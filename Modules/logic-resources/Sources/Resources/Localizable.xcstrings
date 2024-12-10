@@ -177,6 +177,17 @@
         }
       }
     },
+    "authenticate_authorise_transactions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authenticate, authorise transactions and share your digital documents in person or online."
+          }
+        }
+      }
+    },
     "biometry_open_settings" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -474,6 +485,17 @@
         }
       }
     },
+    "documents" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documents"
+          }
+        }
+      }
+    },
     "driving_privileges" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -492,6 +514,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "EDL Credential"
+          }
+        }
+      }
+    },
+    "electronically_sign_digital_documents" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Electronically sign digital documents with your wallet by choosing a file from your device or by scanning a QR code."
           }
         }
       }
@@ -712,6 +745,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Height (cm)"
+          }
+        }
+      }
+    },
+    "home" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home"
           }
         }
       }
@@ -965,6 +1009,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Issuing jurisdiction"
+          }
+        }
+      }
+    },
+    "learn_more" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learn more"
           }
         }
       }
@@ -1870,6 +1925,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invalid transaction code format. Length should be between %@ to %@ digits and only numeric characters are allowed."
+          }
+        }
+      }
+    },
+    "transactions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transactions"
           }
         }
       }

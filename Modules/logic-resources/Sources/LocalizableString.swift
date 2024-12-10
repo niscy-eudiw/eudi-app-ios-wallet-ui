@@ -295,6 +295,18 @@ public final class LocalizableString: LocalizableStringType {
       bundle.localizedString(forKey: "sign_document_subtitle")
     case .selectDocument:
       bundle.localizedString(forKey: "select_document")
+    case .home:
+      bundle.localizedString(forKey: "home")
+    case .transactions:
+      bundle.localizedString(forKey: "transactions")
+    case .documents:
+      bundle.localizedString(forKey: "documents")
+    case .authenticateAuthoriseTransactions:
+      bundle.localizedString(forKey: "authenticate_authorise_transactions")
+    case .electronicallySignDigitalDocuments:
+      bundle.localizedString(forKey: "electronically_sign_digital_documents")
+    case .learnMore:
+      bundle.localizedString(forKey: "learn_more")
     }
   }
 
@@ -435,6 +447,12 @@ public extension LocalizableString {
     case retrieveLogs
     case qrScanInformativeText
     case unableToPresentAndShare
+    case home
+    case documents
+    case transactions
+    case authenticateAuthoriseTransactions
+    case electronicallySignDigitalDocuments
+    case learnMore
   }
 }
 
