@@ -35,22 +35,20 @@ struct AddDocumentView<Router: RouterHost>: View {
       padding: .zero,
       canScroll: true,
       allowBackGesture: true,
-      errorConfig: viewModel.viewState.error
+      errorConfig: viewModel.viewState.error,
+      navigationTitle: LocalizableString.shared.get(with: .chooseFromList),
+      isLoading: viewModel.viewState.isLoading,
+      toolbarContent: ToolBarContent(
+        trailingActions: [
+          Action(title: LocalizableString.shared.get(with: .cancelButton).lowercased()) {
+            viewModel.pop()
+          }
+        ]
+      )
     ) {
-
-      if viewModel.viewState.isFlowCancellable {
-        ContentHeaderView(dismissIcon: Theme.shared.image.xmark) {
-          viewModel.pop()
-        }
-        .padding([.top, .horizontal], Theme.shared.dimension.padding)
-      }
 
       content(viewState: viewModel.viewState) { type in
         viewModel.onClick(for: type)
-      }
-
-      scanFooter(viewState: viewModel.viewState, contentSize: contentSize) {
-        self.viewModel.onScanClick()
       }
     }
     .task {
@@ -66,26 +64,24 @@ private func content(
   action: @escaping (DocumentTypeIdentifier) -> Void
 ) -> some View {
   ScrollView {
-    VStack(spacing: .zero) {
+    VStack(spacing: SPACING_LARGE_MEDIUM) {
 
-      ContentTitleView(
-        title: .addDocumentTitle,
-        caption: .addDocumentSubtitle,
-        titleColor: Theme.shared.color.onSurface,
-        topSpacing: viewState.isFlowCancellable ? .withToolbar : .withoutToolbar
-      )
+      Text(.chooseFromListTitle)
+        .typography(Theme.shared.font.bodyMedium)
+        .foregroundStyle(Theme.shared.color.onSurface)
 
-      VSpacer.large()
-
-      ForEach(viewState.addDocumentCellModels) { cell in
-        AddNewDocumentCellView(
-          isEnabled: cell.isEnabled,
-          icon: cell.image,
-          title: cell.documentName,
-          isLoading: cell.isLoading,
-          action: action(cell.type)
-        )
-        .padding(.bottom, Theme.shared.shape.small)
+      VStack(spacing: SPACING_MEDIUM_SMALL) {
+        ForEach(viewState.addDocumentCellModels) { cell in
+          WrapCardView {
+            WrapListItemView(
+              listItem: ListItemData(
+                mainText: LocalizableString.shared.get(with: cell.documentName),
+                trailingContent: .icon(Theme.shared.image.plus)
+              ),
+              action: { action(cell.type) }
+            )
+          }
+        }
       }
     }
     .padding(.horizontal, Theme.shared.dimension.padding)
