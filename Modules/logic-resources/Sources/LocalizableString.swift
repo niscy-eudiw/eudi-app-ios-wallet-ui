@@ -219,6 +219,8 @@ public final class LocalizableString: LocalizableStringType {
       bundle.localizedString(forKey: "request_data_no_document")
     case .issuanceDetailsDeletionTitle(let args):
       bundle.localizedStringWithArguments(forKey: "issuance_details_doc_deletion_title", arguments: args)
+    case .deleteDocument:
+      bundle.localizedString(forKey: "delete_document")
     case .issuanceDetailsDeletionCaption(let args):
       bundle.localizedStringWithArguments(forKey: "issuance_details_doc_deletion_caption", arguments: args)
     case .errorUnableFetchDocuments:
@@ -317,6 +319,12 @@ public final class LocalizableString: LocalizableStringType {
       bundle.localizedString(forKey: "choose_from_list_title")
     case .addDocumentsToWallet:
       bundle.localizedString(forKey: "add_documents_to_wallet")
+    case .details:
+      bundle.localizedString(forKey: "details")
+    case .dataSharingRequest:
+      bundle.localizedString(forKey: "data_sharing_request")
+    case .dataSharingTitle:
+      bundle.localizedString(forKey: "data_sharing_title")
     }
   }
 
@@ -422,6 +430,7 @@ public extension LocalizableString {
     case loadSampleData
     case requestDataNoDocument
     case issuanceDetailsDeletionTitle([String])
+    case deleteDocument
     case issuanceDetailsDeletionCaption([String])
     case errorUnableFetchDocuments
     case errorUnableFetchDocument
@@ -468,6 +477,9 @@ public extension LocalizableString {
     case chooseFromList
     case chooseFromListTitle
     case addDocumentsToWallet
+    case details
+    case dataSharingRequest
+    case dataSharingTitle
   }
 }
 
