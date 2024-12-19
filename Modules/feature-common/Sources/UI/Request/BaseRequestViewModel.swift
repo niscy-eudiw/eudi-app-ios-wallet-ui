@@ -24,6 +24,7 @@ public struct RequestViewState: ViewState {
   public let isContentVisible: Bool
   public let itemsAreAllSelected: Bool
   public let items: [RequestDataUIModel]
+  public let sections: [RequestDataUIModel]
   public let title: LocalizableString.Key
   public let trustedRelyingPartyInfo: LocalizableString.Key
   public let relyingParty: String
@@ -48,6 +49,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         isContentVisible: false,
         itemsAreAllSelected: true,
         items: RequestDataUiModel.mock(),
+        sections: [],
         title: .requestDataTitle([LocalizableString.shared.get(with: .unknownVerifier)]),
         trustedRelyingPartyInfo: .requestDataVerifiedEntityMessage,
         relyingParty: LocalizableString.shared.get(with: .unknownVerifier),
@@ -133,17 +135,41 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
     }
   }
 
+  private func filterRequestDataSections(from items: [RequestDataUIModel]) -> [RequestDataUIModel] {
+    return items.filter {
+      if case .requestDataSection = $0 {
+        return true
+      }
+      return false
+    }
+  }
+
+  private func filterRequestData(from items: [RequestDataUIModel]) -> [RequestDataUIModel] {
+    return items.filter {
+      if case .requestDataRow = $0 {
+        return true
+      }
+      if case .requestDataVerification = $0 {
+        return true
+      }
+      return false
+    }
+  }
+
   public func onReceivedItems(
     with items: [RequestDataUIModel],
     title: LocalizableString.Key,
     relyingParty: String,
     isTrusted: Bool
   ) {
+    let sections = filterRequestDataSections(from: items)
+    let dataItems = filterRequestData(from: items)
     setState {
       $0
         .copy(
           isLoading: false,
-          items: items,
+          items: dataItems,
+          sections: sections,
           title: title,
           relyingParty: relyingParty,
           isTrusted: isTrusted,
@@ -162,6 +188,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
           isContentVisible: false,
           itemsAreAllSelected: true,
           items: RequestDataUiModel.mock(),
+          sections: [],
           title: .requestDataTitle([LocalizableString.shared.get(with: .unknownVerifier)]),
           trustedRelyingPartyInfo: .requestDataVerifiedEntityMessage,
           relyingParty: LocalizableString.shared.get(with: .unknownVerifier),
