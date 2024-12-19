@@ -22,6 +22,7 @@ struct DocumentDetailsView<Router: RouterHost>: View {
 
   @ObservedObject var viewModel: DocumentDetailsViewModel<Router>
   @State private var isVisible = false
+  @State private var showAlert = false
 
   init(with viewModel: DocumentDetailsViewModel<Router>) {
     self.viewModel = viewModel
@@ -47,12 +48,14 @@ struct DocumentDetailsView<Router: RouterHost>: View {
 
       content(
         viewState: viewModel.viewState,
-        isVisible: isVisible) {
-          viewModel.onContinue()
-        } onShowDeleteModal: {
-          viewModel.onShowDeleteModal()
-        }
-      pop: {
+        isVisible: isVisible
+      ) {
+        showAlert = true
+      } onContinue: {
+        viewModel.onContinue()
+      } onShowDeleteModal: {
+        viewModel.onShowDeleteModal()
+      } pop: {
         viewModel.pop()
       }
     }
@@ -69,8 +72,18 @@ struct DocumentDetailsView<Router: RouterHost>: View {
         viewModel.onShowDeleteModal()
       }
     )
+    .alertView(
+      isPresented: $showAlert,
+      title: LocalizableString.shared.get(with: .trustedRelyingParty),
+      message: LocalizableString.shared.get(with: .trustedRelyingPartyDescription),
+      buttonText: LocalizableString.shared.get(with: .close),
+      onDismiss: {
+        showAlert = false
+      }
+    )
     .task {
       await self.viewModel.fetchDocumentDetails()
+      await self.viewModel.fetchIssuerData()
     }
   }
 }
@@ -80,6 +93,7 @@ struct DocumentDetailsView<Router: RouterHost>: View {
 private func content(
   viewState: DocumentDetailsViewState,
   isVisible: Bool,
+  showAlert: @escaping () -> Void,
   onContinue: @escaping () -> Void,
   onShowDeleteModal: @escaping () -> Void,
   pop: @escaping () -> Void
@@ -125,6 +139,21 @@ private func content(
         }
       }
 
+      Text(LocalizableString.shared.get(with: .unknownIssuer))
+        .font(Theme.shared.font.labelSmall.font)
+        .foregroundStyle(Theme.shared.color.onSurfaceVariant)
+        .frame(maxWidth: .infinity, alignment: .leading)
+
+      CardViewWithLogo(
+        icon: viewState.issuerData.icon,
+        title: viewState.issuerData.title,
+        subtitle: viewState.issuerData.subtitle,
+        footer: viewState.issuerData.caption,
+        isVerified: viewState.issuerData.isVerified
+      ) {
+        showAlert()
+      }
+
       if viewState.hasDeleteAction {
         WrapButtonView(
           style: .error,
@@ -151,6 +180,7 @@ private func content(
 #Preview {
   let viewState = DocumentDetailsViewState(
     document: DocumentDetailsUIModel.mock(),
+    issuerData: IssuerDataUIModel.mock(),
     isLoading: false,
     error: nil,
     config: IssuanceDetailUiConfig(flow: .extraDocument("documentId")),
@@ -165,6 +195,7 @@ private func content(
     content(
       viewState: viewState,
       isVisible: true,
+      showAlert: {},
       onContinue: {},
       onShowDeleteModal: {},
       pop: {}
