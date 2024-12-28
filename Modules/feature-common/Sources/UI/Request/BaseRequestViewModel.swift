@@ -24,6 +24,7 @@ public struct RequestViewState: ViewState {
   public let isContentVisible: Bool
   public let itemsAreAllSelected: Bool
   public let items: [RequestDataUIModel]
+  public let sections: [RequestDataSection]
   public let title: LocalizableString.Key
   public let trustedRelyingPartyInfo: LocalizableString.Key
   public let relyingParty: String
@@ -48,6 +49,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         isContentVisible: false,
         itemsAreAllSelected: true,
         items: RequestDataUiModel.mock(),
+        sections: [],
         title: .requestDataTitle([LocalizableString.shared.get(with: .unknownVerifier)]),
         trustedRelyingPartyInfo: .requestDataVerifiedEntityMessage,
         relyingParty: LocalizableString.shared.get(with: .unknownVerifier),
@@ -144,6 +146,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         .copy(
           isLoading: false,
           items: items,
+          sections: items.compactMap { $0.isDataSection },
           title: title,
           relyingParty: relyingParty,
           isTrusted: isTrusted,
@@ -162,6 +165,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
           isContentVisible: false,
           itemsAreAllSelected: true,
           items: RequestDataUiModel.mock(),
+          sections: [],
           title: .requestDataTitle([LocalizableString.shared.get(with: .unknownVerifier)]),
           trustedRelyingPartyInfo: .requestDataVerifiedEntityMessage,
           relyingParty: LocalizableString.shared.get(with: .unknownVerifier),

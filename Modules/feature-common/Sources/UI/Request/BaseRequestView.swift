@@ -20,13 +20,31 @@ import logic_resources
 public struct BaseRequestView<Router: RouterHost>: View {
 
   @ObservedObject var viewModel: BaseRequestViewModel<Router>
+  @State private var isExpanded: Bool = false
 
   public init(with router: Router, viewModel: BaseRequestViewModel<Router>) {
     self.viewModel = viewModel
   }
 
   public var body: some View {
-    ContentScreenView(errorConfig: viewModel.viewState.error) {
+    ContentScreenView(
+      errorConfig: viewModel.viewState.error,
+      navigationTitle: LocalizableString.shared.get(with: .dataSharingRequest),
+      toolbarContent: ToolBarContent(
+        trailingActions: [
+          Action(
+            title: LocalizableString.shared.get(with: .shareButton).lowercased()) {
+              viewModel.onShare()
+            }
+        ],
+        leadingActions: [
+          Action(
+            title: LocalizableString.shared.get(with: .cancelButton).lowercased()) {
+              viewModel.onShowCancelModal()
+            }
+        ]
+      )
+    ) {
       content(
         viewState: viewModel.viewState,
         getScreenRect: getScreenRect(),
@@ -35,6 +53,7 @@ public struct BaseRequestView<Router: RouterHost>: View {
         getTitle: viewModel.getTitle(),
         getCaption: viewModel.getCaption(),
         getDataRequestInfo: viewModel.getDataRequestInfo(),
+        isExpanded: $isExpanded,
         onShowRequestInfoModal: viewModel.onShowRequestInfoModal,
         onVerifiedEntityModal: viewModel.onVerifiedEntityModal,
         onContentVisibilityChange: viewModel.onContentVisibilityChange,
@@ -45,20 +64,19 @@ public struct BaseRequestView<Router: RouterHost>: View {
         }
       )
     }
-    .sheetDialog(isPresented: $viewModel.isCancelModalShowing) {
-      SheetContentView {
-        VStack(spacing: SPACING_MEDIUM) {
-
-          ContentTitleView(
-            title: .cancelShareSheetTitle,
-            caption: .cancelShareSheetCaption
-          )
-
-          WrapButtonView(style: .primary, title: .cancelShareSheetContinue, onAction: viewModel.onShowCancelModal())
-          WrapButtonView(style: .secondary, title: .cancelButton, onAction: viewModel.onPop())
-        }
+    .confirmationDialog(
+      title: LocalizableString.shared.get(with: .cancelShareSheetTitle),
+      message: LocalizableString.shared.get(with: .cancelShareSheetCaption),
+      destructiveText: LocalizableString.shared.get(with: .cancelButton),
+      baseText: LocalizableString.shared.get(with: .cancelShareSheetContinue),
+      isPresented: $viewModel.isCancelModalShowing,
+      destructiveAction: {
+        viewModel.onPop()
+      },
+      baseAction: {
+        viewModel.onShowCancelModal()
       }
-    }
+    )
     .sheetDialog(isPresented: $viewModel.isRequestInfoModalShowing) {
       SheetContentView {
         VStack(spacing: SPACING_MEDIUM) {
@@ -103,6 +121,7 @@ private func content(
   getTitle: LocalizableString.Key,
   getCaption: LocalizableString.Key,
   getDataRequestInfo: LocalizableString.Key,
+  isExpanded: Binding<Bool>,
   onShowRequestInfoModal: @escaping () -> Void,
   onVerifiedEntityModal: @escaping () -> Void,
   onContentVisibilityChange: @escaping () -> Void,
@@ -111,93 +130,129 @@ private func content(
   onSelectionChanged: @escaping (String) -> Void
 ) -> some View {
   if viewState.isTrusted {
-    ContentTitleView(
-      titleDecoration: .icon(
-        decorated: getRelyingParty,
-        icon: Theme.shared.image.checkMarkSealFill,
-        text: getTitleCaption
-      ),
-      decorationColor: Theme.shared.color.success,
-      topSpacing: .withoutToolbar,
-      onTap: {
-        onVerifiedEntityModal()
-      }
+    ContentHeader(
+      config: ContentHeaderConfig(
+        appIconAndTextData: AppIconAndTextData(
+          appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet,
+          appText: ThemeManager.shared.image.euditext
+        ),
+        description: LocalizableString.shared.get(with: .dataSharingTitle),
+        mainText: LocalizableString.shared.get(with: .dataSharingRequest),
+        relyingPartyData: RelyingPartyData(
+          isVerified: true,
+          name: LocalizableString.shared.get(with: .requestDataVerifiedEntity),
+          description: "requests the following"
+        )
+      )
     )
+    //    ContentTitleView(
+    //      titleDecoration: .icon(
+    //        decorated: getRelyingParty,
+    //        icon: Theme.shared.image.checkMarkSealFill,
+    //        text: getTitleCaption
+    //      ),
+    //      decorationColor: Theme.shared.color.success,
+    //      topSpacing: .withoutToolbar,
+    //      onTap: {
+    //        onVerifiedEntityModal()
+    //      }
+    //    )
   } else {
-    ContentTitleView(
-      title: getTitle,
-      topSpacing: .withoutToolbar
+    ContentHeader(
+      config: ContentHeaderConfig(
+        appIconAndTextData: AppIconAndTextData(
+          appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet,
+          appText: ThemeManager.shared.image.euditext
+        ),
+        description: LocalizableString.shared.get(with: .addDoc)
+      )
     )
+
+    //    ContentTitleView(
+    //      title: getTitle,
+    //      topSpacing: .withoutToolbar
+    //    )
   }
 
-  VSpacer.extraSmall()
-
-  HStack {
-
-    let titleText = Text(getCaption)
-      .foregroundColor(Theme.shared.color.secondaryFixed)
-
-    let whyInfoText = Text(getDataRequestInfo)
-      .foregroundColor(Theme.shared.color.onSurface)
-
-    Text("\(titleText) \(whyInfoText)")
-      .typography(Theme.shared.font.bodyMedium)
-      .onTapGesture { onShowRequestInfoModal() }
-
-    Spacer()
-
-    visibilityIcon(viewState: viewState) {
-      onContentVisibilityChange()
-    }
-  }
-
-  VSpacer.small()
+  //  VSpacer.extraSmall()
+  //
+  //  HStack {
+  //
+  //    let titleText = Text(getCaption)
+  //      .foregroundColor(Theme.shared.color.secondaryFixed)
+  //
+  //    let whyInfoText = Text(getDataRequestInfo)
+  //      .foregroundColor(Theme.shared.color.onSurface)
+  //
+  //    Text("\(titleText) \(whyInfoText)")
+  //      .typography(Theme.shared.font.bodyMedium)
+  //      .onTapGesture { onShowRequestInfoModal() }
+  //
+  //    Spacer()
+  //
+  //    visibilityIcon(viewState: viewState) {
+  //      onContentVisibilityChange()
+  //    }
+  //  }
+  //
+  //  VSpacer.small()
 
   if viewState.items.isEmpty {
     noDocumentsFound(getScreenRect: getScreenRect)
   } else {
     ScrollView {
-      VStack(spacing: .zero) {
+      VStack(spacing: SPACING_MEDIUM) {
+        ForEach(viewState.sections, id: \.id) { section in
+          ExpandableCardView(title: section.title, subtitle: "View details", listItems: []) {
+            ForEach(viewState.items.indices, id: \.self) { index in
+              let item = viewState.sections[index]
+              switch item {
+              case .requestDataRow, .requestDataVerification:
+                WrapListItemView(
+                  listItem: ListItemData(
+                    mainText: item.title
+                  )
+                )
+              case .requestDataSection:
+                EmptyView()
+              }
+            }
+            //            let nextItem: RequestDataUIModel? = (index + 2) < viewState.items.count
+            //            ? viewState.items[index + 1]
+            //            : nil
+            //
+            //            if index > 0 {
+            //              VSpacer.small()
+            //            }
 
-        ForEach(viewState.items.indices, id: \.self) { index in
+            //            RequestDataCellView(
+            //              cellModel: item,
+            //              isLoading: viewState.isLoading
+            //            ) { id in
+            //              onSelectionChanged(id)
+            //            }
 
-          let item = viewState.items[index]
-          let nextItem: RequestDataUIModel? = (index + 2) < viewState.items.count
-          ? viewState.items[index + 1]
-          : nil
-
-          if index > 0 {
-            VSpacer.small()
+            //            if (index + 1) < viewState.items.count,
+            //               item.isDataSection == nil,
+            //               item.isDataVerification == nil,
+            //               nextItem?.isDataRow != nil {
+            //              Divider()
+            //            }
+            //
+            //            VSpacer.small()
           }
-
-          RequestDataCellView(
-            cellModel: item,
-            isLoading: viewState.isLoading
-          ) { id in
-            onSelectionChanged(id)
-          }
-
-          if (index + 1) < viewState.items.count,
-             item.isDataSection == nil,
-             item.isDataVerification == nil,
-             nextItem?.isDataRow != nil {
-            Divider()
-          }
-
-          VSpacer.small()
         }
       }
-      .padding(.top)
+      //    .bottomFade()
     }
-    .bottomFade()
-  }
 
-  Spacer()
-
-  footer(viewState: viewState) {
-    onShare()
-  } onShowCancelModal: {
-    onShowCancelModal()
+    //  Spacer()
+    //
+    //  footer(viewState: viewState) {
+    //    onShare()
+    //  } onShowCancelModal: {
+    //    onShowCancelModal()
+    //  }
   }
 }
 
@@ -308,6 +363,7 @@ private func missingCredentials(itemsAreAllSelected: Bool) -> some View {
     isContentVisible: true,
     itemsAreAllSelected: true,
     items: RequestDataUiModel.mock(),
+    sections: [],
     title: LocalizableString.Key.addDocumentTitle,
     trustedRelyingPartyInfo: .requestDataVerifiedEntityMessage,
     relyingParty: "relying party",
@@ -326,6 +382,7 @@ private func missingCredentials(itemsAreAllSelected: Bool) -> some View {
       getTitle: viewState.title,
       getCaption: .requestDataCaption,
       getDataRequestInfo: .requestDataVerifiedEntityMessage,
+      isExpanded: .constant(true),
       onShowRequestInfoModal: {},
       onVerifiedEntityModal: {},
       onContentVisibilityChange: {},
