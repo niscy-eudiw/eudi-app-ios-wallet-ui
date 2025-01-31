@@ -176,6 +176,7 @@ struct DashboardView<Router: RouterHost>: View {
       }
     }
     .task {
+      await viewModel.onFiltersChangeState()
       await viewModel.fetch()
     }
     .onChange(of: scenePhase) { phase in
@@ -282,7 +283,7 @@ private func content(
 
     VStack(spacing: .zero) {
       DocumentListView(
-        filteredItems: viewState.filteredDocuments,
+        filteredItems: viewState.documents,
         isLoading: viewState.isLoading,
         action: { document in
           switch document.value.state {
@@ -319,6 +320,7 @@ private func content(
     documents: DocumentUIModel.mocks(),
     filteredDocuments: DocumentUIModel.mocks(),
     filterModel: .init(sections: [], sortAscending: true, initialSorting: "", selectedStateOption: ""),
+    filterUIModel: [],
     username: "First name",
     phase: .active,
     pendingBleModalAction: false,
@@ -334,6 +336,42 @@ private func content(
         appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet,
         appText: ThemeManager.shared.image.euditext
       )
+    ),
+    isInitialFetch: true,
+    filters: Filters(
+      filterGroups: [
+        // MARK: - EXPIRY
+        FilterGroup(
+          name: LocalizableString.shared.get(with: .expiryPeriodSectionTitle),
+          filters: [
+            FilterItem(
+              name: LocalizableString.shared.get(with: .nextSevenDays).capitalized,
+              selected: false,
+              filterableAction: Filter<DocumentAttributes>(predicate: { _, _ in
+                Date().isWithinNextDays(7)
+              })),
+            FilterItem(
+              name: LocalizableString.shared.get(with: .nextThirtyDays).capitalized,
+              selected: false,
+              filterableAction: Filter<DocumentAttributes>(predicate: { _, _ in
+                Date().isWithinNextDays(30)
+              })),
+            FilterItem(
+              name: LocalizableString.shared.get(with: .beyondThiryDays).capitalized,
+              selected: false,
+              filterableAction: Filter<DocumentAttributes>(predicate: { _, _ in
+                Date().isBeyondNextDays(30)
+              })),
+            FilterItem(
+              name: LocalizableString.shared.get(with: .beforeToday).capitalized,
+              selected: false,
+              filterableAction: Filter<DocumentAttributes>(predicate: { _, _ in
+                Date().isBeforeToday()
+              }))
+          ]
+        )
+      ],
+      sortOrder: SortOrderType.ascending
     ),
     documentSections: [.issuedSortingDate]
   )
