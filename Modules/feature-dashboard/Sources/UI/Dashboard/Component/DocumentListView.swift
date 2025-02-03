@@ -18,19 +18,21 @@ import logic_resources
 import logic_ui
 
 struct DocumentListView: View {
-  @State private var searchText = ""
-
   let filteredItems: [DocumentUIModel]
   let action: (DocumentUIModel) -> Void
   let isLoading: Bool
   let filteredDocsCallback: (String) -> Void
 
+  @Binding var searchQuery: String
+
   init(
+    searchQuery: Binding<String>,
     filteredItems: [DocumentUIModel],
     isLoading: Bool,
     action: @escaping (DocumentUIModel) -> Void,
     filteredDocsCallback: @escaping (String) -> Void
   ) {
+    self._searchQuery = searchQuery
     self.filteredItems = filteredItems
     self.action = action
     self.isLoading = isLoading
@@ -39,7 +41,7 @@ struct DocumentListView: View {
 
   var body: some View {
     VStack {
-      if filteredItems.isEmpty && !searchText.isEmpty {
+      if filteredItems.isEmpty && !searchQuery.isEmpty {
         contentUnavailableView()
       } else {
         if !filteredItems.isEmpty {
@@ -75,12 +77,11 @@ struct DocumentListView: View {
       }
     }
     .searchable(
-      searchText: $searchText,
+      searchText: $searchQuery,
       placeholder: LocalizableString.shared.get(with: .search),
-      backgroundColor: Theme.shared.color.background
-    ) { searchText in
-      filteredDocsCallback(searchText)
-    }
+      backgroundColor: Theme.shared.color.background,
+      onSearchTextChange: { _ in }
+    )
     .background(Theme.shared.color.background)
   }
 
@@ -146,6 +147,7 @@ private extension DocumentUIModel {
 
 #Preview {
   DocumentListView(
+    searchQuery: .constant(""),
     filteredItems: DocumentUIModel.mocks(),
     isLoading: false,
     action: { _ in }
