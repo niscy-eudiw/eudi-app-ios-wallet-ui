@@ -36,11 +36,11 @@ public struct BaseRequestView<Router: RouterHost>: View {
       content(
         viewState: viewModel.viewState,
         getScreenRect: getScreenRect(),
-        onShowRequestInfoModal: viewModel.onShowRequestInfoModal,
-        onVerifiedEntityModal: viewModel.onVerifiedEntityModal,
         onShare: viewModel.onShare,
         onSelectionChanged: { id in
-          viewModel.onSelectionChanged(id: id)
+          Task {
+            await viewModel.onSelectionChanged(id: id)
+          }
         }
       )
     }
@@ -80,10 +80,8 @@ public struct BaseRequestView<Router: RouterHost>: View {
 private func content(
   viewState: RequestViewState,
   getScreenRect: CGRect,
-  onShowRequestInfoModal: @escaping () -> Void,
-  onVerifiedEntityModal: @escaping () -> Void,
   onShare: @escaping () -> Void,
-  onSelectionChanged: @escaping (String) -> Void
+  onSelectionChanged: @escaping @Sendable (String) -> Void
 ) -> some View {
   ScrollView {
     VStack(spacing: .zero) {
@@ -98,16 +96,16 @@ private func content(
         VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
           ForEach(viewState.items, id: \.id) { section in
             ExpandableCardView(
-              title: section.requestDataSection.title,
-              subtitle: LocalizableString.shared.get(with: .viewDetails)
+              title: .custom(section.requestDataSection.title),
+              subtitle: .viewDetails
             ) {
               ForEach(section.requestDataRow, id: \.id) { item in
                 switch item.value {
                 case .string(let value):
                   WrapListItemView(
                     listItem: ListItemData(
-                      mainText: value,
-                      overlineText: item.title,
+                      mainText: .custom(value),
+                      overlineText: .custom(item.title),
                       trailingContent: .checkbox(
                         item.isEnabled,
                         item.isSelected
@@ -119,7 +117,7 @@ private func content(
                 case .image(let image):
                   WrapListItemView(
                     listItem: ListItemData(
-                      mainText: item.title,
+                      mainText: .custom(item.title),
                       leadingIcon: (nil, image),
                       trailingContent: .checkbox(
                         item.isEnabled,
@@ -183,7 +181,6 @@ private func noDocumentsFound(getScreenRect: CGRect) -> some View {
     error: nil,
     showMissingCrredentials: false,
     items: RequestDataUiModel.mockData(),
-    title: LocalizableString.Key.requestDataVerifiedEntity,
     trustedRelyingPartyInfo: .requestDataVerifiedEntityMessage,
     relyingParty: "relying party",
     isTrusted: true,
@@ -202,8 +199,6 @@ private func noDocumentsFound(getScreenRect: CGRect) -> some View {
     content(
       viewState: viewState,
       getScreenRect: UIScreen.main.bounds,
-      onShowRequestInfoModal: {},
-      onVerifiedEntityModal: {},
       onShare: {},
       onSelectionChanged: { _ in }
     )

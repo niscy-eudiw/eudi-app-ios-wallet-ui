@@ -30,7 +30,6 @@ struct DocumentIssuanceSuccessView<Router: RouterHost>: View {
   var body: some View {
     ContentScreenView(
       padding: .zero,
-      allowBackGesture: false,
       navigationTitle: LocalizableString.shared.get(
         with: .documentAdded
       ),
@@ -115,8 +114,8 @@ private func document(
     ForEach(viewState.documents) { document in
       ExpandableCardView(
         backgroundColor: Theme.shared.color.tertiary,
-        title: document.documentName,
-        subtitle: LocalizableString.shared.get(with: .viewDocumentDetails),
+        title: .custom(document.documentName),
+        subtitle: .viewDocumentDetails,
         isLoading: viewState.isLoading,
         content: {
           WrapListItemsView(
@@ -124,12 +123,12 @@ private func document(
               switch field.value {
               case .string(let value):
                   .init(
-                    mainText: value,
-                    overlineText: field.title
+                    mainText: .custom(value),
+                    overlineText: .custom(field.title)
                   )
               case .image(let image):
                   .init(
-                    mainText: field.title,
+                    mainText: .custom(field.title),
                     leadingIcon: (nil, image)
                   )
               }

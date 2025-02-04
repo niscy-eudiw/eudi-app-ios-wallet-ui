@@ -26,9 +26,27 @@ struct SideMenuView<Router: RouterHost>: View {
   }
 
   var body: some View {
-    content(
-      viewState: viewModel.viewState
-    ).navigationTitle(LocalizableString.shared.get(with: .myEuWallet))
+    ContentScreenView(
+      padding: .zero,
+      canScroll: true,
+      navigationTitle: LocalizableString.shared.get(with: .myEuWallet),
+      toolbarContent: toolbarContent()
+    ) {
+      content(
+        viewState: viewModel.viewState
+      )
+    }
+  }
+
+  func toolbarContent() -> ToolBarContent {
+    .init(
+      trailingActions: [],
+      leadingActions: [
+        Action(image: Theme.shared.image.chevronLeft) {
+          viewModel.onPop()
+        }
+      ]
+    )
   }
 }
 

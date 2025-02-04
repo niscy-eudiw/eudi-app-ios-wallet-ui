@@ -15,18 +15,18 @@
  */
 import logic_resources
 
-public struct ListItemData: Identifiable {
+public struct ListItemData: Identifiable, Sendable {
 
-  public enum MainStyle {
+  public enum MainStyle: Sendable {
     case plain
     case bold
   }
 
-  public var id: String
-  public let mainText: String
+  public let id: String
+  public let mainText: LocalizableString.Key
   public let mainStyle: MainStyle
-  public let overlineText: String?
-  public let supportingText: String?
+  public let overlineText: LocalizableString.Key?
+  public let supportingText: LocalizableString.Key?
   public let supportingTextColor: Color
   public let overlineTextColor: Color
   public let leadingIcon: (imageUrl: URL?, image: Image?)?
@@ -35,10 +35,10 @@ public struct ListItemData: Identifiable {
 
   public init(
     id: String = UUID().uuidString,
-    mainText: String,
+    mainText: LocalizableString.Key,
     mainStyle: MainStyle = .plain,
-    overlineText: String? = nil,
-    supportingText: String? = nil,
+    overlineText: LocalizableString.Key? = nil,
+    supportingText: LocalizableString.Key? = nil,
     supportingTextColor: Color = Theme.shared.color.onSurfaceVariant,
     overlineTextColor: Color = Theme.shared.color.onSurfaceVariant,
     leadingIcon: (imageUrl: URL?, image: Image?)? = nil,
@@ -58,8 +58,8 @@ public struct ListItemData: Identifiable {
   }
 }
 
-public enum TrailingContent {
+public enum TrailingContent: Sendable {
   case icon(Image, Color = Color.accentColor)
-  case checkbox(Bool, Bool, (Bool) -> Void)
+  case checkbox(Bool, Bool, @Sendable (Bool) -> Void)
   case empty
 }

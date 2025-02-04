@@ -31,7 +31,6 @@ public struct BaseSuccessView<Router: RouterHost>: View {
     ContentScreenView(
       padding: .zero,
       canScroll: true,
-      allowBackGesture: false,
       navigationTitle: LocalizableString.shared.get(
         with: .dataShared
       ),
@@ -87,23 +86,23 @@ private func documents(
   viewState: BaseSuccessState,
   ignoreTrainingContent: Bool = true,
   backgroundColor: Color = Theme.shared.color.tertiary,
-  onSelectionChanged: @escaping (String) -> Void
+  onSelectionChanged: @escaping @Sendable (String) -> Void
 ) -> some View {
   if !viewState.items.isEmpty {
     VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
       ForEach(viewState.items, id: \.id) { section in
         ExpandableCardView(
           backgroundColor: backgroundColor,
-          title: section.requestDataSection.title,
-          subtitle: LocalizableString.shared.get(with: .viewDetails)
+          title: .custom(section.requestDataSection.title),
+          subtitle: .viewDetails
         ) {
           ForEach(section.requestDataRow, id: \.id) { item in
             switch item.value {
             case .string(let value):
               WrapListItemView(
                 listItem: ListItemData(
-                  mainText: value,
-                  overlineText: item.title,
+                  mainText: .custom(value),
+                  overlineText: .custom(item.title),
                   trailingContent: ignoreTrainingContent ? .none : .checkbox(
                     item.isEnabled,
                     item.isSelected
@@ -115,7 +114,7 @@ private func documents(
             case .image(let image):
               WrapListItemView(
                 listItem: ListItemData(
-                  mainText: item.title,
+                  mainText: .custom(item.title),
                   leadingIcon: (nil, image),
                   trailingContent: ignoreTrainingContent ? .none : .checkbox(
                     item.isEnabled,

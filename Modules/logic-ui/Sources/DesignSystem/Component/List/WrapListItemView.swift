@@ -41,10 +41,8 @@ public struct WrapListItemView: View {
         RemoteImageView(
           url: url,
           icon: listItem.leadingIcon?.image,
-          size: .init(
-            width: Theme.shared.dimension.remoteImageIconSize,
-            height: Theme.shared.dimension.remoteImageIconSize
-          )
+          width: Theme.shared.dimension.remoteImageIconSize,
+          height: Theme.shared.dimension.remoteImageIconSize
         )
         .if(listItem.isBlur) {
           $0.blur(radius: 4, opaque: false)
@@ -60,7 +58,7 @@ public struct WrapListItemView: View {
       }
 
       VStack(alignment: .leading, spacing: SPACING_EXTRA_SMALL) {
-        if let overlineText = listItem.overlineText, !overlineText.isEmpty {
+        if let overlineText = listItem.overlineText {
           Text(overlineText)
             .typography(Theme.shared.font.bodySmall)
             .foregroundStyle(listItem.overlineTextColor)
@@ -79,7 +77,7 @@ public struct WrapListItemView: View {
             $0.blur(radius: 4, opaque: false)
           }
 
-        if let supportingText = listItem.supportingText, !supportingText.isEmpty {
+        if let supportingText = listItem.supportingText {
           Text(supportingText)
             .typography(Theme.shared.font.headlineSmall)
             .font(Theme.shared.font.bodyMedium.font)
@@ -129,9 +127,9 @@ public struct WrapListItemView: View {
     WrapCardView {
       WrapListItemView(
         listItem: .init(
-          mainText: "Main Text",
-          overlineText: "Overline Text",
-          supportingText: "Valid until: 22 March 2030",
+          mainText: .custom("Main Text"),
+          overlineText: .custom("Overline Text"),
+          supportingText: .custom("Valid until: 22 March 2030"),
           leadingIcon: (nil, Image(systemName: "star")),
           trailingContent: .icon(Image(systemName: "chevron.right"))
         ),
@@ -142,9 +140,9 @@ public struct WrapListItemView: View {
     WrapCardView {
       WrapListItemView(
         listItem: .init(
-          mainText: "Another Item",
+          mainText: .custom("Another Item"),
           overlineText: nil,
-          supportingText: "Additional Info",
+          supportingText: .custom("Additional Info"),
           leadingIcon: nil
         )
       )
@@ -153,9 +151,9 @@ public struct WrapListItemView: View {
     WrapCardView {
       WrapListItemView(
         listItem: .init(
-          mainText: "Another Item",
+          mainText: .custom("Another Item"),
           overlineText: nil,
-          supportingText: "Additional Info",
+          supportingText: .custom("Additional Info"),
           leadingIcon: (nil, Image(systemName: "heart"))
         )
       )
@@ -164,9 +162,9 @@ public struct WrapListItemView: View {
     WrapCardView {
       WrapListItemView(
         listItem: .init(
-          mainText: "Another Item",
-          overlineText: "Overline Texr",
-          supportingText: "Additional Info",
+          mainText: .custom("Another Item"),
+          overlineText: .custom("Overline Texr"),
+          supportingText: .custom("Additional Info"),
           overlineTextColor: Theme.shared.color.error,
           leadingIcon: (nil, Image(systemName: "heart"))
         )
@@ -176,9 +174,9 @@ public struct WrapListItemView: View {
     WrapCardView {
       WrapListItemView(
         listItem: .init(
-          mainText: "Main Text",
-          overlineText: "Overline Text",
-          supportingText: "Valid until: 22 March 2030",
+          mainText: .custom("Main Text"),
+          overlineText: .custom("Overline Text"),
+          supportingText: .custom("Valid until: 22 March 2030"),
           leadingIcon: (nil, Image(systemName: "star")),
           trailingContent: .checkbox(true, true) { _ in }
         ),
@@ -189,7 +187,7 @@ public struct WrapListItemView: View {
     WrapCardView {
       WrapListItemView(
         listItem: .init(
-          mainText: "Another Item",
+          mainText: .custom("Another Item"),
           trailingContent: .icon(Image(systemName: "plus"))
         )
       )
