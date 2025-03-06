@@ -43,7 +43,10 @@ struct DocumentTabView: View {
   var body: some View {
     VStack {
       if filteredItems.isEmpty && !searchQuery.isEmpty {
-        contentUnavailableView()
+        ContentUnavailableView(
+          title: .noResults,
+          description: .noResultsDescription
+        )
       } else {
         if !filteredItems.isEmpty {
           List {
@@ -73,9 +76,11 @@ struct DocumentTabView: View {
           .scrollIndicators(.hidden)
           .clipped()
         } else {
-          contentUnavailableView()
+          ContentUnavailableView(
+            title: .noResults,
+            description: .noResultsDescription
+          )
         }
-
       }
     }
     .searchable(
@@ -84,23 +89,6 @@ struct DocumentTabView: View {
       onSearchTextChange: { _ in }
     )
     .background(Theme.shared.color.background)
-  }
-
-  @ViewBuilder
-  private func contentUnavailableView() -> some View {
-    VStack(spacing: SPACING_SMALL) {
-      Text(.noResults)
-        .typography(Theme.shared.font.titleLarge)
-        .fontWeight(.bold)
-
-      Text(.noResultsDescription)
-        .typography(Theme.shared.font.bodyLarge)
-        .foregroundStyle(Theme.shared.color.onSurface)
-        .multilineTextAlignment(.center)
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    .padding(.top, SPACING_LARGE_MEDIUM)
-    .padding(.horizontal, SPACING_MEDIUM)
   }
 }
 

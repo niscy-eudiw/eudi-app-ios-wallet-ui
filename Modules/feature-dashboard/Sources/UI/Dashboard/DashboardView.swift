@@ -255,13 +255,18 @@ private func content(
     }
     .tag(SelectedTab.documents)
 
-    TransactionTabView()
-      .tabItem {
-        Label(
-          .transactions,
-          systemImage: "arrow.left.arrow.right"
-        )
-      }
+    TransactionTabView(
+      searchQuery: searchQuery,
+      transactions: TransactionUIModel.mocks(),
+      isLoading: viewState.isLoading
+    )
+    .tabItem {
+      Label(
+        .transactions,
+        systemImage: "arrow.left.arrow.right"
+      )
+    }
+    .tag(SelectedTab.transactions)
   }
 }
 

@@ -41,36 +41,33 @@ public struct WrapListView<Item: Identifiable, Content: View, ListStyleType: Lis
   }
 
   public var body: some View {
-    List {
-      ForEach(0..<sections.count, id: \.self) { index in
-        let section = sections[index]
-        if let header = section.header {
-          Section(
-            header:
-              Text(header)
-              .typography(Theme.shared.font.labelMedium)
-              .foregroundStyle(sectionHeaderColor)
-          ) {
-            ForEach(section.items) { item in
-              rowContent(item)
-                .if(hideRowSeperators) {
-                  $0.listRowSeparator(.hidden)
-                }
-            }
-          }
-          .listRowBackground(listRowBackground)
-        } else {
+    ForEach(0..<sections.count, id: \.self) { index in
+      let section = sections[index]
+      if let header = section.header {
+        Section(
+          header:
+            Text(header)
+            .typography(Theme.shared.font.labelMedium)
+            .foregroundStyle(sectionHeaderColor)
+        ) {
           ForEach(section.items) { item in
             rowContent(item)
               .if(hideRowSeperators) {
                 $0.listRowSeparator(.hidden)
               }
           }
-          .listRowBackground(listRowBackground)
         }
+        .listRowBackground(listRowBackground)
+      } else {
+        ForEach(section.items) { item in
+          rowContent(item)
+            .if(hideRowSeperators) {
+              $0.listRowSeparator(.hidden)
+            }
+        }
+        .listRowBackground(listRowBackground)
       }
     }
-    .listStyle(style)
   }
 }
 

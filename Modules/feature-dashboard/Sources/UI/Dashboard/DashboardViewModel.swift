@@ -435,7 +435,11 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
     case .home:
       return nil
     case .transactions:
-      return nil
+      return [
+        Action(image: Theme.shared.image.filterMenuIcon, hasIndicator: viewState.showFilterIndicator && !viewState.hasDefaultFilters) {
+          //TODO: FILTERING
+        }
+      ]
     }
   }
 

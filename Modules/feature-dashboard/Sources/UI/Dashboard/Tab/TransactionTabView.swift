@@ -14,13 +14,80 @@
  * governing permissions and limitations under the Licence.
  */
 import SwiftUI
+import logic_ui
+import logic_core
+import logic_resources
 
 public struct TransactionTabView: View {
+  @Binding var searchQuery: String
+  let transactions: [TransactionUIModel]
+  let isLoading: Bool
+
+  init(
+    searchQuery: Binding<String>,
+    transactions: [TransactionUIModel],
+    isLoading: Bool
+  ) {
+    self._searchQuery = searchQuery
+    self.transactions = transactions
+    self.isLoading = isLoading
+  }
+
   public var body: some View {
-    Text("Transactions")
+    let categorizedTransactions = TransactionUIModel.categorizeTransactions(transactions)
+    VStack {
+      if !categorizedTransactions.isEmpty && !searchQuery.isEmpty {
+        ContentUnavailableView(
+          title: .noResults,
+          description: .noResultsDescription
+        )
+      } else {
+        if !categorizedTransactions.isEmpty {
+          List {
+            ForEach(categorizedTransactions.keys.sorted(by: { $0.order < $1.order }), id: \.self) { category in
+              Section(header: Text(category.title)) {
+                WrapCardView {
+                  VStack(spacing: 0) {
+                    WrapListItemsView(listItems: categorizedTransactions[category]?.map({ transaction in
+                      transaction.listItem
+                    }) ?? []
+                  )}
+                }
+                .listRowSeparator(.hidden)
+              }
+              .listRowInsets(.init(
+                top: SPACING_SMALL,
+                leading: SPACING_MEDIUM,
+                bottom: .zero,
+                trailing: SPACING_MEDIUM)
+              )
+            }
+          }
+          .shimmer(isLoading: isLoading)
+          .listStyle(.plain)
+          .scrollIndicators(.hidden)
+          .clipped()
+        } else {
+          ContentUnavailableView(
+            title: .noResults,
+            description: .noResultsDescription
+          )
+        }
+      }
+    }
+    .searchable(
+      searchText: $searchQuery,
+      backgroundColor: Theme.shared.color.background,
+      onSearchTextChange: { _ in }
+    )
+    .background(Theme.shared.color.background)
   }
 }
 
 #Preview {
-  TransactionTabView()
+  TransactionTabView(
+    searchQuery: .constant(""),
+    transactions: TransactionUIModel.mocks(),
+    isLoading: false
+  )
 }
