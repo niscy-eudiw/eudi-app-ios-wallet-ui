@@ -44,7 +44,6 @@ public struct WrapListItemsView: View {
       )
       if index < listItems.count - 1 {
         Divider()
-          .padding(.horizontal, SPACING_MEDIUM)
           .background(Theme.shared.color.onSurfaceVariant.opacity(0.2))
       }
     }

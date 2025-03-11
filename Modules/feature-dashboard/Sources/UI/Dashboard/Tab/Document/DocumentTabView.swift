@@ -104,7 +104,10 @@ private func content(
 ) -> some View {
   VStack {
     if state.documents.isEmpty && !searchQuery.wrappedValue.isEmpty {
-      contentUnavailableView()
+      ContentUnavailableView(
+        title: .noResults,
+        description: .noResultsDescription
+      )
     } else if !state.documents.isEmpty {
       List {
         ForEach(state.documents.keys.sorted(by: { $0.order < $1.order }), id: \.self) { category in
@@ -131,11 +134,13 @@ private func content(
       .scrollIndicators(.hidden)
       .clipped()
     } else if !state.isLoading {
-      contentUnavailableView()
+      ContentUnavailableView(
+        title: .noResults,
+        description: .noResultsDescription
+      )
     } else {
-      Spacer()
       ContentLoaderView(showLoader: .constant(true))
-      Spacer()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
   }
   .searchable(
@@ -144,24 +149,6 @@ private func content(
     onSearchTextChange: { _ in }
   )
   .background(Theme.shared.color.background)
-}
-
-@MainActor
-@ViewBuilder
-private func contentUnavailableView() -> some View {
-  VStack(spacing: SPACING_SMALL) {
-    Text(.noResults)
-      .typography(Theme.shared.font.titleLarge)
-      .fontWeight(.bold)
-
-    Text(.noResultsDescription)
-      .typography(Theme.shared.font.bodyLarge)
-      .foregroundStyle(Theme.shared.color.onSurface)
-      .multilineTextAlignment(.center)
-  }
-  .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-  .padding(.top, SPACING_LARGE_MEDIUM)
-  .padding(.horizontal, SPACING_MEDIUM)
 }
 
 @MainActor
