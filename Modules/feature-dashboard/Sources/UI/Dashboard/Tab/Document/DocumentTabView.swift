@@ -153,6 +153,32 @@ private func content(
 
 @MainActor
 @ViewBuilder
+private func loader() -> some View {
+  Spacer()
+  ContentLoaderView(showLoader: .constant(true))
+  Spacer()
+}
+
+@MainActor
+@ViewBuilder
+private func contentUnavailableView() -> some View {
+  VStack(spacing: SPACING_SMALL) {
+    Text(.noResults)
+      .typography(Theme.shared.font.titleLarge)
+      .fontWeight(.bold)
+
+    Text(.noResultsDescription)
+      .typography(Theme.shared.font.bodyLarge)
+      .foregroundStyle(Theme.shared.color.onSurface)
+      .multilineTextAlignment(.center)
+  }
+  .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+  .padding(.top, SPACING_LARGE_MEDIUM)
+  .padding(.horizontal, SPACING_MEDIUM)
+}
+
+@MainActor
+@ViewBuilder
 private func deferredSuccessList(
   state: DocumentTabState,
   onDocumentDetails: @escaping (String) -> Void

@@ -191,7 +191,6 @@ extension DocClaimsDecodable {
     )
   }
 
-  // MARK: - TODO SUPPORT NESTED
   private func parseClaim(
     documentId: String,
     isSensitive: Bool,
@@ -206,7 +205,7 @@ extension DocClaimsDecodable {
           )
         }
       )
-      .parseUserPseudonym()
+      .parseUserPseudonyms()
       .reduce(into: []) { partialResult, docClaim in
 
         let title = docClaim.displayName.ifNilOrEmpty { docClaim.name }

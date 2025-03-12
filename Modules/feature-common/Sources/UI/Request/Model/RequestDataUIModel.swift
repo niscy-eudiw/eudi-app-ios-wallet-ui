@@ -51,7 +51,7 @@ extension RequestDataUiModel {
         switch listItems[index] {
         case .single(let item):
 
-          guard item.collapsed.id == id else {
+          guard item.collapsed.groupId == id else {
             continue
           }
 
@@ -69,7 +69,7 @@ extension RequestDataUiModel {
             break
           }
         case .nested(let item):
-          if item.collapsed.id == id {
+          if item.collapsed.groupId == id {
             listItems[index] = .nested(item.copy(isExpanded: !item.isExpanded))
           } else {
             var children = item.expanded
@@ -92,7 +92,6 @@ extension RequestDataUiModel {
 
 public extension Array where Element == RequestDataUiModel {
 
-  // MARK: - TODO FIX RESPONSE PREPARATION
   func prepareRequest() -> RequestItemsWrapper {
 
     func flatSelectedValues(
@@ -141,27 +140,20 @@ public extension Array where Element == RequestDataUiModel {
       .reduce(into: [PresentationExpandableListItem]()) { partialResult, document in
         partialResult.append(contentsOf: document.section.listItems)
       }
-      .reduce(into: [PresentationExpandableListItem]()) { unique, element in
-
-        guard let elementDomain = element.domainModel else {
-          return
-        }
-
-        let duplicate = unique.first {
-          guard let domain = $0.domainModel else {
-            return true
-          }
-          return domain.groupId == elementDomain.groupId
-        } != nil
-
-        if !duplicate {
-          unique.append(element)
-        }
-      }
       .reduce(into: RequestItemsWrapper()) { partialResult, claim in
 
         var path: [String] {
-          claim.domainModel?.path ?? []
+          switch claim.domainModel?.type {
+          case .mdoc:
+            guard let first = claim.domainModel?.path?.first else {
+              return []
+            }
+            return [first]
+          case .sdjwt:
+            return  claim.domainModel?.path ?? []
+          default:
+            return []
+          }
         }
 
         var documentId: String {
@@ -333,36 +325,54 @@ public extension RequestDataUiModel {
   }
 }
 
-public extension Array where Element == DocElementsViewModel {
-
-  private func selectiveDisclosableFields(
-    for docElements: [ElementViewModel],
-    with docElement: DocElementsViewModel,
-    walletKitController: WalletKitController
-  ) -> [DocumentElementClaim] {
-    docElements
-      .map { element in
-        let elementIdentifier = element.elementPath.joined(separator: ".")
-        return walletKitController.valueForElementIdentifier(
-          with: docElement.id,
-          elementIdentifier: elementIdentifier,
-          nameSpace: element.nameSpace,
-          parser: {
-            Locale.current.localizedDateTime(
-              date: $0,
-              uiFormatter: "dd MMM yyyy"
-            )
-          }
-        )
-      }
-  }
-
+public extension Array where Element == DocElements {
   func toUiModels(with walletKitController: WalletKitController) -> [RequestDataUiModel] {
-    self.compactMap { docElement in
+    self.compactMap { element in
 
-      let dataFields = selectiveDisclosableFields(
-        for: docElement.elements,
-        with: docElement,
+      var title: String {
+        return switch element {
+        case .msoMdoc(let msoMdocElements):
+          msoMdocElements.displayName.ifNilOrEmpty { msoMdocElements.docType }
+        case .sdJwt(let sdJwtElements):
+          sdJwtElements.displayName.ifNilOrEmpty { sdJwtElements.vct }
+        }
+      }
+
+      var type: DocumentElementType {
+        return switch element {
+        case .msoMdoc:
+          .mdoc
+        case .sdJwt:
+          .sdjwt
+        }
+      }
+
+      let claims = switch element {
+      case .msoMdoc(let doc):
+        doc.nameSpacedElements
+          .reduce(into: [MsoMdocElement]()) { partialResult, nameSpaceElement in
+            partialResult.append(contentsOf: nameSpaceElement.elements)
+          }
+          .reduce(into: [DocClaim]()) { partialResult, element in
+            if let claim = element.docClaim {
+              partialResult.append(claim)
+            }
+          }
+      case .sdJwt(let doc):
+        doc.sdJwtElements
+          .reduce(into: [SdJwtElement]()) { partialResult, sdJwtElement in
+            partialResult.append(sdJwtElement)
+          }
+          .reduce(into: [DocClaim]()) { partialResult, element in
+            if let claim = element.docClaim {
+              partialResult.append(claim)
+            }
+          }
+      }
+
+      let dataFields = claims.selectiveDisclosableFields(
+        id: element.docId,
+        type: type,
         walletKitController: walletKitController
       )
 
@@ -374,12 +384,36 @@ public extension Array where Element == DocElementsViewModel {
 
       return .init(
         section: .init(
-          id: docElement.id,
-          title: docElement.displayName.orEmpty,
+          id: element.docId,
+          title: title,
           listItems: dataRows.toListItems()
         )
       )
     }
+  }
+}
+
+private extension Array where Element == DocClaim {
+  func selectiveDisclosableFields(
+    id: String,
+    type: DocumentElementType,
+    walletKitController: WalletKitController
+  ) -> [DocumentElementClaim] {
+    self
+      .map { claim in
+        return walletKitController.parseDocClaim(
+          docId: id,
+          groupId: nil,
+          docClaim: claim,
+          type: type,
+          parser: {
+            Locale.current.localizedDateTime(
+              date: $0,
+              uiFormatter: "dd MMM yyyy"
+            )
+          }
+        )
+      }
   }
 }
 
@@ -398,16 +432,18 @@ private extension DocumentElementClaim {
 private extension DocumentElementClaim {
   func toExpandableListItem() -> PresentationExpandableListItem? {
     switch self {
-    case .group(let title, let items):
+    case .group(let id, let title, let items):
       return .nested(
         .init(
-          collapsed: .init(mainText: .custom(title)),
+          collapsed: .init(groupId: id, mainText: .custom(title)),
           expanded: items.compactMap { $0.toExpandableListItem() },
           isExpanded: false
         )
       )
     case .primitive(
+      let id,
       let title,
+      _,
       _,
       _,
       _,
@@ -419,6 +455,7 @@ private extension DocumentElementClaim {
         return .single(
           .init(
             collapsed: .init(
+              groupId: id,
               mainText: .custom(value),
               overlineText: .custom(title),
               isEnable: !status.isRequired,
@@ -435,6 +472,7 @@ private extension DocumentElementClaim {
         return .single(
           .init(
             collapsed: .init(
+              groupId: id,
               mainText: .custom(title),
               leadingIcon: .init(image: image),
               isEnable: !status.isRequired,
