@@ -43,8 +43,7 @@ public struct WrapListItemsView: View {
         }
       )
       if index < listItems.count - 1 {
-        Divider()
-          .background(Theme.shared.color.onSurfaceVariant.opacity(0.2))
+        ListDivider()
       }
     }
   }

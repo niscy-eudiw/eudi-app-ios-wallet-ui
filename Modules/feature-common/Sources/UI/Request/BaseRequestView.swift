@@ -88,9 +88,8 @@ private func content(
       if viewState.items.isEmpty {
         noDocumentsFound(getScreenRect: getScreenRect)
       } else {
-
-        // MARK: - TODO REWORK
         VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
+          
           ForEach(viewState.items, id: \.id) { section in
             WrapExpandableListView(
               header: .init(
@@ -107,6 +106,7 @@ private func content(
             .typography(Theme.shared.font.bodyMedium)
             .foregroundColor(Theme.shared.color.onSurface)
             .multilineTextAlignment(.leading)
+          
           VSpacer.medium()
         }
         .padding(.top, Theme.shared.dimension.padding)
