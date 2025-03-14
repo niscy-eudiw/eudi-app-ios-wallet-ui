@@ -201,12 +201,17 @@ final class DocumentTabViewModel<Router: RouterHost>: ViewModel<Router, Document
 
   func onAdd() {
     router.push(
-      with: .featureCommonModule(
-        .issuanceAddDocumentOptions(
-          config: IssuanceFlowUiConfig(flow: .extraDocument)
-        )
+      with: .featureIssuanceModule(
+        .transactionDetails
       )
     )
+//    router.push(
+//      with: .featureCommonModule(
+//        .issuanceAddDocumentOptions(
+//          config: IssuanceFlowUiConfig(flow: .extraDocument)
+//        )
+//      )
+//    )
   }
 
   func showFilters() {

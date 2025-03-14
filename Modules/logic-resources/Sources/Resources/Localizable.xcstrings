@@ -1940,6 +1940,39 @@
         }
       }
     },
+    "transaction_details_data_shared" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DATA SHARED"
+          }
+        }
+      }
+    },
+    "transaction_details_data_signed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DATA SIGNED"
+          }
+        }
+      }
+    },
+    "transaction_information" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transaction information"
+          }
+        }
+      }
+    },
     "transactions" : {
       "extractionState" : "manual",
       "localizations" : {
