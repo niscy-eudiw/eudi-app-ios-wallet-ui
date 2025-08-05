@@ -524,6 +524,10 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "expandable_document_credentials_issue_button")
     case .issuanceAddDocumentNoOptions:
       bundle.localizedString(forKey: "issuance_add_document_no_options")
+    case .requestTransactionDataSectionTitleSign:
+      bundle.localizedString(forKey: "request_transaction_data_section_title_sign")
+    case .requestTransactionDataDescriptionSign:
+      bundle.localizedString(forKey: "request_transaction_data_description_sign")
     }
   }
 }

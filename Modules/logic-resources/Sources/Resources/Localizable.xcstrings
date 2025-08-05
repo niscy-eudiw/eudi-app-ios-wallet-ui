@@ -1921,6 +1921,28 @@
         }
       }
     },
+    "request_transaction_data_description_sign" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signature details"
+          }
+        }
+      }
+    },
+    "request_transaction_data_section_title_sign" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DATA TO BE SIGNED"
+          }
+        }
+      }
+    },
     "requests_the_following" : {
       "extractionState" : "manual",
       "localizations" : {

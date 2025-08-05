@@ -33,7 +33,7 @@ public enum ProximityResponsePreparationPartialState: Sendable {
 }
 
 public enum ProximityRequestPartialState: Sendable {
-  case success([RequestDataUiModel], relyingParty: String, dataRequestInfo: String, isTrusted: Bool)
+  case success([RequestDataUiModel], transactionData: RequestTransactionDataUi?, relyingParty: String, dataRequestInfo: String, isTrusted: Bool)
   case failure(Error)
 }
 
@@ -126,6 +126,7 @@ final class ProximityInteractorImpl: ProximityInteractor {
         documents.toUiModels(
           with: self.walletKitController
         ),
+        transactionData: RequestTransactionDataUi.mocks(),
         relyingParty: response.relyingParty,
         dataRequestInfo: response.dataRequestInfo,
         isTrusted: response.isTrusted
