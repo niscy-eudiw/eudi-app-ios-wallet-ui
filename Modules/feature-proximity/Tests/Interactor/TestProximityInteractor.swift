@@ -286,12 +286,12 @@ final class TestProximityInteractor: EudiTest {
     
     // Then
     switch state {
-    case .success(let uimodels, let transactionData, let relyingParty, let dataRequestInfo, let isTrusted):
-      XCTAssertEqual(uimodels, expectedUiModels)
-      XCTAssertEqual(relyingParty, request.relyingParty)
-      XCTAssertEqual(dataRequestInfo, request.dataRequestInfo)
-      XCTAssertEqual(isTrusted, request.isTrusted)
-      XCTAssertNotNil(transactionData)
+    case .success(let successModel):
+      XCTAssertEqual(successModel.requestDataCells, expectedUiModels)
+      XCTAssertEqual(successModel.relyingParty, request.relyingParty)
+      XCTAssertEqual(successModel.dataRequestInfo, request.dataRequestInfo)
+      XCTAssertEqual(successModel.isTrusted, request.isTrusted)
+      XCTAssertNotNil(successModel.transactionData)
     default:
       XCTFail("Wrong state \(state)")
     }

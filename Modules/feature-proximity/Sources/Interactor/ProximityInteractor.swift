@@ -32,9 +32,12 @@ public enum ProximityResponsePreparationPartialState: Sendable {
   case failure(Error)
 }
 
-public enum ProximityRequestPartialState: Sendable {
-  case success([RequestDataUiModel], transactionData: RequestTransactionDataUi?, relyingParty: String, dataRequestInfo: String, isTrusted: Bool)
-  case failure(Error)
+public struct ProximityRequestResult: Sendable {
+  var requestDataCells: [RequestDataUiModel]
+  var transactionData: RequestTransactionDataUi?
+  var relyingParty: String
+  var dataRequestInfo: String
+  var isTrusted: Bool
 }
 
 public enum ProximityQrCodePartialState: Sendable {
@@ -59,7 +62,7 @@ public protocol ProximityInteractor: Sendable {
 
   func onDeviceEngagement() async -> ProximityDeviceEngagementPartialState
   func onQRGeneration() async -> ProximityQrCodePartialState
-  func onRequestReceived() async -> ProximityRequestPartialState
+  func onRequestReceived() async -> Result<ProximityRequestResult, Error>
   func onResponsePrepare(requestItems: [RequestDataUiModel]) async -> ProximityResponsePreparationPartialState
   func onSendResponse() async -> ProximityResponsePartialState
   func stopPresentation()
@@ -116,20 +119,22 @@ final class ProximityInteractorImpl: ProximityInteractor {
 
   }
 
-  public func onRequestReceived() async -> ProximityRequestPartialState {
+  public func onRequestReceived() async -> Result<ProximityRequestResult, Error> {
     do {
       let response = try await sessionCoordinatorHolder.getActiveProximityCoordinator().requestReceived()
       let revokedDocuments = (try? await walletKitController.fetchRevokedDocuments()) ?? []
       let documents = response.items.filter { item in !revokedDocuments.contains(where: { $0 == item.docId }) }
       guard !documents.isEmpty else { return .failure(WalletCoreError.unableFetchDocuments) }
       return .success(
-        documents.toUiModels(
-          with: self.walletKitController
-        ),
-        transactionData: RequestTransactionDataUi.mocks(),
-        relyingParty: response.relyingParty,
-        dataRequestInfo: response.dataRequestInfo,
-        isTrusted: response.isTrusted
+        .init(
+          requestDataCells: documents.toUiModels(
+            with: self.walletKitController
+          ),
+          transactionData: RequestTransactionDataUi.mocks(),
+          relyingParty: response.relyingParty,
+          dataRequestInfo: response.dataRequestInfo,
+          isTrusted: response.isTrusted
+        )
       )
     } catch {
       return .failure(error)

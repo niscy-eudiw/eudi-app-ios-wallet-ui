@@ -34,20 +34,20 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
     self.onStartLoading()
     self.startPublisherTask()
 
-    let interactor = self.interactor
-
-    let state = await Task.detached { () -> ProximityRequestPartialState in
-      return await interactor.onRequestReceived()
+    let state = await Task.detached { () -> Result<ProximityRequestResult, Error> in
+      return await self.interactor.onRequestReceived()
     }.value
 
     switch state {
-    case .success(let items, let transactionData, let relyingParty, _, let isTrusted):
+    case .success(let authenticationRequest):
       self.onReceivedItems(
-        with: items,
-        transactionData: transactionData,
-        title: .requestDataTitle([relyingParty]),
-        relyingParty: .custom(relyingParty),
-        isTrusted: isTrusted
+        with: authenticationRequest.requestDataCells,
+        transactionData: authenticationRequest.transactionData,
+        title: .requestDataTitle(
+          [authenticationRequest.relyingParty]
+        ),
+        relyingParty: .custom(authenticationRequest.relyingParty),
+        isTrusted: authenticationRequest.isTrusted
       )
       setState {
         $0.copy(
