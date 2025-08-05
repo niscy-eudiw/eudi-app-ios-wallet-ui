@@ -1099,9 +1099,9 @@ public class MockProximityInteractor: ProximityInteractor, Cuckoo.ProtocolMock, 
         )
     }
     
-    public func onRequestReceived() async -> ProximityRequestPartialState {
+    public func onRequestReceived() async -> Result<ProximityRequestResult, Error> {
         return await cuckoo_manager.call(
-            "onRequestReceived() async -> ProximityRequestPartialState",
+            "onRequestReceived() async -> Result<ProximityRequestResult, Error>",
             parameters: (),
             escapingParameters: (),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
@@ -1178,10 +1178,10 @@ public class MockProximityInteractor: ProximityInteractor, Cuckoo.ProtocolMock, 
             ))
         }
         
-        func onRequestReceived() -> Cuckoo.ProtocolStubFunction<(), ProximityRequestPartialState> {
+        func onRequestReceived() -> Cuckoo.ProtocolStubFunction<(), Result<ProximityRequestResult, Error>> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockProximityInteractor.self,
-                method: "onRequestReceived() async -> ProximityRequestPartialState",
+                method: "onRequestReceived() async -> Result<ProximityRequestResult, Error>",
                 parameterMatchers: matchers
             ))
         }
@@ -1272,10 +1272,10 @@ public class MockProximityInteractor: ProximityInteractor, Cuckoo.ProtocolMock, 
         
         
         @discardableResult
-        func onRequestReceived() -> Cuckoo.__DoNotUse<(), ProximityRequestPartialState> {
+        func onRequestReceived() -> Cuckoo.__DoNotUse<(), Result<ProximityRequestResult, Error>> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "onRequestReceived() async -> ProximityRequestPartialState",
+                "onRequestReceived() async -> Result<ProximityRequestResult, Error>",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -1340,8 +1340,8 @@ public class ProximityInteractorStub:ProximityInteractor, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (ProximityQrCodePartialState).self)
     }
     
-    public func onRequestReceived() async -> ProximityRequestPartialState {
-        return DefaultValueRegistry.defaultValue(for: (ProximityRequestPartialState).self)
+    public func onRequestReceived() async -> Result<ProximityRequestResult, Error> {
+        return DefaultValueRegistry.defaultValue(for: (Result<ProximityRequestResult, Error>).self)
     }
     
     public func onResponsePrepare(requestItems p0: [RequestDataUiModel]) async -> ProximityResponsePreparationPartialState {
