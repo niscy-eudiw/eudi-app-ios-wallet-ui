@@ -23,6 +23,7 @@ public struct RequestViewState: ViewState {
   public let error: ContentErrorView.Config?
   public let showMissingCredentials: Bool
   public let items: [RequestDataUiModel]
+  public let transactionData: RequestTransactionDataUi?
   public let trustedRelyingPartyInfo: LocalizableStringKey
   public let relyingParty: LocalizableStringKey
   public let isTrusted: Bool
@@ -46,6 +47,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         error: nil,
         showMissingCredentials: true,
         items: RequestDataUiModel.mockData(),
+        transactionData: nil,
         trustedRelyingPartyInfo: .requestDataVerifiedEntityMessage,
         relyingParty: .unknownVerifier,
         isTrusted: false,
@@ -145,6 +147,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
 
   public func onReceivedItems(
     with items: [RequestDataUiModel],
+    transactionData: RequestTransactionDataUi?,
     title: LocalizableStringKey,
     relyingParty: LocalizableStringKey,
     isTrusted: Bool
@@ -153,6 +156,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
       $0.copy(
         isLoading: false,
         items: items,
+        transactionData: transactionData,
         relyingParty: relyingParty,
         isTrusted: isTrusted,
         allowShare: canShare(with: items),
@@ -169,6 +173,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         error: nil,
         showMissingCredentials: true,
         items: RequestDataUiModel.mockData(),
+        transactionData: nil,
         trustedRelyingPartyInfo: .requestDataVerifiedEntityMessage,
         relyingParty: .unknownVerifier,
         isTrusted: false,
@@ -238,6 +243,12 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
           allowShare: canShare(with: items)
         )
       }
+    }
+  }
+  
+  func transactionDataUrl(urString: String) async {
+    if let url = URL(string: urString.trimmingCharacters(in: .whitespacesAndNewlines)) {
+      url.open()
     }
   }
 

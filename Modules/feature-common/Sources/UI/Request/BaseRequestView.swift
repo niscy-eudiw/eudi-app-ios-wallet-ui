@@ -40,6 +40,11 @@ public struct BaseRequestView<Router: RouterHost>: View {
           Task {
             await viewModel.onSelectionChanged(id: id)
           }
+        },
+        transactionDataUrl: { urlString in
+          Task {
+            await viewModel.transactionDataUrl(urString: urlString)
+          }
         }
       )
     }
@@ -75,7 +80,8 @@ public struct BaseRequestView<Router: RouterHost>: View {
 private func content(
   viewState: RequestViewState,
   onShare: @escaping () -> Void,
-  onSelectionChanged: @escaping (String) -> Void
+  onSelectionChanged: @escaping @Sendable (String) -> Void,
+  transactionDataUrl: @escaping @Sendable (String) -> Void
 ) -> some View {
   if viewState.items.isEmpty {
     noDocumentsFound(viewState: viewState)
@@ -83,7 +89,8 @@ private func content(
     scrollableContent(
       viewState: viewState,
       onShare: onShare,
-      onSelectionChanged: onSelectionChanged
+      onSelectionChanged: onSelectionChanged,
+      transactionDataUrl: transactionDataUrl
     )
   }
 }
@@ -93,39 +100,60 @@ private func content(
 private func scrollableContent(
   viewState: RequestViewState,
   onShare: @escaping () -> Void,
-  onSelectionChanged: @escaping (String) -> Void
+  onSelectionChanged: @escaping @Sendable (String) -> Void,
+  transactionDataUrl: @escaping @Sendable (String) -> Void
 ) -> some View {
   ScrollView {
     VStack(spacing: .zero) {
       ContentHeaderView(
         config: viewState.contentHeaderConfig
       )
-      ZStack {
-        VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
-
-          ForEach(viewState.items, id: \.id) { section in
+       
+      VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
+        
+        ForEach(viewState.items, id: \.id) { section in
+          WrapExpandableListView(
+            header: .init(
+              mainText: .custom(section.section.title),
+              supportingText: .viewDetails
+            ),
+            items: section.section.listItems,
+            hideSensitiveContent: false,
+            isLoading: viewState.isLoading,
+            onItemClick: { onSelectionChanged($0.groupId) }
+          )
+        }
+        
+        Text(.shareDataReview)
+          .typography(Theme.shared.font.bodyMedium)
+          .foregroundColor(Theme.shared.color.onSurface)
+          .multilineTextAlignment(.leading)
+          .shimmer(isLoading: viewState.isLoading)
+        
+        VSpacer.mediumLarge()
+        
+        if let transactionData = viewState.transactionData {
+          VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
+            Text(transactionData.type.getSectionTitle())
+              .font(Theme.shared.font.labelSmall.font)
+              .foregroundStyle(Theme.shared.color.onSurfaceVariant)
+            
             WrapExpandableListView(
               header: .init(
-                mainContent: .text(.custom(section.section.title)),
+                mainContent: .text(transactionData.type.getDescription()),
                 supportingText: .viewDetails
               ),
-              items: section.section.listItems,
+              items: transactionData.section.listItems,
               hideSensitiveContent: false,
               isLoading: viewState.isLoading,
-              onItemClick: { onSelectionChanged($0.groupId) }
+              onItemClick: { transactionDataUrl($0.mainText.toString) }
             )
           }
-
-          Text(.shareDataReview)
-            .typography(Theme.shared.font.bodyMedium)
-            .foregroundColor(Theme.shared.color.onSurface)
-            .multilineTextAlignment(.leading)
-            .shimmer(isLoading: viewState.isLoading)
-
-          VSpacer.medium()
         }
-        .padding(.top, Theme.shared.dimension.padding)
+        
+        VSpacer.medium()
       }
+      .padding(.top, Theme.shared.dimension.padding)
       .padding(Theme.shared.dimension.padding)
     }
   }
@@ -157,6 +185,7 @@ private func noDocumentsFound(
     error: nil,
     showMissingCredentials: false,
     items: RequestDataUiModel.mockData(),
+    transactionData: nil,
     trustedRelyingPartyInfo: .requestDataVerifiedEntityMessage,
     relyingParty: .custom("relying party"),
     isTrusted: true,
@@ -175,7 +204,8 @@ private func noDocumentsFound(
     content(
       viewState: viewState,
       onShare: {},
-      onSelectionChanged: { _ in }
+      onSelectionChanged: { _ in },
+      transactionDataUrl: { _ in }
     )
   }
 }

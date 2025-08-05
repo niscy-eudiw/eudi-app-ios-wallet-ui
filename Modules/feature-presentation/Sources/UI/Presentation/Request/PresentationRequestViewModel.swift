@@ -43,6 +43,7 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
     case .success(let authenticationRequest):
       self.onReceivedItems(
         with: authenticationRequest.requestDataCells,
+        transactionData: authenticationRequest.transactionData,
         title: .requestDataTitle(
           [authenticationRequest.relyingParty]
         ),

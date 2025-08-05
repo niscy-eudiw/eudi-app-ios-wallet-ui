@@ -41,9 +41,10 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
     }.value
 
     switch state {
-    case .success(let items, let relyingParty, _, let isTrusted):
+    case .success(let items, let transactionData, let relyingParty, _, let isTrusted):
       self.onReceivedItems(
         with: items,
+        transactionData: transactionData,
         title: .requestDataTitle([relyingParty]),
         relyingParty: .custom(relyingParty),
         isTrusted: isTrusted

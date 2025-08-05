@@ -18,6 +18,7 @@ import feature_common
 
 public struct OnlineAuthenticationRequestSuccessModel: Sendable {
   var requestDataCells: [RequestDataUiModel]
+  var transactionData: RequestTransactionDataUi?
   var relyingParty: String
   var dataRequestInfo: String
   var isTrusted: Bool
@@ -101,6 +102,7 @@ final class PresentationInteractorImpl: PresentationInteractor {
           requestDataCells: documents.toUiModels(
             with: self.walletKitController
           ),
+          transactionData: RequestTransactionDataUi.mocks(),
           relyingParty: response.relyingParty,
           dataRequestInfo: response.dataRequestInfo,
           isTrusted: response.isTrusted

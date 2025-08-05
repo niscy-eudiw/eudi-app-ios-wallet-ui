@@ -286,11 +286,12 @@ final class TestProximityInteractor: EudiTest {
     
     // Then
     switch state {
-    case .success(let uimodels, let relyingParty, let dataRequestInfo, let isTrusted):
+    case .success(let uimodels, let transactionData, let relyingParty, let dataRequestInfo, let isTrusted):
       XCTAssertEqual(uimodels, expectedUiModels)
       XCTAssertEqual(relyingParty, request.relyingParty)
       XCTAssertEqual(dataRequestInfo, request.dataRequestInfo)
       XCTAssertEqual(isTrusted, request.isTrusted)
+      XCTAssertNotNil(transactionData)
     default:
       XCTFail("Wrong state \(state)")
     }
@@ -615,6 +616,45 @@ private extension TestProximityInteractor {
         )
       )
     ]
+  }
+  
+  static func mocksRequestTransactionDataUi() -> RequestTransactionDataUi {
+    RequestTransactionDataUi(
+      type: .sign,
+      section: .init(
+        id: UUID().uuidString,
+        title: "",
+        listItems: [
+          .single(
+            .init(
+              collapsed: ListItemData(
+                mainText: .custom("Item 1"),
+                overlineText: .custom("Item 1 Description")
+              ),
+              domainModel: nil
+            )
+          ),
+          .single(
+            .init(
+              collapsed: ListItemData(
+                mainText: .custom("https://www.google.com"),
+                overlineText: .custom("Item 2 Description")
+              ),
+              domainModel: nil
+            )
+          ),
+          .single(
+            .init(
+              collapsed: ListItemData(
+                mainText: .custom("Item 3"),
+                overlineText: .custom("Item 3 Description")
+              ),
+              domainModel: nil
+            )
+          )
+        ]
+      )
+    )
   }
   
   static let mockRequestItems = [
