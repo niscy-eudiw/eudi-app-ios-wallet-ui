@@ -55,7 +55,7 @@ public enum ProximityCoordinatorPartialState: Sendable {
   case failure(Error)
 }
 
-public protocol ProximityInteractor: Sendable {
+public protocol ProximityInteractor: FormValidatorInteractor, Sendable {
 
   func getSessionStatePublisher() -> ProximityPublisherPartialState
   func getCoordinator() -> ProximityCoordinatorPartialState
@@ -70,18 +70,20 @@ public protocol ProximityInteractor: Sendable {
 }
 
 final class ProximityInteractorImpl: ProximityInteractor {
-
+  private let formValidator: FormValidator
   private let walletKitController: WalletKitController
   private let sessionCoordinatorHolder: SessionCoordinatorHolder
 
   init(
     with presentationSessionCoordinator: ProximitySessionCoordinator,
     and walletKitController: WalletKitController,
-    also sessionCoordinatorHolder: SessionCoordinatorHolder
+    also sessionCoordinatorHolder: SessionCoordinatorHolder,
+    formValidator: FormValidator
   ) {
     self.walletKitController = walletKitController
     self.sessionCoordinatorHolder = sessionCoordinatorHolder
     self.sessionCoordinatorHolder.setActiveProximityCoordinator(presentationSessionCoordinator)
+    self.formValidator = formValidator
   }
 
   func getCoordinator() -> ProximityCoordinatorPartialState {
@@ -178,5 +180,13 @@ final class ProximityInteractorImpl: ProximityInteractor {
   public func stopPresentation() {
     walletKitController.stopPresentation()
     try? sessionCoordinatorHolder.getActiveProximityCoordinator().stopPresentation()
+  }
+  
+  func validateForm(form: ValidatableForm) async -> FormValidationResult {
+    return await formValidator.validateForm(form: form)
+  }
+
+  func validateForms(forms: [ValidatableForm]) async -> FormsValidationResult {
+    return await formValidator.validateForms(forms: forms)
   }
 }

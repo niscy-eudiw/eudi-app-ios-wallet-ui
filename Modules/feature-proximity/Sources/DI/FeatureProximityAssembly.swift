@@ -15,6 +15,7 @@
  */
 import Swinject
 import logic_core
+import logic_business
 
 public final class FeatureProximityAssembly: Assembly {
 
@@ -25,7 +26,8 @@ public final class FeatureProximityAssembly: Assembly {
       ProximityInteractorImpl(
         with: session,
         and: r.force(WalletKitController.self),
-        also: r.force(SessionCoordinatorHolder.self)
+        also: r.force(SessionCoordinatorHolder.self),
+        formValidator: r.force(FormValidator.self),
       )
     }
     .inObjectScope(ObjectScope.transient)
