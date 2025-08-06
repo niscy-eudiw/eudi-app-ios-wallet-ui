@@ -41,9 +41,9 @@ public struct BaseRequestView<Router: RouterHost>: View {
             await viewModel.onSelectionChanged(id: id)
           }
         },
-        transactionDataUrl: { urlString in
+        transactionDataUrl: { url in
           Task {
-            await viewModel.transactionDataUrl(urString: urlString)
+            await viewModel.openUrl(url)
           }
         }
       )

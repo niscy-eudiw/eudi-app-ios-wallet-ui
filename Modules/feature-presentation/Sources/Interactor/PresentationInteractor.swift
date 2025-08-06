@@ -39,7 +39,7 @@ public enum RemoteSentResponsePartialState: Sendable {
   case failure(Error)
 }
 
-public protocol PresentationInteractor: Sendable {
+public protocol PresentationInteractor: FormValidatorInteractor, Sendable {
   func getSessionStatePublisher() -> RemotePublisherPartialState
   func getCoordinator() -> PresentationCoordinatorPartialState
   func onDeviceEngagement() async -> Result<OnlineAuthenticationRequestSuccessModel, Error>
@@ -55,15 +55,18 @@ final class PresentationInteractorImpl: PresentationInteractor {
 
   private let sessionCoordinatorHolder: SessionCoordinatorHolder
   private let walletKitController: WalletKitController
-
+  private let formValidator: FormValidator
+  
   init(
     with presentationCoordinator: RemoteSessionCoordinator,
     and walletKitController: WalletKitController,
-    also sessionCoordinatorHolder: SessionCoordinatorHolder
+    also sessionCoordinatorHolder: SessionCoordinatorHolder,
+    formValidator: FormValidator
   ) {
     self.walletKitController = walletKitController
     self.sessionCoordinatorHolder = sessionCoordinatorHolder
     self.sessionCoordinatorHolder.setActiveRemoteCoordinator(presentationCoordinator)
+    self.formValidator = formValidator
   }
 
   public func getSessionStatePublisher() -> RemotePublisherPartialState {
@@ -154,5 +157,13 @@ final class PresentationInteractorImpl: PresentationInteractor {
   public func stopPresentation() {
     walletKitController.stopPresentation()
     try? sessionCoordinatorHolder.getActiveRemoteCoordinator().stopPresentation()
+  }
+  
+  func validateForm(form: ValidatableForm) async -> FormValidationResult {
+    return await formValidator.validateForm(form: form)
+  }
+
+  func validateForms(forms: [ValidatableForm]) async -> FormsValidationResult {
+    return await formValidator.validateForms(forms: forms)
   }
 }

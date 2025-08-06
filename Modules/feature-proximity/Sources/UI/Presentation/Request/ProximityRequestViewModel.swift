@@ -157,6 +157,35 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
   override func getTrustedRelyingPartyInfo() -> LocalizableStringKey {
     .requestDataVerifiedEntityMessage
   }
+  
+  override func urlIsValid(url: String) async -> Bool {
+    let isValid = await Task.detached { () -> Bool in
+      return await self.interactor.validateForm(
+        form: .init(
+          inputs: [
+            [
+              Rule.ValidateUrl(
+                errorMessage: "",
+                shouldValidateHost: true,
+                shouldValidateQuery: false,
+                shouldValidatePath: true,
+              )
+            ]: url
+          ]
+        )
+      ).isValid
+    }.value
+    
+    return isValid
+  }
+  
+  override func openUrl(_ url: String) async {
+    if await urlIsValid(url: url) {
+      if let url = url.toCompatibleUrl() {
+        url.open()
+      }
+    }
+  }
 
   private func startPublisherTask() {
     if publisherTask == nil || publisherTask?.isCancelled == true {

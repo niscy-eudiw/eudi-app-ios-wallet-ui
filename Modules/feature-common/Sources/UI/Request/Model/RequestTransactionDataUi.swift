@@ -67,8 +67,26 @@ public extension RequestTransactionDataUi {
           .single(
             .init(
               collapsed: ListItemData(
-                mainText: .custom("Item 3"),
+                mainText: .custom("www.google.com"),
                 overlineText: .custom("Item 3 Description")
+              ),
+              domainModel: nil
+            )
+          ),
+          .single(
+            .init(
+              collapsed: ListItemData(
+                mainText: .custom("https://wwww.google.com"),
+                overlineText: .custom("Item 4 Description")
+              ),
+              domainModel: nil
+            )
+          ),
+          .single(
+            .init(
+              collapsed: ListItemData(
+                mainText: .custom("Item 5"),
+                overlineText: .custom("Item 5 Description")
               ),
               domainModel: nil
             )
