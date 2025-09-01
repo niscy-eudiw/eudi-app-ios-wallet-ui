@@ -181,7 +181,7 @@ final class ProximityInteractorImpl: ProximityInteractor {
     walletKitController.stopPresentation()
     try? sessionCoordinatorHolder.getActiveProximityCoordinator().stopPresentation()
   }
-  
+
   func validateForm(form: ValidatableForm) async -> FormValidationResult {
     return await formValidator.validateForm(form: form)
   }

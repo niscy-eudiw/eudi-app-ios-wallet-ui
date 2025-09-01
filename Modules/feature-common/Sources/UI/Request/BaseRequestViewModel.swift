@@ -111,11 +111,11 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
   open func getPopRoute() -> AppRoute? {
     return nil
   }
-  
+
   open func urlIsValid(url: String) async -> Bool {
     false
   }
-  
+
   open func openUrl(_ url: String) async {}
 
   public func getOriginator() -> AppRoute {

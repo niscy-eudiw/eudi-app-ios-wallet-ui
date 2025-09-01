@@ -156,7 +156,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
   override func getTrustedRelyingPartyInfo() -> LocalizableStringKey {
     .requestDataVerifiedEntityMessage
   }
-  
+
   override func urlIsValid(url: String) async -> Bool {
     let isValid = await Task.detached { () -> Bool in
       return await self.interactor.validateForm(
@@ -174,10 +174,10 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
         )
       ).isValid
     }.value
-    
+
     return isValid
   }
-  
+
   override func openUrl(_ url: String) async {
     if await urlIsValid(url: url) {
       if let url = url.toCompatibleUrl() {
