@@ -22,10 +22,10 @@ import Copyable
 public struct RequestTransactionDataUi: Identifiable, Sendable, Equatable {
   @EquatableNoop
   public var id: String
-  
+
   public let type: TransactionDataType
   public let section: PresentationListItemSection
-  
+
   public init(
     id: String = UUID().uuidString,
     type: TransactionDataType,
@@ -99,14 +99,14 @@ public extension RequestTransactionDataUi {
 
 public enum TransactionDataType: Sendable {
   case sign
-  
+
   func getDescription() -> LocalizableStringKey {
     switch self {
     case .sign:
       .requestTransactionDataDescriptionSign
     }
   }
-  
+
   func getSectionTitle() -> LocalizableStringKey {
     switch self {
     case .sign:

@@ -171,7 +171,7 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
     interactor.updatePresentationCoordinator(with: session)
     Task { await doWork() }
   }
-  
+
   override func urlIsValid(url: String) async -> Bool {
     let isValid = await Task.detached { () -> Bool in
       return await self.interactor.validateForm(
@@ -189,10 +189,10 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
         )
       ).isValid
     }.value
-    
+
     return isValid
   }
-  
+
   override func openUrl(_ url: String) async {
     if await urlIsValid(url: url) {
       if let url = url.toCompatibleUrl() {

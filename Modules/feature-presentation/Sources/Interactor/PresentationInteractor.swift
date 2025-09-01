@@ -56,7 +56,7 @@ final class PresentationInteractorImpl: PresentationInteractor {
   private let sessionCoordinatorHolder: SessionCoordinatorHolder
   private let walletKitController: WalletKitController
   private let formValidator: FormValidator
-  
+
   init(
     with presentationCoordinator: RemoteSessionCoordinator,
     and walletKitController: WalletKitController,
@@ -158,7 +158,7 @@ final class PresentationInteractorImpl: PresentationInteractor {
     walletKitController.stopPresentation()
     try? sessionCoordinatorHolder.getActiveRemoteCoordinator().stopPresentation()
   }
-  
+
   func validateForm(form: ValidatableForm) async -> FormValidationResult {
     return await formValidator.validateForm(form: form)
   }

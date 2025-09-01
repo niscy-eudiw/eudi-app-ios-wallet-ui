@@ -108,9 +108,9 @@ private func scrollableContent(
       ContentHeaderView(
         config: viewState.contentHeaderConfig
       )
-       
+
       VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
-        
+
         ForEach(viewState.items, id: \.id) { section in
           WrapExpandableListView(
             header: .init(
@@ -123,21 +123,21 @@ private func scrollableContent(
             onItemClick: { onSelectionChanged($0.groupId) }
           )
         }
-        
+
         Text(.shareDataReview)
           .typography(Theme.shared.font.bodyMedium)
           .foregroundColor(Theme.shared.color.onSurface)
           .multilineTextAlignment(.leading)
           .shimmer(isLoading: viewState.isLoading)
-        
+
         VSpacer.mediumLarge()
-        
+
         if let transactionData = viewState.transactionData {
           VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
             Text(transactionData.type.getSectionTitle())
               .font(Theme.shared.font.labelSmall.font)
               .foregroundStyle(Theme.shared.color.onSurfaceVariant)
-            
+
             WrapExpandableListView(
               header: .init(
                 mainContent: .text(transactionData.type.getDescription()),
@@ -150,7 +150,7 @@ private func scrollableContent(
             )
           }
         }
-        
+
         VSpacer.medium()
       }
       .padding(.top, Theme.shared.dimension.padding)
