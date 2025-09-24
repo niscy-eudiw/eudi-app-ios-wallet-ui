@@ -173,8 +173,9 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
   }
 
   override func urlIsValid(url: String) async -> Bool {
+    let interactor = self.interactor
     let isValid = await Task.detached { () -> Bool in
-      return await self.interactor.validateForm(
+      return await interactor.validateForm(
         form: .init(
           inputs: [
             [

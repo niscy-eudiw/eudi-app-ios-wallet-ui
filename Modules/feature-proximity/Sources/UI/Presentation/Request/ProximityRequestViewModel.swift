@@ -34,8 +34,9 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
     self.onStartLoading()
     self.startPublisherTask()
 
+    let interactor = self.interactor
     let state = await Task.detached { () -> Result<ProximityRequestResult, Error> in
-      return await self.interactor.onRequestReceived()
+      return await interactor.onRequestReceived()
     }.value
 
     switch state {

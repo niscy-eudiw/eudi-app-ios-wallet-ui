@@ -114,7 +114,7 @@ private func scrollableContent(
         ForEach(viewState.items, id: \.id) { section in
           WrapExpandableListView(
             header: .init(
-              mainText: .custom(section.section.title),
+              mainContent: .text(.custom(section.section.title)),
               supportingText: .viewDetails
             ),
             items: section.section.listItems,
@@ -146,7 +146,7 @@ private func scrollableContent(
               items: transactionData.section.listItems,
               hideSensitiveContent: false,
               isLoading: viewState.isLoading,
-              onItemClick: { transactionDataUrl($0.mainText.toString) }
+              onItemClick: { transactionDataUrl($0.mainContent.asString) }
             )
           }
         }

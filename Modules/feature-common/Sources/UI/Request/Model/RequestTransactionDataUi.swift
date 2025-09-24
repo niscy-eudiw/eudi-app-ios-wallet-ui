@@ -49,7 +49,7 @@ public extension RequestTransactionDataUi {
           .single(
             .init(
               collapsed: ListItemData(
-                mainText: .custom("Item 1"),
+                mainContent: .text(.custom("Item 1")),
                 overlineText: .custom("Item 1 Description")
               ),
               domainModel: nil
@@ -58,7 +58,7 @@ public extension RequestTransactionDataUi {
           .single(
             .init(
               collapsed: ListItemData(
-                mainText: .custom("https://www.google.com"),
+                mainContent: .text(.custom("https://www.google.com")),
                 overlineText: .custom("Item 2 Description")
               ),
               domainModel: nil
@@ -67,7 +67,7 @@ public extension RequestTransactionDataUi {
           .single(
             .init(
               collapsed: ListItemData(
-                mainText: .custom("www.google.com"),
+                mainContent: .text(.custom("www.google.com")),
                 overlineText: .custom("Item 3 Description")
               ),
               domainModel: nil
@@ -76,7 +76,7 @@ public extension RequestTransactionDataUi {
           .single(
             .init(
               collapsed: ListItemData(
-                mainText: .custom("https://wwww.google.com"),
+                mainContent: .text(.custom("https://wwww.google.com")),
                 overlineText: .custom("Item 4 Description")
               ),
               domainModel: nil
@@ -85,7 +85,7 @@ public extension RequestTransactionDataUi {
           .single(
             .init(
               collapsed: ListItemData(
-                mainText: .custom("Item 5"),
+                mainContent: .text(.custom("Item 5")),
                 overlineText: .custom("Item 5 Description")
               ),
               domainModel: nil
