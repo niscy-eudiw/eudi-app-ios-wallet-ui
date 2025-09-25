@@ -8955,10 +8955,11 @@ import logic_resources
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Blur/BlurView.swift'
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/AlertOrConfirmationModifier/AlertOrConfirmationModifier.swift'
 
 import Cuckoo
 import SwiftUI
+import logic_resources
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -8970,11 +8971,10 @@ import SwiftUI
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/ConfirmationDialog/ConfirmationDialogModifier.swift'
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Blur/BlurView.swift'
 
 import Cuckoo
 import SwiftUI
-import logic_resources
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
