@@ -42,6 +42,7 @@ public struct ContentErrorView: View {
           title: config.button,
           onAction: action()
         )
+        .combineChilrenAccessibility(locator: WrapButtonLocators.errorRetryButton)
       }
     }
   }

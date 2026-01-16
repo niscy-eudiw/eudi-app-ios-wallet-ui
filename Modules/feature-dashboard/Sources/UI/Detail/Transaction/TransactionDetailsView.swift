@@ -99,6 +99,7 @@ private func content(
               isEnabled: false,
               onAction: onShowDeleteModal()
             )
+            .combineChilrenAccessibility(locator: WrapButtonLocators.transactionDetailsRequestDeletionButton)
           }
 
           VStack(alignment: .leading, spacing: SPACING_SMALL) {
@@ -114,6 +115,7 @@ private func content(
               isEnabled: false,
               onAction: onShowDeleteModal()
             )
+            .combineChilrenAccessibility(locator: WrapButtonLocators.transactionDetailsReportTransactionButton)
           }
         }
       }

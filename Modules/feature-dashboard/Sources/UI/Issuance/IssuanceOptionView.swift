@@ -59,6 +59,7 @@ private func content(
           onAddDocumentClick()
         }
       )
+      .combineChilrenAccessibility(locator: Locators.chooseFromList)
 
       ActionCard(
         icon: Theme.shared.image.scanDocumentImage,
@@ -67,6 +68,7 @@ private func content(
           onScanClick()
         }
       )
+      .combineChilrenAccessibility(locator: Locators.scanQrCode)
     }
   }
   .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

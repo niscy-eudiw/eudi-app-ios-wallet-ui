@@ -83,6 +83,7 @@ private func content(
       Text(.chooseFromListTitle)
         .typography(Theme.shared.font.bodyLarge)
         .foregroundStyle(Theme.shared.color.onSurface)
+        .accessibilityLocator(TextLocators.addDocumentTitle)
 
       ForEach(viewState.addDocumentCellModels.elements, id: \.key) { pair in
 
@@ -111,6 +112,7 @@ private func content(
                 action: { action(cell.issuerId, cell.configId, cell.docTypeIdentifier) }
               )
             }
+            .accessibilityLocator(with: "\(cell.issuerId)-\(cell.docTypeIdentifier)")
           }
         }
       }
@@ -176,6 +178,7 @@ private func scanFooter(
       isLoading: viewState.isLoading,
       onAction: action()
     )
+    .combineChilrenAccessibility(locator: WrapButtonLocators.scanQrCode)
 
     Spacer()
 

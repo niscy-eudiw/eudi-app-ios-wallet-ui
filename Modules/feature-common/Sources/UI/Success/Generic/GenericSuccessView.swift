@@ -63,6 +63,7 @@ private func content(
 
     ContentTitleView(
       title: viewState.config.title.value,
+      accessibilityTitle: TextLocators.successTitle,
       titleFont: Theme.shared.font.displayLarge,
       caption: viewState.config.subtitle,
       titleColor: viewState.config.title.color,
@@ -79,6 +80,7 @@ private func content(
           title: button.title,
           onAction: onButtonClicked(button)
         )
+        .combineChilrenAccessibility(locator: WrapButtonLocators.genericSuccessButton)
       }
     }
   }

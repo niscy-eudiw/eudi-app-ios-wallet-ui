@@ -7130,10 +7130,11 @@ import logic_resources
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Type/AccesibilityLocatorViewModifier.swift'
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Type/AccessibilityLocatorViewModifier.swift'
 
 import Cuckoo
 import SwiftUI
+import logic_resources
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -7164,17 +7165,17 @@ public class MockLocatorType: LocatorType, Cuckoo.ProtocolMock, @unchecked Senda
             )
         }
     }
-
     
-    public func value() -> String {
-        return cuckoo_manager.call(
-            "value() -> String",
-            parameters: (),
-            escapingParameters: (),
-            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: __defaultImplStub!.value()
-        )
+    public var trait: AccessibilityTraits? {
+        get {
+            return cuckoo_manager.getter(
+                "trait",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.trait
+            )
+        }
     }
+
 
     public struct __StubbingProxy_LocatorType: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
@@ -7187,12 +7188,8 @@ public class MockLocatorType: LocatorType, Cuckoo.ProtocolMock, @unchecked Senda
             return .init(manager: cuckoo_manager, name: "id")
         }
         
-        func value() -> Cuckoo.ProtocolStubFunction<(), String> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return .init(stub: cuckoo_manager.createStub(for: MockLocatorType.self,
-                method: "value() -> String",
-                parameterMatchers: matchers
-            ))
+        var trait: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockLocatorType,AccessibilityTraits?> {
+            return .init(manager: cuckoo_manager, name: "trait")
         }
     }
 
@@ -7211,16 +7208,8 @@ public class MockLocatorType: LocatorType, Cuckoo.ProtocolMock, @unchecked Senda
             return .init(manager: cuckoo_manager, name: "id", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
         
-        
-        @discardableResult
-        func value() -> Cuckoo.__DoNotUse<(), String> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return cuckoo_manager.verify(
-                "value() -> String",
-                callMatcher: callMatcher,
-                parameterMatchers: matchers,
-                sourceLocation: sourceLocation
-            )
+        var trait: Cuckoo.VerifyReadOnlyProperty<AccessibilityTraits?> {
+            return .init(manager: cuckoo_manager, name: "trait", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
     }
 }
@@ -7232,14 +7221,27 @@ public class LocatorTypeStub:LocatorType, @unchecked Sendable {
             return DefaultValueRegistry.defaultValue(for: (String).self)
         }
     }
-
-
     
-    public func value() -> String {
-        return DefaultValueRegistry.defaultValue(for: (String).self)
+    public var trait: AccessibilityTraits? {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (AccessibilityTraits?).self)
+        }
     }
+
+
 }
 
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Type/CombineAccessibilityModifier.swift'
+
+import Cuckoo
+import SwiftUI
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
 
 
 
@@ -7247,6 +7249,49 @@ public class LocatorTypeStub:LocatorType, @unchecked Sendable {
 
 import Cuckoo
 import SwiftUI
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Type/TabViewLocators.swift'
+
+import Cuckoo
+import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Type/TextLocators.swift'
+
+import Cuckoo
+import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Type/ToolbarLocators.swift'
+
+import Cuckoo
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Type/WrapButtonLocators.swift'
+
+import Cuckoo
+import logic_resources
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics

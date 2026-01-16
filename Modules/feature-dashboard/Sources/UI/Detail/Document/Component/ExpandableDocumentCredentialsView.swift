@@ -83,6 +83,7 @@ struct ExpandableDocumentCredentialsView: View {
               cornerRadius: Theme.shared.shape.large,
               onAction: onPrimaryButtonClicked()
             )
+            .combineChilrenAccessibility(locator: WrapButtonLocators.updateNowButton)
           }
         }
       }

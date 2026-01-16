@@ -96,10 +96,12 @@ private func content(
         Text(.welcomeBack([username]))
           .font(Theme.shared.font.titleMedium.font)
           .foregroundStyle(Theme.shared.color.onSurface)
+          .accessibilityLocator(Locators.userNameText)
       }
 
       HomeCardView(
         text: LocalizableStringKey.authenticateAuthoriseTransactions,
+        locator: WrapButtonLocators.authenticateAuthoriseTransactions,
         buttonText: LocalizableStringKey.authenticate,
         illustration: Theme.shared.image.homeIdentity,
         learnMoreText: LocalizableStringKey.learnMore,
@@ -118,6 +120,7 @@ private func content(
 
       HomeCardView(
         text: LocalizableStringKey.electronicallySignDigitalDocuments,
+        locator: WrapButtonLocators.electronicallySignDigitalDocuments,
         buttonText: LocalizableStringKey.signDocument,
         illustration: Theme.shared.image.homeContract,
         learnMoreText: LocalizableStringKey.learnMore,

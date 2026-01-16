@@ -75,6 +75,7 @@ private func content(
 
   ContentTitleView(
     title: viewState.title,
+    accessibilityTitle: TextLocators.quickPinTitle,
     caption: viewState.caption
   )
 

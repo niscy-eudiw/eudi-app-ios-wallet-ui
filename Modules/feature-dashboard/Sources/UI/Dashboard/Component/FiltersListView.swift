@@ -99,6 +99,7 @@ struct FiltersListView: View {
           onAction: applyFilters()
         )
         .padding(.horizontal, SPACING_MEDIUM)
+        .combineChilrenAccessibility(locator: WrapButtonLocators.showResults)
       }
       .onDisappear {
         if !isApplied {
