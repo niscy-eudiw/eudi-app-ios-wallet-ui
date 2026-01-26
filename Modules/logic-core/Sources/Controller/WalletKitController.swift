@@ -501,28 +501,59 @@ extension WalletKitController {
       children.count > 1 && !title.isEmpty && children.allSatisfy { $0.children != nil }
     }
 
+    func isNumericPath(_ docClaim: DocClaim) -> Bool {
+      guard let lastPath = docClaim.path.last else { return false }
+      return Int(lastPath) != nil
+    }
+
+    func sharedGroupIdForArrayChildren(of parent: DocClaim) -> String? {
+      guard type == .sdjwt else { return nil }
+      guard let children = parent.children, !children.isEmpty else { return nil }
+      guard children.contains(where: { isNumericPath($0) }) else { return nil }
+      return UUID().uuidString
+    }
+
+    func childGroupIdProvider(for parent: DocClaim, sharedId: String?) -> () -> String {
+      switch type {
+      case .mdoc:
+        return { groupId }
+      case .sdjwt:
+        if let sharedId {
+          return { sharedId }
+        }
+        if isNumericPath(parent) {
+          let sharedGroupId = UUID().uuidString
+          return { sharedGroupId }
+        }
+        return { UUID().uuidString }
+      }
+    }
+
     if let children = docClaim.children, !children.isEmpty {
 
       let title = docClaim.displayName.ifNilOrEmpty { docClaim.name }
 
       if shouldGroup(title, children) {
 
+        let sharedGroupId = sharedGroupIdForArrayChildren(of: docClaim)
         let grouped = children.enumerated().flatMap { index, entry in
           let inner = entry.children ?? []
+          let groupIdProvider = childGroupIdProvider(for: entry, sharedId: sharedGroupId)
+          let items = inner.flatMap {
+            parseDocClaim(
+              docId: docId,
+              groupId: groupIdProvider(),
+              docClaim: $0,
+              type: type,
+              parser: parser
+            )
+          }.sortByName()
 
           return [
             DocumentElementClaim.group(
               id: UUID().uuidString,
               title: "\(title) \(index + 1)",
-              items: inner.flatMap {
-                parseDocClaim(
-                  docId: docId,
-                  groupId: groupId,
-                  docClaim: $0,
-                  type: type,
-                  parser: parser
-                )
-              }.sortByName()
+              items: items
             )
           ]
         }
@@ -537,10 +568,12 @@ extension WalletKitController {
 
       } else {
 
+        let sharedGroupId = sharedGroupIdForArrayChildren(of: docClaim)
+        let groupIdProvider = childGroupIdProvider(for: docClaim, sharedId: sharedGroupId)
         let childClaims = children.flatMap {
           parseDocClaim(
             docId: docId,
-            groupId: groupId,
+            groupId: groupIdProvider(),
             docClaim: $0,
             type: type,
             parser: parser
@@ -575,7 +608,7 @@ extension WalletKitController {
       case .mdoc:
         groupId
       case .sdjwt:
-        UUID().uuidString
+        groupId
       }
     }()
 
