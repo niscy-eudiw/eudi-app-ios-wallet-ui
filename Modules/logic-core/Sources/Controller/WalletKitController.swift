@@ -489,6 +489,11 @@ extension WalletKitController {
     }
   }
 
+//  func isNumericPath(_ claim: DocClaim) -> Bool {
+//    guard let children = claim.children, !children.isEmpty else { return false }
+//    return children.allSatisfy { $0.children == nil || $0.children?.isEmpty == true }
+//  }
+
   public func parseDocClaim(
     docId: String,
     groupId: String,
@@ -502,8 +507,13 @@ extension WalletKitController {
     }
 
     func isNumericPath(_ docClaim: DocClaim) -> Bool {
-      guard let lastPath = docClaim.path.last else { return false }
-      return Int(lastPath) != nil
+      guard let children = docClaim.children, !children.isEmpty else { return false }
+      let isArrayEntryDepth = docClaim.path.count >= 3
+      let childrenAreLeaves = children.allSatisfy {
+        $0.children == nil || $0.children?.isEmpty == true
+      }
+
+      return isArrayEntryDepth && childrenAreLeaves
     }
 
     func sharedGroupIdForArrayChildren(of parent: DocClaim) -> String? {
