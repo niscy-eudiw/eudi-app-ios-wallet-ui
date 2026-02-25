@@ -5310,7 +5310,7 @@ class MockWalletKitConfig: WalletKitConfig, Cuckoo.ProtocolMock, @unchecked Send
         cuckoo_manager.enableDefaultStubImplementation()
     }
     
-    var vciConfig: [String: OpenId4VciConfiguration] {
+    var vciConfig: [String: OrderedVciConfig] {
         get {
             return cuckoo_manager.getter(
                 "vciConfig",
@@ -5418,7 +5418,7 @@ class MockWalletKitConfig: WalletKitConfig, Cuckoo.ProtocolMock, @unchecked Send
             self.cuckoo_manager = manager
         }
         
-        var vciConfig: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockWalletKitConfig,[String: OpenId4VciConfiguration]> {
+        var vciConfig: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockWalletKitConfig,[String: OrderedVciConfig]> {
             return .init(manager: cuckoo_manager, name: "vciConfig")
         }
         
@@ -5470,7 +5470,7 @@ class MockWalletKitConfig: WalletKitConfig, Cuckoo.ProtocolMock, @unchecked Send
             self.sourceLocation = sourceLocation
         }
         
-        var vciConfig: Cuckoo.VerifyReadOnlyProperty<[String: OpenId4VciConfiguration]> {
+        var vciConfig: Cuckoo.VerifyReadOnlyProperty<[String: OrderedVciConfig]> {
             return .init(manager: cuckoo_manager, name: "vciConfig", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
         
@@ -5514,9 +5514,9 @@ class MockWalletKitConfig: WalletKitConfig, Cuckoo.ProtocolMock, @unchecked Send
 
 class WalletKitConfigStub:WalletKitConfig, @unchecked Sendable {
     
-    var vciConfig: [String: OpenId4VciConfiguration] {
+    var vciConfig: [String: OrderedVciConfig] {
         get {
-            return DefaultValueRegistry.defaultValue(for: ([String: OpenId4VciConfiguration]).self)
+            return DefaultValueRegistry.defaultValue(for: ([String: OrderedVciConfig]).self)
         }
     }
     

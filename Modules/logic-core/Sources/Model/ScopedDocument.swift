@@ -17,6 +17,7 @@
 public struct ScopedDocument: Equatable, Sendable {
   public let name: String
   public let issuer: String
+  public let order: Int
   public let configId: String
   public let isPid: Bool
   public let docTypeIdentifier: DocumentTypeIdentifier
@@ -24,6 +25,6 @@ public struct ScopedDocument: Equatable, Sendable {
 
 public extension ScopedDocument {
   static func empty() -> ScopedDocument {
-    .init(name: "", issuer: "", configId: "", isPid: false, docTypeIdentifier: .mDocPid)
+    .init(name: "", issuer: "", order: 0, configId: "", isPid: false, docTypeIdentifier: .mDocPid)
   }
 }
