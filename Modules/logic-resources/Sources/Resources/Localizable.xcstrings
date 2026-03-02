@@ -873,6 +873,50 @@
         }
       }
     },
+    "home_screen_sign_document" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign document"
+          }
+        }
+      }
+    },
+    "home_screen_sign_document_description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign a document digitally by choosing a file from your device or by scanning a QR code."
+          }
+        }
+      }
+    },
+    "home_screen_sign_document_option_from_device" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From device"
+          }
+        }
+      }
+    },
+    "home_screen_sign_document_option_scan_qr" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan QR"
+          }
+        }
+      }
+    },
     "in_person" : {
       "extractionState" : "manual",
       "localizations" : {

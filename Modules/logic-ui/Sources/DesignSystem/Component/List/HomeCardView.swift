@@ -16,7 +16,7 @@
 import SwiftUI
 import logic_resources
 
-public struct HomeCardView: View {
+public struct HomeCardView<A: View, M: View>: View {
   private let text: LocalizableStringKey
   private let locator: LocatorType?
   private let buttonText: LocalizableStringKey
@@ -25,6 +25,7 @@ public struct HomeCardView: View {
   private let learnMoreText: LocalizableStringKey?
   private let learnMoreAction: (() -> Void)?
   private let action: () -> Void
+  private let confirmationDialog: HomeCardConfirmationDialog<A, M>?
 
   public init(
     text: LocalizableStringKey,
@@ -34,7 +35,8 @@ public struct HomeCardView: View {
     buttonViewStyle: ButtonViewStyle = .primary,
     learnMoreText: LocalizableStringKey? = nil,
     learnMoreAction: (() -> Void)? = nil,
-    action: @autoclosure @escaping () -> Void
+    action: @autoclosure @escaping () -> Void,
+    confirmationDialog: HomeCardConfirmationDialog<A, M>? = nil
   ) {
     self.text = text
     self.locator = locator
@@ -44,6 +46,7 @@ public struct HomeCardView: View {
     self.illustration = illustration
     self.buttonViewStyle = buttonViewStyle
     self.learnMoreText = learnMoreText
+    self.confirmationDialog = confirmationDialog
   }
 
   public var body: some View {
@@ -75,6 +78,16 @@ public struct HomeCardView: View {
       .ifLet(locator) { view, locator in
         view.combineChilrenAccessibility(locator: locator)
       }
+      .ifLet(confirmationDialog) { view, confirmationDialog in
+        view
+          .confirmationDialog(
+            confirmationDialog.key.toString,
+            isPresented: confirmationDialog.isPresented,
+            titleVisibility: confirmationDialog.titleVisibility,
+            actions: confirmationDialog.actions,
+            message: confirmationDialog.message
+          )
+      }
 
       if let learnMoreAction, let learnMoreText {
         Button(action: learnMoreAction) {
@@ -98,6 +111,28 @@ public struct HomeCardView: View {
   }
 }
 
+public struct HomeCardConfirmationDialog<A: View, M: View> {
+  public let key: LocalizableStringKey
+  public let isPresented: Binding<Bool>
+  public let titleVisibility: Visibility
+  public let actions: () -> A
+  public let message: () -> M
+
+  public init(
+    _ key: LocalizableStringKey,
+    isPresented: Binding<Bool>,
+    titleVisibility: Visibility = .visible,
+    @ViewBuilder actions: @escaping () -> A,
+    @ViewBuilder message: @escaping () -> M
+  ) {
+    self.key = key
+    self.isPresented = isPresented
+    self.titleVisibility = titleVisibility
+    self.actions = actions
+    self.message = message
+  }
+}
+
 #Preview {
   ScrollView {
     VStack {
@@ -107,7 +142,16 @@ public struct HomeCardView: View {
         illustration: Image(systemName: "person.fill"),
         learnMoreText: LocalizableStringKey.learnMore,
         learnMoreAction: {},
-        action: {}()
+        action: {}(),
+        confirmationDialog: HomeCardConfirmationDialog(
+          .homeScreenSignDocument,
+          isPresented: .constant(false),
+          titleVisibility: .visible
+        ) {
+          Button(.cancelButton, role: .destructive) {}
+        } message: {
+          Text(.homeScreenSignDocumentDescription)
+        }
       )
 
       HomeCardView(
@@ -116,20 +160,47 @@ public struct HomeCardView: View {
         illustration: Image(systemName: "person.fill"),
         buttonViewStyle: .secondary,
         learnMoreAction: {},
-        action: {}()
+        action: {}(),
+        confirmationDialog: HomeCardConfirmationDialog(
+          .homeScreenSignDocument,
+          isPresented: .constant(false),
+          titleVisibility: .visible
+        ) {
+          Button(.cancelButton, role: .destructive) {}
+        } message: {
+          Text(.homeScreenSignDocumentDescription)
+        }
       )
 
       HomeCardView(
         text: LocalizableStringKey.authenticateAuthoriseTransactions,
         buttonText: LocalizableStringKey.addDocumentTitle,
         illustration: Image(systemName: "person.fill"),
-        action: {}()
+        action: {}(),
+        confirmationDialog: HomeCardConfirmationDialog(
+          .homeScreenSignDocument,
+          isPresented: .constant(false),
+          titleVisibility: .visible
+        ) {
+          Button(.cancelButton, role: .destructive) {}
+        } message: {
+          Text(.homeScreenSignDocumentDescription)
+        }
       )
 
       HomeCardView(
         text: LocalizableStringKey.authenticateAuthoriseTransactions,
         buttonText: LocalizableStringKey.addDocumentTitle,
-        action: {}()
+        action: {}(),
+        confirmationDialog: HomeCardConfirmationDialog(
+          .homeScreenSignDocument,
+          isPresented: .constant(false),
+          titleVisibility: .visible
+        ) {
+          Button(.cancelButton, role: .destructive) {}
+        } message: {
+          Text(.homeScreenSignDocumentDescription)
+        }
       )
     }
     .padding()

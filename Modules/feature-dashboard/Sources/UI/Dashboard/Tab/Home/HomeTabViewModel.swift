@@ -34,6 +34,7 @@ final class HomeTabViewModel<Router: RouterHost>: ViewModel<Router, HomeTabState
 
   var isAuthenticateAlertShowing: Bool = false
   var isAuthenticateModalShowing: Bool = false
+  var isSignDocumentModalShowing: Bool = false
   var isSignDocumentAlertShowing: Bool = false
   var isBleModalShowing: Bool = false
 
@@ -87,6 +88,10 @@ final class HomeTabViewModel<Router: RouterHost>: ViewModel<Router, HomeTabState
     isAuthenticateModalShowing.toggle()
   }
 
+  func toggleSignDocumentModel() {
+    isSignDocumentModalShowing.toggle()
+  }
+
   func toggleSignDocumentAlert() {
     isSignDocumentAlertShowing.toggle()
   }
@@ -96,6 +101,10 @@ final class HomeTabViewModel<Router: RouterHost>: ViewModel<Router, HomeTabState
   }
 
   func onShowScanner() {
+    router.push(with: .featureCommonModule(.qrScanner(config: ScannerUiConfig(flow: .presentation))))
+  }
+
+  func onShowSignDocumentScanner() {
     router.push(with: .featureCommonModule(.qrScanner(config: ScannerUiConfig(flow: .presentation))))
   }
 

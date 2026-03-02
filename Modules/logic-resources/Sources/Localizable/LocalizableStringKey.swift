@@ -246,6 +246,10 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case issuanceAddDocumentNoOptions
   case unknown
   case pidCombined
+  case homeScreenSignDocument
+  case homeScreenSignDocumentDescription
+  case homeScreenSignDocumentOptionFromDevice
+  case homeScreenSignDocumentOptionScanQr
 }
 
 public extension LocalizableStringKey {
