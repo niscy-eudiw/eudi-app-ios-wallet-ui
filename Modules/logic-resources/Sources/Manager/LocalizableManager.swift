@@ -492,6 +492,14 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "quick_pin_set_no_activation_success_button")
     case .pidCombined:
       bundle.localizedString(forKey: "pid_combined")
+    case .homeScreenSignDocument:
+      bundle.localizedString(forKey: "home_screen_sign_document")
+    case .homeScreenSignDocumentDescription:
+      bundle.localizedString(forKey: "home_screen_sign_document_description")
+    case .homeScreenSignDocumentOptionFromDevice:
+      bundle.localizedString(forKey: "home_screen_sign_document_option_from_device")
+    case .homeScreenSignDocumentOptionScanQr:
+      bundle.localizedString(forKey: "home_screen_sign_document_option_scan_qr")
     }
   }
 }

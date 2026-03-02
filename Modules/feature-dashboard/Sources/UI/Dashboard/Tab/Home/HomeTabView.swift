@@ -32,31 +32,17 @@ struct HomeTabView<Router: RouterHost>: View {
       viewState: viewModel.viewState,
       isAuthenticateAlertShowing: $viewModel.isAuthenticateAlertShowing,
       isSignDocumentAlertShowing: $viewModel.isSignDocumentAlertShowing,
+      isAuthenticateModalShowing: $viewModel.isAuthenticateModalShowing,
+      isSignDocumentModalShowing: $viewModel.isSignDocumentModalShowing,
+      onShare: viewModel.onShare(),
+      onShowScanner: viewModel.onShowScanner(),
+      openSignDocument: viewModel.openSignDocument(),
+      onShowSignDocumentScanner: viewModel.onShowSignDocumentScanner(),
       toggleAuthenticateAlert: viewModel.toggleAuthenticateAlert(),
       toggleAuthenticateModal: viewModel.toggleAuthenticateModal(),
-      openSignDocument: viewModel.openSignDocument(),
+      toggleSignDocumentModel: viewModel.toggleSignDocumentModel(),
       toggleSignDocumentAlert: viewModel.toggleSignDocumentAlert()
     )
-    .confirmationDialog(
-      .authenticate,
-      isPresented: $viewModel.isAuthenticateModalShowing,
-      titleVisibility: .visible
-    ) {
-      Button(.inPerson) {
-        viewModel.onShare()
-      }
-      .accessibilityLocator(HomeTabViewLocators.inPersonButton)
-
-      Button(.online) {
-        viewModel.onShowScanner()
-      }
-      .accessibilityLocator(HomeTabViewLocators.onlineButton)
-
-      Button(.cancelButton, role: .destructive) {}
-        .accessibilityLocator(HomeTabViewLocators.cancelButton)
-    } message: {
-      Text(.authenticateAuthoriseTransactions)
-    }
     .dialogCompat(
       .bleDisabledModalTitle,
       isPresented: $viewModel.isBleModalShowing,
@@ -86,9 +72,15 @@ private func content(
   viewState: HomeTabState,
   isAuthenticateAlertShowing: Binding<Bool>,
   isSignDocumentAlertShowing: Binding<Bool>,
+  isAuthenticateModalShowing: Binding<Bool>,
+  isSignDocumentModalShowing: Binding<Bool>,
+  onShare: @autoclosure @escaping () -> Void,
+  onShowScanner: @autoclosure @escaping () -> Void,
+  openSignDocument: @autoclosure @escaping () -> Void,
+  onShowSignDocumentScanner: @autoclosure @escaping () -> Void,
   toggleAuthenticateAlert: @autoclosure @escaping () -> Void,
   toggleAuthenticateModal: @autoclosure @escaping () -> Void,
-  openSignDocument: @autoclosure @escaping () -> Void,
+  toggleSignDocumentModel: @autoclosure @escaping () -> Void,
   toggleSignDocumentAlert: @autoclosure @escaping () -> Void
 ) -> some View {
   ScrollView {
@@ -113,7 +105,18 @@ private func content(
         learnMoreAction: {
           toggleAuthenticateAlert()
         },
-        action: toggleAuthenticateModal()
+        action: toggleAuthenticateModal(),
+        confirmationDialog: HomeCardConfirmationDialog(
+          .authenticate,
+          isPresented: isAuthenticateModalShowing,
+          titleVisibility: .visible
+        ) {
+          Button(.inPerson) { onShare() }
+          Button(.online) { onShowScanner() }
+          Button(.cancelButton, role: .destructive) {}
+        } message: {
+          Text(.authenticateAuthoriseTransactions)
+        }
       )
       .alertView(
         isPresented: isAuthenticateAlertShowing,
@@ -132,7 +135,27 @@ private func content(
         learnMoreAction: {
           toggleSignDocumentAlert()
         },
-        action: openSignDocument()
+        action: toggleSignDocumentModel(),
+        confirmationDialog: HomeCardConfirmationDialog(
+          .homeScreenSignDocument,
+          isPresented: isSignDocumentModalShowing,
+          titleVisibility: .visible
+        ) {
+          Button(.homeScreenSignDocumentOptionFromDevice) {
+            openSignDocument()
+          }
+          .accessibilityLocator(HomeTabViewLocators.inPersonButton)
+
+          Button(.homeScreenSignDocumentOptionScanQr) {
+            onShowSignDocumentScanner()
+          }
+          .accessibilityLocator(HomeTabViewLocators.onlineButton)
+
+          Button(.cancelButton, role: .destructive) {}
+            .accessibilityLocator(HomeTabViewLocators.cancelButton)
+        } message: {
+          Text(.homeScreenSignDocumentDescription)
+        }
       )
       .alertView(
         isPresented: isSignDocumentAlertShowing,
@@ -164,9 +187,15 @@ private func content(
     viewState: state,
     isAuthenticateAlertShowing: .constant(false),
     isSignDocumentAlertShowing: .constant(false),
+    isAuthenticateModalShowing: .constant(false),
+    isSignDocumentModalShowing: .constant(false),
+    onShare: {}(),
+    onShowScanner: {}(),
+    openSignDocument: {}(),
+    onShowSignDocumentScanner: {}(),
     toggleAuthenticateAlert: {}(),
     toggleAuthenticateModal: {}(),
-    openSignDocument: {}(),
+    toggleSignDocumentModel: {}(),
     toggleSignDocumentAlert: {}()
   )
 }
