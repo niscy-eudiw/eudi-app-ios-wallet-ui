@@ -500,6 +500,10 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "home_screen_sign_document_option_from_device")
     case .homeScreenSignDocumentOptionScanQr:
       bundle.localizedString(forKey: "home_screen_sign_document_option_scan_qr")
+    case .signatureQrScanTitle:
+      bundle.localizedString(forKey: "signature_qr_scan_title")
+    case .signatureQrScanSubtitle:
+      bundle.localizedString(forKey: "signature_qr_scan_subtitle")
     }
   }
 }

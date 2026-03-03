@@ -37,22 +37,27 @@ public extension ScannerUiConfig {
       successNavigation: UIConfig.TwoWayNavigationType,
       cancelNavigation: UIConfig.ThreeWayNavigationType
     )
+    case signature
 
     var title: LocalizableStringKey {
       return switch self {
       case .presentation:
-          .scannerQrTitlePresentation
+        .scannerQrTitlePresentation
       case .issuing:
-          .scannerQrTitleIssuing
+        .scannerQrTitleIssuing
+      case .signature:
+        .signatureQrScanTitle
       }
     }
 
     var caption: LocalizableStringKey {
       return switch self {
       case .presentation:
-          .scannerQrCaptionPresentation
+        .scannerQrCaptionPresentation
       case .issuing:
-          .scannerQrCaptionIssuing
+        .scannerQrCaptionIssuing
+      case .signature:
+        .signatureQrScanSubtitle
       }
     }
 
@@ -66,6 +71,8 @@ public extension ScannerUiConfig {
         "presentation"
       case .issuing(let successNavigation, let cancelNavigation):
         "type: issuing successNavigation: \(successNavigation.key) cancelNavigation: \(cancelNavigation.key)"
+      case .signature:
+        "signature"
       }
     }
   }

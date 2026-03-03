@@ -2108,6 +2108,28 @@
         }
       }
     },
+    "signature_qr_scan_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan a QR code to electronically sign a document."
+          }
+        }
+      }
+    },
+    "signature_qr_scan_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign document"
+          }
+        }
+      }
+    },
     "signed_documents" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -39,7 +39,8 @@ public final class FeatureCommonAssembly: Assembly {
     container.register(ScannerInteractor.self) { r in
       ScannerInteractorImpl(
         formValidator: r.force(FormValidator.self),
-        walletKitController: r.force(WalletKitController.self)
+        walletKitController: r.force(WalletKitController.self),
+        configLogic: r.force(ConfigLogic.self)
       )
     }
     .inObjectScope(ObjectScope.transient)
