@@ -1137,17 +1137,6 @@
         }
       }
     },
-    "learn_more" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Learn more"
-          }
-        }
-      }
-    },
     "load_sample_data" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1921,6 +1910,28 @@
         }
       }
     },
+    "scanner" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learn more"
+          }
+        }
+      }
+    },
+    "scanner_invalid_qr_code" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The scanned QR code is not valid."
+          }
+        }
+      }
+    },
     "scanner_qr_caption_issuing" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2104,6 +2115,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Select a document from your device to sign electronically."
+          }
+        }
+      }
+    },
+    "signature_qr_scan_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan a QR code to electronically sign a document."
+          }
+        }
+      }
+    },
+    "signature_qr_scan_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign document"
           }
         }
       }

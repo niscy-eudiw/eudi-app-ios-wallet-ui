@@ -15,19 +15,27 @@
  */
 import logic_business
 import logic_core
+import EudiRQESUi
 
 public protocol ScannerInteractor: FormValidatorInteractor, Sendable {
   func startCrossDevicePresentation(scanResult: String) async -> RemoteSessionCoordinator
+  func initiateSigning(url: URL) async
 }
 
 final actor ScannerInteractorImpl: ScannerInteractor {
 
   private let formValidator: FormValidator
   private let walletKitController: WalletKitController
+  private let configLogic: ConfigLogic
 
-  init(formValidator: FormValidator, walletKitController: WalletKitController) {
+  init(
+    formValidator: FormValidator,
+    walletKitController: WalletKitController,
+    configLogic: ConfigLogic
+  ) {
     self.formValidator = formValidator
     self.walletKitController = walletKitController
+    self.configLogic = configLogic
   }
 
   func validateForm(form: ValidatableForm) async -> FormValidationResult {
@@ -41,6 +49,26 @@ final actor ScannerInteractorImpl: ScannerInteractor {
   func startCrossDevicePresentation(scanResult: String) async -> RemoteSessionCoordinator {
     return await walletKitController.startCrossDevicePresentation(
       urlString: scanResult
+    )
+  }
+
+  func initiateSigning(url: URL) async {
+
+    let eudiRQESUi: EudiRQESUi
+
+    do {
+      eudiRQESUi = try .instance()
+    } catch {
+      eudiRQESUi = await .init(config: configLogic.rqesConfig)
+    }
+
+    guard let controller = await UIApplication.shared.topViewController() else {
+      return
+    }
+
+    try? await eudiRQESUi.initiate(
+      on: controller,
+      fileUrl: url
     )
   }
 }

@@ -105,7 +105,7 @@ final class HomeTabViewModel<Router: RouterHost>: ViewModel<Router, HomeTabState
   }
 
   func onShowSignDocumentScanner() {
-    router.push(with: .featureCommonModule(.qrScanner(config: ScannerUiConfig(flow: .presentation))))
+    router.push(with: .featureCommonModule(.qrScanner(config: ScannerUiConfig(flow: .signature))))
   }
 
   func onShare() {

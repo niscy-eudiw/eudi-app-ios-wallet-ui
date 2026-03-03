@@ -150,6 +150,12 @@ final class ScannerViewModel<Router: RouterHost>: ViewModel<Router, ScannerState
           )
         )
       )
+    case .signature:
+      guard let url = URL(string: scanResult) else {
+        return setState { $0.copy(error: .scannerInvalidQrCode) }
+      }
+
+      await interactor.initiateSigning(url: url)
     }
   }
 }
