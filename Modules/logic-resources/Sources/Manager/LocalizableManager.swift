@@ -504,6 +504,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "signature_qr_scan_title")
     case .signatureQrScanSubtitle:
       bundle.localizedString(forKey: "signature_qr_scan_subtitle")
+    case .scannerInvalidQrCode:
+      bundle.localizedString(forKey: "scanner_invalid_qr_code")
     }
   }
 }

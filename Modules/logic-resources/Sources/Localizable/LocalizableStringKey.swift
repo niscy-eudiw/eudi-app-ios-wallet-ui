@@ -252,6 +252,7 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case homeScreenSignDocumentOptionScanQr
   case signatureQrScanSubtitle
   case signatureQrScanTitle
+  case scannerInvalidQrCode
 }
 
 public extension LocalizableStringKey {
