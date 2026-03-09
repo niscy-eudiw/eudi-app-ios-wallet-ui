@@ -44,7 +44,7 @@ final actor DocumentSignInteractorImpl: DocumentSignInteractor {
 
     try? await eudiRQESUi.initiate(
       on: controller,
-      fileUrl: url
+      provenance: .localUri(url)
     )
   }
 }

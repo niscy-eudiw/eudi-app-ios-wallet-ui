@@ -59,4 +59,13 @@ final class RQESConfig: EudiRQESUiConfig {
   var printLogs: Bool {
     buildType == .DEBUG
   }
+  
+  var documentRetrievalConfiguration: DocumentRetrievalConfig {
+    .init(
+      issuer: nil,
+      supportedClientIdSchemes: [
+        .x509SanDns(trust: { _ in true })
+      ]
+    )
+  }
 }

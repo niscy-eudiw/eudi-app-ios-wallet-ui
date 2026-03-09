@@ -19,7 +19,8 @@ import EudiRQESUi
 
 public protocol ScannerInteractor: FormValidatorInteractor, Sendable {
   func startCrossDevicePresentation(scanResult: String) async -> RemoteSessionCoordinator
-  func initiateSigning(url: URL) async
+  func initiateSigning(provenance: DocumentProvenance) async
+  func getConfig() async -> ConfigLogic
 }
 
 final actor ScannerInteractorImpl: ScannerInteractor {
@@ -38,6 +39,10 @@ final actor ScannerInteractorImpl: ScannerInteractor {
     self.configLogic = configLogic
   }
 
+  func getConfig() async -> ConfigLogic {
+    configLogic
+  }
+  
   func validateForm(form: ValidatableForm) async -> FormValidationResult {
     return await formValidator.validateForm(form: form)
   }
@@ -52,7 +57,7 @@ final actor ScannerInteractorImpl: ScannerInteractor {
     )
   }
 
-  func initiateSigning(url: URL) async {
+  func initiateSigning(provenance: DocumentProvenance) async {
 
     let eudiRQESUi: EudiRQESUi
 
@@ -68,7 +73,7 @@ final actor ScannerInteractorImpl: ScannerInteractor {
 
     try? await eudiRQESUi.initiate(
       on: controller,
-      fileUrl: url
+      provenance: provenance
     )
   }
 }

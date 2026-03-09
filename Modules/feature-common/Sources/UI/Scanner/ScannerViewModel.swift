@@ -151,18 +151,16 @@ final class ScannerViewModel<Router: RouterHost>: ViewModel<Router, ScannerState
         )
       )
     case .signature:
-      guard let url = URL(string: scanResult), url.startAccessingSecurityScopedResource() else {
+      guard let url = URL(string: scanResult) else {
         return
       }
 
-      defer {
-        url.stopAccessingSecurityScopedResource()
-      }
-
-      do {
-        _ = try Data(contentsOf: url)
-        await interactor.initiateSigning(url: url)
-      } catch {}
+      let config = await interactor.getConfig()
+      
+      await interactor.initiateSigning(provenance: .remoteUri(
+        url,
+        config.rqesConfig.documentRetrievalConfiguration
+      ))
     }
   }
 }
