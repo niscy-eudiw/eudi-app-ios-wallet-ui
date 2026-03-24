@@ -2092,7 +2092,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search Documents"
+            "value" : "Search"
           }
         }
       }
@@ -2103,7 +2103,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search Transactions"
+            "value" : "Search"
           }
         }
       }
@@ -2576,7 +2576,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Welcome back, %@"
+            "value" : "Welcome%@"
           }
         }
       }
