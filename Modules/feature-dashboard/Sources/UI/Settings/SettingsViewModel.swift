@@ -25,7 +25,14 @@ struct SettingsViewState: ViewState {
   let changelogUrl: URL?
 }
 
+@Observable
 final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsViewState> {
+  var isBatchCounterEnabled: Bool = false {
+    didSet {
+      guard oldValue != isBatchCounterEnabled else { return }
+      updateBatchCounter(isBatchCounterEnabled)
+    }
+  }
 
   private let interactor: SettingsInteractor
   private let walletKitController: WalletKitController
@@ -71,8 +78,15 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
     let appVersion = await interactor.getAppVersion()
     let logsUrl = await interactor.retrieveLogFileUrl()
     let changelogUrl = await interactor.retrieveChangeLogUrl()
+    isBatchCounterEnabled = await interactor.isBatchCounterEnabled()
 
     var items: [SettingMenuItemUIModel] = [
+      .init(
+        title: .batchIssuanceCounter,
+        showDivider: true,
+        isToggle: true,
+        action: {}()
+      ),
       .init(
         title: .retrieveLogs,
         isShareLink: true,
@@ -97,6 +111,12 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
         logsUrl: logsUrl,
         changelogUrl: changelogUrl
       )
+    }
+  }
+
+  private func updateBatchCounter(_ isEnabled: Bool) {
+    Task {
+      await interactor.setBatchCounter(isEnabled: isEnabled)
     }
   }
 }
