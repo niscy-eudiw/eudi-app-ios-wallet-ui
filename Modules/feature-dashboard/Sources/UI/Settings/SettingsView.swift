@@ -31,7 +31,8 @@ struct SettingsView<Router: RouterHost>: View {
       toolbarContent: viewModel.toolbarContent()
     ) {
       content(
-        viewState: viewModel.viewState
+        viewState: viewModel.viewState,
+        isBatchCounterEnabled: $viewModel.isBatchCounterEnabled
       )
     }
     .task {
@@ -43,7 +44,8 @@ struct SettingsView<Router: RouterHost>: View {
 @MainActor
 @ViewBuilder
 private func content(
-  viewState: SettingsViewState
+  viewState: SettingsViewState,
+  isBatchCounterEnabled: Binding<Bool>
 ) -> some View {
   VStack(spacing: SPACING_MEDIUM_SMALL) {
     ForEach(viewState.items) { item in
@@ -58,6 +60,14 @@ private func content(
             )
           }
         }
+      } else if item.isToggle {
+        TappableCellView(
+          title: item.title,
+          showDivider: item.showDivider,
+          isToggle: true,
+          isOn: isBatchCounterEnabled,
+          action: item.action()
+        )
       } else {
         TappableCellView(
           title: item.title,
@@ -96,7 +106,8 @@ private func content(
     background: Theme.shared.color.surface
   ) {
     content(
-      viewState: viewSate
+      viewState: viewSate,
+      isBatchCounterEnabled: .constant(true)
     )
   }
 }

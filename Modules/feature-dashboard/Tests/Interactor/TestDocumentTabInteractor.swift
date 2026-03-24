@@ -25,15 +25,18 @@ final class TestDocumentTabInteractor: EudiTest {
   
   var interactor: DocumentTabInteractor!
   var walletKitController: MockWalletKitController!
+  var prefsController: MockPrefsController!
   var filterValidator: MockFilterValidator!
   var configLogic: MockConfigLogic!
   
   override func setUp() {
     self.walletKitController = MockWalletKitController()
+    self.prefsController = MockPrefsController()
     self.configLogic = MockConfigLogic()
     self.filterValidator = MockFilterValidator()
     self.interactor = DocumentTabInteractorImpl(
       walletKitController: walletKitController,
+      prefsController: prefsController,
       filterValidator: filterValidator,
       configLogic: configLogic
     )
@@ -44,6 +47,7 @@ final class TestDocumentTabInteractor: EudiTest {
   override func tearDown() {
     self.interactor = nil
     self.walletKitController = nil
+    self.prefsController = nil
     self.configLogic = nil
   }
   
@@ -89,6 +93,7 @@ final class TestDocumentTabInteractor: EudiTest {
     stubFetchIssuedDocuments(with: [])
     stubFetchDocumentsWithExclusion(with: [])
     stubFetchMainPidDocument(with: nil)
+    stubIsBatchCounterEnabled()
 
     // When
     let state = await interactor.fetchDocuments(failedDocuments: [])
@@ -138,6 +143,7 @@ final class TestDocumentTabInteractor: EudiTest {
     stubFetchDocumentsWithExclusion(with: [expectedMdl])
     stubFetchMainPidDocument(with: expectedPid)
     stubIsDocumentLowOnCredentials()
+    stubIsBatchCounterEnabled()
     
     // When
     let state = await interactor.fetchDocuments(failedDocuments: [])
@@ -349,6 +355,7 @@ final class TestDocumentTabInteractor: EudiTest {
     stub(walletKitController) { stub in
       when(stub.requestDeferredIssuance(with: any())).thenReturn(issuedDoc)
     }
+    stubIsBatchCounterEnabled()
 
     // When
     let result = await interactor.requestDeferredIssuance()
@@ -473,7 +480,8 @@ final class TestDocumentTabInteractor: EudiTest {
     stubFetchDocumentsWithExclusion(with: [expectedMdl])
     stubFetchMainPidDocument(with: expectedPid)
     stubIsDocumentLowOnCredentials()
-
+    stubIsBatchCounterEnabled()
+    
     // When
     let state = await interactor.fetchDocuments(failedDocuments: [])
 
@@ -645,6 +653,12 @@ private extension TestDocumentTabInteractor {
   func stubConfigLogic() {
     stub(configLogic) { mock in
       when(mock.forcePidActivation.get).thenReturn(true)
+    }
+  }
+  
+  func stubIsBatchCounterEnabled(_ enabled: Bool = true) {
+    stub(prefsController) { stub in
+      when(stub.getBool(forKey: Prefs.Key.batchCounter)).thenReturn(enabled)
     }
   }
 }
