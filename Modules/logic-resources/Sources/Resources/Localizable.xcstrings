@@ -972,6 +972,17 @@
         }
       }
     },
+    "history" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History"
+          }
+        }
+      }
+    },
     "home" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2423,17 +2434,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Transaction information"
-          }
-        }
-      }
-    },
-    "transactions" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transactions"
           }
         }
       }
