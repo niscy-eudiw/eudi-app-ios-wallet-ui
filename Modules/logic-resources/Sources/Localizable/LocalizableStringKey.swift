@@ -133,7 +133,7 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case itemsNotFoundInStorage
   case home
   case documents
-  case transactions
+  case historyTitle
   case authenticateAuthoriseTransactions
   case electronicallySignDigitalDocuments
   case learnMore
