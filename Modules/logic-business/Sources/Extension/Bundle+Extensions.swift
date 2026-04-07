@@ -98,7 +98,14 @@ public extension Bundle {
       }
     }
 
-    // Fallback: return the team ID and main app bundle ID as the access group
-    return "\("Team ID".valueFromBundle).\(mainAppBundleID)"
+    // Fallback: use Team ID + bundle ID only when Team ID is available.
+    // If Team ID is missing (common in simulator/debug contexts), return empty
+    // so callers can use app-local keychain without access-group entitlement.
+    let teamId = "Team ID".valueFromBundle.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !teamId.isEmpty else {
+      return ""
+    }
+
+    return "\(teamId).\(mainAppBundleID)"
   }
 }
