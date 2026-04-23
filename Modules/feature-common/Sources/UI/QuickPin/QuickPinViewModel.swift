@@ -29,7 +29,8 @@ struct QuickPinState: ViewState {
   let navigationTitle: LocalizableStringKey
   let title: LocalizableStringKey
   let caption: LocalizableStringKey
-  let button: LocalizableStringKey
+  let pinTextFieldTitle: LocalizableStringKey
+  let buttonImage: Image
   let successTitle: LocalizableStringKey
   let successCaption: LocalizableStringKey
   let successButton: LocalizableStringKey
@@ -105,8 +106,9 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
         config: config,
         navigationTitle: config.isSetFlow ? .quickPinEnterPin : .quickPinConfirmPin,
         title: config.isSetFlow ? .quickPinSetTitle : .quickPinUpdateTitle,
-        caption: config.isSetFlow ? .quickPinSetCaptionOne : .quickPinUpdateCaptionOne,
-        button: .quickPinNextButton,
+        caption: .quickPinSetCaptionOne,
+        pinTextFieldTitle: config.isSetFlow ? .quickPinEnterPin : .quickPinUpdateCaptionOne,
+        buttonImage: Theme.shared.image.chevronRight,
         successTitle: config.isSetFlow
         ? .walletIsSecured
         : .successTitlePunctuated,
@@ -134,8 +136,8 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
           $0
             .copy(
               navigationTitle: .quickPinConfirmPin,
-              caption: viewState.config.isSetFlow ? .quickPinSetCaptionTwo : .quickPinUpdateCaptionThree,
-              button: .quickPinConfirmButton,
+              pinTextFieldTitle: viewState.config.isSetFlow ? .quickPinUpdateCaptionThree : .quickPinEnterPin,
+              buttonImage: Theme.shared.image.checkmark,
               step: .retryInput(uiPinInputField)
             )
             .copy(pinError: nil)
@@ -177,9 +179,10 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
     return .init(
       trailingActions: [
         .init(
-          title: viewState.button,
+          image: viewState.buttonImage,
           accessibilityLocator: QuickPinLocators.confirmButton,
-          disabled: !viewState.isButtonActive
+          disabled: !viewState.isButtonActive,
+          isBorderedProminent: true
         ) {
           self.onButtonClick()
         }
@@ -195,7 +198,7 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
         $0
           .copy(
             caption: .quickPinUpdateCaptionTwo,
-            button: .quickPinNextButton,
+            buttonImage: Theme.shared.image.chevronRight,
             step: .firstInput
           )
           .copy(pinError: nil)

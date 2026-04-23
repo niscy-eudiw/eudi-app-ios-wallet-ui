@@ -76,7 +76,9 @@ private func content(
   ContentTitleView(
     title: viewState.title,
     accessibilityTitle: QuickPinLocators.quickPinTitle,
-    caption: viewState.caption
+    titleWeight: .bold,
+    caption: viewState.caption,
+    captionWeight: .semibold
   )
 
   VSpacer.large()
@@ -84,6 +86,7 @@ private func content(
   pinView(
     uiPinInputField: uiPinInputField,
     quickPinSize: viewState.quickPinSize,
+    pinTextfieldTitle: viewState.pinTextFieldTitle,
     pinError: viewState.pinError
   )
 
@@ -95,16 +98,18 @@ private func content(
 private func pinView(
   uiPinInputField: Binding<String>,
   quickPinSize: Int,
+  pinTextfieldTitle: LocalizableStringKey,
   pinError: LocalizableStringKey?
 ) -> some View {
   VStack(spacing: .zero) {
 
     PinTextFieldView(
+      pinTitle: pinTextfieldTitle,
       numericText: uiPinInputField,
       maxDigits: quickPinSize,
       isSecureEntry: true,
       canFocus: .constant(true),
-      shouldUseFullScreen: false,
+      shouldUseFullScreen: true,
       hasError: pinError != nil
     )
 
@@ -127,7 +132,8 @@ private func pinView(
     navigationTitle: .quickPinEnterPin,
     title: .quickPinSetTitle,
     caption: .quickPinSetCaptionOne,
-    button: .quickPinNextButton,
+    pinTextFieldTitle: .quickPinEnterPin,
+    buttonImage: Theme.shared.image.chevronRight,
     successTitle: .quickPinSetTitle,
     successCaption: .quickPinSetSuccess,
     successButton: .quickPinSetSuccessButton,
