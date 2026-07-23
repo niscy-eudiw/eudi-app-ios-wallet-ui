@@ -1,6 +1,160 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "understand_risks_proceed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I understand the risks and agree to proceed"
+          }
+        }
+      }
+    },
+    "relying_party_overasked_warning" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warning: Some of the requested data are not registered with this interacting party. Review carefully before sharing your data."
+          }
+        }
+      }
+    },
+    "issuer_not_verified_warning" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warning: The information registered about the entity could not be obtained. Review carefully before accepting the offered documents."
+          }
+        }
+      }
+    },
+    "issuance_registration_blocked_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Issuance blocked"
+          }
+        }
+      }
+    },
+    "issuance_registration_blocked_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This issuance request has been blocked because the provider is not registered for it.\n\nNo document has been added to your Wallet."
+          }
+        }
+      }
+    },
+    "issuance_registration_warning_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warning"
+          }
+        }
+      }
+    },
+    "issuance_registration_warning_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The information registered about the provider could not be obtained. Review carefully before proceeding."
+          }
+        }
+      }
+    },
+    "continue_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
+    "understand_risks_agree" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I understand the risks and agree to share my data"
+          }
+        }
+      }
+    },
+    "relying_party_not_verified_warning" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warning: The information registered about the entity could not be obtained. Review carefully before sharing your data."
+          }
+        }
+      }
+    },
+    "intended_use" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intended use"
+          }
+        }
+      }
+    },
+    "on_behalf_of" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "on behalf of"
+          }
+        }
+      }
+    },
+    "privacy_policy" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy policy"
+          }
+        }
+      }
+    },
+    "relying_party_id" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(ID: %@)"
+          }
+        }
+      }
+    },
     "add_doc" : {
       "extractionState" : "manual",
       "localizations" : {

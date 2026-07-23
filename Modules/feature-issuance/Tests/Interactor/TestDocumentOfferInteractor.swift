@@ -35,7 +35,11 @@ final class TestDocumentOfferInteractor: EudiTest {
     self.configLogic = MockConfigLogic()
     self.interactor = DocumentOfferInteractorImpl(
       walletController: walletKitController,
-      configLogic: configLogic
+      configLogic: configLogic,
+      relyingPartyRegistrationController: MockRelyingPartyRegistrationControllerImpl(
+        verifierScenario: .verified,
+        issuerScenario: .verified
+      )
     )
     stubConfigLogic()
   }
@@ -917,7 +921,7 @@ final class TestDocumentOfferInteractor: EudiTest {
     
     // Then
     switch result {
-    case .success(let doc):
+    case .success(let doc, _):
       XCTAssertEqual(doc.issuerName, expectedDocumentOfferUIModel.issuerName)
     default:
       XCTFail("Expected success, but got \(result)")

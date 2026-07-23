@@ -41,7 +41,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
     let state = await interactor.onRequestReceived()
 
     switch state {
-    case .success(let items, let relyingParty, _, let isTrusted):
+    case .success(let items, let relyingParty, _, let isTrusted, let registration):
       self.onReceivedItems(
         with: items,
         title: .requestDataTitle([relyingParty]),
@@ -64,6 +64,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
           )
         )
       }
+      self.onReceivedRegistration(registration)
     case .notSecuredRequest:
       self.onVerifierNotTrusted()
     case .failure(let error):

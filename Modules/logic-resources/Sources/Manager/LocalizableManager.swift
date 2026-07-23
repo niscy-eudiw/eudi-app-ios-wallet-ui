@@ -544,6 +544,34 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "enter_your_pin")
     case .homeScreenAuthenticateDescription:
       bundle.localizedString(forKey: "home_screen_authenticate_description")
+    case .relyingPartyId(let args):
+      bundle.localizedStringWithArguments(forKey: "relying_party_id", arguments: args)
+    case .onBehalfOf:
+      bundle.localizedString(forKey: "on_behalf_of")
+    case .privacyPolicy:
+      bundle.localizedString(forKey: "privacy_policy")
+    case .intendedUse:
+      bundle.localizedString(forKey: "intended_use")
+    case .understandRisksAgree:
+      bundle.localizedString(forKey: "understand_risks_agree")
+    case .understandRisksProceed:
+      bundle.localizedString(forKey: "understand_risks_proceed")
+    case .relyingPartyNotVerifiedWarning:
+      bundle.localizedString(forKey: "relying_party_not_verified_warning")
+    case .relyingPartyOveraskedWarning:
+      bundle.localizedString(forKey: "relying_party_overasked_warning")
+    case .issuerNotVerifiedWarning:
+      bundle.localizedString(forKey: "issuer_not_verified_warning")
+    case .issuanceRegistrationBlockedTitle:
+      bundle.localizedString(forKey: "issuance_registration_blocked_title")
+    case .issuanceRegistrationBlockedMessage:
+      bundle.localizedString(forKey: "issuance_registration_blocked_message")
+    case .issuanceRegistrationWarningTitle:
+      bundle.localizedString(forKey: "issuance_registration_warning_title")
+    case .issuanceRegistrationWarningMessage:
+      bundle.localizedString(forKey: "issuance_registration_warning_message")
+    case .continueButton:
+      bundle.localizedString(forKey: "continue_button")
     }
   }
 }

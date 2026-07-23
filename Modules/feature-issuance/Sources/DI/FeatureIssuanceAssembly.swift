@@ -23,14 +23,18 @@ public final class FeatureIssuanceAssembly: Assembly {
 
   public func assemble(container: Container) {
     container.register(AddDocumentInteractor.self) { r in
-      AddDocumentInteractorImpl(walletController: r.force(WalletKitController.self))
+      AddDocumentInteractorImpl(
+        walletController: r.force(WalletKitController.self),
+        relyingPartyRegistrationController: r.force(RelyingPartyRegistrationController.self)
+      )
     }
     .inObjectScope(ObjectScope.transient)
 
     container.register(DocumentOfferInteractor.self) { r in
       DocumentOfferInteractorImpl(
         walletController: r.force(WalletKitController.self),
-        configLogic: r.force(ConfigLogic.self)
+        configLogic: r.force(ConfigLogic.self),
+        relyingPartyRegistrationController: r.force(RelyingPartyRegistrationController.self)
       )
     }
     .inObjectScope(ObjectScope.transient)

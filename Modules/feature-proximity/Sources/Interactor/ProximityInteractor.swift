@@ -33,7 +33,13 @@ public enum ProximityResponsePreparationPartialState: Sendable {
 }
 
 public enum ProximityRequestPartialState: Sendable {
-  case success([RequestDataUiModel], relyingParty: String, dataRequestInfo: String, isTrusted: Bool)
+  case success(
+    [RequestDataUiModel],
+    relyingParty: String,
+    dataRequestInfo: String,
+    isTrusted: Bool,
+    relyingPartyRegistration: RelyingPartyRegistration
+  )
   case notSecuredRequest
   case failure(Error)
 }
@@ -71,14 +77,17 @@ final actor ProximityInteractorImpl: ProximityInteractor {
 
   private let walletKitController: WalletKitController
   private let sessionCoordinatorHolder: SessionCoordinatorHolder
+  private let relyingPartyRegistrationController: RelyingPartyRegistrationController
 
   init(
     with proximitySessionCoordinator: ProximitySessionCoordinator,
     and walletKitController: WalletKitController,
-    also sessionCoordinatorHolder: SessionCoordinatorHolder
+    also sessionCoordinatorHolder: SessionCoordinatorHolder,
+    relyingPartyRegistrationController: RelyingPartyRegistrationController
   ) {
     self.walletKitController = walletKitController
     self.sessionCoordinatorHolder = sessionCoordinatorHolder
+    self.relyingPartyRegistrationController = relyingPartyRegistrationController
     Task { await self.sessionCoordinatorHolder.setActiveProximityCoordinator(proximitySessionCoordinator) }
   }
 
@@ -129,7 +138,15 @@ final actor ProximityInteractorImpl: ProximityInteractor {
         ),
         relyingParty: response.relyingParty,
         dataRequestInfo: response.dataRequestInfo,
-        isTrusted: response.isTrusted
+        isTrusted: response.isTrusted,
+        // proximity carries no registration certificate; the evaluation reports .notSupported and
+        // the screen keeps showing the access-certificate badge it always did
+        relyingPartyRegistration: relyingPartyRegistrationController.getVerifierRegistration(
+          verifierName: response.relyingParty,
+          verifierIsTrusted: response.isTrusted,
+          transport: .proximity,
+          requestedClaims: response.itemSets.toRequestedClaims()
+        )
       )
     } catch {
       return error.isIssuerNotTrusted ? .notSecuredRequest : .failure(error)

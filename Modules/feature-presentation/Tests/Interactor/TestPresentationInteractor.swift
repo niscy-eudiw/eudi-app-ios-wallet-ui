@@ -51,7 +51,11 @@ final class TestPresentationInteractor: EudiTest {
     interactor = PresentationInteractorImpl(
       with: presentationCoordinator,
       and: walletKitController,
-      also: sessionCoordinatorHolder
+      also: sessionCoordinatorHolder,
+      relyingPartyRegistrationController: MockRelyingPartyRegistrationControllerImpl(
+        verifierScenario: .verified,
+        issuerScenario: .verified
+      )
     )
   }
 

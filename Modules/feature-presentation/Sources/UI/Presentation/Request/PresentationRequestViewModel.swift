@@ -63,6 +63,7 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
           )
         )
       }
+      self.onReceivedRegistration(authenticationRequest.relyingPartyRegistration)
     case .notSecuredRequest:
       self.onVerifierNotTrusted()
     case .failure(let error):

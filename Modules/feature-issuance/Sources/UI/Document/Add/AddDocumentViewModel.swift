@@ -38,13 +38,23 @@ struct AddDocumentViewState: ViewState {
   }
 }
 
+private struct PendingIssuance {
+  let issuerId: String
+  let configIds: [String]
+  let docTypeIdentifier: DocumentTypeIdentifier
+}
+
 @Observable
 final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocumentViewState> {
 
   var isIssuerNotTrustedSheetShowing: Bool = false
+  var isRegistrationBlockedSheetShowing: Bool = false
+  var isRegistrationWarningSheetShowing: Bool = false
 
   private let interactor: AddDocumentInteractor
   private let deepLinkController: DeepLinkController
+
+  private var pendingIssuance: PendingIssuance?
 
   init(
     router: Router,
@@ -120,8 +130,26 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
     issueDocument(
       issuerId: issuerId,
       configIds: configIds,
-      docTypeIdentifier: docTypeIdentifier
+      docTypeIdentifier: docTypeIdentifier,
+      hasAcknowledgedRegistrationWarning: false
     )
+  }
+
+  func onRegistrationWarningProceed() {
+    isRegistrationWarningSheetShowing = false
+    guard let pendingIssuance else { return }
+    self.pendingIssuance = nil
+    issueDocument(
+      issuerId: pendingIssuance.issuerId,
+      configIds: pendingIssuance.configIds,
+      docTypeIdentifier: pendingIssuance.docTypeIdentifier,
+      hasAcknowledgedRegistrationWarning: true
+    )
+  }
+
+  func onRegistrationWarningCancel() {
+    isRegistrationWarningSheetShowing = false
+    pendingIssuance = nil
   }
 
   func onScanClick() {
@@ -232,7 +260,8 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
   private func issueDocument(
     issuerId: String,
     configIds: [String],
-    docTypeIdentifier: DocumentTypeIdentifier
+    docTypeIdentifier: DocumentTypeIdentifier,
+    hasAcknowledgedRegistrationWarning: Bool
   ) {
     Task {
       setState {
@@ -245,7 +274,8 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
       let state = await interactor.issueDocument(
         issuerId: issuerId,
         configIds: configIds,
-        docTypeIdentifier: docTypeIdentifier
+        docTypeIdentifier: docTypeIdentifier,
+        hasAcknowledgedRegistrationWarning: hasAcknowledgedRegistrationWarning
       )
 
       switch state {
@@ -273,6 +303,27 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
           .copy(error: nil)
         }
         isIssuerNotTrustedSheetShowing = true
+      case .registrationBlocked:
+        setState {
+          $0.copy(
+            addDocumentCellModels: transformCellLoadingState(with: false)
+          )
+          .copy(error: nil)
+        }
+        isRegistrationBlockedSheetShowing = true
+      case .registrationNotVerified:
+        setState {
+          $0.copy(
+            addDocumentCellModels: transformCellLoadingState(with: false)
+          )
+          .copy(error: nil)
+        }
+        pendingIssuance = PendingIssuance(
+          issuerId: issuerId,
+          configIds: configIds,
+          docTypeIdentifier: docTypeIdentifier
+        )
+        isRegistrationWarningSheetShowing = true
       case .failure(let error):
         setState {
           $0.copy(

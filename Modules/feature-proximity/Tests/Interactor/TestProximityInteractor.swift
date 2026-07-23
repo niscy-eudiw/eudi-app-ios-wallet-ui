@@ -53,7 +53,11 @@ final class TestProximityInteractor: EudiTest {
     self.interactor = ProximityInteractorImpl(
       with: presentationSessionCoordinator,
       and: walletKitController,
-      also: sessionHolder
+      also: sessionHolder,
+      relyingPartyRegistrationController: MockRelyingPartyRegistrationControllerImpl(
+        verifierScenario: .verified,
+        issuerScenario: .verified
+      )
     )
   }
   
@@ -290,11 +294,13 @@ final class TestProximityInteractor: EudiTest {
     
     // Then
     switch state {
-    case .success(let uimodels, let relyingParty, let dataRequestInfo, let isTrusted):
+    case .success(let uimodels, let relyingParty, let dataRequestInfo, let isTrusted, let registration):
       XCTAssertEqual(uimodels, expectedUiModels)
       XCTAssertEqual(relyingParty, request.relyingParty)
       XCTAssertEqual(dataRequestInfo, request.dataRequestInfo)
       XCTAssertEqual(isTrusted, request.isTrusted)
+      // proximity carries no registration certificate
+      XCTAssertEqual(registration.registration, .notSupported)
     default:
       XCTFail("Wrong state \(state)")
     }

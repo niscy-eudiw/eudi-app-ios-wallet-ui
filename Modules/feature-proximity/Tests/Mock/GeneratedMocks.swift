@@ -1262,6 +1262,21 @@ import Observation
 
 
 
+// MARK: - Mocks generated from file: '../Modules/feature-common/Sources/UI/Request/Model/RelyingPartyRegistrationUiModel.swift'
+
+import Cuckoo
+import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_proximity
+
+
+
 // MARK: - Mocks generated from file: '../Modules/feature-common/Sources/UI/Request/Model/RequestDataUIModel.swift'
 
 import Cuckoo
@@ -7084,6 +7099,133 @@ class WalletProviderAttestationConfigStub:WalletProviderAttestationConfig, @unch
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Controller/RelyingPartyRegistrationController.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_proximity
+
+public class MockRelyingPartyRegistrationController: RelyingPartyRegistrationController, Cuckoo.ProtocolMock, @unchecked Sendable {
+    public typealias MocksType = any RelyingPartyRegistrationController
+    public typealias Stubbing = __StubbingProxy_RelyingPartyRegistrationController
+    public typealias Verification = __VerificationProxy_RelyingPartyRegistrationController
+
+    // Original typealiases
+
+    public let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+
+    private var __defaultImplStub: (any RelyingPartyRegistrationController)?
+
+    public func enableDefaultImplementation(_ stub: any RelyingPartyRegistrationController) {
+        __defaultImplStub = stub
+        cuckoo_manager.enableDefaultStubImplementation()
+    }
+
+
+    public func getVerifierRegistration(verifierName p0: String?, verifierIsTrusted p1: Bool, transport p2: RegistrationTransport, requestedClaims p3: [RequestedClaim]) -> RelyingPartyRegistration {
+        return cuckoo_manager.call(
+            "getVerifierRegistration(verifierName p0: String?, verifierIsTrusted p1: Bool, transport p2: RegistrationTransport, requestedClaims p3: [RequestedClaim]) -> RelyingPartyRegistration",
+            parameters: (p0, p1, p2, p3),
+            escapingParameters: (p0, p1, p2, p3),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.getVerifierRegistration(verifierName: p0, verifierIsTrusted: p1, transport: p2, requestedClaims: p3)
+        )
+    }
+
+    public func getIssuerRegistration(issuerId p0: String) -> IssuerRegistration {
+        return cuckoo_manager.call(
+            "getIssuerRegistration(issuerId p0: String) -> IssuerRegistration",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.getIssuerRegistration(issuerId: p0)
+        )
+    }
+
+    public struct __StubbingProxy_RelyingPartyRegistrationController: Cuckoo.StubbingProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+    
+        public init(manager: Cuckoo.MockManager) {
+            self.cuckoo_manager = manager
+        }
+        
+        func getVerifierRegistration<M1: Cuckoo.OptionalMatchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable, M4: Cuckoo.Matchable>(verifierName p0: M1, verifierIsTrusted p1: M2, transport p2: M3, requestedClaims p3: M4) -> Cuckoo.ProtocolStubFunction<(String?, Bool, RegistrationTransport, [RequestedClaim]), RelyingPartyRegistration> where M1.OptionalMatchedType == String, M2.MatchedType == Bool, M3.MatchedType == RegistrationTransport, M4.MatchedType == [RequestedClaim] {
+            let matchers: [Cuckoo.ParameterMatcher<(String?, Bool, RegistrationTransport, [RequestedClaim])>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }, wrap(matchable: p3) { $0.3 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockRelyingPartyRegistrationController.self,
+                method: "getVerifierRegistration(verifierName p0: String?, verifierIsTrusted p1: Bool, transport p2: RegistrationTransport, requestedClaims p3: [RequestedClaim]) -> RelyingPartyRegistration",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func getIssuerRegistration<M1: Cuckoo.Matchable>(issuerId p0: M1) -> Cuckoo.ProtocolStubFunction<(String), IssuerRegistration> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockRelyingPartyRegistrationController.self,
+                method: "getIssuerRegistration(issuerId p0: String) -> IssuerRegistration",
+                parameterMatchers: matchers
+            ))
+        }
+    }
+
+    public struct __VerificationProxy_RelyingPartyRegistrationController: Cuckoo.VerificationProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+        private let callMatcher: Cuckoo.CallMatcher
+        private let sourceLocation: Cuckoo.SourceLocation
+    
+        public init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+            self.cuckoo_manager = manager
+            self.callMatcher = callMatcher
+            self.sourceLocation = sourceLocation
+        }
+        
+        
+        @discardableResult
+        func getVerifierRegistration<M1: Cuckoo.OptionalMatchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable, M4: Cuckoo.Matchable>(verifierName p0: M1, verifierIsTrusted p1: M2, transport p2: M3, requestedClaims p3: M4) -> Cuckoo.__DoNotUse<(String?, Bool, RegistrationTransport, [RequestedClaim]), RelyingPartyRegistration> where M1.OptionalMatchedType == String, M2.MatchedType == Bool, M3.MatchedType == RegistrationTransport, M4.MatchedType == [RequestedClaim] {
+            let matchers: [Cuckoo.ParameterMatcher<(String?, Bool, RegistrationTransport, [RequestedClaim])>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }, wrap(matchable: p3) { $0.3 }]
+            return cuckoo_manager.verify(
+                "getVerifierRegistration(verifierName p0: String?, verifierIsTrusted p1: Bool, transport p2: RegistrationTransport, requestedClaims p3: [RequestedClaim]) -> RelyingPartyRegistration",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func getIssuerRegistration<M1: Cuckoo.Matchable>(issuerId p0: M1) -> Cuckoo.__DoNotUse<(String), IssuerRegistration> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "getIssuerRegistration(issuerId p0: String) -> IssuerRegistration",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+    }
+}
+
+public class RelyingPartyRegistrationControllerStub:RelyingPartyRegistrationController, @unchecked Sendable {
+
+
+    
+    public func getVerifierRegistration(verifierName p0: String?, verifierIsTrusted p1: Bool, transport p2: RegistrationTransport, requestedClaims p3: [RequestedClaim]) -> RelyingPartyRegistration {
+        return DefaultValueRegistry.defaultValue(for: (RelyingPartyRegistration).self)
+    }
+    
+    public func getIssuerRegistration(issuerId p0: String) -> IssuerRegistration {
+        return DefaultValueRegistry.defaultValue(for: (IssuerRegistration).self)
+    }
+}
+
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Controller/WalletKitController.swift'
 
 import Cuckoo
@@ -10028,6 +10170,21 @@ import Foundation
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/RelyingPartyRegistration.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_proximity
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/RequestItemConvertible.swift'
 
 import Cuckoo
@@ -11457,6 +11614,22 @@ import logic_resources
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Content/ContentHeader/RelyingPartyRegistrationView.swift'
+
+import Cuckoo
+import SwiftUI
+import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_proximity
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Content/ContentHeader/RelyingPartyView.swift'
 
 import Cuckoo
@@ -11873,7 +12046,39 @@ import logic_resources
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Sheet/WarningProceedSheetContent.swift'
+
+import Cuckoo
+import SwiftUI
+import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_proximity
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Unavailable/ContentUnavailableView.swift'
+
+import Cuckoo
+import SwiftUI
+import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_proximity
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Warning/WarningAcknowledgementView.swift'
 
 import Cuckoo
 import SwiftUI

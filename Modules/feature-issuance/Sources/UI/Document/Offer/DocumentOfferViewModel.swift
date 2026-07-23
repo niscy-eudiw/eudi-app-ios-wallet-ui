@@ -29,6 +29,8 @@ struct DocumentOfferViewState: ViewState {
   let allowIssue: Bool
   let initialized: Bool
   let contentHeaderConfig: ContentHeaderConfig
+  let issuerRegistration: RelyingPartyRegistrationData?
+  let registrationWarning: RegistrationWarning?
 
   var title: LocalizableStringKey {
     return .requestCredentialOfferTitle([documentOfferUiModel.issuerName])
@@ -47,6 +49,8 @@ struct DocumentOfferViewState: ViewState {
 final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, DocumentOfferViewState> {
 
   var isIssuerNotTrustedSheetShowing: Bool = false
+  var isRegistrationBlockedSheetShowing: Bool = false
+  var isRiskAcknowledged: Bool = false
 
   private let interactor: DocumentOfferInteractor
 
@@ -76,7 +80,9 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
           appIconAndTextData: AppIconAndTextData(
             appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
           )
-        )
+        ),
+        issuerRegistration: nil,
+        registrationWarning: nil
       )
     )
   }
@@ -93,7 +99,9 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
     let state = await interactor.processOfferRequest(with: offerUri)
 
     switch state {
-    case .success(let uiModel):
+    case .success(let uiModel, let issuerRegistration):
+      isRiskAcknowledged = false
+      let isProviderVerified = issuerRegistration.details != nil
       setState {
         $0.copy(
           isLoading: false,
@@ -108,13 +116,25 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
             mainText: .issuanceRequest,
             icon: .remoteImage(uiModel.issuerLogo, nil),
             relyingPartyData: RelyingPartyData(
-              isVerified: false,
+              isVerified: isProviderVerified,
               name: .custom(uiModel.issuerName),
               description: .issuerWantWalletAddition
             )
           )
+        )
+        .copy(error: nil)
+        .copy(issuerRegistration: issuerRegistration.toRegistrationData(issuerName: uiModel.issuerName))
+        .copy(registrationWarning: issuerRegistration.toWarning())
+      }
+    case .registrationBlocked:
+      setState {
+        $0.copy(
+          isLoading: false,
+          allowIssue: false,
+          initialized: false
         ).copy(error: nil)
       }
+      isRegistrationBlockedSheetShowing = true
     case .failure(let error):
       setState {
         $0.copy(
@@ -204,6 +224,11 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
     }
   }
 
+  func onRegistrationBlockedClose() {
+    isRegistrationBlockedSheetShowing = false
+    onPop()
+  }
+
   func onPop() {
     switch viewState.cancelNavigation {
     case .popTo(let route):
@@ -234,6 +259,8 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
           initialized: false
         )
         .copy(error: nil)
+        .copy(issuerRegistration: nil)
+        .copy(registrationWarning: nil)
     }
     Task {
       await self.initialize()

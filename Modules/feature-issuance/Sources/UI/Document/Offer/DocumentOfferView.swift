@@ -43,6 +43,7 @@ struct DocumentOfferView<Router: RouterHost>: View {
     ) {
       DocumentOfferViewContainer(
         viewState: viewModel.viewState,
+        isRiskAcknowledged: $viewModel.isRiskAcknowledged,
         onIssueDocuments: viewModel.onIssueDocuments
       )
     }
@@ -51,6 +52,13 @@ struct DocumentOfferView<Router: RouterHost>: View {
         title: .issuanceBlockedTitle,
         message: .issuanceBlockedMessage,
         onClose: { viewModel.isIssuerNotTrustedSheetShowing = false }
+      )
+    }
+    .sheetDialog(isPresented: $viewModel.isRegistrationBlockedSheetShowing) {
+      TrustBlockedSheetContent(
+        title: .issuanceRegistrationBlockedTitle,
+        message: .issuanceRegistrationBlockedMessage,
+        onClose: { viewModel.onRegistrationBlockedClose() }
       )
     }
     .task {
@@ -62,7 +70,17 @@ struct DocumentOfferView<Router: RouterHost>: View {
 private struct DocumentOfferViewContainer: View {
 
   let viewState: DocumentOfferViewState
+  @Binding var isRiskAcknowledged: Bool
   let onIssueDocuments: () -> Void
+
+  private var registrationWarning: RegistrationWarning? {
+    guard viewState.initialized, !viewState.isLoading else { return nil }
+    return viewState.registrationWarning
+  }
+
+  private var canIssue: Bool {
+    viewState.allowIssue && (registrationWarning == nil || isRiskAcknowledged)
+  }
 
   var body: some View {
     content()
@@ -91,6 +109,11 @@ private struct DocumentOfferViewContainer: View {
 
         VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
 
+          if let issuerRegistration = viewState.issuerRegistration {
+            RelyingPartyRegistrationView(data: issuerRegistration)
+              .shimmer(isLoading: viewState.isLoading)
+          }
+
           ForEach(viewState.documentOfferUiModel.uiOffers) { cell in
             WrapCardView(
               backgroundColor: Theme.shared.color.groupedElevatedBackground
@@ -113,6 +136,22 @@ private struct DocumentOfferViewContainer: View {
       }
     }
     .safeAreaInset(edge: .bottom) {
+      bottomBar()
+    }
+  }
+
+  @MainActor
+  @ViewBuilder
+  private func bottomBar() -> some View {
+    VStack(spacing: SPACING_MEDIUM) {
+      if let registrationWarning {
+        WarningAcknowledgementView(
+          message: registrationWarning.message,
+          acknowledgementText: registrationWarning.acknowledgement,
+          isAcknowledged: $isRiskAcknowledged
+        )
+      }
+
       issueButton()
     }
   }
@@ -124,7 +163,7 @@ private struct DocumentOfferViewContainer: View {
       style: .primary,
       title: .issueButton,
       isLoading: viewState.isLoading,
-      isEnabled: viewState.allowIssue,
+      isEnabled: canIssue,
       onAction: onIssueDocuments()
     )
     .combineChilrenAccessibility(
@@ -165,12 +204,15 @@ private struct DocumentOfferViewContainer: View {
       appIconAndTextData: AppIconAndTextData(
         appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
       )
-    )
+    ),
+    issuerRegistration: nil,
+    registrationWarning: nil
   )
 
   ContentScreenView {
     DocumentOfferViewContainer(
       viewState: viewState,
+      isRiskAcknowledged: .constant(false),
       onIssueDocuments: {}
     )
   }
@@ -199,12 +241,15 @@ private struct DocumentOfferViewContainer: View {
       appIconAndTextData: AppIconAndTextData(
         appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
       )
-    )
+    ),
+    issuerRegistration: nil,
+    registrationWarning: nil
   )
 
   ContentScreenView {
     DocumentOfferViewContainer(
       viewState: viewState,
+      isRiskAcknowledged: .constant(false),
       onIssueDocuments: {}
     )
   }

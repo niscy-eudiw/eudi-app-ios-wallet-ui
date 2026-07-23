@@ -35,6 +35,7 @@ public struct BaseRequestView<Router: RouterHost>: View {
     ) {
       BaseRequestViewContainer(
         viewState: viewModel.viewState,
+        isRiskAcknowledged: $viewModel.isRiskAcknowledged,
         onShare: viewModel.onShare,
         onSelectionChanged: { id in
           Task {
@@ -99,10 +100,20 @@ public struct BaseRequestView<Router: RouterHost>: View {
 private struct BaseRequestViewContainer: View {
 
   let viewState: RequestViewState
+  @Binding var isRiskAcknowledged: Bool
   let onShare: () -> Void
   let onSelectionChanged: (String) -> Void
   var onCombinationSelected: (Int) -> Void = { _ in }
   var onCombinationItemClick: (Int, String) -> Void = { _, _ in }
+
+  private var registrationWarning: RegistrationWarning? {
+    guard viewState.initialized, !viewState.isLoading else { return nil }
+    return viewState.registrationWarning
+  }
+
+  private var canShare: Bool {
+    viewState.allowShare && (registrationWarning == nil || isRiskAcknowledged)
+  }
 
   var body: some View {
     content()
@@ -125,37 +136,49 @@ private struct BaseRequestViewContainer: View {
   @MainActor
   @ViewBuilder
   private func scrollableContent() -> some View {
-    ScrollView {
-      VStack(spacing: .zero) {
-        ContentHeaderView(
-          config: viewState.contentHeaderConfig,
-          accessibilityDescription: BaseRequestLocators.description
-        )
-        .padding(.horizontal, Theme.shared.dimension.padding)
+    ZStack(alignment: .bottom) {
+      ScrollView {
+        VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
 
-        ZStack {
-          VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
-
-            if viewState.combinations.count > 1 {
-              combinationsContent()
-            } else {
-              singleCombinationContent()
-            }
-
-            Text(.shareDataReview)
-              .typography(Theme.shared.font.bodyMedium)
-              .foregroundColor(Theme.shared.color.primaryLabel)
-              .multilineTextAlignment(.leading)
+          if let registration = viewState.relyingPartyRegistration {
+            RelyingPartyRegistrationView(data: registration)
               .shimmer(isLoading: viewState.isLoading)
-
-            VSpacer.medium()
           }
-          .padding(.top, Theme.shared.dimension.padding)
+
+          if viewState.combinations.count > 1 {
+            combinationsContent()
+          } else {
+            singleCombinationContent()
+          }
+
+          Text(.shareDataReview)
+            .typography(Theme.shared.font.bodyMedium)
+            .foregroundColor(Theme.shared.color.primaryLabel)
+            .multilineTextAlignment(.leading)
+            .shimmer(isLoading: viewState.isLoading)
+
+          VSpacer.medium()
         }
         .padding(Theme.shared.dimension.padding)
       }
+
+      bottomBar()
     }
-    .safeAreaInset(edge: .bottom) {
+  }
+
+  @MainActor
+  @ViewBuilder
+  private func bottomBar() -> some View {
+    VStack(spacing: SPACING_MEDIUM) {
+      if let registrationWarning {
+        WarningAcknowledgementView(
+          message: registrationWarning.message,
+          acknowledgementText: registrationWarning.acknowledgement,
+          isAcknowledged: $isRiskAcknowledged
+        )
+        .padding(.horizontal, Theme.shared.dimension.padding)
+      }
+
       shareButton()
     }
   }
@@ -227,7 +250,7 @@ private struct BaseRequestViewContainer: View {
       style: .primary,
       title: .shareButton,
       isLoading: viewState.isLoading,
-      isEnabled: viewState.allowShare,
+      isEnabled: canShare,
       onAction: onShare()
     )
     .combineChilrenAccessibility(
@@ -278,12 +301,25 @@ private struct BaseRequestViewContainer: View {
       appIconAndTextData: AppIconAndTextData(
         appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
       )
-    )
+    ),
+    relyingPartyRegistration: RelyingPartyRegistrationData(
+      primary: RegisteredParty(
+        name: .custom("NordicBank A/S"),
+        identifier: .relyingPartyId(["rp:nordicbank:prod"]),
+        isVerified: true
+      ),
+      privacyPolicyUrl: URL(string: "https://nordicbank.example/privacy"),
+      intendedUse: .custom(
+        "We will use your identity and age to verify you for a new current account. Your data will be used once to complete onboarding and to meet anti-money laundering requirements."
+      )
+    ),
+    registrationWarning: nil
   )
 
   ContentScreenView {
     BaseRequestViewContainer(
       viewState: viewState,
+      isRiskAcknowledged: .constant(false),
       onShare: {},
       onSelectionChanged: { _ in }
     )

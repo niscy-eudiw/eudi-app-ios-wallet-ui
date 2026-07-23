@@ -31,7 +31,11 @@ final class TestAddDocumentInteractor: EudiTest {
     super.setUp()
     self.walletKitController = MockWalletKitController()
     self.interactor = AddDocumentInteractorImpl(
-      walletController: walletKitController
+      walletController: walletKitController,
+      relyingPartyRegistrationController: MockRelyingPartyRegistrationControllerImpl(
+        verifierScenario: .verified,
+        issuerScenario: .verified
+      )
     )
   }
   
@@ -133,7 +137,8 @@ final class TestAddDocumentInteractor: EudiTest {
     let result = await interactor.issueDocument(
       issuerId: issuerId,
       configIds: configIds,
-      docTypeIdentifier: identifier
+      docTypeIdentifier: identifier,
+      hasAcknowledgedRegistrationWarning: false
     )
     
     // Then
@@ -158,7 +163,8 @@ final class TestAddDocumentInteractor: EudiTest {
     let result = await interactor.issueDocument(
       issuerId: issuerId,
       configIds: configIds,
-      docTypeIdentifier: identifier
+      docTypeIdentifier: identifier,
+      hasAcknowledgedRegistrationWarning: false
     )
     
     // Then
@@ -186,7 +192,8 @@ final class TestAddDocumentInteractor: EudiTest {
     let result = await interactor.issueDocument(
       issuerId: issuerId,
       configIds: configIds,
-      docTypeIdentifier: identifier
+      docTypeIdentifier: identifier,
+      hasAcknowledgedRegistrationWarning: false
     )
     
     // Then
@@ -218,7 +225,8 @@ final class TestAddDocumentInteractor: EudiTest {
     let result = await interactor.issueDocument(
       issuerId: issuerId,
       configIds: configIds,
-      docTypeIdentifier: identifier
+      docTypeIdentifier: identifier,
+      hasAcknowledgedRegistrationWarning: false
     )
 
     // Then
@@ -485,7 +493,8 @@ final class TestAddDocumentInteractor: EudiTest {
 
     // When
     let result = await interactor.issueDocument(
-      issuerId: issuerId, configIds: configIds, docTypeIdentifier: identifier
+      issuerId: issuerId, configIds: configIds, docTypeIdentifier: identifier,
+      hasAcknowledgedRegistrationWarning: false
     )
 
     // Then
@@ -526,7 +535,8 @@ final class TestAddDocumentInteractor: EudiTest {
 
     // When
     let result = await interactor.issueDocument(
-      issuerId: issuerId, configIds: configIds, docTypeIdentifier: identifier
+      issuerId: issuerId, configIds: configIds, docTypeIdentifier: identifier,
+      hasAcknowledgedRegistrationWarning: false
     )
 
     // Then
@@ -604,6 +614,95 @@ final class TestAddDocumentInteractor: EudiTest {
     default:
       XCTFail("Expected success but got \(result)")
     }
+  }
+
+  func testIssueDocument_WhenProviderRegistrationIsBlocked_ThenIssuanceNeverStarts() async {
+    // Given
+    let interactor = interactor(withIssuerScenario: .blockedNotRegisteredAsProvider)
+
+    // When
+    let result = await interactor.issueDocument(
+      issuerId: "issuer.dev",
+      configIds: ["doc"],
+      docTypeIdentifier: DocumentTypeIdentifier(rawValue: "eu.europa.ec.eudi.pid.1"),
+      hasAcknowledgedRegistrationWarning: false
+    )
+
+    // Then
+    switch result {
+    case .registrationBlocked(let reason):
+      XCTAssertEqual(reason, .notRegisteredAsProvider)
+      verify(walletKitController, never()).issueDocuments(
+        issuerId: any(),
+        identifiers: any(),
+        docTypeIdentifier: any()
+      )
+    default:
+      XCTFail("Expected .registrationBlocked, got \(result)")
+    }
+  }
+
+  func testIssueDocument_WhenProviderNotVerifiedAndUnacknowledged_ThenAsksForApproval() async {
+    // Given
+    let interactor = interactor(withIssuerScenario: .notVerified)
+
+    // When
+    let result = await interactor.issueDocument(
+      issuerId: "issuer.dev",
+      configIds: ["doc"],
+      docTypeIdentifier: DocumentTypeIdentifier(rawValue: "eu.europa.ec.eudi.pid.1"),
+      hasAcknowledgedRegistrationWarning: false
+    )
+
+    // Then
+    switch result {
+    case .registrationNotVerified:
+      verify(walletKitController, never()).issueDocuments(
+        issuerId: any(),
+        identifiers: any(),
+        docTypeIdentifier: any()
+      )
+    default:
+      XCTFail("Expected .registrationNotVerified, got \(result)")
+    }
+  }
+
+  func testIssueDocument_WhenProviderNotVerifiedButAcknowledged_ThenIssuanceProceeds() async {
+    // Given
+    let interactor = interactor(withIssuerScenario: .notVerified)
+    let issuerId = "issuer.dev"
+    let configIds = ["deferred-doc"]
+    let identifier = DocumentTypeIdentifier(rawValue: "eu.europa.ec.eudi.pid.1")
+    stubResumeDynamicIssuanceDefferedSuccess(document: Constants.issuedPendingDocument)
+
+    // When
+    let result = await interactor.issueDocument(
+      issuerId: issuerId,
+      configIds: configIds,
+      docTypeIdentifier: identifier,
+      hasAcknowledgedRegistrationWarning: true
+    )
+
+    // Then
+    switch result {
+    case .success:
+      XCTAssertTrue(true)
+    default:
+      XCTFail("Expected .success, got \(result)")
+    }
+  }
+}
+
+private extension TestAddDocumentInteractor {
+
+  func interactor(withIssuerScenario scenario: MockIssuerRegistrationScenario) -> AddDocumentInteractor {
+    AddDocumentInteractorImpl(
+      walletController: walletKitController,
+      relyingPartyRegistrationController: MockRelyingPartyRegistrationControllerImpl(
+        verifierScenario: .verified,
+        issuerScenario: scenario
+      )
+    )
   }
 }
 

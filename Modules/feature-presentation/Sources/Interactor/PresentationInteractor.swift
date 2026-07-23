@@ -21,6 +21,7 @@ public struct OnlineAuthenticationRequestSuccessModel: Sendable {
   var relyingParty: String
   var dataRequestInfo: String
   var isTrusted: Bool
+  var relyingPartyRegistration: RelyingPartyRegistration
 }
 
 public enum PresentationCoordinatorPartialState: Sendable {
@@ -60,14 +61,17 @@ final actor PresentationInteractorImpl: PresentationInteractor {
 
   private let sessionCoordinatorHolder: SessionCoordinatorHolder
   private let walletKitController: WalletKitController
+  private let relyingPartyRegistrationController: RelyingPartyRegistrationController
 
   init(
     with presentationCoordinator: RemoteSessionCoordinator,
     and walletKitController: WalletKitController,
-    also sessionCoordinatorHolder: SessionCoordinatorHolder
+    also sessionCoordinatorHolder: SessionCoordinatorHolder,
+    relyingPartyRegistrationController: RelyingPartyRegistrationController
   ) {
     self.walletKitController = walletKitController
     self.sessionCoordinatorHolder = sessionCoordinatorHolder
+    self.relyingPartyRegistrationController = relyingPartyRegistrationController
     Task { await self.sessionCoordinatorHolder.setActiveRemoteCoordinator(presentationCoordinator) }
   }
 
@@ -117,7 +121,13 @@ final actor PresentationInteractorImpl: PresentationInteractor {
           requestDataCombinations: combinations,
           relyingParty: response.relyingParty,
           dataRequestInfo: response.dataRequestInfo,
-          isTrusted: response.isTrusted
+          isTrusted: response.isTrusted,
+          relyingPartyRegistration: relyingPartyRegistrationController.getVerifierRegistration(
+            verifierName: response.relyingParty,
+            verifierIsTrusted: response.isTrusted,
+            transport: .openId4Vp,
+            requestedClaims: response.itemSets.toRequestedClaims()
+          )
         )
       )
     } catch {

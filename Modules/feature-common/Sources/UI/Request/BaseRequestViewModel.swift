@@ -16,6 +16,7 @@
 
 @_exported import logic_ui
 @_exported import logic_resources
+import logic_core
 import Observation
 
 @Copyable
@@ -34,6 +35,8 @@ public struct RequestViewState: ViewState {
   public let originator: AppRoute
   public let initialized: Bool
   public let contentHeaderConfig: ContentHeaderConfig
+  public let relyingPartyRegistration: RelyingPartyRegistrationData?
+  public let registrationWarning: RegistrationWarning?
 }
 
 @Observable
@@ -43,6 +46,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
   var isVerifiedEntityModalShowing: Bool = false
   var isVerifierNotTrustedSheetShowing: Bool = false
   var itemsChanged: Bool = false
+  var isRiskAcknowledged: Bool = false
 
   public init(router: Router, originator: AppRoute) {
     super.init(
@@ -66,7 +70,9 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
             appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
           ),
           description: .dataSharingTitle
-        )
+        ),
+        relyingPartyRegistration: nil,
+        registrationWarning: nil
       )
     )
   }
@@ -202,6 +208,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
   }
 
   public func resetState() {
+    isRiskAcknowledged = false
     setState { previous in
       .init(
         isLoading: true,
@@ -217,8 +224,19 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         allowShare: false,
         originator: previous.originator,
         initialized: false,
-        contentHeaderConfig: initialHeaderConfig()
+        contentHeaderConfig: initialHeaderConfig(),
+        relyingPartyRegistration: nil,
+        registrationWarning: nil
       )
+    }
+  }
+
+  public func onReceivedRegistration(_ registration: RelyingPartyRegistration) {
+    isRiskAcknowledged = false
+    setState {
+      $0
+        .copy(relyingPartyRegistration: registration.toRegistrationData(fallbackName: .unknownVerifier))
+        .copy(registrationWarning: registration.toWarning())
     }
   }
 

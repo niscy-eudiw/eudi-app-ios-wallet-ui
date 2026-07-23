@@ -23,7 +23,8 @@ public protocol AddDocumentInteractor: Sendable {
   func issueDocument(
     issuerId: String,
     configIds: [String],
-    docTypeIdentifier: DocumentTypeIdentifier
+    docTypeIdentifier: DocumentTypeIdentifier,
+    hasAcknowledgedRegistrationWarning: Bool
   ) async -> IssueResultPartialState
   func resumeDynamicIssuance() async -> IssueDynamicDocumentPartialState
   func fetchStoredDocuments(documentIds: [String]) async -> IssueDocumentsPartialState
@@ -32,11 +33,14 @@ public protocol AddDocumentInteractor: Sendable {
 final actor AddDocumentInteractorImpl: AddDocumentInteractor {
 
   private let walletController: WalletKitController
+  private let relyingPartyRegistrationController: RelyingPartyRegistrationController
 
   init(
-    walletController: WalletKitController
+    walletController: WalletKitController,
+    relyingPartyRegistrationController: RelyingPartyRegistrationController
   ) {
     self.walletController = walletController
+    self.relyingPartyRegistrationController = relyingPartyRegistrationController
   }
 
   public func fetchScopedDocuments(
@@ -142,8 +146,19 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
   public func issueDocument(
     issuerId: String,
     configIds: [String],
-    docTypeIdentifier: DocumentTypeIdentifier
+    docTypeIdentifier: DocumentTypeIdentifier,
+    hasAcknowledgedRegistrationWarning: Bool
   ) async -> IssueResultPartialState {
+
+    switch relyingPartyRegistrationController.getIssuerRegistration(issuerId: issuerId) {
+    case .blocked(let reason):
+      return .registrationBlocked(reason)
+    case .notVerified:
+      guard hasAcknowledgedRegistrationWarning else { return .registrationNotVerified }
+    case .verified:
+      break
+    }
+
     do {
 
       let docs = try await walletController.issueDocuments(
@@ -259,6 +274,8 @@ public enum IssueResultPartialState: Sendable {
   case deferredSuccess(ScopedDocument)
   case dynamicIssuance(RemoteSessionCoordinator)
   case issuerNotTrusted
+  case registrationBlocked(IssuerRegistration.BlockedReason)
+  case registrationNotVerified
   case failure(Error)
 }
 

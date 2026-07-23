@@ -38,13 +38,16 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
 
   private let walletController: WalletKitController
   private let configLogic: ConfigLogic
+  private let relyingPartyRegistrationController: RelyingPartyRegistrationController
 
   init(
     walletController: WalletKitController,
-    configLogic: ConfigLogic
+    configLogic: ConfigLogic,
+    relyingPartyRegistrationController: RelyingPartyRegistrationController
   ) {
     self.walletController = walletController
     self.configLogic = configLogic
+    self.relyingPartyRegistrationController = relyingPartyRegistrationController
   }
 
   func processOfferRequest(with uri: String) async -> OfferRequestPartialState {
@@ -79,7 +82,14 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
         return .failure(WalletCoreError.missingPid)
       }
 
-      return .success(offer.transformToDocumentOfferUi())
+      let issuerRegistration = relyingPartyRegistrationController.getIssuerRegistration(
+        issuerId: offer.issuerName
+      )
+      if case .blocked(let reason) = issuerRegistration {
+        return .registrationBlocked(reason)
+      }
+
+      return .success(offer.transformToDocumentOfferUi(), issuerRegistration)
     } catch {
       return .failure(error)
     }
@@ -305,7 +315,8 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
 }
 
 public enum OfferRequestPartialState: Sendable {
-  case success(DocumentOfferUIModel)
+  case success(DocumentOfferUIModel, IssuerRegistration)
+  case registrationBlocked(IssuerRegistration.BlockedReason)
   case failure(Error)
 }
 
