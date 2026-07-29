@@ -7021,9 +7021,9 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func getDocumentStatus(for p0: StatusIdentifier) async throws -> CredentialStatus {
+    public func getDocumentStatus(for p0: MdocDataModel18013.StatusList) async throws -> CredentialStatus {
         return try await cuckoo_manager.callThrows(
-            "getDocumentStatus(for p0: StatusIdentifier) async throws -> CredentialStatus",
+            "getDocumentStatus(for p0: MdocDataModel18013.StatusList) async throws -> CredentialStatus",
             parameters: (p0),
             escapingParameters: (p0),
             errorType: Swift.Error.self,
@@ -7382,10 +7382,10 @@ return await cuckoo_manager.call(
             ))
         }
         
-        func getDocumentStatus<M1: Cuckoo.Matchable>(for p0: M1) -> Cuckoo.ProtocolStubThrowingFunction<(StatusIdentifier), CredentialStatus,Swift.Error> where M1.MatchedType == StatusIdentifier {
-            let matchers: [Cuckoo.ParameterMatcher<(StatusIdentifier)>] = [wrap(matchable: p0) { $0 }]
+        func getDocumentStatus<M1: Cuckoo.Matchable>(for p0: M1) -> Cuckoo.ProtocolStubThrowingFunction<(MdocDataModel18013.StatusList), CredentialStatus,Swift.Error> where M1.MatchedType == MdocDataModel18013.StatusList {
+            let matchers: [Cuckoo.ParameterMatcher<(MdocDataModel18013.StatusList)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "getDocumentStatus(for p0: StatusIdentifier) async throws -> CredentialStatus",
+                method: "getDocumentStatus(for p0: MdocDataModel18013.StatusList) async throws -> CredentialStatus",
                 parameterMatchers: matchers
             ))
         }
@@ -7884,10 +7884,10 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func getDocumentStatus<M1: Cuckoo.Matchable>(for p0: M1) -> Cuckoo.__DoNotUse<(StatusIdentifier), CredentialStatus> where M1.MatchedType == StatusIdentifier {
-            let matchers: [Cuckoo.ParameterMatcher<(StatusIdentifier)>] = [wrap(matchable: p0) { $0 }]
+        func getDocumentStatus<M1: Cuckoo.Matchable>(for p0: M1) -> Cuckoo.__DoNotUse<(MdocDataModel18013.StatusList), CredentialStatus> where M1.MatchedType == MdocDataModel18013.StatusList {
+            let matchers: [Cuckoo.ParameterMatcher<(MdocDataModel18013.StatusList)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
-                "getDocumentStatus(for p0: StatusIdentifier) async throws -> CredentialStatus",
+                "getDocumentStatus(for p0: MdocDataModel18013.StatusList) async throws -> CredentialStatus",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -8102,7 +8102,7 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
-    public func getDocumentStatus(for p0: StatusIdentifier) async throws -> CredentialStatus {
+    public func getDocumentStatus(for p0: MdocDataModel18013.StatusList) async throws -> CredentialStatus {
         return DefaultValueRegistry.defaultValue(for: (CredentialStatus).self)
     }
     
