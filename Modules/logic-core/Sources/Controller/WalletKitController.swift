@@ -73,7 +73,7 @@ public protocol WalletKitController: Sendable {
   func resumePendingIssuance(pendingDoc: WalletStorage.Document, webUrl: URL?) async throws -> WalletStorage.Document
   func storeDynamicIssuancePendingUrl(with url: URL) async
   func getDynamicIssuancePendingData() async -> DynamicIssuancePendingData?
-  func getScopedDocuments() async throws -> [ScopedDocument]
+  func getScopedDocuments() async -> ScopedDocumentsResult
   func getDocumentCategories() async -> DocumentCategories
 
   func isDocumentBookmarked(with id: String) async -> Bool
@@ -397,49 +397,65 @@ final actor WalletKitControllerImpl: WalletKitController {
     return .init(pendingDoc: pendingDoc, url: url)
   }
 
-  func getScopedDocuments() async throws -> [ScopedDocument] {
+  func getScopedDocuments() async -> ScopedDocumentsResult {
 
-    try await withThrowingTaskGroup(of: [ScopedDocument].self) { group in
-      for (issuerName, orderedVciConfig) in walletKitConfig.issuersConfig {
+    let issuersConfig = walletKitConfig.issuersConfig
+
+    return await withTaskGroup(of: Result<[ScopedDocument], Error>.self) { group in
+      for (issuerName, orderedVciConfig) in issuersConfig {
         group.addTask {
-          let metadata = try await self.wallet.getIssuerMetadata(issuerName: issuerName)
-          return metadata.credentialsSupported.compactMap { credential in
-            switch credential.value {
-            case .msoMdoc(let config):
-              let id = DocumentTypeIdentifier(rawValue: config.docType)
-              return ScopedDocument(
-                name: config.credentialMetadata?.display.getName(fallback: credential.key.value) ?? credential.key.value,
-                issuer: metadata.credentialIssuerIdentifier.url.host.ifNilOrEmpty { issuerName },
-                order: orderedVciConfig.order,
-                configId: credential.key.value,
-                isPid: id == .mDocPid,
-                docTypeIdentifier: id
-              )
+          do {
+            let metadata = try await self.wallet.getIssuerMetadata(issuerName: issuerName)
+            return .success(
+              metadata.credentialsSupported.compactMap { credential in
+                switch credential.value {
+                case .msoMdoc(let config):
+                  let id = DocumentTypeIdentifier(rawValue: config.docType)
+                  return ScopedDocument(
+                    name: config.credentialMetadata?.display.getName(fallback: credential.key.value) ?? credential.key.value,
+                    issuer: metadata.credentialIssuerIdentifier.url.host.ifNilOrEmpty { issuerName },
+                    order: orderedVciConfig.order,
+                    configId: credential.key.value,
+                    isPid: id == .mDocPid,
+                    docTypeIdentifier: id
+                  )
 
-            case .sdJwtVc(let config):
-              guard let vct = config.vct else { return nil }
-              let id = DocumentTypeIdentifier(rawValue: vct)
-              return ScopedDocument(
-                name: config.credentialMetadata?.display.getName(fallback: credential.key.value) ?? credential.key.value,
-                issuer: metadata.credentialIssuerIdentifier.url.host.ifNilOrEmpty { issuerName },
-                order: orderedVciConfig.order,
-                configId: credential.key.value,
-                isPid: id == .sdJwtPid,
-                docTypeIdentifier: id
-              )
+                case .sdJwtVc(let config):
+                  guard let vct = config.vct else { return nil }
+                  let id = DocumentTypeIdentifier(rawValue: vct)
+                  return ScopedDocument(
+                    name: config.credentialMetadata?.display.getName(fallback: credential.key.value) ?? credential.key.value,
+                    issuer: metadata.credentialIssuerIdentifier.url.host.ifNilOrEmpty { issuerName },
+                    order: orderedVciConfig.order,
+                    configId: credential.key.value,
+                    isPid: id == .sdJwtPid,
+                    docTypeIdentifier: id
+                  )
 
-            default:
-              return nil
-            }
+                default:
+                  return nil
+                }
+              }
+            )
+          } catch {
+            return .failure(error)
           }
         }
       }
 
       var documents: [ScopedDocument] = []
-      for try await docs in group {
-        documents.append(contentsOf: docs)
+      var errors: [Error] = []
+      for await result in group {
+        switch result {
+        case .success(let docs): documents.append(contentsOf: docs)
+        case .failure(let error): errors.append(error)
+        }
       }
-      return documents
+      return ScopedDocumentsResult(
+        documents: documents,
+        errors: errors,
+        totalIssuers: issuersConfig.count
+      )
     }
   }
 

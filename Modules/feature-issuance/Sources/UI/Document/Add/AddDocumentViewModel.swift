@@ -101,6 +101,14 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
         )
         .copy(error: nil)
       }
+    case .issuerNotTrusted:
+      setState {
+        $0.copy(
+          addDocumentCellModels: [:]
+        )
+        .copy(error: nil)
+      }
+      isIssuerNotTrustedSheetShowing = true
     case .failure(let error):
       setState {
         $0.copy(
@@ -182,6 +190,13 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
 
   func pop() {
     router.pop()
+  }
+
+  func onIssuerNotTrustedClose() {
+    isIssuerNotTrustedSheetShowing = false
+    if case .extraDocument = viewState.config.flow {
+      pop()
+    }
   }
 
   func toolbarContent() -> ToolBarContent? {

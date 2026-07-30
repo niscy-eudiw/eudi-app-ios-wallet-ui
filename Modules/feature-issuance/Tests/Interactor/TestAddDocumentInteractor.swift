@@ -119,6 +119,49 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
+  func testFetchScopedDocuments_whenOneIssuerFailsAndAnotherSucceeds_thenReturnsSuccessSilently() async throws {
+    // Given
+    stubGetScopedDocuments(
+      documents: [Constants.scopedDocument],
+      errors: [WalletError(description: "trust", code: .trustError)],
+      totalIssuers: 2
+    )
+
+    // When
+    let result = await interactor.fetchScopedDocuments(with: .extraDocument(filterType: nil))
+
+    // Then
+    switch result {
+    case .success(let documents):
+      XCTAssertEqual(documents.count, 1)
+    default:
+      XCTFail("Expected success but got \(result)")
+    }
+  }
+
+  func testFetchScopedDocuments_whenAllIssuersFailAndOneIsUntrusted_thenReturnsIssuerNotTrusted() async {
+    // Given a mix of a generic and a trust failure, the trust failure wins.
+    stubGetScopedDocuments(
+      documents: [],
+      errors: [
+        WalletCoreError.unableFetchDocument,
+        WalletError(description: "trust", code: .trustError)
+      ],
+      totalIssuers: 2
+    )
+
+    // When
+    let result = await interactor.fetchScopedDocuments(with: .extraDocument(filterType: nil))
+
+    // Then
+    switch result {
+    case .issuerNotTrusted:
+      break
+    default:
+      XCTFail("Expected issuerNotTrusted but got \(result)")
+    }
+  }
+
   func testIssueDocument_whenDefferedPendingDocument_thenReturnSuccess() async {
     // Given
     let configIds = ["deferred-doc"]
@@ -708,23 +751,34 @@ private extension TestAddDocumentInteractor {
 
 private extension TestAddDocumentInteractor {
   func stubGetScopedDocuments(with document: [ScopedDocument]) {
+    stubGetScopedDocumentsSuccess(with: document)
+  }
+
+  func stubGetScopedDocuments(documents: [ScopedDocument], errors: [Error], totalIssuers: Int) {
     stub(walletKitController) { stub in
       when(stub.getScopedDocuments())
-        .thenReturn(document)
+        .thenReturn(
+          ScopedDocumentsResult(documents: documents, errors: errors, totalIssuers: totalIssuers)
+        )
     }
   }
-  
+
   func stubGetScopedDocumentsSuccess(with documents: [ScopedDocument]) {
     stub(walletKitController) { stub in
-      when(stub.getScopedDocuments()
-      ).thenReturn(documents)
+      when(stub.getScopedDocuments())
+        .thenReturn(
+          ScopedDocumentsResult(documents: documents, errors: [], totalIssuers: 1)
+        )
     }
   }
-  
-  func stubGetScopedDocumentsFailure() {
+
+  /// Every configured issuer failed, which is the only case that surfaces an error to the caller.
+  func stubGetScopedDocumentsFailure(with error: Error = WalletCoreError.unableFetchDocument) {
     stub(walletKitController) { stub in
-      when(stub.getScopedDocuments()
-      ).thenThrow(WalletCoreError.unableFetchDocument)
+      when(stub.getScopedDocuments())
+        .thenReturn(
+          ScopedDocumentsResult(documents: [], errors: [error], totalIssuers: 1)
+        )
     }
   }
   

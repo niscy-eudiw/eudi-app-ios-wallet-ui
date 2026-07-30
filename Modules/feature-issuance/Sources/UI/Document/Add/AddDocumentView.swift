@@ -50,7 +50,7 @@ struct AddDocumentView<Router: RouterHost>: View {
       TrustBlockedSheetContent(
         title: .issuanceBlockedTitle,
         message: .issuanceBlockedMessage,
-        onClose: { viewModel.isIssuerNotTrustedSheetShowing = false }
+        onClose: { viewModel.onIssuerNotTrustedClose() }
       )
     }
     .sheetDialog(isPresented: $viewModel.isRegistrationBlockedSheetShowing) {

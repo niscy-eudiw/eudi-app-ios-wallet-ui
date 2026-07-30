@@ -7043,12 +7043,11 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func getScopedDocuments() async throws -> [ScopedDocument] {
-        return try await cuckoo_manager.callThrows(
-            "getScopedDocuments() async throws -> [ScopedDocument]",
+    public func getScopedDocuments() async -> ScopedDocumentsResult {
+        return await cuckoo_manager.call(
+            "getScopedDocuments() async -> ScopedDocumentsResult",
             parameters: (),
             escapingParameters: (),
-            errorType: Swift.Error.self,
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
             defaultCall: await __defaultImplStub!.getScopedDocuments()
         )
@@ -7434,10 +7433,10 @@ return await cuckoo_manager.call(
             ))
         }
         
-        func getScopedDocuments() -> Cuckoo.ProtocolStubThrowingFunction<(), [ScopedDocument],Swift.Error> {
+        func getScopedDocuments() -> Cuckoo.ProtocolStubFunction<(), ScopedDocumentsResult> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "getScopedDocuments() async throws -> [ScopedDocument]",
+                method: "getScopedDocuments() async -> ScopedDocumentsResult",
                 parameterMatchers: matchers
             ))
         }
@@ -7892,10 +7891,10 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func getScopedDocuments() -> Cuckoo.__DoNotUse<(), [ScopedDocument]> {
+        func getScopedDocuments() -> Cuckoo.__DoNotUse<(), ScopedDocumentsResult> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "getScopedDocuments() async throws -> [ScopedDocument]",
+                "getScopedDocuments() async -> ScopedDocumentsResult",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -8198,8 +8197,8 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (DynamicIssuancePendingData?).self)
     }
     
-    public func getScopedDocuments() async throws -> [ScopedDocument] {
-        return DefaultValueRegistry.defaultValue(for: ([ScopedDocument]).self)
+    public func getScopedDocuments() async -> ScopedDocumentsResult {
+        return DefaultValueRegistry.defaultValue(for: (ScopedDocumentsResult).self)
     }
     
     public func getDocumentCategories() async -> DocumentCategories {
