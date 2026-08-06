@@ -30,12 +30,27 @@ final class TestAddDocumentInteractor: EudiTest {
   override func setUp() {
     super.setUp()
     self.walletKitController = MockWalletKitController()
-    self.interactor = AddDocumentInteractorImpl(
-      walletController: walletKitController,
-      relyingPartyRegistrationController: MockRelyingPartyRegistrationControllerImpl(
-        verifierScenario: .verified,
-        issuerScenario: .verified
+
+    stub(walletKitController) { mock in
+      // Issuer registration is a wallet-kit 0.38.0 stub returning verified; tests that need a
+      // different scenario override this.
+      when(mock.getIssuerRegistration(issuerId: any())).thenReturn(
+        .verified(
+          details: RegistrationDetails(
+            tradeName: "issuer",
+            uniqueId: "issuer",
+            logoUrl: nil,
+            intendedUse: nil,
+            privacyPolicyUrl: nil,
+            serviceDescription: nil,
+            isIntermediated: false
+          )
+        )
       )
+    }
+
+    self.interactor = AddDocumentInteractorImpl(
+      walletController: walletKitController
     )
   }
   
@@ -531,7 +546,7 @@ final class TestAddDocumentInteractor: EudiTest {
         issuerId: equal(to: issuerId),
         identifiers: equal(to: configIds),
         docTypeIdentifier: equal(to: identifier)
-      )).thenReturn([])
+      )).thenReturn(IssuanceResult(documents: [], issuerRegistration: nil))
     }
 
     // When
@@ -573,7 +588,7 @@ final class TestAddDocumentInteractor: EudiTest {
         issuerId: equal(to: issuerId),
         identifiers: equal(to: configIds),
         docTypeIdentifier: equal(to: identifier)
-      )).thenReturn([deferredDocNoMeta])
+      )).thenReturn(IssuanceResult(documents: [deferredDocNoMeta], issuerRegistration: nil))
     }
 
     // When
@@ -661,7 +676,7 @@ final class TestAddDocumentInteractor: EudiTest {
 
   func testIssueDocument_WhenProviderRegistrationIsBlocked_ThenIssuanceNeverStarts() async {
     // Given
-    let interactor = interactor(withIssuerScenario: .blockedNotRegisteredAsProvider)
+    stubIssuerRegistration(.blocked(reason: .notRegisteredAsProvider))
 
     // When
     let result = await interactor.issueDocument(
@@ -687,7 +702,7 @@ final class TestAddDocumentInteractor: EudiTest {
 
   func testIssueDocument_WhenProviderNotVerifiedAndUnacknowledged_ThenAsksForApproval() async {
     // Given
-    let interactor = interactor(withIssuerScenario: .notVerified)
+    stubIssuerRegistration(.notVerified)
 
     // When
     let result = await interactor.issueDocument(
@@ -712,7 +727,7 @@ final class TestAddDocumentInteractor: EudiTest {
 
   func testIssueDocument_WhenProviderNotVerifiedButAcknowledged_ThenIssuanceProceeds() async {
     // Given
-    let interactor = interactor(withIssuerScenario: .notVerified)
+    stubIssuerRegistration(.notVerified)
     let issuerId = "issuer.dev"
     let configIds = ["deferred-doc"]
     let identifier = DocumentTypeIdentifier(rawValue: "eu.europa.ec.eudi.pid.1")
@@ -738,14 +753,12 @@ final class TestAddDocumentInteractor: EudiTest {
 
 private extension TestAddDocumentInteractor {
 
-  func interactor(withIssuerScenario scenario: MockIssuerRegistrationScenario) -> AddDocumentInteractor {
-    AddDocumentInteractorImpl(
-      walletController: walletKitController,
-      relyingPartyRegistrationController: MockRelyingPartyRegistrationControllerImpl(
-        verifierScenario: .verified,
-        issuerScenario: scenario
-      )
-    )
+  /// Issuer registration now comes from the wallet controller rather than a dedicated controller,
+  /// so scenarios are expressed by stubbing the lookup.
+  func stubIssuerRegistration(_ registration: IssuerRegistration) {
+    stub(walletKitController) { stub in
+      when(stub.getIssuerRegistration(issuerId: any())).thenReturn(registration)
+    }
   }
 }
 
@@ -805,7 +818,7 @@ private extension TestAddDocumentInteractor {
           docTypeIdentifier: equal(to: DocumentTypeIdentifier.init(rawValue: "eu.europa.ec.eudi.pid.1"))
         )
       )
-      .thenReturn([document])
+      .thenReturn(IssuanceResult(documents: [document], issuerRegistration: nil))
     }
   }
   

@@ -17,6 +17,7 @@ import Foundation
 import logic_ui
 import logic_resources
 import feature_common
+import logic_core
 import Observation
 
 @Copyable
@@ -48,9 +49,11 @@ struct DocumentOfferViewState: ViewState {
 @Observable
 final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, DocumentOfferViewState> {
 
-  var isIssuerNotTrustedSheetShowing: Bool = false
+  var isTrustBlockedAlertShowing: Bool = false
   var isRegistrationBlockedSheetShowing: Bool = false
+  var isIssuerRegistrationWarningSheetShowing: Bool = false
   var isRiskAcknowledged: Bool = false
+  private var pendingSuccessRoute: AppRoute?
 
   private let interactor: DocumentOfferInteractor
 
@@ -123,7 +126,12 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
           )
         )
         .copy(error: nil)
-        .copy(issuerRegistration: issuerRegistration.toRegistrationData(issuerName: uiModel.issuerName))
+        .copy(
+          issuerRegistration: issuerRegistration.toRegistrationData(
+            issuerName: uiModel.issuerName,
+            issuerLogo: uiModel.issuerLogo
+          )
+        )
         .copy(registrationWarning: issuerRegistration.toWarning())
       }
     case .registrationBlocked:
@@ -187,8 +195,8 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
       )
 
       switch state {
-      case .success(let route):
-        router.push(with: route)
+      case .success(let route, let issuerRegistration):
+        proceedToSuccess(route: route, issuerRegistration: issuerRegistration)
       case .dynamicIssuance(let session):
         setState {
           $0.copy(
@@ -205,7 +213,7 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
         )
       case .issuerNotTrusted:
         setState { $0.copy(isLoading: false).copy(error: nil) }
-        isIssuerNotTrustedSheetShowing = true
+        isTrustBlockedAlertShowing = true
       case .failure(let error):
         setState {
           $0.copy(
@@ -224,8 +232,29 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
     }
   }
 
+  private func proceedToSuccess(route: AppRoute, issuerRegistration: IssuerRegistration?) {
+    guard issuerRegistration?.toWarning() != nil else {
+      router.push(with: route)
+      return
+    }
+    pendingSuccessRoute = route
+    isIssuerRegistrationWarningSheetShowing = true
+  }
+
+  func onIssuerRegistrationWarningClose() {
+    isIssuerRegistrationWarningSheetShowing = false
+    guard let route = pendingSuccessRoute else { return }
+    pendingSuccessRoute = nil
+    router.push(with: route)
+  }
+
   func onRegistrationBlockedClose() {
     isRegistrationBlockedSheetShowing = false
+    onPop()
+  }
+
+  func onTrustBlockedClose() {
+    isTrustBlockedAlertShowing = false
     onPop()
   }
 
@@ -285,7 +314,7 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
       setState { $0.copy(isLoading: false) }
     case .issuerNotTrusted:
       setState { $0.copy(isLoading: false).copy(error: nil) }
-      isIssuerNotTrustedSheetShowing = true
+      isTrustBlockedAlertShowing = true
     case .failure(let error):
       setState {
         $0.copy(

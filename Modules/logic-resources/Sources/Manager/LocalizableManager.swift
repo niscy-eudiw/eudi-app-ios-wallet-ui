@@ -64,8 +64,6 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedStringWithArguments(forKey: "request_combination_title", arguments: args)
     case .documentAdded:
       bundle.localizedString(forKey: "document_added")
-    case .requestDataSheetCaption:
-      bundle.localizedString(forKey: "request_data_sheet_caption")
     case .okButton:
       bundle.localizedString(forKey: "ok_button")
     case .shareDataReview:
@@ -96,10 +94,6 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "proxmity_connectivity_caption")
     case .unavailableField:
       bundle.localizedString(forKey: "unavailable_field")
-    case .requestDataVerifiedEntity:
-      bundle.localizedString(forKey: "request_data_verified_entity")
-    case .requestDataVerifiedEntityMessage:
-      bundle.localizedString(forKey: "request_data_verified_entity_message")
     case .changeQuickPinOption:
       bundle.localizedString(forKey: "change_quick_pin_option")
     case .quickPinSetTitle:
@@ -376,6 +370,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "before_today")
     case .issuanceRequest:
       bundle.localizedString(forKey: "issuance_request")
+    case .issuanceRequestTitle:
+      bundle.localizedString(forKey: "issuance_request_title")
     case .myEuWallet:
       bundle.localizedString(forKey: "My EU Wallet")
     case .categoryGovernment:
@@ -560,6 +556,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "relying_party_not_verified_warning")
     case .relyingPartyOveraskedWarning:
       bundle.localizedString(forKey: "relying_party_overasked_warning")
+    case .notRegisteredData:
+      bundle.localizedString(forKey: "not_registered_data")
     case .issuerNotVerifiedWarning:
       bundle.localizedString(forKey: "issuer_not_verified_warning")
     case .issuanceRegistrationBlockedTitle:

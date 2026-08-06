@@ -20,15 +20,18 @@ public struct RegisteredParty: Sendable {
   public let name: LocalizableStringKey
   public let identifier: LocalizableStringKey?
   public let isVerified: Bool
+  public let logoUrl: URL?
 
   public init(
     name: LocalizableStringKey,
     identifier: LocalizableStringKey? = nil,
-    isVerified: Bool
+    isVerified: Bool,
+    logoUrl: URL? = nil
   ) {
     self.name = name
     self.identifier = identifier
     self.isVerified = isVerified
+    self.logoUrl = logoUrl
   }
 }
 
@@ -85,29 +88,44 @@ public struct RelyingPartyRegistrationView: View {
 
   @ViewBuilder
   private func partyView(_ party: RegisteredParty) -> some View {
-    VStack(alignment: .leading, spacing: SPACING_EXTRA_SMALL) {
-      HStack(spacing: SPACING_SMALL) {
-        if party.isVerified {
-          Theme.shared.image.relyingPartyVerified
-            .resizable()
-            .scaledToFit()
-            .frame(width: 20, height: 20)
+    HStack(alignment: .top, spacing: SPACING_SMALL) {
+      VStack(alignment: .leading, spacing: SPACING_EXTRA_SMALL) {
+        HStack(spacing: SPACING_SMALL) {
+          if party.isVerified {
+            Theme.shared.image.relyingPartyVerified
+              .resizable()
+              .scaledToFit()
+              .frame(width: 20, height: 20)
+          }
+          Text(party.name)
+            .typography(Theme.shared.font.bodyLarge)
+            .fontWeight(.semibold)
+            .foregroundColor(Theme.shared.color.primaryLabel)
+            .multilineTextAlignment(.leading)
         }
-        Text(party.name)
-          .typography(Theme.shared.font.bodyLarge)
-          .fontWeight(.semibold)
-          .foregroundColor(Theme.shared.color.primaryLabel)
-          .multilineTextAlignment(.leading)
-      }
 
-      if let identifier = party.identifier {
-        Text(identifier)
-          .typography(Theme.shared.font.bodyMedium)
-          .foregroundColor(Theme.shared.color.secondaryLabel)
-          .multilineTextAlignment(.leading)
+        if let identifier = party.identifier {
+          Text(identifier)
+            .typography(Theme.shared.font.bodyMedium)
+            .foregroundColor(Theme.shared.color.secondaryLabel)
+            .multilineTextAlignment(.leading)
+        }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+
+      if let logoUrl = party.logoUrl {
+        RemoteImageView(
+          url: logoUrl,
+          icon: nil,
+          width: logoSize,
+          height: logoSize
+        )
+        .clipShape(Circle())
       }
     }
   }
+
+  private var logoSize: Double { 40 }
 
   @ViewBuilder
   private func onBehalfOfView(_ party: RegisteredParty) -> some View {
@@ -119,7 +137,6 @@ public struct RelyingPartyRegistrationView: View {
       HStack(alignment: .center, spacing: SPACING_SMALL) {
         partyView(party)
         Spacer(minLength: SPACING_SMALL)
-        // TODO: right-side registration image
       }
     }
     .padding(SPACING_MEDIUM)

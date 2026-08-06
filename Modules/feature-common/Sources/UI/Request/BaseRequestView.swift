@@ -52,28 +52,6 @@ public struct BaseRequestView<Router: RouterHost>: View {
         }
       )
     }
-    .confirmationDialog(
-      .requestDataInfoNotice,
-      isPresented: $viewModel.isRequestInfoModalShowing,
-      actions: {
-        Button(.okButton) {
-          viewModel.onShowRequestInfoModal()
-        }
-      }, message: {
-        Text(.requestDataSheetCaption)
-      }
-    )
-    .confirmationDialog(
-      viewModel.getTrustedRelyingParty(),
-      isPresented: $viewModel.isVerifiedEntityModalShowing,
-      actions: {
-        Button(.okButton) {
-          viewModel.onVerifiedEntityModal()
-        }
-      }, message: {
-        Text(viewModel.getTrustedRelyingPartyInfo())
-      }
-    )
     .task {
       if !viewModel.viewState.initialized {
         await viewModel.doWork()
@@ -87,13 +65,14 @@ public struct BaseRequestView<Router: RouterHost>: View {
         Button(.okButton) {}
       }
     )
-    .sheetDialog(isPresented: $viewModel.isVerifierNotTrustedSheetShowing) {
-      TrustBlockedSheetContent(
-        title: .presentationBlockedTitle,
-        message: .presentationBlockedMessage,
-        onClose: { viewModel.onVerifierNotTrustedClose() }
-      )
-    }
+    .alertView(
+      isPresented: $viewModel.isTrustBlockedAlertShowing,
+      title: .presentationBlockedTitle,
+      message: .presentationBlockedMessage,
+      actions: {
+        Button(.close) { viewModel.onTrustBlockedClose() }
+      }
+    )
   }
 }
 
@@ -136,32 +115,31 @@ private struct BaseRequestViewContainer: View {
   @MainActor
   @ViewBuilder
   private func scrollableContent() -> some View {
-    ZStack(alignment: .bottom) {
-      ScrollView {
-        VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
+    ScrollView {
+      VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
 
-          if let registration = viewState.relyingPartyRegistration {
-            RelyingPartyRegistrationView(data: registration)
-              .shimmer(isLoading: viewState.isLoading)
-          }
-
-          if viewState.combinations.count > 1 {
-            combinationsContent()
-          } else {
-            singleCombinationContent()
-          }
-
-          Text(.shareDataReview)
-            .typography(Theme.shared.font.bodyMedium)
-            .foregroundColor(Theme.shared.color.primaryLabel)
-            .multilineTextAlignment(.leading)
+        if let registration = viewState.relyingPartyRegistration {
+          RelyingPartyRegistrationView(data: registration)
             .shimmer(isLoading: viewState.isLoading)
-
-          VSpacer.medium()
         }
-        .padding(Theme.shared.dimension.padding)
-      }
 
+        if viewState.combinations.count > 1 {
+          combinationsContent()
+        } else {
+          singleCombinationContent()
+        }
+
+        Text(.shareDataReview)
+          .typography(Theme.shared.font.bodyMedium)
+          .foregroundColor(Theme.shared.color.primaryLabel)
+          .multilineTextAlignment(.leading)
+          .shimmer(isLoading: viewState.isLoading)
+
+        VSpacer.medium()
+      }
+      .padding(Theme.shared.dimension.padding)
+    }
+    .safeAreaInset(edge: .bottom, spacing: .zero) {
       bottomBar()
     }
   }
@@ -181,6 +159,8 @@ private struct BaseRequestViewContainer: View {
 
       shareButton()
     }
+    .padding(.top, SPACING_MEDIUM)
+    .background(Theme.shared.color.background)
   }
 
   @MainActor
@@ -291,7 +271,6 @@ private struct BaseRequestViewContainer: View {
     items: RequestDataUiModel.mockData(),
     combinations: [RequestDataUiModel.mockData()],
     selectedCombinationIndex: 0,
-    trustedRelyingPartyInfo: .requestDataVerifiedEntityMessage,
     relyingParty: .custom("relying party"),
     isTrusted: true,
     allowShare: true,

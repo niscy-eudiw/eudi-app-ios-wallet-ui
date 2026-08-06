@@ -89,7 +89,7 @@ public struct WrapButtonView: View {
   }
 
   private var resolvedBackgroundColor: Color {
-    isVisiblyDisabled ? Theme.shared.color.tertiaryFill : backgroundColor
+    isVisiblyDisabled ? Theme.shared.color.secondaryBackground : backgroundColor
   }
 
   private var resolvedTextColor: Color {

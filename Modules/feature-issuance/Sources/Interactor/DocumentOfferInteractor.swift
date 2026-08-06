@@ -38,16 +38,13 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
 
   private let walletController: WalletKitController
   private let configLogic: ConfigLogic
-  private let relyingPartyRegistrationController: RelyingPartyRegistrationController
 
   init(
     walletController: WalletKitController,
-    configLogic: ConfigLogic,
-    relyingPartyRegistrationController: RelyingPartyRegistrationController
+    configLogic: ConfigLogic
   ) {
     self.walletController = walletController
     self.configLogic = configLogic
-    self.relyingPartyRegistrationController = relyingPartyRegistrationController
   }
 
   func processOfferRequest(with uri: String) async -> OfferRequestPartialState {
@@ -82,7 +79,7 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
         return .failure(WalletCoreError.missingPid)
       }
 
-      let issuerRegistration = relyingPartyRegistrationController.getIssuerRegistration(
+      let issuerRegistration = await walletController.getIssuerRegistration(
         issuerId: offer.issuerName
       )
       if case .blocked(let reason) = issuerRegistration {
@@ -104,11 +101,12 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
   ) async -> OfferResultPartialState {
     do {
 
-      let issuedDocuments = try await walletController.issueDocumentsByOfferUrl(
+      let issuance = try await walletController.issueDocumentsByOfferUrl(
         offerUri: uri,
         docTypes: docOffers,
         txCodeValue: txCodeValue
       )
+      let issuedDocuments = issuance.documents
 
       if issuedDocuments.isEmpty {
         return .failure(WalletCoreError.unableToIssueAndStore)
@@ -140,7 +138,8 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
         let documentIdentifiers = issuedDocuments.compactMap { $0.id }
         return await fetchAndHandleDocuments(
           successNavigation: successNavigation,
-          documentIdentifiers: documentIdentifiers
+          documentIdentifiers: documentIdentifiers,
+          issuerRegistration: issuance.issuerRegistration
         )
       } else {
 
@@ -153,7 +152,7 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
       }
 
     } catch {
-      return error.isIssuerNotTrusted ? .issuerNotTrusted : .failure(error)
+      return error.isTrustBlocked ? .issuerNotTrusted : .failure(error)
     }
   }
 
@@ -206,7 +205,7 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
       }
 
     } catch {
-      return error.isIssuerNotTrusted ? .issuerNotTrusted : .failure(error)
+      return error.isTrustBlocked ? .issuerNotTrusted : .failure(error)
     }
   }
 
@@ -225,7 +224,8 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
   private func fetchAndHandleDocuments(
     successNavigation: UIConfig.TwoWayNavigationType,
     documentIdentifiers: [String],
-    isPartialState: Bool = false
+    isPartialState: Bool = false,
+    issuerRegistration: IssuerRegistration? = nil
   ) async -> OfferResultPartialState {
     let state = await self.fetchStoredDocuments(documentIds: documentIdentifiers)
     switch state {
@@ -242,7 +242,8 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
             retrieveDocumentSuccessRoute(
               successNavigation: successNavigation,
               documents: documents
-            )
+            ),
+            issuerRegistration: issuerRegistration
           )
         }
     case .failure:
@@ -321,7 +322,7 @@ public enum OfferRequestPartialState: Sendable {
 }
 
 public enum OfferResultPartialState: Sendable {
-  case success(AppRoute)
+  case success(AppRoute, issuerRegistration: IssuerRegistration?)
   case partialSuccess(AppRoute)
   case deferredSuccess(AppRoute)
   case dynamicIssuance(RemoteSessionCoordinator)

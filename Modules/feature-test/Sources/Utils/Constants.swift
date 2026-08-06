@@ -18,6 +18,7 @@ import UIKit
 import XCTest
 @testable import logic_core
 @testable import EudiWalletKit
+import struct OpenID4VP.PolicyViolation
 
 final class Constants {}
 
@@ -209,7 +210,11 @@ extension Constants {
     func sendResponse(userAccepted: Bool, itemsToSend: EudiWalletKit.RequestItems, deviceNameSpacesToSend: MdocDataTransfer18013.RequestDeviceNameSpaces?, onSuccess: (@Sendable (URL?) -> Void)?) async throws {}
 
     var zkpDocumentIds: [WalletStorage.Document.ID]?
-    
+
+    var wrpVerifierPolicy: WrpRegistrationPolicy?
+
+    var wrpVerifierWarnings: [String: [PolicyViolation]]?
+
     func waitForDisconnect() async throws {}
     
     var transactionLog: TransactionLog

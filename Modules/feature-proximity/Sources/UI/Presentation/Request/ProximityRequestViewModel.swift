@@ -66,7 +66,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
       }
       self.onReceivedRegistration(registration)
     case .notSecuredRequest:
-      self.onVerifierNotTrusted()
+      self.onTrustBlocked()
     case .failure(let error):
       self.onEmptyDocuments(error: error.errorMessage)
     }
@@ -148,14 +148,6 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
 
   override func getTitleCaption() -> LocalizableStringKey {
     .requestDataTitle([""])
-  }
-
-  override func getTrustedRelyingParty() -> LocalizableStringKey {
-    .requestDataVerifiedEntity
-  }
-
-  override func getTrustedRelyingPartyInfo() -> LocalizableStringKey {
-    .requestDataVerifiedEntityMessage
   }
 
   private func startPublisherTask() {

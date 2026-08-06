@@ -48,16 +48,36 @@ final class TestProximityInteractor: EudiTest {
     
     stub(presentationSessionCoordinator) { mock in
       when(mock.stopPresentation()).thenDoNothing()
+      // Requests without a registration certificate: no policy, no violations.
+      when(mock.relyingPartyRegistration.get).thenReturn(nil)
+      when(mock.relyingPartyWarningViolations.get).thenReturn([])
     }
-    
+
+    stub(walletKitController) { mock in
+      // Registration mapping is exercised by its own tests; here it just needs to resolve.
+      when(
+        mock.getVerifierRegistration(
+          policy: any(),
+          trustViolations: any(),
+          overaskedClaims: any(),
+          verifierName: any(),
+          verifierIsTrusted: any()
+        )
+      ).thenReturn(
+        RelyingPartyRegistration(
+          name: nil,
+          uniqueId: nil,
+          isVerified: true,
+          logoUrl: nil,
+          registration: .notSupported
+        )
+      )
+    }
+
     self.interactor = ProximityInteractorImpl(
       with: presentationSessionCoordinator,
       and: walletKitController,
-      also: sessionHolder,
-      relyingPartyRegistrationController: MockRelyingPartyRegistrationControllerImpl(
-        verifierScenario: .verified,
-        issuerScenario: .verified
-      )
+      also: sessionHolder
     )
   }
   

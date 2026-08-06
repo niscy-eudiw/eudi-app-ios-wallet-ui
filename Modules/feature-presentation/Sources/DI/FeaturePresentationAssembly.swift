@@ -25,8 +25,7 @@ public final class FeaturePresentationAssembly: Assembly {
       PresentationInteractorImpl(
         with: session,
         and: r.force(WalletKitController.self),
-        also: r.force(SessionCoordinatorHolder.self),
-        relyingPartyRegistrationController: r.force(RelyingPartyRegistrationController.self)
+        also: r.force(SessionCoordinatorHolder.self)
       )
     }
     .inObjectScope(ObjectScope.transient)

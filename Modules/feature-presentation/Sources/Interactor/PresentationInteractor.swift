@@ -61,17 +61,14 @@ final actor PresentationInteractorImpl: PresentationInteractor {
 
   private let sessionCoordinatorHolder: SessionCoordinatorHolder
   private let walletKitController: WalletKitController
-  private let relyingPartyRegistrationController: RelyingPartyRegistrationController
 
   init(
     with presentationCoordinator: RemoteSessionCoordinator,
     and walletKitController: WalletKitController,
-    also sessionCoordinatorHolder: SessionCoordinatorHolder,
-    relyingPartyRegistrationController: RelyingPartyRegistrationController
+    also sessionCoordinatorHolder: SessionCoordinatorHolder
   ) {
     self.walletKitController = walletKitController
     self.sessionCoordinatorHolder = sessionCoordinatorHolder
-    self.relyingPartyRegistrationController = relyingPartyRegistrationController
     Task { await self.sessionCoordinatorHolder.setActiveRemoteCoordinator(presentationCoordinator) }
   }
 
@@ -102,16 +99,22 @@ final actor PresentationInteractorImpl: PresentationInteractor {
 
   public func onRequestReceived() async -> PresentationRequestPartialState {
     do {
-      let response = try await sessionCoordinatorHolder.getActiveRemoteCoordinator().requestReceived()
+      let coordinator = try await sessionCoordinatorHolder.getActiveRemoteCoordinator()
+      let response = try await coordinator.requestReceived()
       let revokedDocuments = (try? await walletKitController.fetchRevokedDocuments()) ?? []
+      let registrationPolicy = coordinator.relyingPartyRegistration
+      var overaskedClaims: [String: Set<[String]>] = [:]
       let combinations = response.itemSets
         .map { documentSet in
           documentSet.filter { item in !revokedDocuments.contains(where: { $0 == item.docId }) }
         }
-        .map { documentSet in
-          documentSet.toUiModels(
+        .map { documentSet -> [RequestDataUiModel] in
+          let overasked = documentSet.overaskedClaims(policy: registrationPolicy)
+          overaskedClaims.merge(overasked) { current, _ in current }
+          return documentSet.toUiModels(
             with: self.walletKitController,
-            claimsAreSelectable: false
+            claimsAreSelectable: false,
+            overaskedClaims: overasked
           )
         }
         .filter { !$0.isEmpty }
@@ -122,16 +125,17 @@ final actor PresentationInteractorImpl: PresentationInteractor {
           relyingParty: response.relyingParty,
           dataRequestInfo: response.dataRequestInfo,
           isTrusted: response.isTrusted,
-          relyingPartyRegistration: relyingPartyRegistrationController.getVerifierRegistration(
+          relyingPartyRegistration: await walletKitController.getVerifierRegistration(
+            policy: registrationPolicy,
+            trustViolations: coordinator.relyingPartyWarningViolations,
+            overaskedClaims: overaskedClaims.toRequestedClaims(),
             verifierName: response.relyingParty,
-            verifierIsTrusted: response.isTrusted,
-            transport: .openId4Vp,
-            requestedClaims: response.itemSets.toRequestedClaims()
+            verifierIsTrusted: response.isTrusted
           )
         )
       )
     } catch {
-      return error.isIssuerNotTrusted ? .notSecuredRequest : .failure(error)
+      return error.isTrustBlocked ? .notSecuredRequest : .failure(error)
     }
   }
 

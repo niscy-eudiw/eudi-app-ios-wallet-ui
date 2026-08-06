@@ -17,6 +17,7 @@ import logic_business
 import SwiftUI
 import logic_storage
 import logic_api
+import struct OpenID4VCI.PolicyViolation
 
 private enum KeyIdentifier: String, KeyChainWrapper {
   public var value: String {
@@ -49,7 +50,7 @@ public protocol WalletKitController: Sendable {
     issuerId: String,
     identifiers: [String],
     docTypeIdentifier: DocumentTypeIdentifier
-  ) async throws -> [WalletStorage.Document]
+  ) async throws -> IssuanceResult
   func reIssueDocument(
     identifier: String,
     isBackgroundOperation: Bool
@@ -61,7 +62,7 @@ public protocol WalletKitController: Sendable {
     offerUri: String,
     docTypes: [OfferedDocModel],
     txCodeValue: String?
-  ) async throws -> [WalletStorage.Document]
+  ) async throws -> IssuanceResult
   func parseDocClaim(
     docId: String,
     groupId: String,
@@ -95,6 +96,15 @@ public protocol WalletKitController: Sendable {
   func removeAllFailedReIssuedDocuments() async throws
 
   func refreshUsageCounters() async throws
+  func getIssuerRegistration(issuerId: String) async -> IssuerRegistration
+
+  func getVerifierRegistration(
+    policy: WrpRegistrationPolicy?,
+    trustViolations: [String],
+    overaskedClaims: [logic_core.RequestedClaim],
+    verifierName: String?,
+    verifierIsTrusted: Bool
+  ) async -> RelyingPartyRegistration
 }
 
 final actor WalletKitControllerImpl: WalletKitController {
@@ -179,7 +189,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     offerUri: String,
     docTypes: [OfferedDocModel],
     txCodeValue: String?
-  ) async throws -> [WalletStorage.Document] {
+  ) async throws -> IssuanceResult {
     let docTypes = docTypes.map { docType in
       let credentialOptions = walletKitConfig.documentIssuanceConfig.credentialOptions(for: docType.documentTypeIdentifier)
       return docType.copy(
@@ -188,10 +198,17 @@ final actor WalletKitControllerImpl: WalletKitController {
       )
     }
 
-    return try await wallet.issueDocumentsByOfferUrl(
+    let response = try await wallet.issueDocumentsByOfferUrl(
       offerUri: offerUri,
       docTypes: docTypes,
       txCodeValue: txCodeValue
+    )
+    return IssuanceResult(
+      documents: response.documents,
+      issuerRegistration: makeIssuerRegistration(
+        policy: response.wrpIssuerPolicy,
+        warnings: response.wrpIssuerWarnings
+      )
     )
   }
 
@@ -280,16 +297,47 @@ final actor WalletKitControllerImpl: WalletKitController {
     issuerId: String,
     identifiers: [String],
     docTypeIdentifier: DocumentTypeIdentifier
-  ) async throws -> [WalletStorage.Document] {
+  ) async throws -> IssuanceResult {
     let credentialOptions = walletKitConfig.documentIssuanceConfig.credentialOptions(for: docTypeIdentifier)
 
-    let documents = try await wallet.issueDocuments(
+    let response = try await wallet.issueDocuments(
       issuerName: issuerId,
       docTypeIdentifiers: identifiers.map { .identifier($0) },
       credentialOptions: credentialOptions,
       keyOptions: walletKitConfig.keyOptions
     )
-    return documents
+    return IssuanceResult(
+      documents: response.documents,
+      issuerRegistration: makeIssuerRegistration(
+        policy: response.wrpIssuerPolicy,
+        warnings: response.wrpIssuerWarnings
+      )
+    )
+  }
+
+  private func makeIssuerRegistration(
+    policy: WrpRegistrationPolicy?,
+    warnings: [String: [PolicyViolation]]?
+  ) -> IssuerRegistration? {
+
+    guard let policy else { return nil }
+
+    let hasWarnings = (warnings ?? [:]).contains { !$0.value.isEmpty }
+    guard !hasWarnings else { return .notVerified }
+
+    let intendedUse = policy.srvDescription?.first?.value ?? policy.purpose?.first?.value
+
+    return .verified(
+      details: RegistrationDetails(
+        tradeName: policy.name ?? policy.sub,
+        uniqueId: policy.sub,
+        logoUrl: nil,
+        intendedUse: intendedUse,
+        privacyPolicyUrl: policy.privacyPolicy.flatMap { URL(string: $0) },
+        serviceDescription: intendedUse,
+        isIntermediated: policy.intermediary != nil
+      )
+    )
   }
 
   func reIssueDocument(identifier: String, isBackgroundOperation: Bool) async throws -> WalletStorage.Document {
@@ -467,9 +515,76 @@ final actor WalletKitControllerImpl: WalletKitController {
     }
   }
 
+  func getIssuerRegistration(issuerId: String) async -> IssuerRegistration {
+    .verified(
+      details: RegistrationDetails(
+        tradeName: issuerId,
+        uniqueId: issuerId,
+        logoUrl: nil,
+        intendedUse: nil,
+        privacyPolicyUrl: nil,
+        serviceDescription: nil,
+        isIntermediated: false
+      )
+    )
+  }
+
   func getDocumentCategories() -> DocumentCategories {
     let sorted = walletKitConfig.documentsCategories.sorted { $0.key.order < $1.key.order }
     return DocumentCategories(uniqueKeysWithValues: sorted)
+  }
+
+  func getVerifierRegistration(
+    policy: WrpRegistrationPolicy?,
+    trustViolations: [String],
+    overaskedClaims: [RequestedClaim],
+    verifierName: String?,
+    verifierIsTrusted: Bool
+  ) async -> RelyingPartyRegistration {
+    guard let policy else {
+      return RelyingPartyRegistration(
+        name: verifierName,
+        uniqueId: nil,
+        isVerified: verifierIsTrusted,
+        logoUrl: nil,
+        registration: .notSupported
+      )
+    }
+
+    let intendedUse = policy.srvDescription?.first?.value ?? policy.purpose?.first?.value
+    let privacyPolicyUrl = policy.privacyPolicy.flatMap { URL(string: $0) }
+
+    let subjectDetails = RegistrationDetails(
+      tradeName: policy.name ?? policy.sub,
+      uniqueId: policy.sub,
+      logoUrl: nil,
+      intendedUse: intendedUse,
+      privacyPolicyUrl: privacyPolicyUrl,
+      serviceDescription: intendedUse,
+      isIntermediated: policy.intermediary != nil
+    )
+
+    let status: RegistrationStatus = trustViolations.isEmpty
+    ? .verified(details: subjectDetails, overaskedClaims: overaskedClaims)
+    : .notVerified
+
+    if let intermediary = policy.intermediary {
+      return RelyingPartyRegistration(
+        name: intermediary.name ?? verifierName,
+        uniqueId: intermediary.identifier,
+        isVerified: verifierIsTrusted,
+        logoUrl: nil,
+        registration: status
+      )
+    }
+
+    return RelyingPartyRegistration(
+      name: policy.name ?? verifierName,
+      uniqueId: policy.sub,
+      isVerified: verifierIsTrusted,
+      logoUrl: nil,
+      registration: status
+    )
   }
 
   func isDocumentBookmarked(with id: String) async -> Bool {

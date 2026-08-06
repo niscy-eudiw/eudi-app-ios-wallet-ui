@@ -24,8 +24,7 @@ public final class FeatureIssuanceAssembly: Assembly {
   public func assemble(container: Container) {
     container.register(AddDocumentInteractor.self) { r in
       AddDocumentInteractorImpl(
-        walletController: r.force(WalletKitController.self),
-        relyingPartyRegistrationController: r.force(RelyingPartyRegistrationController.self)
+        walletController: r.force(WalletKitController.self)
       )
     }
     .inObjectScope(ObjectScope.transient)
@@ -33,8 +32,7 @@ public final class FeatureIssuanceAssembly: Assembly {
     container.register(DocumentOfferInteractor.self) { r in
       DocumentOfferInteractorImpl(
         walletController: r.force(WalletKitController.self),
-        configLogic: r.force(ConfigLogic.self),
-        relyingPartyRegistrationController: r.force(RelyingPartyRegistrationController.self)
+        configLogic: r.force(ConfigLogic.self)
       )
     }
     .inObjectScope(ObjectScope.transient)

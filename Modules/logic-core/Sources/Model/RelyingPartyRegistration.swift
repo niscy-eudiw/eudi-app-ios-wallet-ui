@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
+import WalletStorage
 
 public struct RelyingPartyRegistration: Sendable, Equatable {
 
@@ -109,5 +110,19 @@ public enum IssuerRegistration: Sendable, Equatable {
   public var details: RegistrationDetails? {
     guard case .verified(let details) = self else { return nil }
     return details
+  }
+}
+
+public struct IssuanceResult: Sendable {
+
+  public let documents: [WalletStorage.Document]
+  public let issuerRegistration: IssuerRegistration?
+
+  public init(
+    documents: [WalletStorage.Document],
+    issuerRegistration: IssuerRegistration?
+  ) {
+    self.documents = documents
+    self.issuerRegistration = issuerRegistration
   }
 }

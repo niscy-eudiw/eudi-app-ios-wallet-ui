@@ -57,14 +57,6 @@ public final class LogicCoreAssembly: Assembly {
     }
     .inObjectScope(ObjectScope.container)
 
-    container.register(RelyingPartyRegistrationController.self) { _ in
-      MockRelyingPartyRegistrationControllerImpl(
-        verifierScenario: .verified,
-        issuerScenario: .verified
-      )
-    }
-    .inObjectScope(ObjectScope.container)
-
     container.register(WalletProviderAttestationConfig.self) { r in
       WalletProviderAttestationConfigImpl(
         configLogic: r.force(ConfigLogic.self)

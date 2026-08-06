@@ -23,6 +23,17 @@
         }
       }
     },
+    "not_registered_data" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not registered data"
+          }
+        }
+      }
+    },
     "issuer_not_verified_warning" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1390,6 +1401,17 @@
         }
       }
     },
+    "issuance_request_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Issuance request"
+          }
+        }
+      }
+    },
     "issuance_request" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2192,39 +2214,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ requests the following"
-          }
-        }
-      }
-    },
-    "request_data_sheet_caption" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "It allows us to verify your identity with the requesting party"
-          }
-        }
-      }
-    },
-    "request_data_verified_entity" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Relying Party"
-          }
-        }
-      }
-    },
-    "request_data_verified_entity_message" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A relying party is considered trusted when it meets predefined criteria for security, data protection, compliance, and responsible data handling. Trust is reinforced through assessments, audits, and certifications."
           }
         }
       }

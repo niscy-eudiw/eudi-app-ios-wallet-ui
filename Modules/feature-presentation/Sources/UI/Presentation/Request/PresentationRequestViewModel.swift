@@ -65,7 +65,7 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
       }
       self.onReceivedRegistration(authenticationRequest.relyingPartyRegistration)
     case .notSecuredRequest:
-      self.onVerifierNotTrusted()
+      self.onTrustBlocked()
     case .failure(let error):
       self.onEmptyDocuments(error: error.errorMessage)
     }
@@ -151,14 +151,6 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
 
   override func getTitleCaption() -> LocalizableStringKey {
     .requestDataTitle([""])
-  }
-
-  override func getTrustedRelyingParty() -> LocalizableStringKey {
-    .requestDataVerifiedEntity
-  }
-
-  override func getTrustedRelyingPartyInfo() -> LocalizableStringKey {
-    .requestDataVerifiedEntityMessage
   }
 
   func handleDeepLinkNotification(with info: [AnyHashable: Any]) {

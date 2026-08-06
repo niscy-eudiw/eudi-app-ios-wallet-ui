@@ -47,9 +47,10 @@ private struct PendingIssuance {
 @Observable
 final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocumentViewState> {
 
-  var isIssuerNotTrustedSheetShowing: Bool = false
+  var isTrustBlockedAlertShowing: Bool = false
   var isRegistrationBlockedSheetShowing: Bool = false
   var isRegistrationWarningSheetShowing: Bool = false
+  var isIssuerRegistrationWarningSheetShowing: Bool = false
 
   private let interactor: AddDocumentInteractor
   private let deepLinkController: DeepLinkController
@@ -108,7 +109,7 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
         )
         .copy(error: nil)
       }
-      isIssuerNotTrustedSheetShowing = true
+      isTrustBlockedAlertShowing = true
     case .failure(let error):
       setState {
         $0.copy(
@@ -192,8 +193,8 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
     router.pop()
   }
 
-  func onIssuerNotTrustedClose() {
-    isIssuerNotTrustedSheetShowing = false
+  func onTrustBlockedClose() {
+    isTrustBlockedAlertShowing = false
     if case .extraDocument = viewState.config.flow {
       pop()
     }
@@ -258,7 +259,7 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
         )
         .copy(error: nil)
       }
-      isIssuerNotTrustedSheetShowing = true
+      isTrustBlockedAlertShowing = true
     case .failure(let error):
       setState {
         $0.copy(
@@ -294,7 +295,10 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
       )
 
       switch state {
-      case .success(let docIds):
+      case .success(let docIds, let issuerRegistration):
+        if issuerRegistration?.toWarning() != nil {
+          isIssuerRegistrationWarningSheetShowing = true
+        }
         await fetchStoredDocuments(docIds: docIds)
       case .dynamicIssuance(let session):
         setState {
@@ -317,7 +321,7 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
           )
           .copy(error: nil)
         }
-        isIssuerNotTrustedSheetShowing = true
+        isTrustBlockedAlertShowing = true
       case .registrationBlocked:
         setState {
           $0.copy(

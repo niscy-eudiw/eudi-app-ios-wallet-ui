@@ -33,14 +33,11 @@ public protocol AddDocumentInteractor: Sendable {
 final actor AddDocumentInteractorImpl: AddDocumentInteractor {
 
   private let walletController: WalletKitController
-  private let relyingPartyRegistrationController: RelyingPartyRegistrationController
 
   init(
-    walletController: WalletKitController,
-    relyingPartyRegistrationController: RelyingPartyRegistrationController
+    walletController: WalletKitController
   ) {
     self.walletController = walletController
-    self.relyingPartyRegistrationController = relyingPartyRegistrationController
   }
 
   public func fetchScopedDocuments(
@@ -55,9 +52,9 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
       var order: Int = 0
     }
 
-    let result = await walletController.getScopedDocuments()    
+    let result = await walletController.getScopedDocuments()
     if result.allIssuersFailed {
-      return result.errors.contains(where: { $0.isIssuerNotTrusted })
+      return result.errors.contains(where: { $0.isTrustBlocked })
       ? .issuerNotTrusted
       : .failure(result.errors.first ?? WalletCoreError.unableFetchDocuments)
     }
@@ -153,7 +150,7 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
     hasAcknowledgedRegistrationWarning: Bool
   ) async -> IssueResultPartialState {
 
-    switch relyingPartyRegistrationController.getIssuerRegistration(issuerId: issuerId) {
+    switch await walletController.getIssuerRegistration(issuerId: issuerId) {
     case .blocked(let reason):
       return .registrationBlocked(reason)
     case .notVerified:
@@ -164,11 +161,12 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
 
     do {
 
-      let docs = try await walletController.issueDocuments(
+      let issuance = try await walletController.issueDocuments(
         issuerId: issuerId,
         identifiers: configIds,
         docTypeIdentifier: docTypeIdentifier
       )
+      let docs = issuance.documents
 
       guard !docs.isEmpty else {
         return .failure(WalletCoreError.unableToIssueAndStore)
@@ -208,7 +206,7 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
       if let error {
         return .failure(error)
       } else if !successIds.isEmpty {
-        return .success(successIds)
+        return .success(successIds, issuerRegistration: issuance.issuerRegistration)
       } else if let deferredDocument {
         return .deferredSuccess(deferredDocument)
       } else if let session = dynamicIssuanceCoordinator {
@@ -218,7 +216,7 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
       }
 
     } catch {
-      return error.isIssuerNotTrusted ? .issuerNotTrusted : .failure(error)
+      return error.isTrustBlocked ? .issuerNotTrusted : .failure(error)
     }
   }
 
@@ -244,7 +242,7 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
       }
 
     } catch {
-      return error.isIssuerNotTrusted ? .issuerNotTrusted : .failure(error)
+      return error.isTrustBlocked ? .issuerNotTrusted : .failure(error)
     }
   }
 
@@ -274,7 +272,7 @@ public enum ScopedDocumentsPartialState: Sendable {
 }
 
 public enum IssueResultPartialState: Sendable {
-  case success([String])
+  case success([String], issuerRegistration: IssuerRegistration?)
   case deferredSuccess(ScopedDocument)
   case dynamicIssuance(RemoteSessionCoordinator)
   case issuerNotTrusted

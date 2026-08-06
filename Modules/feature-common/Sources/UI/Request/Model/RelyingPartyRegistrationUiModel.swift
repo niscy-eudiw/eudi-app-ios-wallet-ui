@@ -57,7 +57,8 @@ public extension RelyingPartyRegistration {
       ? RegisteredParty(
         name: .custom(safeDetails.tradeName),
         identifier: .relyingPartyId([safeDetails.uniqueId]),
-        isVerified: true
+        isVerified: true,
+        logoUrl: safeDetails.logoUrl
       )
       : nil
     }
@@ -66,7 +67,8 @@ public extension RelyingPartyRegistration {
       primary: RegisteredParty(
         name: name.map { LocalizableStringKey.custom($0) } ?? fallbackName,
         identifier: uniqueId.map { LocalizableStringKey.relyingPartyId([$0]) },
-        isVerified: showVerifiedBadge
+        isVerified: showVerifiedBadge,
+        logoUrl: logoUrl
       ),
       onBehalfOf: onBehalfOf,
       privacyPolicyUrl: details?.privacyPolicyUrl,
@@ -88,13 +90,14 @@ public extension RelyingPartyRegistration {
 
 public extension IssuerRegistration {
 
-  func toRegistrationData(issuerName: String) -> RelyingPartyRegistrationData? {
+  func toRegistrationData(issuerName: String, issuerLogo: URL? = nil) -> RelyingPartyRegistrationData? {
     guard let details else { return nil }
     return RelyingPartyRegistrationData(
       primary: RegisteredParty(
         name: .custom(issuerName),
         identifier: .relyingPartyId([details.uniqueId]),
-        isVerified: true
+        isVerified: true,
+        logoUrl: details.logoUrl ?? issuerLogo
       ),
       privacyPolicyUrl: details.privacyPolicyUrl,
       intendedUse: details.intendedUse.map { LocalizableStringKey.custom($0) }

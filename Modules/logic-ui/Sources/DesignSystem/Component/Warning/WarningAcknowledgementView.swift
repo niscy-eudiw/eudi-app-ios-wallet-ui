@@ -21,6 +21,14 @@ public struct WarningAcknowledgementView: View {
   private let acknowledgementText: LocalizableStringKey
   @Binding private var isAcknowledged: Bool
 
+  private var accentColor: Color {
+    Theme.shared.color.red
+  }
+  private var backgroundOpacity: Double { 0.2 }
+  private var foregroundColor: Color {
+    Theme.shared.color.primaryLabel
+  }
+
   public init(
     message: LocalizableStringKey,
     acknowledgementText: LocalizableStringKey = .understandRisksAgree,
@@ -33,9 +41,9 @@ public struct WarningAcknowledgementView: View {
 
   public var body: some View {
     VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
-      HStack(alignment: .top, spacing: SPACING_SMALL) {
+      HStack(alignment: .center, spacing: SPACING_SMALL) {
         Theme.shared.image.exclamationmarkTriangleFill
-          .foregroundColor(foregroundColor)
+          .foregroundColor(accentColor)
 
         Text(message)
           .typography(Theme.shared.font.bodyMedium)
@@ -46,7 +54,7 @@ public struct WarningAcknowledgementView: View {
       }
 
       Divider()
-        .overlay(foregroundColor)
+        .overlay(accentColor)
 
       Toggle(isOn: $isAcknowledged) {
         Text(acknowledgementText)
@@ -55,16 +63,11 @@ public struct WarningAcknowledgementView: View {
           .multilineTextAlignment(.leading)
           .fixedSize(horizontal: false, vertical: true)
       }
-      .tint(foregroundColor)
     }
     .padding(SPACING_MEDIUM)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(Theme.shared.color.warning)
+    .background(accentColor.opacity(backgroundOpacity))
     .clipShape(RoundedRectangle(cornerRadius: SPACING_SMALL))
-  }
-
-  private var foregroundColor: Color {
-    Theme.shared.color.white
   }
 }
 

@@ -18,6 +18,7 @@ import logic_business
 @testable import logic_ui
 @testable import logic_test
 @testable import logic_core
+import struct OpenID4VP.PolicyViolation
 
 final class TestDeepLinkController: EudiTest {
   
@@ -540,7 +541,11 @@ private extension TestDeepLinkController {
 private extension TestDeepLinkController {
   struct MockPresentationService: PresentationService {
     var zkpDocumentIds: [WalletStorage.Document.ID]?
-    
+
+    var wrpVerifierPolicy: WrpRegistrationPolicy?
+
+    var wrpVerifierWarnings: [String: [PolicyViolation]]?
+
     func waitForDisconnect() async throws {}
     
     var transactionLog: TransactionLog

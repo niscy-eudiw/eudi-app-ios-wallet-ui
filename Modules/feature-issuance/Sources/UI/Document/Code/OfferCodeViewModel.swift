@@ -17,6 +17,7 @@ import Foundation
 import logic_ui
 import logic_resources
 import feature_common
+import logic_core
 import Observation
 
 @Copyable
@@ -32,7 +33,9 @@ struct OfferCodeViewState: ViewState {
 @Observable
 final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeViewState> {
 
-  var isIssuerNotTrustedSheetShowing: Bool = false
+  var isTrustBlockedAlertShowing: Bool = false
+  var isIssuerRegistrationWarningSheetShowing: Bool = false
+  private var pendingSuccessRoute: AppRoute?
 
   var codeInput: String = "" {
     didSet {
@@ -94,7 +97,7 @@ final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeV
     case .noPending: break
     case .issuerNotTrusted:
       setState { $0.copy(isLoading: false).copy(error: nil) }
-      isIssuerNotTrustedSheetShowing = true
+      isTrustBlockedAlertShowing = true
     case .failure(let error):
       setState {
         $0.copy(
@@ -106,6 +109,22 @@ final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeV
         )
       }
     }
+  }
+
+  private func proceedToSuccess(route: AppRoute, issuerRegistration: IssuerRegistration?) {
+    guard issuerRegistration?.toWarning() != nil else {
+      router.push(with: route)
+      return
+    }
+    pendingSuccessRoute = route
+    isIssuerRegistrationWarningSheetShowing = true
+  }
+
+  func onIssuerRegistrationWarningClose() {
+    isIssuerRegistrationWarningSheetShowing = false
+    guard let route = pendingSuccessRoute else { return }
+    pendingSuccessRoute = nil
+    router.push(with: route)
   }
 
   func onPop() {
@@ -151,8 +170,8 @@ final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeV
       )
 
       switch state {
-      case .success(let route):
-        router.push(with: route)
+      case .success(let route, let issuerRegistration):
+        proceedToSuccess(route: route, issuerRegistration: issuerRegistration)
       case .dynamicIssuance(let session):
         setState {
           $0.copy(
@@ -171,7 +190,7 @@ final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeV
         )
       case .issuerNotTrusted:
         setState { $0.copy(isLoading: false).copy(error: nil) }
-        isIssuerNotTrustedSheetShowing = true
+        isTrustBlockedAlertShowing = true
       case .failure(let error):
         setState {
           $0.copy(

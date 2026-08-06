@@ -28,8 +28,10 @@ struct DocumentOfferView<Router: RouterHost>: View {
 
   var body: some View {
     ContentScreenView(
+      padding: .zero,
+      canScroll: true,
       errorConfig: viewModel.viewState.error,
-      navigationTitle: .addDocumentRequest,
+      navigationTitle: .issuanceRequestTitle,
       toolbarContent: viewModel.toolbarContent(),
       notificationActions: [
         .init(
@@ -47,13 +49,21 @@ struct DocumentOfferView<Router: RouterHost>: View {
         onIssueDocuments: viewModel.onIssueDocuments
       )
     }
-    .sheetDialog(isPresented: $viewModel.isIssuerNotTrustedSheetShowing) {
+    .sheetDialog(isPresented: $viewModel.isIssuerRegistrationWarningSheetShowing) {
       TrustBlockedSheetContent(
-        title: .issuanceBlockedTitle,
-        message: .issuanceBlockedMessage,
-        onClose: { viewModel.isIssuerNotTrustedSheetShowing = false }
+        title: .issuanceRegistrationWarningTitle,
+        message: .issuanceRegistrationWarningMessage,
+        onClose: { viewModel.onIssuerRegistrationWarningClose() }
       )
     }
+    .alertView(
+      isPresented: $viewModel.isTrustBlockedAlertShowing,
+      title: .issuanceBlockedTitle,
+      message: .issuanceBlockedMessage,
+      actions: {
+        Button(.close) { viewModel.onTrustBlockedClose() }
+      }
+    )
     .sheetDialog(isPresented: $viewModel.isRegistrationBlockedSheetShowing) {
       TrustBlockedSheetContent(
         title: .issuanceRegistrationBlockedTitle,
@@ -100,42 +110,35 @@ private struct DocumentOfferViewContainer: View {
   @ViewBuilder
   private func scrollableContent() -> some View {
     ScrollView {
-      VStack(spacing: .zero) {
+      VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
 
-        ContentHeaderView(
-          config: viewState.contentHeaderConfig,
-          accessibilityDescription: DocumentOfferLocators.headerDescription
-        )
-
-        VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
-
-          if let issuerRegistration = viewState.issuerRegistration {
-            RelyingPartyRegistrationView(data: issuerRegistration)
-              .shimmer(isLoading: viewState.isLoading)
-          }
-
-          ForEach(viewState.documentOfferUiModel.uiOffers) { cell in
-            WrapCardView(
-              backgroundColor: Theme.shared.color.groupedElevatedBackground
-            ) {
-              DocumentOfferCellView(
-                cellModel: cell,
-                isLoading: viewState.isLoading
-              )
-            }
-          }
-
-          Text(.shareDataReview)
-            .typography(Theme.shared.font.bodyMedium)
-            .foregroundColor(Theme.shared.color.primaryLabel)
-            .multilineTextAlignment(.leading)
+        if let issuerRegistration = viewState.issuerRegistration {
+          RelyingPartyRegistrationView(data: issuerRegistration)
             .shimmer(isLoading: viewState.isLoading)
-
-          VSpacer.medium()
         }
+
+        ForEach(viewState.documentOfferUiModel.uiOffers) { cell in
+          WrapCardView(
+            backgroundColor: Theme.shared.color.groupedElevatedBackground
+          ) {
+            DocumentOfferCellView(
+              cellModel: cell,
+              isLoading: viewState.isLoading
+            )
+          }
+        }
+
+        Text(.shareDataReview)
+          .typography(Theme.shared.font.bodyMedium)
+          .foregroundColor(Theme.shared.color.primaryLabel)
+          .multilineTextAlignment(.leading)
+          .shimmer(isLoading: viewState.isLoading)
+
+        VSpacer.medium()
       }
+      .padding(Theme.shared.dimension.padding)
     }
-    .safeAreaInset(edge: .bottom) {
+    .safeAreaInset(edge: .bottom, spacing: .zero) {
       bottomBar()
     }
   }
@@ -150,10 +153,13 @@ private struct DocumentOfferViewContainer: View {
           acknowledgementText: registrationWarning.acknowledgement,
           isAcknowledged: $isRiskAcknowledged
         )
+        .padding(.horizontal, Theme.shared.dimension.padding)
       }
 
       issueButton()
     }
+    .padding(.top, SPACING_MEDIUM)
+    .background(Theme.shared.color.background)
   }
 
   @MainActor
@@ -169,6 +175,8 @@ private struct DocumentOfferViewContainer: View {
     .combineChilrenAccessibility(
       locator: DocumentOfferLocators.issueButton
     )
+    .padding(.horizontal, SPACING_MEDIUM)
+    .padding(.bottom, SPACING_LARGE_MEDIUM)
   }
 
   @MainActor
@@ -178,6 +186,7 @@ private struct DocumentOfferViewContainer: View {
       ContentHeaderView(
         config: viewState.contentHeaderConfig
       )
+      .padding(.horizontal, Theme.shared.dimension.padding)
       Spacer()
       ContentEmptyView(
         title: .requestCredentialOfferNoDocument

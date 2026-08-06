@@ -28,7 +28,6 @@ public struct RequestViewState: ViewState {
   public let items: [RequestDataUiModel]
   public let combinations: [[RequestDataUiModel]]
   public let selectedCombinationIndex: Int
-  public let trustedRelyingPartyInfo: LocalizableStringKey
   public let relyingParty: LocalizableStringKey
   public let isTrusted: Bool
   public let allowShare: Bool
@@ -42,9 +41,7 @@ public struct RequestViewState: ViewState {
 @Observable
 open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestViewState> {
 
-  var isRequestInfoModalShowing: Bool = false
-  var isVerifiedEntityModalShowing: Bool = false
-  var isVerifierNotTrustedSheetShowing: Bool = false
+  var isTrustBlockedAlertShowing: Bool = false
   var itemsChanged: Bool = false
   var isRiskAcknowledged: Bool = false
 
@@ -59,7 +56,6 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         items: RequestDataUiModel.mockData(),
         combinations: [],
         selectedCombinationIndex: 0,
-        trustedRelyingPartyInfo: .requestDataVerifiedEntityMessage,
         relyingParty: .unknownVerifier,
         isTrusted: false,
         allowShare: false,
@@ -104,14 +100,6 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
   }
 
   open func getTitleCaption() -> LocalizableStringKey {
-    return .custom("")
-  }
-
-  open func getTrustedRelyingParty() -> LocalizableStringKey {
-    return .custom("")
-  }
-
-  open func getTrustedRelyingPartyInfo() -> LocalizableStringKey {
     return .custom("")
   }
 
@@ -218,7 +206,6 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         items: RequestDataUiModel.mockData(),
         combinations: [],
         selectedCombinationIndex: 0,
-        trustedRelyingPartyInfo: .requestDataVerifiedEntityMessage,
         relyingParty: .unknownVerifier,
         isTrusted: false,
         allowShare: false,
@@ -254,7 +241,6 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
   }
 
   func onPop() {
-    isRequestInfoModalShowing = false
     if let route = getPopRoute() {
       router.popTo(with: route)
     } else {
@@ -262,16 +248,8 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
     }
   }
 
-  func onShowRequestInfoModal() {
-    isRequestInfoModalShowing = !isRequestInfoModalShowing
-  }
-
-  func onVerifiedEntityModal() {
-    isVerifiedEntityModalShowing = !isVerifiedEntityModalShowing
-  }
-
   open func stopPresentation() async {}
-  public func onVerifierNotTrusted() {
+  public func onTrustBlocked() {
     setState {
       $0.copy(
         isLoading: false,
@@ -282,12 +260,12 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         initialized: true
       ).copy(error: nil)
     }
-    isVerifierNotTrustedSheetShowing = true
+    isTrustBlockedAlertShowing = true
     Task { await stopPresentation() }
   }
 
-  func onVerifierNotTrustedClose() {
-    isVerifierNotTrustedSheetShowing = false
+  func onTrustBlockedClose() {
+    isTrustBlockedAlertShowing = false
     onPop()
   }
 

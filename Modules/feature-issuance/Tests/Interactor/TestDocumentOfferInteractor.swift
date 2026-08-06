@@ -33,13 +33,27 @@ final class TestDocumentOfferInteractor: EudiTest {
     super.setUp()
     self.walletKitController = MockWalletKitController()
     self.configLogic = MockConfigLogic()
+    stub(walletKitController) { mock in
+      // Issuer registration is a wallet-kit 0.38.0 stub returning verified; tests that need a
+      // different scenario override this.
+      when(mock.getIssuerRegistration(issuerId: any())).thenReturn(
+        .verified(
+          details: RegistrationDetails(
+            tradeName: "issuer",
+            uniqueId: "issuer",
+            logoUrl: nil,
+            intendedUse: nil,
+            privacyPolicyUrl: nil,
+            serviceDescription: nil,
+            isIntermediated: false
+          )
+        )
+      )
+    }
+
     self.interactor = DocumentOfferInteractorImpl(
       walletController: walletKitController,
-      configLogic: configLogic,
-      relyingPartyRegistrationController: MockRelyingPartyRegistrationControllerImpl(
-        verifierScenario: .verified,
-        issuerScenario: .verified
-      )
+      configLogic: configLogic
     )
     stubConfigLogic()
   }
@@ -497,7 +511,7 @@ final class TestDocumentOfferInteractor: EudiTest {
         docTypes: any(),
         txCodeValue: txCodeValue
       )
-      .thenReturn([])
+      .thenReturn(IssuanceResult(documents: [], issuerRegistration: nil))
     }
     
     // When
@@ -552,7 +566,7 @@ final class TestDocumentOfferInteractor: EudiTest {
         docTypes: any(),
         txCodeValue: txCodeValue
       )
-      .thenReturn([document])
+      .thenReturn(IssuanceResult(documents: [document], issuerRegistration: nil))
     }
     
     // When
@@ -607,7 +621,7 @@ final class TestDocumentOfferInteractor: EudiTest {
         docTypes: any(),
         txCodeValue: txCodeValue
       )
-      .thenReturn([document])
+      .thenReturn(IssuanceResult(documents: [document], issuerRegistration: nil))
       
       when(mock.fetchDocuments(with: any())).thenReturn([Constants.createEuPidModel()])
     }
@@ -680,7 +694,7 @@ final class TestDocumentOfferInteractor: EudiTest {
         docTypes: docOffers,
         txCodeValue: txCodeValue
       )
-      .thenReturn([document])
+      .thenReturn(IssuanceResult(documents: [document], issuerRegistration: nil))
       
       when(mock.fetchDocuments(with: any())).thenReturn([Constants.createEuPidModel()])
     }

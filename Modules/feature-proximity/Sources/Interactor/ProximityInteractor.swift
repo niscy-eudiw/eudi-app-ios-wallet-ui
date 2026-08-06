@@ -77,17 +77,14 @@ final actor ProximityInteractorImpl: ProximityInteractor {
 
   private let walletKitController: WalletKitController
   private let sessionCoordinatorHolder: SessionCoordinatorHolder
-  private let relyingPartyRegistrationController: RelyingPartyRegistrationController
 
   init(
     with proximitySessionCoordinator: ProximitySessionCoordinator,
     and walletKitController: WalletKitController,
-    also sessionCoordinatorHolder: SessionCoordinatorHolder,
-    relyingPartyRegistrationController: RelyingPartyRegistrationController
+    also sessionCoordinatorHolder: SessionCoordinatorHolder
   ) {
     self.walletKitController = walletKitController
     self.sessionCoordinatorHolder = sessionCoordinatorHolder
-    self.relyingPartyRegistrationController = relyingPartyRegistrationController
     Task { await self.sessionCoordinatorHolder.setActiveProximityCoordinator(proximitySessionCoordinator) }
   }
 
@@ -128,28 +125,31 @@ final actor ProximityInteractorImpl: ProximityInteractor {
 
   public func onRequestReceived() async -> ProximityRequestPartialState {
     do {
-      let response = try await sessionCoordinatorHolder.getActiveProximityCoordinator().requestReceived()
+      let coordinator = try await sessionCoordinatorHolder.getActiveProximityCoordinator()
+      let response = try await coordinator.requestReceived()
       let revokedDocuments = (try? await walletKitController.fetchRevokedDocuments()) ?? []
       let documents = (response.itemSets.first ?? []).filter { item in !revokedDocuments.contains(where: { $0 == item.docId }) }
       guard !documents.isEmpty else { return .failure(WalletCoreError.unableFetchDocuments) }
+      let registrationPolicy = coordinator.relyingPartyRegistration
+      let overaskedClaims = documents.overaskedClaims(policy: registrationPolicy)
       return .success(
         documents.toUiModels(
-          with: self.walletKitController
+          with: self.walletKitController,
+          overaskedClaims: overaskedClaims
         ),
         relyingParty: response.relyingParty,
         dataRequestInfo: response.dataRequestInfo,
         isTrusted: response.isTrusted,
-        // proximity carries no registration certificate; the evaluation reports .notSupported and
-        // the screen keeps showing the access-certificate badge it always did
-        relyingPartyRegistration: relyingPartyRegistrationController.getVerifierRegistration(
+        relyingPartyRegistration: await walletKitController.getVerifierRegistration(
+          policy: registrationPolicy,
+          trustViolations: coordinator.relyingPartyWarningViolations,
+          overaskedClaims: overaskedClaims.toRequestedClaims(),
           verifierName: response.relyingParty,
-          verifierIsTrusted: response.isTrusted,
-          transport: .proximity,
-          requestedClaims: response.itemSets.toRequestedClaims()
+          verifierIsTrusted: response.isTrusted
         )
       )
     } catch {
-      return error.isIssuerNotTrusted ? .notSecuredRequest : .failure(error)
+      return error.isTrustBlocked ? .notSecuredRequest : .failure(error)
     }
   }
 

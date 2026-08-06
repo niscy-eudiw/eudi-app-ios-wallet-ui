@@ -61,8 +61,7 @@ open class DocumentSuccessViewModel<Router: RouterHost, RequestItem: Sendable>: 
           relyingPartyData: RelyingPartyData(
             logo: config.issuerLogoUrl == nil ? nil : .remoteImage(config.issuerLogoUrl, nil),
             isVerified: config.relyingPartyIsTrusted,
-            name: .custom(config.relyingParty ?? ""),
-            alignment: .leading
+            name: .custom(config.relyingParty ?? "")
           )
         ),
         items: requestItems.removeTrailingContent(),

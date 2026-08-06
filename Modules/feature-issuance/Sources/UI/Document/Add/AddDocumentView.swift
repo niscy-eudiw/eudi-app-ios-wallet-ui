@@ -46,13 +46,14 @@ struct AddDocumentView<Router: RouterHost>: View {
         )
       }
     }
-    .sheetDialog(isPresented: $viewModel.isIssuerNotTrustedSheetShowing) {
-      TrustBlockedSheetContent(
-        title: .issuanceBlockedTitle,
-        message: .issuanceBlockedMessage,
-        onClose: { viewModel.onIssuerNotTrustedClose() }
-      )
-    }
+    .alertView(
+      isPresented: $viewModel.isTrustBlockedAlertShowing,
+      title: .issuanceBlockedTitle,
+      message: .issuanceBlockedMessage,
+      actions: {
+        Button(.close) { viewModel.onTrustBlockedClose() }
+      }
+    )
     .sheetDialog(isPresented: $viewModel.isRegistrationBlockedSheetShowing) {
       TrustBlockedSheetContent(
         title: .issuanceRegistrationBlockedTitle,
