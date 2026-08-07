@@ -528,6 +528,12 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "document_details_issuer_card_issued_action_btn_text")
     case .batchIssuanceCounter:
       bundle.localizedString(forKey: "batch_issuance_counter")
+    case .validateIssuerRegistration:
+      bundle.localizedString(forKey: "validate_issuer_registration")
+    case .restartRequiredTitle:
+      bundle.localizedString(forKey: "restart_required_title")
+    case .restartRequiredMessage:
+      bundle.localizedString(forKey: "restart_required_message")
     case .documentProviderExtensionAcceptButton:
       bundle.localizedString(forKey: "document_provider_extension_accept_button")
     case .documentProviderExtensionRejectButton:

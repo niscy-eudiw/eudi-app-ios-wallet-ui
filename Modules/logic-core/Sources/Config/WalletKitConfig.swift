@@ -88,15 +88,18 @@ struct WalletKitConfigImpl: WalletKitConfig {
   let configLogic: ConfigLogic
   let transactionLoggerImpl: TransactionLogger
   let walletKitAttestationProvider: WalletKitAttestationProvider
+  let prefsController: PrefsController
 
   init(
     configLogic: ConfigLogic,
     transactionLogger: TransactionLogger,
-    walletKitAttestationProvider: WalletKitAttestationProvider
+    walletKitAttestationProvider: WalletKitAttestationProvider,
+    prefsController: PrefsController
   ) {
     self.configLogic = configLogic
     self.transactionLoggerImpl = transactionLogger
     self.walletKitAttestationProvider = walletKitAttestationProvider
+    self.prefsController = prefsController
   }
 
   var userAuthenticationRequired: Bool {
@@ -112,10 +115,7 @@ struct WalletKitConfigImpl: WalletKitConfig {
   }
 
   var validateIssuerRegistrationCertificate: Bool {
-    return switch configLogic.appBuildVariant {
-    case .DEMO: true
-    case .DEV: true
-    }
+    prefsController.getBool(forKey: .validateIssuerRegistrationCertificate)
   }
 
   var issuersConfig: [String: VciConfig] {

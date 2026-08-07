@@ -3150,6 +3150,26 @@ public class MockSettingsInteractor: SettingsInteractor, Cuckoo.ProtocolMock, @u
         )
     }
 
+    public func setIssuerRegistrationValidation(isEnabled p0: Bool) async {
+        return await cuckoo_manager.call(
+            "setIssuerRegistrationValidation(isEnabled p0: Bool) async",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.setIssuerRegistrationValidation(isEnabled: p0)
+        )
+    }
+
+    public func isIssuerRegistrationValidationEnabled() async -> Bool {
+        return await cuckoo_manager.call(
+            "isIssuerRegistrationValidationEnabled() async -> Bool",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.isIssuerRegistrationValidationEnabled()
+        )
+    }
+
     public struct __StubbingProxy_SettingsInteractor: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
@@ -3233,6 +3253,22 @@ public class MockSettingsInteractor: SettingsInteractor, Cuckoo.ProtocolMock, @u
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockSettingsInteractor.self,
                 method: "isBatchCounterEnabled() async -> Bool",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func setIssuerRegistrationValidation<M1: Cuckoo.Matchable>(isEnabled p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(Bool)> where M1.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockSettingsInteractor.self,
+                method: "setIssuerRegistrationValidation(isEnabled p0: Bool) async",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func isIssuerRegistrationValidationEnabled() -> Cuckoo.ProtocolStubFunction<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockSettingsInteractor.self,
+                method: "isIssuerRegistrationValidationEnabled() async -> Bool",
                 parameterMatchers: matchers
             ))
         }
@@ -3368,6 +3404,30 @@ public class MockSettingsInteractor: SettingsInteractor, Cuckoo.ProtocolMock, @u
                 sourceLocation: sourceLocation
             )
         }
+        
+        
+        @discardableResult
+        func setIssuerRegistrationValidation<M1: Cuckoo.Matchable>(isEnabled p0: M1) -> Cuckoo.__DoNotUse<(Bool), Void> where M1.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "setIssuerRegistrationValidation(isEnabled p0: Bool) async",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func isIssuerRegistrationValidationEnabled() -> Cuckoo.__DoNotUse<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "isIssuerRegistrationValidationEnabled() async -> Bool",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
     }
 }
 
@@ -3412,6 +3472,14 @@ public class SettingsInteractorStub:SettingsInteractor, @unchecked Sendable {
     }
     
     public func isBatchCounterEnabled() async -> Bool {
+        return DefaultValueRegistry.defaultValue(for: (Bool).self)
+    }
+    
+    public func setIssuerRegistrationValidation(isEnabled p0: Bool) async {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func isIssuerRegistrationValidationEnabled() async -> Bool {
         return DefaultValueRegistry.defaultValue(for: (Bool).self)
     }
 }
