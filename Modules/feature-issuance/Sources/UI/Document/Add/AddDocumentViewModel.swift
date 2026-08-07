@@ -50,13 +50,11 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
   var isTrustBlockedAlertShowing: Bool = false
   var isRegistrationBlockedSheetShowing: Bool = false
   var isRegistrationWarningSheetShowing: Bool = false
-  var isIssuerRegistrationWarningSheetShowing: Bool = false
 
   private let interactor: AddDocumentInteractor
   private let deepLinkController: DeepLinkController
 
   private var pendingIssuance: PendingIssuance?
-  private var pendingSuccessDocIds: [String]?
 
   init(
     router: Router,
@@ -155,13 +153,6 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
       docTypeIdentifier: pendingIssuance.docTypeIdentifier,
       hasAcknowledgedRegistrationWarning: true
     )
-  }
-
-  func onIssuerRegistrationWarningClose() {
-    isIssuerRegistrationWarningSheetShowing = false
-    guard let docIds = pendingSuccessDocIds else { return }
-    pendingSuccessDocIds = nil
-    Task { await fetchStoredDocuments(docIds: docIds) }
   }
 
   func onRegistrationWarningCancel() {
@@ -303,13 +294,8 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
       )
 
       switch state {
-      case .success(let docIds, let issuerRegistration):
-        if issuerRegistration?.toWarning() != nil {
-          pendingSuccessDocIds = docIds
-          isIssuerRegistrationWarningSheetShowing = true
-        } else {
-          await fetchStoredDocuments(docIds: docIds)
-        }
+      case .success(let docIds):
+        await fetchStoredDocuments(docIds: docIds)
       case .dynamicIssuance(let session):
         setState {
           $0.copy(

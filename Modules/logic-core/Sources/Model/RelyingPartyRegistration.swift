@@ -113,6 +113,16 @@ public enum IssuerRegistration: Sendable, Equatable {
   }
 }
 
+public extension Optional where Wrapped == IssuerRegistration {
+
+  var vouchesForIssuer: Bool {
+    switch self {
+    case .none: return true
+    case .some(let registration): return registration.details != nil
+    }
+  }
+}
+
 public struct IssuanceResult: Sendable {
 
   public let documents: [WalletStorage.Document]

@@ -49,13 +49,6 @@ struct DocumentOfferView<Router: RouterHost>: View {
         onIssueDocuments: viewModel.onIssueDocuments
       )
     }
-    .sheetDialog(isPresented: $viewModel.isIssuerRegistrationWarningSheetShowing) {
-      TrustBlockedSheetView(
-        title: .issuanceRegistrationWarningTitle,
-        message: .issuanceRegistrationWarningMessage,
-        onClose: { viewModel.onIssuerRegistrationWarningClose() }
-      )
-    }
     .alertView(
       isPresented: $viewModel.isTrustBlockedAlertShowing,
       title: .issuanceBlockedTitle,

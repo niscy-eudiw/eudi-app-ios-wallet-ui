@@ -177,6 +177,41 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
 
+  func testIssueDocument_whenIssuerRegistrationDoesNotVouch_thenBlocksAndDiscardsTheDocuments() async {
+    // Given
+    let issuerId = "issuer.dev"
+    let configIds = ["doc"]
+    let identifier = DocumentTypeIdentifier(rawValue: "eu.europa.ec.eudi.pid.1")
+    let document = Constants.issuedPendingDocument
+
+    stub(walletKitController) { mock in
+      when(mock.issueDocuments(
+        issuerId: equal(to: issuerId),
+        identifiers: equal(to: configIds),
+        docTypeIdentifier: equal(to: identifier)
+      )).thenReturn(
+        IssuanceResult(documents: [document], issuerRegistration: .notVerified)
+      )
+      when(mock.deleteDocument(with: any(), status: any())).thenDoNothing()
+    }
+
+    // When
+    let result = await interactor.issueDocument(
+      issuerId: issuerId,
+      configIds: configIds,
+      docTypeIdentifier: identifier,
+      hasAcknowledgedRegistrationWarning: false
+    )
+
+    // Then
+    switch result {
+    case .issuerNotTrusted:
+      verify(walletKitController).deleteDocument(with: equal(to: document.id), status: any())
+    default:
+      XCTFail("Expected issuerNotTrusted, got \(result)")
+    }
+  }
+
   func testIssueDocument_whenDefferedPendingDocument_thenReturnSuccess() async {
     // Given
     let configIds = ["deferred-doc"]

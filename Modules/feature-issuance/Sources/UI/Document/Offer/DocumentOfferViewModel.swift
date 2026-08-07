@@ -51,9 +51,7 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
 
   var isTrustBlockedAlertShowing: Bool = false
   var isRegistrationBlockedSheetShowing: Bool = false
-  var isIssuerRegistrationWarningSheetShowing: Bool = false
   var isRiskAcknowledged: Bool = false
-  private var pendingSuccessRoute: AppRoute?
 
   private let interactor: DocumentOfferInteractor
 
@@ -195,8 +193,8 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
       )
 
       switch state {
-      case .success(let route, let issuerRegistration):
-        proceedToSuccess(route: route, issuerRegistration: issuerRegistration)
+      case .success(let route):
+        router.push(with: route)
       case .dynamicIssuance(let session):
         setState {
           $0.copy(
@@ -230,22 +228,6 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
         router.push(with: route)
       }
     }
-  }
-
-  private func proceedToSuccess(route: AppRoute, issuerRegistration: IssuerRegistration?) {
-    guard issuerRegistration?.toWarning() != nil else {
-      router.push(with: route)
-      return
-    }
-    pendingSuccessRoute = route
-    isIssuerRegistrationWarningSheetShowing = true
-  }
-
-  func onIssuerRegistrationWarningClose() {
-    isIssuerRegistrationWarningSheetShowing = false
-    guard let route = pendingSuccessRoute else { return }
-    pendingSuccessRoute = nil
-    router.push(with: route)
   }
 
   func onRegistrationBlockedClose() {

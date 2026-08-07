@@ -108,6 +108,11 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
       )
       let issuedDocuments = issuance.documents
 
+      if !issuance.issuerRegistration.vouchesForIssuer {
+        await discard(issuedDocuments)
+        return .issuerNotTrusted
+      }
+
       if issuedDocuments.isEmpty {
         return .failure(WalletCoreError.unableToIssueAndStore)
       } else if issuedDocuments.first(where: { $0.isDeferred }) != nil {
@@ -138,8 +143,7 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
         let documentIdentifiers = issuedDocuments.compactMap { $0.id }
         return await fetchAndHandleDocuments(
           successNavigation: successNavigation,
-          documentIdentifiers: documentIdentifiers,
-          issuerRegistration: issuance.issuerRegistration
+          documentIdentifiers: documentIdentifiers
         )
       } else {
 
@@ -221,11 +225,16 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
     return .success(documentsDetails)
   }
 
+  private func discard(_ documents: [WalletStorage.Document]) async {
+    for document in documents {
+      try? await walletController.deleteDocument(with: document.id, status: document.status)
+    }
+  }
+
   private func fetchAndHandleDocuments(
     successNavigation: UIConfig.TwoWayNavigationType,
     documentIdentifiers: [String],
-    isPartialState: Bool = false,
-    issuerRegistration: IssuerRegistration? = nil
+    isPartialState: Bool = false
   ) async -> OfferResultPartialState {
     let state = await self.fetchStoredDocuments(documentIds: documentIdentifiers)
     switch state {
@@ -242,8 +251,7 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
             retrieveDocumentSuccessRoute(
               successNavigation: successNavigation,
               documents: documents
-            ),
-            issuerRegistration: issuerRegistration
+            )
           )
         }
     case .failure:
@@ -322,7 +330,7 @@ public enum OfferRequestPartialState: Sendable {
 }
 
 public enum OfferResultPartialState: Sendable {
-  case success(AppRoute, issuerRegistration: IssuerRegistration?)
+  case success(AppRoute)
   case partialSuccess(AppRoute)
   case deferredSuccess(AppRoute)
   case dynamicIssuance(RemoteSessionCoordinator)

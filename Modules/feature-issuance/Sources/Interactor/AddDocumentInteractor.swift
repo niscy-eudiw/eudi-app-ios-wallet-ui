@@ -168,6 +168,11 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
       )
       let docs = issuance.documents
 
+      if !issuance.issuerRegistration.vouchesForIssuer {
+        await discard(docs)
+        return .issuerNotTrusted
+      }
+
       guard !docs.isEmpty else {
         return .failure(WalletCoreError.unableToIssueAndStore)
       }
@@ -206,7 +211,7 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
       if let error {
         return .failure(error)
       } else if !successIds.isEmpty {
-        return .success(successIds, issuerRegistration: issuance.issuerRegistration)
+        return .success(successIds)
       } else if let deferredDocument {
         return .deferredSuccess(deferredDocument)
       } else if let session = dynamicIssuanceCoordinator {
@@ -258,6 +263,12 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
     return .success(documentsDetails)
   }
 
+  private func discard(_ documents: [WalletStorage.Document]) async {
+    for document in documents {
+      try? await walletController.deleteDocument(with: document.id, status: document.status)
+    }
+  }
+
   private func getScopedDocument(configId: String) async throws -> ScopedDocument {
     await walletController.getScopedDocuments().documents.first {
       $0.configId == configId
@@ -272,7 +283,7 @@ public enum ScopedDocumentsPartialState: Sendable {
 }
 
 public enum IssueResultPartialState: Sendable {
-  case success([String], issuerRegistration: IssuerRegistration?)
+  case success([String])
   case deferredSuccess(ScopedDocument)
   case dynamicIssuance(RemoteSessionCoordinator)
   case issuerNotTrusted

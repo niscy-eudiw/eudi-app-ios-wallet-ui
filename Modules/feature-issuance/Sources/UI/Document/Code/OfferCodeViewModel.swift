@@ -34,8 +34,6 @@ struct OfferCodeViewState: ViewState {
 final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeViewState> {
 
   var isTrustBlockedAlertShowing: Bool = false
-  var isIssuerRegistrationWarningSheetShowing: Bool = false
-  private var pendingSuccessRoute: AppRoute?
 
   var codeInput: String = "" {
     didSet {
@@ -111,22 +109,6 @@ final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeV
     }
   }
 
-  private func proceedToSuccess(route: AppRoute, issuerRegistration: IssuerRegistration?) {
-    guard issuerRegistration?.toWarning() != nil else {
-      router.push(with: route)
-      return
-    }
-    pendingSuccessRoute = route
-    isIssuerRegistrationWarningSheetShowing = true
-  }
-
-  func onIssuerRegistrationWarningClose() {
-    isIssuerRegistrationWarningSheetShowing = false
-    guard let route = pendingSuccessRoute else { return }
-    pendingSuccessRoute = nil
-    router.push(with: route)
-  }
-
   func onPop() {
     switch viewState.config.navigationCancelType {
     case .popTo(let route):
@@ -170,8 +152,8 @@ final class OfferCodeViewModel<Router: RouterHost>: ViewModel<Router, OfferCodeV
       )
 
       switch state {
-      case .success(let route, let issuerRegistration):
-        proceedToSuccess(route: route, issuerRegistration: issuerRegistration)
+      case .success(let route):
+        router.push(with: route)
       case .dynamicIssuance(let session):
         setState {
           $0.copy(

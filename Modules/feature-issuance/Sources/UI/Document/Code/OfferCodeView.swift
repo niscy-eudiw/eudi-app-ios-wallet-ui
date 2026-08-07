@@ -37,13 +37,6 @@ struct OfferCodeView<Router: RouterHost>: View {
         codeIsFocused: $viewModel.codeIsFocused
       )
     }
-    .sheetDialog(isPresented: $viewModel.isIssuerRegistrationWarningSheetShowing) {
-      TrustBlockedSheetView(
-        title: .issuanceRegistrationWarningTitle,
-        message: .issuanceRegistrationWarningMessage,
-        onClose: { viewModel.onIssuerRegistrationWarningClose() }
-      )
-    }
     .alertView(
       isPresented: $viewModel.isTrustBlockedAlertShowing,
       title: .issuanceBlockedTitle,

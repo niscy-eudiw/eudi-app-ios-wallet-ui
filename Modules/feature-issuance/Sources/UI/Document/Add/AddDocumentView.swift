@@ -54,13 +54,6 @@ struct AddDocumentView<Router: RouterHost>: View {
         Button(.close) { viewModel.onTrustBlockedClose() }
       }
     )
-    .sheetDialog(isPresented: $viewModel.isIssuerRegistrationWarningSheetShowing) {
-      TrustBlockedSheetView(
-        title: .issuanceRegistrationWarningTitle,
-        message: .issuanceRegistrationWarningMessage,
-        onClose: { viewModel.onIssuerRegistrationWarningClose() }
-      )
-    }
     .sheetDialog(isPresented: $viewModel.isRegistrationBlockedSheetShowing) {
       TrustBlockedSheetView(
         title: .issuanceRegistrationBlockedTitle,
