@@ -33,7 +33,6 @@ public struct RequestViewState: ViewState {
   public let allowShare: Bool
   public let originator: AppRoute
   public let initialized: Bool
-  public let contentHeaderConfig: ContentHeaderConfig
   public let relyingPartyRegistration: RelyingPartyRegistrationData?
   public let registrationWarning: RegistrationWarning?
 }
@@ -61,12 +60,6 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         allowShare: false,
         originator: originator,
         initialized: false,
-        contentHeaderConfig: .init(
-          appIconAndTextData: AppIconAndTextData(
-            appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
-          ),
-          description: .dataSharingTitle
-        ),
         relyingPartyRegistration: nil,
         registrationWarning: nil
       )
@@ -74,10 +67,6 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
   }
 
   open func doWork() async {}
-
-  open func getTitle() -> LocalizableStringKey {
-    return .custom("")
-  }
 
   open func getRelyingParty() -> LocalizableStringKey {
     return .custom("")
@@ -87,20 +76,8 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
     return false
   }
 
-  open func getCaption() -> LocalizableStringKey {
-    return .custom("")
-  }
-
-  open func getDataRequestInfo() -> LocalizableStringKey {
-    return .custom("")
-  }
-
   open func getSuccessRoute() -> AppRoute? {
     return nil
-  }
-
-  open func getTitleCaption() -> LocalizableStringKey {
-    return .custom("")
   }
 
   open func onShare() {
@@ -211,7 +188,6 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         allowShare: false,
         originator: previous.originator,
         initialized: false,
-        contentHeaderConfig: initialHeaderConfig(),
         relyingPartyRegistration: nil,
         registrationWarning: nil
       )
@@ -304,15 +280,6 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         )
       }
     }
-  }
-
-  private func initialHeaderConfig() -> ContentHeaderConfig {
-    .init(
-      appIconAndTextData: AppIconAndTextData(
-        appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
-      ),
-      description: .dataSharingTitle
-    )
   }
 
   private func canShare(with items: [RequestDataUiModel]) -> Bool {

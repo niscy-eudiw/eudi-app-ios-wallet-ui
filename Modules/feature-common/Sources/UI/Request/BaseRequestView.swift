@@ -269,11 +269,6 @@ private struct BaseRequestViewContainer: View {
     allowShare: true,
     originator: .featureDashboardModule(.dashboard),
     initialized: true,
-    contentHeaderConfig: .init(
-      appIconAndTextData: AppIconAndTextData(
-        appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
-      )
-    ),
     relyingPartyRegistration: RelyingPartyRegistrationData(
       primary: RegisteredParty(
         name: .custom("NordicBank A/S"),

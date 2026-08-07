@@ -48,22 +48,6 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
         relyingParty: .custom(relyingParty),
         isTrusted: isTrusted
       )
-      setState {
-        $0.copy(
-          contentHeaderConfig: .init(
-            appIconAndTextData: AppIconAndTextData(
-              appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
-            ),
-            description: .dataSharingTitle,
-            mainText: getTitle(),
-            relyingPartyData: RelyingPartyData(
-              isVerified: viewState.isTrusted,
-              name: getRelyingParty(),
-              description: getCaption()
-            )
-          )
-        )
-      }
       self.onReceivedRegistration(registration)
     case .notSecuredRequest:
       self.onTrustBlocked()
@@ -133,24 +117,8 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
     await interactor.stopPresentation()
   }
 
-  override func getTitle() -> LocalizableStringKey {
-    .dataSharingRequest
-  }
-
-  override func getCaption() -> LocalizableStringKey {
-    .requestsTheFollowing
-  }
-
-  override func getDataRequestInfo() -> LocalizableStringKey {
-    .requestDataInfoNotice
-  }
-
   override func getRelyingParty() -> LocalizableStringKey {
     viewState.relyingParty
-  }
-
-  override func getTitleCaption() -> LocalizableStringKey {
-    .requestDataTitle([""])
   }
 
   private func startPublisherTask() {
