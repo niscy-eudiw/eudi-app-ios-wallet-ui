@@ -42,8 +42,7 @@ final class TestAddDocumentInteractor: EudiTest {
             logoUrl: nil,
             intendedUse: nil,
             privacyPolicyUrl: nil,
-            serviceDescription: nil,
-            isIntermediated: false
+            serviceDescription: nil
           )
         )
       )

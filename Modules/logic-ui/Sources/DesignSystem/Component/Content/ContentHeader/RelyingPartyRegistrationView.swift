@@ -37,18 +37,15 @@ public struct RegisteredParty: Sendable {
 
 public struct RelyingPartyRegistrationData: Sendable {
   public let primary: RegisteredParty
-  public let onBehalfOf: RegisteredParty?
   public let privacyPolicyUrl: URL?
   public let intendedUse: LocalizableStringKey?
 
   public init(
     primary: RegisteredParty,
-    onBehalfOf: RegisteredParty? = nil,
     privacyPolicyUrl: URL? = nil,
     intendedUse: LocalizableStringKey? = nil
   ) {
     self.primary = primary
-    self.onBehalfOf = onBehalfOf
     self.privacyPolicyUrl = privacyPolicyUrl
     self.intendedUse = intendedUse
   }
@@ -64,10 +61,6 @@ public struct RelyingPartyRegistrationView: View {
   public var body: some View {
     VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
       partyView(data.primary)
-
-      if let onBehalfOf = data.onBehalfOf {
-        onBehalfOfView(onBehalfOf)
-      }
 
       if let privacyPolicyUrl = data.privacyPolicyUrl {
         privacyPolicyView(url: privacyPolicyUrl)
@@ -128,24 +121,6 @@ public struct RelyingPartyRegistrationView: View {
   private var logoSize: Double { 40 }
 
   @ViewBuilder
-  private func onBehalfOfView(_ party: RegisteredParty) -> some View {
-    VStack(alignment: .leading, spacing: SPACING_SMALL) {
-      Text(.onBehalfOf)
-        .typography(Theme.shared.font.bodySmall)
-        .foregroundColor(Theme.shared.color.secondaryLabel)
-
-      HStack(alignment: .center, spacing: SPACING_SMALL) {
-        partyView(party)
-        Spacer(minLength: SPACING_SMALL)
-      }
-    }
-    .padding(SPACING_MEDIUM)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(Theme.shared.color.groupedElevatedBackground)
-    .clipShape(RoundedRectangle(cornerRadius: SPACING_SMALL))
-  }
-
-  @ViewBuilder
   private func privacyPolicyView(url: URL) -> some View {
     section(title: .privacyPolicy) {
       Link(destination: url) {
@@ -186,28 +161,6 @@ public struct RelyingPartyRegistrationView: View {
       privacyPolicyUrl: URL(string: "https://nordicbank.example/privacy"),
       intendedUse: .custom(
         "We will use your identity and age to verify you for a new current account. Your data will be used once to complete onboarding and to meet anti-money laundering requirements."
-      )
-    )
-  )
-  .padding()
-}
-
-#Preview("Intermediary") {
-  RelyingPartyRegistrationView(
-    data: RelyingPartyRegistrationData(
-      primary: RegisteredParty(
-        name: .custom("RP Services S.A."),
-        identifier: .relyingPartyId(["rp:rpservices:prod"]),
-        isVerified: true
-      ),
-      onBehalfOf: RegisteredParty(
-        name: .custom("NordicBank A/S"),
-        identifier: .relyingPartyId(["rp:nordicbank:prod"]),
-        isVerified: true
-      ),
-      privacyPolicyUrl: URL(string: "https://nordicbank.example/privacy"),
-      intendedUse: .custom(
-        "We will use your identity and age to verify you for a new current account."
       )
     )
   )

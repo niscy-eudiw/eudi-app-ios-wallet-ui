@@ -538,8 +538,6 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "home_screen_authenticate_description")
     case .relyingPartyId(let args):
       bundle.localizedStringWithArguments(forKey: "relying_party_id", arguments: args)
-    case .onBehalfOf:
-      bundle.localizedString(forKey: "on_behalf_of")
     case .privacyPolicy:
       bundle.localizedString(forKey: "privacy_policy")
     case .intendedUse:

@@ -52,17 +52,6 @@ public extension RelyingPartyRegistration {
 
     let details = registration.details
 
-    let onBehalfOf = details.flatMap { safeDetails in
-      safeDetails.isIntermediated
-      ? RegisteredParty(
-        name: .custom(safeDetails.tradeName),
-        identifier: .relyingPartyId([safeDetails.uniqueId]),
-        isVerified: true,
-        logoUrl: safeDetails.logoUrl
-      )
-      : nil
-    }
-
     return RelyingPartyRegistrationData(
       primary: RegisteredParty(
         name: name.map { LocalizableStringKey.custom($0) } ?? fallbackName,
@@ -70,7 +59,6 @@ public extension RelyingPartyRegistration {
         isVerified: showVerifiedBadge,
         logoUrl: logoUrl
       ),
-      onBehalfOf: onBehalfOf,
       privacyPolicyUrl: details?.privacyPolicyUrl,
       intendedUse: details?.intendedUse.map { LocalizableStringKey.custom($0) }
     )

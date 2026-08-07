@@ -317,12 +317,20 @@ final actor WalletKitControllerImpl: WalletKitController {
     )
   }
 
+  private var isIssuerRegistrationEnforced: Bool {
+    guard walletKitConfig.validateIssuerRegistrationCertificate else { return false }
+    if case .enforce = walletKitConfig.trustConfiguration.wrprcTrustPolicy { return true }
+    return false
+  }
+
   private func makeIssuerRegistration(
     policy: WrpRegistrationPolicy?,
     warnings: [String: [PolicyViolation]]?
   ) -> IssuerRegistration? {
 
-    guard let policy else { return nil }
+    guard let policy else {
+      return isIssuerRegistrationEnforced ? .notVerified : nil
+    }
 
     let hasWarnings = (warnings ?? [:]).contains { !$0.value.isEmpty }
     guard !hasWarnings else { return .notVerified }
@@ -336,8 +344,7 @@ final actor WalletKitControllerImpl: WalletKitController {
         logoUrl: nil,
         intendedUse: intendedUse,
         privacyPolicyUrl: policy.privacyPolicy.flatMap { URL(string: $0) },
-        serviceDescription: intendedUse,
-        isIntermediated: policy.intermediary != nil
+        serviceDescription: intendedUse
       )
     )
   }
@@ -517,16 +524,17 @@ final actor WalletKitControllerImpl: WalletKitController {
     }
   }
 
+  /// Placeholder details for the credential offer screen: resolving an offer carries no WRPRC today,
+  /// so nothing here is validated. Replace once the kit returns the registration before issuance.
   func getIssuerRegistration(issuerId: String) async -> IssuerRegistration {
     .verified(
       details: RegistrationDetails(
         tradeName: issuerId,
-        uniqueId: issuerId,
+        uniqueId: "rp:\(issuerId):prod",
         logoUrl: nil,
-        intendedUse: nil,
-        privacyPolicyUrl: nil,
-        serviceDescription: nil,
-        isIntermediated: false
+        intendedUse: "We will use your identity data to issue the documents included in this offer.",
+        privacyPolicyUrl: URL(string: "https://issuer.eudiw.dev/privacy"),
+        serviceDescription: "Credential issuance"
       )
     )
   }
@@ -577,23 +585,12 @@ final actor WalletKitControllerImpl: WalletKitController {
       logoUrl: nil,
       intendedUse: intendedUse,
       privacyPolicyUrl: privacyPolicyUrl,
-      serviceDescription: intendedUse,
-      isIntermediated: policy.intermediary != nil
+      serviceDescription: intendedUse
     )
 
     let status: RegistrationStatus = trustViolations.isEmpty
     ? .verified(details: subjectDetails, overaskedClaims: overaskedClaims)
     : .notVerified
-
-    if let intermediary = policy.intermediary {
-      return RelyingPartyRegistration(
-        name: intermediary.name ?? verifierName,
-        uniqueId: intermediary.identifier,
-        isVerified: verifierIsTrusted,
-        logoUrl: nil,
-        registration: status
-      )
-    }
 
     return RelyingPartyRegistration(
       name: policy.name ?? verifierName,

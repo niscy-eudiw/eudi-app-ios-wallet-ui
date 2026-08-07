@@ -31,22 +31,7 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
     // Then
     XCTAssertEqual(data?.primary.isVerified, true)
     XCTAssertEqual(data?.intendedUse, .custom("Onboarding"))
-    XCTAssertNil(data?.onBehalfOf)
     XCTAssertNil(registration.toWarning())
-  }
-
-  func testToRegistrationData_whenIntermediated_thenFillsOnBehalfOfBlock() {
-    // Given
-    let registration = relyingParty(
-      status: .verified(details: details(isIntermediated: true), overaskedClaims: [])
-    )
-
-    // When
-    let data = registration.toRegistrationData(fallbackName: .unknownVerifier)
-
-    // Then
-    XCTAssertEqual(data?.onBehalfOf?.name, .custom("NordicBank A/S"))
-    XCTAssertEqual(data?.onBehalfOf?.isVerified, true)
   }
 
   func testToWarning_whenOverasked_thenReturnsOveraskedWarning() {
@@ -132,15 +117,14 @@ private extension TestRelyingPartyRegistrationUiModel {
     )
   }
 
-  func details(isIntermediated: Bool = false, logoUrl: URL? = nil) -> RegistrationDetails {
+  func details(logoUrl: URL? = nil) -> RegistrationDetails {
     RegistrationDetails(
       tradeName: "NordicBank A/S",
       uniqueId: "rp:nordicbank:prod",
       logoUrl: logoUrl,
       intendedUse: "Onboarding",
       privacyPolicyUrl: URL(string: "https://nordicbank.example/privacy"),
-      serviceDescription: "Current account onboarding",
-      isIntermediated: isIntermediated
+      serviceDescription: "Current account onboarding"
     )
   }
 }

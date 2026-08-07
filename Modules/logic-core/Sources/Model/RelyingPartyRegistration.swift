@@ -64,7 +64,6 @@ public struct RegistrationDetails: Sendable, Equatable {
   public let intendedUse: String?
   public let privacyPolicyUrl: URL?
   public let serviceDescription: String?
-  public let isIntermediated: Bool
 
   public init(
     tradeName: String,
@@ -72,8 +71,7 @@ public struct RegistrationDetails: Sendable, Equatable {
     logoUrl: URL?,
     intendedUse: String?,
     privacyPolicyUrl: URL?,
-    serviceDescription: String?,
-    isIntermediated: Bool
+    serviceDescription: String?
   ) {
     self.tradeName = tradeName
     self.uniqueId = uniqueId
@@ -81,7 +79,6 @@ public struct RegistrationDetails: Sendable, Equatable {
     self.intendedUse = intendedUse
     self.privacyPolicyUrl = privacyPolicyUrl
     self.serviceDescription = serviceDescription
-    self.isIntermediated = isIntermediated
   }
 }
 

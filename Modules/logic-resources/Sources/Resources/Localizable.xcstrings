@@ -133,17 +133,6 @@
         }
       }
     },
-    "on_behalf_of" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "on behalf of"
-          }
-        }
-      }
-    },
     "privacy_policy" : {
       "extractionState" : "manual",
       "localizations" : {

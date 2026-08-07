@@ -269,7 +269,6 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case enterYourPin
   case homeScreenAuthenticateDescription
   case relyingPartyId([String])
-  case onBehalfOf
   case privacyPolicy
   case intendedUse
   case understandRisksAgree
