@@ -16,7 +16,7 @@
 import SwiftUI
 import logic_resources
 
-public struct WarningProceedSheetContent: View {
+public struct WarningProceedSheetView: View {
 
   private let title: LocalizableStringKey
   private let message: LocalizableStringKey
@@ -76,7 +76,7 @@ public struct WarningProceedSheetContent: View {
 }
 
 #Preview {
-  WarningProceedSheetContent(
+  WarningProceedSheetView(
     title: .issuanceRegistrationWarningTitle,
     message: .issuanceRegistrationWarningMessage,
     onProceed: {},

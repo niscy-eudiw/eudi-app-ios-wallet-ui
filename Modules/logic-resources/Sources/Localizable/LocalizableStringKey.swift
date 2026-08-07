@@ -28,13 +28,11 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case tryAgain
   case shareButton
   case cancelButton
-  case requestDataCaption
   case requestDataInfoNotice
   case requestDataTitle([String])
   case requestCombinationTitle([String])
   case documentAdded
   case okButton
-  case shareDataReview
   case success
   case successfullySharedFollowingInformation
   case incompleteRequestDataSelection

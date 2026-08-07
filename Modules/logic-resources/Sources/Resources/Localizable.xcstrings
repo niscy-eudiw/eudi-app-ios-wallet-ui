@@ -2185,17 +2185,6 @@
         }
       }
     },
-    "request_data_share_caption" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please review carefully before sharing your data."
-          }
-        }
-      }
-    },
     "request_data_share_quick_pin_caption" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2467,17 +2456,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Share"
-          }
-        }
-      }
-    },
-    "share_data_review_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please review carefully before sharing your data."
           }
         }
       }

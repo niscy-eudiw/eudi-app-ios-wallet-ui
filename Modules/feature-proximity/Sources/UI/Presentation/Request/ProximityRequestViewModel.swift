@@ -69,6 +69,9 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
       self.onTrustBlocked()
     case .failure(let error):
       self.onEmptyDocuments(error: error.errorMessage)
+      if let registration = await interactor.registrationForFailedRequest() {
+        self.onReceivedRegistration(registration)
+      }
     }
   }
 

@@ -9894,6 +9894,16 @@ return await cuckoo_manager.call(
         )
     }
 
+    public func getVerifierRegistrationForFailedRequest() async -> RelyingPartyRegistration? {
+        return await cuckoo_manager.call(
+            "getVerifierRegistrationForFailedRequest() async -> RelyingPartyRegistration?",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.getVerifierRegistrationForFailedRequest()
+        )
+    }
+
     public struct __StubbingProxy_WalletKitController: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
@@ -10253,6 +10263,14 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<(WrpRegistrationPolicy?, [String], [logic_core.RequestedClaim], String?, Bool)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }, wrap(matchable: p3) { $0.3 }, wrap(matchable: p4) { $0.4 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
                 method: "getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.RequestedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool) async -> RelyingPartyRegistration",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func getVerifierRegistrationForFailedRequest() -> Cuckoo.ProtocolStubFunction<(), RelyingPartyRegistration?> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "getVerifierRegistrationForFailedRequest() async -> RelyingPartyRegistration?",
                 parameterMatchers: matchers
             ))
         }
@@ -10800,6 +10818,18 @@ return await cuckoo_manager.call(
                 sourceLocation: sourceLocation
             )
         }
+        
+        
+        @discardableResult
+        func getVerifierRegistrationForFailedRequest() -> Cuckoo.__DoNotUse<(), RelyingPartyRegistration?> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "getVerifierRegistrationForFailedRequest() async -> RelyingPartyRegistration?",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
     }
 }
 
@@ -10987,6 +11017,10 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
     
     public func getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.RequestedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool) async -> RelyingPartyRegistration {
         return DefaultValueRegistry.defaultValue(for: (RelyingPartyRegistration).self)
+    }
+    
+    public func getVerifierRegistrationForFailedRequest() async -> RelyingPartyRegistration? {
+        return DefaultValueRegistry.defaultValue(for: (RelyingPartyRegistration?).self)
     }
 }
 
@@ -14377,7 +14411,7 @@ import logic_resources
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Sheet/TrustBlockedSheetContent.swift'
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Sheet/TrustBlockedSheetView.swift'
 
 import Cuckoo
 import SwiftUI
@@ -14393,7 +14427,7 @@ import logic_resources
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Sheet/WarningProceedSheetContent.swift'
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Sheet/WarningProceedSheetView.swift'
 
 import Cuckoo
 import SwiftUI

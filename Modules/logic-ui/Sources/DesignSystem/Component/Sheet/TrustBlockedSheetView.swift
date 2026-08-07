@@ -16,7 +16,7 @@
 import SwiftUI
 import logic_resources
 
-public struct TrustBlockedSheetContent: View {
+public struct TrustBlockedSheetView: View {
 
   private let title: LocalizableStringKey
   private let message: LocalizableStringKey
@@ -67,7 +67,7 @@ public struct TrustBlockedSheetContent: View {
 }
 
 #Preview {
-  TrustBlockedSheetContent(
+  TrustBlockedSheetView(
     title: .issuanceBlockedTitle,
     message: .issuanceBlockedMessage,
     onClose: {}

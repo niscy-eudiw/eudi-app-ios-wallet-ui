@@ -129,12 +129,6 @@ private struct BaseRequestViewContainer: View {
           singleCombinationContent()
         }
 
-        Text(.shareDataReview)
-          .typography(Theme.shared.font.bodyMedium)
-          .foregroundColor(Theme.shared.color.primaryLabel)
-          .multilineTextAlignment(.leading)
-          .shimmer(isLoading: viewState.isLoading)
-
         VSpacer.medium()
       }
       .padding(Theme.shared.dimension.padding)
@@ -244,11 +238,10 @@ private struct BaseRequestViewContainer: View {
   @ViewBuilder
   private func noDocumentsFound(errorTitle: LocalizableStringKey) -> some View {
     VStack(spacing: .zero) {
-      ContentHeaderView(
-        config: viewState.contentHeaderConfig,
-        accessibilityDescription: BaseRequestLocators.description
-      )
-      .padding(.horizontal, Theme.shared.dimension.padding)
+      if let registration = viewState.relyingPartyRegistration {
+        RelyingPartyRegistrationView(data: registration)
+          .padding(.horizontal, Theme.shared.dimension.padding)
+      }
 
       VStack(spacing: .zero) {
         Spacer()

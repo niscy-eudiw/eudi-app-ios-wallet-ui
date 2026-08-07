@@ -55,6 +55,7 @@ public protocol PresentationInteractor: Sendable {
   func updatePresentationCoordinator(with coordinator: RemoteSessionCoordinator) async
   func storeDynamicIssuancePendingUrl(with url: URL) async
   func stopPresentation() async
+  func registrationForFailedRequest() async -> RelyingPartyRegistration?
 }
 
 final actor PresentationInteractorImpl: PresentationInteractor {
@@ -118,7 +119,6 @@ final actor PresentationInteractorImpl: PresentationInteractor {
           )
         }
         .filter { !$0.isEmpty }
-      guard !combinations.isEmpty else { return .failure(WalletCoreError.unableFetchDocuments) }
       return .success(
         .init(
           requestDataCombinations: combinations,
@@ -179,6 +179,10 @@ final actor PresentationInteractorImpl: PresentationInteractor {
 
   public func storeDynamicIssuancePendingUrl(with url: URL) async {
     await walletKitController.storeDynamicIssuancePendingUrl(with: url)
+  }
+
+  public func registrationForFailedRequest() async -> RelyingPartyRegistration? {
+    await walletKitController.getVerifierRegistrationForFailedRequest()
   }
 
   public func stopPresentation() async {

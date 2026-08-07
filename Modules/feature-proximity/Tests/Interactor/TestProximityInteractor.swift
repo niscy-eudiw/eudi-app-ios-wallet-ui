@@ -549,7 +549,7 @@ final class TestProximityInteractor: EudiTest {
     }
   }
 
-  func testOnRequestReceived_WhenAllDocumentsAreRevoked_ThenVerifyFailureState() async {
+  func testOnRequestReceived_WhenAllDocumentsAreRevoked_ThenVerifySuccessWithNoItems() async {
     // Given
     let mockResponse = Self.mockPresentationRequest
     let revokedDocIds = mockResponse.itemSets.flatMap { $0 }.map { $0.docId }
@@ -566,13 +566,10 @@ final class TestProximityInteractor: EudiTest {
 
     // Then
     switch state {
-    case .failure(let error):
-      XCTAssertEqual(
-        error.localizedDescription,
-        WalletCoreError.unableFetchDocuments.localizedDescription
-      )
+    case .success(let items, _, _, _, _):
+      XCTAssertTrue(items.isEmpty)
     default:
-      XCTFail("Expected failure state, got \(state)")
+      XCTFail("Expected success state, got \(state)")
     }
   }
 

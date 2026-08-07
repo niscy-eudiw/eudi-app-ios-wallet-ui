@@ -54,8 +54,6 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "share_button")
     case .cancelButton:
       bundle.localizedString(forKey: "cancel_button")
-    case .requestDataCaption:
-      bundle.localizedString(forKey: "request_data_share_caption")
     case .requestDataInfoNotice:
       bundle.localizedString(forKey: "request_data_info_notice")
     case .requestDataTitle(let args):
@@ -66,8 +64,6 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "document_added")
     case .okButton:
       bundle.localizedString(forKey: "ok_button")
-    case .shareDataReview:
-      bundle.localizedString(forKey: "share_data_review_title")
     case .success:
       bundle.localizedString(forKey: "success")
     case .successfullySharedFollowingInformation:

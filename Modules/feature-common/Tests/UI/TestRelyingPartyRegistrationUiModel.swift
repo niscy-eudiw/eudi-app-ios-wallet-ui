@@ -84,6 +84,33 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
     XCTAssertNil(registration.toWarning())
   }
 
+  func testIssuerToRegistrationData_whenCertificateHasNoLogo_thenFallsBackToIssuerMetadata() {
+    let metadataLogo = URL(string: "https://issuer.example/logo.png")
+    let registration = IssuerRegistration.verified(details: details())
+
+    let data = registration.toRegistrationData(issuerName: "Aegean S.A.", issuerLogo: metadataLogo)
+
+    XCTAssertEqual(data?.primary.logoUrl, metadataLogo)
+  }
+
+  func testIssuerToRegistrationData_whenCertificateCarriesALogo_thenItWinsOverMetadata() {
+    let certificateLogo = URL(string: "https://registry.example/certified-logo.png")
+    let registration = IssuerRegistration.verified(details: details(logoUrl: certificateLogo))
+
+    let data = registration.toRegistrationData(
+      issuerName: "Aegean S.A.",
+      issuerLogo: URL(string: "https://issuer.example/logo.png")
+    )
+
+    XCTAssertEqual(data?.primary.logoUrl, certificateLogo)
+  }
+
+  func testIssuerToRegistrationData_whenBlocked_thenNoBlockIsShown() {
+    let registration = IssuerRegistration.blocked(reason: .attestationNotRegistered)
+
+    XCTAssertNil(registration.toRegistrationData(issuerName: "Aegean S.A."))
+  }
+
   func testIssuerToWarning_whenNotVerified_thenReturnsIssuerWarning() {
     XCTAssertEqual(IssuerRegistration.notVerified.toWarning(), .issuerNotVerified)
     XCTAssertNil(IssuerRegistration.verified(details: details()).toWarning())
@@ -105,11 +132,11 @@ private extension TestRelyingPartyRegistrationUiModel {
     )
   }
 
-  func details(isIntermediated: Bool = false) -> RegistrationDetails {
+  func details(isIntermediated: Bool = false, logoUrl: URL? = nil) -> RegistrationDetails {
     RegistrationDetails(
       tradeName: "NordicBank A/S",
       uniqueId: "rp:nordicbank:prod",
-      logoUrl: nil,
+      logoUrl: logoUrl,
       intendedUse: "Onboarding",
       privacyPolicyUrl: URL(string: "https://nordicbank.example/privacy"),
       serviceDescription: "Current account onboarding",

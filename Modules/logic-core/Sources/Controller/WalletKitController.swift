@@ -105,6 +105,8 @@ public protocol WalletKitController: Sendable {
     verifierName: String?,
     verifierIsTrusted: Bool
   ) async -> RelyingPartyRegistration
+
+  func getVerifierRegistrationForFailedRequest() async -> RelyingPartyRegistration?
 }
 
 final actor WalletKitControllerImpl: WalletKitController {
@@ -526,6 +528,21 @@ final actor WalletKitControllerImpl: WalletKitController {
         serviceDescription: nil,
         isIntermediated: false
       )
+    )
+  }
+
+  func getVerifierRegistrationForFailedRequest() async -> RelyingPartyRegistration? {
+
+    guard let policy = await wallet.wrpRegistrationValidator.wrpVpRegistrationPolicy else {
+      return nil
+    }
+
+    return await getVerifierRegistration(
+      policy: policy,
+      trustViolations: [],
+      overaskedClaims: [],
+      verifierName: nil,
+      verifierIsTrusted: false
     )
   }
 

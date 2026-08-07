@@ -560,7 +560,7 @@ final class TestPresentationInteractor: EudiTest {
     }
   }
 
-  func testOnRequestReceived_WhenAllDocumentsRevoked_ThenReturnsFailure() async {
+  func testOnRequestReceived_WhenAllDocumentsRevoked_ThenReturnsSuccessWithNoCombinations() async {
     // Given
     let mockResponse = Self.mockPresentationRequest
     let allDocIds = mockResponse.itemSets.flatMap { $0 }.map { $0.docId }
@@ -589,13 +589,10 @@ final class TestPresentationInteractor: EudiTest {
 
     // Then
     switch result {
-    case .failure(let error):
-      XCTAssertEqual(
-        error.localizedDescription,
-        WalletCoreError.unableFetchDocuments.localizedDescription
-      )
+    case .success(let model):
+      XCTAssertTrue(model.requestDataCombinations.isEmpty)
     default:
-      XCTFail("Expected failure, got \(result)")
+      XCTFail("Expected success, got \(result)")
     }
   }
 

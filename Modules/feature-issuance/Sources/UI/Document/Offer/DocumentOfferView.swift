@@ -50,7 +50,7 @@ struct DocumentOfferView<Router: RouterHost>: View {
       )
     }
     .sheetDialog(isPresented: $viewModel.isIssuerRegistrationWarningSheetShowing) {
-      TrustBlockedSheetContent(
+      TrustBlockedSheetView(
         title: .issuanceRegistrationWarningTitle,
         message: .issuanceRegistrationWarningMessage,
         onClose: { viewModel.onIssuerRegistrationWarningClose() }
@@ -65,7 +65,7 @@ struct DocumentOfferView<Router: RouterHost>: View {
       }
     )
     .sheetDialog(isPresented: $viewModel.isRegistrationBlockedSheetShowing) {
-      TrustBlockedSheetContent(
+      TrustBlockedSheetView(
         title: .issuanceRegistrationBlockedTitle,
         message: .issuanceRegistrationBlockedMessage,
         onClose: { viewModel.onRegistrationBlockedClose() }
@@ -128,12 +128,6 @@ private struct DocumentOfferViewContainer: View {
           }
         }
 
-        Text(.shareDataReview)
-          .typography(Theme.shared.font.bodyMedium)
-          .foregroundColor(Theme.shared.color.primaryLabel)
-          .multilineTextAlignment(.leading)
-          .shimmer(isLoading: viewState.isLoading)
-
         VSpacer.medium()
       }
       .padding(Theme.shared.dimension.padding)
@@ -183,10 +177,10 @@ private struct DocumentOfferViewContainer: View {
   @ViewBuilder
   private func noDocumentsFound() -> some View {
     VStack(spacing: .zero) {
-      ContentHeaderView(
-        config: viewState.contentHeaderConfig
-      )
-      .padding(.horizontal, Theme.shared.dimension.padding)
+      if let issuerRegistration = viewState.issuerRegistration {
+        RelyingPartyRegistrationView(data: issuerRegistration)
+          .padding(.horizontal, Theme.shared.dimension.padding)
+      }
       Spacer()
       ContentEmptyView(
         title: .requestCredentialOfferNoDocument

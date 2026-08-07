@@ -70,6 +70,7 @@ public protocol ProximityInteractor: Sendable {
   func onResponsePrepare(requestItems: [RequestDataUiModel]) async -> ProximityResponsePreparationPartialState
   func onSendResponse() async -> ProximityResponsePartialState
   func stopPresentation() async
+  func registrationForFailedRequest() async -> RelyingPartyRegistration?
 
 }
 
@@ -129,7 +130,6 @@ final actor ProximityInteractorImpl: ProximityInteractor {
       let response = try await coordinator.requestReceived()
       let revokedDocuments = (try? await walletKitController.fetchRevokedDocuments()) ?? []
       let documents = (response.itemSets.first ?? []).filter { item in !revokedDocuments.contains(where: { $0 == item.docId }) }
-      guard !documents.isEmpty else { return .failure(WalletCoreError.unableFetchDocuments) }
       let registrationPolicy = coordinator.relyingPartyRegistration
       let overaskedClaims = documents.overaskedClaims(policy: registrationPolicy)
       return .success(
@@ -185,6 +185,10 @@ final actor ProximityInteractorImpl: ProximityInteractor {
     } catch {
       return .failure(error)
     }
+  }
+
+  public func registrationForFailedRequest() async -> RelyingPartyRegistration? {
+    await walletKitController.getVerifierRegistrationForFailedRequest()
   }
 
   public func stopPresentation() async {

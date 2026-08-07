@@ -68,6 +68,9 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
       self.onTrustBlocked()
     case .failure(let error):
       self.onEmptyDocuments(error: error.errorMessage)
+      if let registration = await interactor.registrationForFailedRequest() {
+        self.onReceivedRegistration(registration)
+      }
     }
   }
 
