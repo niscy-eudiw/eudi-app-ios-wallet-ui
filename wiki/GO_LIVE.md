@@ -34,6 +34,7 @@ certification or a replacement for a full security assessment.
 * [OpenID4VP Configuration](#openid4vp-configuration)
 * [Digital Credentials API And Identity Document Provider](#digital-credentials-api-and-identity-document-provider)
 * [Trust Store](#trust-store)
+* [Registration Certificates: The Second Trust Layer](#registration-certificates-the-second-trust-layer)
 * [Issuer Configuration: `issuersConfig`](#issuer-configuration-issuersconfig)
 * [Wallet Provider Attestation](#wallet-provider-attestation)
 * [Document Issuance Rules](#document-issuance-rules)
@@ -129,6 +130,7 @@ Use this checklist before the first production release.
 | Issuers | All OpenID4VCI issuer URLs point to production issuer services controlled or approved by the implementer. |
 | Wallet provider | `walletProviderAttestationUrl` points to the production Wallet Provider service and supports the expected attestation endpoints. |
 | Trust anchors | Demo and development certificates are replaced by production IACA, reader, verifier, or trust-framework anchors. |
+| Registration certificates | `wrprcProviders` points at the production registration trusted list, every production issuer and verifier presents a registration certificate that validates against it, and every issuer's registered scope covers the documents it offers. Issuance is refused otherwise. |
 | RQES | QTSP, TSA, client ID, redirect URI, and signing policy are production values. No QTSP client secret is hardcoded in the app. |
 | Secrets | No production secret is hardcoded in Swift, plist files, xcconfig files, or build settings. |
 | Network | App Transport Security is enforced; trust-all certificate logic is absent; TLS policy and certificate pinning strategy are agreed. |
@@ -924,6 +926,8 @@ Production guidance:
 
 * Replace the demo LoTE endpoints in `trustConfiguration` with your production trusted-list locations.
 * Review `defaultPolicy`, `requireSignedMetadata`, and `statusTrustPolicy` for production assurance.
+* Configure `wrprcProviders` as well; without it the registration certificates covered in the next
+  section have no trust source, and no registration can be validated in either direction.
 * Remove demo and staging fallback trust anchors that are not part of the production trust framework.
 * Add only production IACA, reader root, verifier, or scheme certificates approved for launch.
 * Use clear file names, for example `ms_iaca_2026.der`.
@@ -936,6 +940,62 @@ Certificate governance:
 * Do not store private keys in the app repository.
 * Define rotation before expiry.
 * Define emergency distrust and app update procedures.
+
+## Registration Certificates: The Second Trust Layer
+
+Trust is evaluated on two independent layers, against separate trusted lists, and passing one says
+nothing about the other:
+
+| | Access certificate (WRPAC) | Registration certificate (WRPRC) |
+|---|---|---|
+| Answers | *who is this party* | *what is it registered to do* |
+| Establishes | authentication of the issuer or verifier | the registered identity, declared purpose, privacy policy, and the attestation types and claims the party may issue or request |
+| Trust source | `wrpacProviders` | `wrprcProviders` |
+| Carried in | the request's reader authentication | `registration_cert` in the signed issuer metadata's `issuer_info` (OpenID4VCI), a `verifier_info` element with `format = registration_cert` (OpenID4VP), or the `euWrprc` entry of each `ItemsRequest` `requestInfo` (ISO/IEC 18013-5) |
+
+The two layers are not interchangeable: an authenticated issuer that is not registered for what it
+offers is refused, and a registered issuer that fails authentication is refused too.
+
+The app treats the two directions differently, and the asymmetry is intentional:
+
+* **Issuance refuses.** A document is stored only when the issuer's registration is verified and
+  covers the credential being issued. A registration that fails validation, or that does not list
+  the offered attestation, stops the flow on the "Issuance blocked" alert and reports it the same
+  way an authentication failure does, because the distinction does not change what the user can do
+  about it. WalletKit writes issued documents to storage before the app sees the outcome, so the app
+  deletes them itself when it refuses.
+* **Presentation warns rather than blocks.** A request whose registration could not be validated
+  still reaches the consent screen, shown without the verified badge and behind a warning the user
+  must acknowledge before sharing. A request whose registration *is* verified but that reaches
+  beyond the registered scope keeps the badge, marks each requested claim outside that scope as
+  "Not registered data", and gates sharing behind the same acknowledgement. The acknowledgement is
+  not remembered between requests. Access-certificate failures continue to block outright where the
+  protocol allows it.
+
+Production requirements:
+
+* Set `wrprcProviders` to the production registration trusted list. It is the only trust source for
+  this layer.
+* Keep `validateIssuerRegistrationCertificate` enabled, and confirm every production issuer
+  publishes `issuer_info`. A missing WRPRC is a hard failure in the OpenID4VCI library rather than a
+  warning, so enabling this against an issuer that does not publish it fails every issuance.
+* Keep `wrprcTrustPolicy` at `.enforce`. It governs the WRPRC trust-chain check, and it also decides
+  whether a registration that was never established refuses the issuance — under `.warning` such an
+  issuance proceeds and the app stores the document.
+* Confirm each issuer's registered scope actually covers what it offers, before release. An issuer
+  authenticated but not registered for a credential it issues is refused at runtime.
+* Note what `wrprcTrustPolicy` does not cover: an expired certificate and a missing status list
+  always fail regardless of the policy, and a status list that cannot be retrieved is always a
+  warning. Under `.enforce`, a transient failure reaching the status list surfaces as a refused
+  issuance, so confirm the status endpoints of your issuers are as available as the issuers
+  themselves.
+* Test both directions: a party on the registration list succeeds; one that is absent, expired, or
+  out of scope is refused on issuance and warned about on presentation.
+
+The verified badge on the consent screen is driven by the registration outcome alone: a registration
+that validated shows the badge, one that failed hides it. The access-certificate verdict is only a
+fallback for the case where no registration was evaluated. Treat the badge as a statement about the
+registration layer, not a combined verdict over both.
 
 ## Issuer Configuration: `issuersConfig`
 

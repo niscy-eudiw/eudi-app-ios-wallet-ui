@@ -146,7 +146,7 @@ The primary trust source is an ETSI LoTE (List of Trusted Entities) source that 
       pidProviders: "https://trustedlist.serviceproviders.eudiw.dev/LOTE/json/PIDProviders.jwt",
       walletProviders: nil,
       wrpacProviders: "https://trustedlist.serviceproviders.eudiw.dev/LOTE/json/WRPACProviders.jwt",
-      wrprcProviders: nil,
+      wrprcProviders: "https://trustedlist.serviceproviders.eudiw.dev/LOTE/json/WRPRCProviders.jwt",
       pubEaaProviders: "https://trustedlist.serviceproviders.eudiw.dev/LOTE/json/PubEAAProviders.jwt",
       qeaProviders: nil,
       eaaProviders: [:]
@@ -169,7 +169,8 @@ The primary trust source is an ETSI LoTE (List of Trusted Entities) source that 
       ),
       defaultPolicy: .warning,
       requireSignedMetadata: true,
-      statusTrustPolicy: .warning
+      statusTrustPolicy: .warning,
+      wrprcTrustPolicy: .enforce
     )
   }
 
@@ -186,6 +187,37 @@ The primary trust source is an ETSI LoTE (List of Trusted Entities) source that 
     ].compactMap { loadCertificate($0) }
   }
 ```
+
+**Two trust layers.** An access certificate (WRPAC) answers *who is this party*, a registration
+certificate (WRPRC) answers *what is it registered to do* — the registered identity, declared
+purpose, privacy policy, and the attestation types and claims the party may issue or request. They
+are validated independently and against separate trusted lists, so passing one says nothing about
+the other. `wrprcProviders` is what makes the second layer possible; leave it `nil` and no
+registration certificate can be validated in either direction.
+
+The app treats the two directions differently, and the asymmetry is deliberate:
+
+* **Issuance refuses.** A document is stored only when the issuer's registration is verified and
+  covers what is being issued. A registration that fails validation, or that does not list the
+  offered attestation, stops the flow on the "Issuance blocked" alert, and any document the kit
+  already wrote to storage is deleted behind the scenes. The same applies to a registration that was
+  never established at all — but only while `wrprcTrustPolicy` is `.enforce`; see below.
+* **Presentation warns.** A request whose registration could not be validated, or that reaches
+  beyond the registered scope, still reaches the consent screen. It is shown without the verified
+  badge, the claims outside the registered scope are marked, and Share stays disabled until the user
+  acknowledges the warning. The acknowledgement is deliberately not remembered between requests.
+
+Two settings govern the issuance side, and both must be on for it to refuse anything:
+
+| Setting | Where | Effect |
+|---|---|---|
+| `validateIssuerRegistrationCertificate` | `WalletKitConfig` | Turns WRPRC validation on for OpenID4VCI. Off means no registration is ever evaluated and issuance never refuses on this basis. A missing WRPRC is a hard failure in the OpenID4VCI library rather than a warning, so enabling this against an issuer that does not publish `issuer_info` fails every issuance. |
+| `wrprcTrustPolicy` | `TrustConfiguration` | Governs the WRPRC **trust chain** check only. `.enforce` rejects a certificate that does not chain to the registration trusted list, and makes an unestablished registration refuse the issuance. `.warning` records the problem and lets the issuance through. |
+
+Note what `wrprcTrustPolicy` does **not** cover: an expired certificate and a missing status list
+always fail regardless of the policy, while a status list that cannot be retrieved is always a
+warning. A transient network failure reaching the status list therefore surfaces as a refused
+issuance under `.enforce`.
 
 4. VP API
 
