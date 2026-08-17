@@ -75,6 +75,39 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
     XCTAssertNil(registration.toWarning())
   }
 
+  func testToRegistrationData_whenRegistrationVerifiedButAccessCertificateIsNot_thenNoBadge() {
+    // Both layers must agree: a registration cannot vouch for a party the access certificate
+    // could not authenticate
+    let registration = RelyingPartyRegistration(
+      name: "NordicBank A/S",
+      uniqueId: "rp:nordicbank:prod",
+      isVerified: false,
+      logoUrl: nil,
+      registration: .verified(details: details(), overaskedClaims: [])
+    )
+
+    let data = registration.toRegistrationData(fallbackName: .unknownVerifier)
+
+    XCTAssertFalse(registration.isFullyVerified)
+    XCTAssertEqual(data.primary.isVerified, false)
+    // the certificate's own sections still render — only the badge is withheld
+    XCTAssertEqual(data.intendedUse, .custom("Onboarding"))
+  }
+
+  func testToRegistrationData_whenNotEvaluated_thenAccessCertificateDecidesAlone() {
+    let trusted = relyingParty(status: .notSupported)
+    let untrusted = RelyingPartyRegistration(
+      name: "NordicBank A/S",
+      uniqueId: nil,
+      isVerified: false,
+      logoUrl: nil,
+      registration: .notSupported
+    )
+
+    XCTAssertTrue(trusted.isFullyVerified)
+    XCTAssertFalse(untrusted.isFullyVerified)
+  }
+
   func testToRegistrationData_whenNotVerified_thenStillNamesTheRequester() {
     // The party whose registration failed is the one the user most needs identified
     let registration = relyingParty(status: .notVerified)

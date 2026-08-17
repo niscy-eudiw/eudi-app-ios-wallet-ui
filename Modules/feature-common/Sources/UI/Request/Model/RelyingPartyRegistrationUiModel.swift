@@ -41,24 +41,14 @@ public enum RegistrationWarning: Sendable, Equatable {
 
 public extension RelyingPartyRegistration {
 
-  /// Who is asking, always. The identity block comes from the request itself, so it survives a
-  /// registration that failed or was never evaluated — only the certificate's own sections drop
-  /// away with it. Hiding the requester precisely when its registration is doubtful would tell the
-  /// user least about the party they should scrutinise most.
   func toRegistrationData(fallbackName: LocalizableStringKey) -> RelyingPartyRegistrationData {
-    let showVerifiedBadge = switch registration {
-    case .verified: true
-    case .notVerified: false
-    case .notSupported: isVerified
-    }
-
     let details = registration.details
 
     return RelyingPartyRegistrationData(
       primary: RegisteredParty(
         name: name.map { LocalizableStringKey.custom($0) } ?? fallbackName,
         identifier: uniqueId.map { LocalizableStringKey.relyingPartyId([$0]) },
-        isVerified: showVerifiedBadge,
+        isVerified: isFullyVerified,
         logoUrl: logoUrl
       ),
       privacyPolicyUrl: details?.privacyPolicyUrl,

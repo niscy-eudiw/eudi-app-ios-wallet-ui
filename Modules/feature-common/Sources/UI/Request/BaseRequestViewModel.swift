@@ -73,7 +73,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
   }
 
   open func getRelyingPartyIsTrusted() -> Bool {
-    return false
+    return viewState.isTrusted
   }
 
   open func getSuccessRoute() -> AppRoute? {
@@ -198,6 +198,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
     isRiskAcknowledged = false
     setState {
       $0
+        .copy(isTrusted: registration.isFullyVerified)
         .copy(relyingPartyRegistration: registration.toRegistrationData(fallbackName: .unknownVerifier))
         .copy(registrationWarning: registration.toWarning())
     }

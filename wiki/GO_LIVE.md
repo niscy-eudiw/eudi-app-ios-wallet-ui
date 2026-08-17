@@ -995,10 +995,16 @@ Production requirements:
 * Test both directions: a party on the registration list succeeds; one that is absent, expired, or
   out of scope is refused on issuance and warned about on presentation.
 
-The verified badge on the consent screen is driven by the registration outcome alone: a registration
-that validated shows the badge, one that failed hides it. The access-certificate verdict is only a
-fallback for the case where no registration was evaluated. Treat the badge as a statement about the
-registration layer, not a combined verdict over both.
+The verified badge on the consent screen is a combined verdict over **both** layers: it appears only
+when the access certificate is trusted *and* the registration raised no problem. A registration that
+failed hides the badge even behind a trusted access certificate, and a trusted registration does not
+restore it if the access certificate is untrusted. Where no registration was evaluated at all, the
+access-certificate verdict decides alone.
+
+The same verdict is carried through to the screens that follow, so a verifier badged on the consent
+screen is badged on the success screen and never the reverse. Note the issuance side answers a
+narrower question — the issuer's badge reflects its registration alone, since a credential offer
+carries no reader authentication to combine it with.
 
 ## Issuer Configuration: `issuersConfig`
 

@@ -120,10 +120,6 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
     viewState.relyingParty
   }
 
-  override func getRelyingPartyIsTrusted() -> Bool {
-    viewState.isTrusted
-  }
-
   func handleDeepLinkNotification(with info: [AnyHashable: Any]) {
     Task {
       guard let session = info["session"] as? RemoteSessionCoordinator else {

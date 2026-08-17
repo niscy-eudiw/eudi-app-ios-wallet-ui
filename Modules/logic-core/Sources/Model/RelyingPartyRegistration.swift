@@ -37,6 +37,10 @@ public struct RelyingPartyRegistration: Sendable, Equatable {
     self.logoUrl = logoUrl
     self.registration = registration
   }
+
+  public var isFullyVerified: Bool {
+    isVerified && registration != .notVerified
+  }
 }
 
 public enum RegistrationStatus: Sendable, Equatable {
