@@ -79,9 +79,7 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
         return .failure(WalletCoreError.missingPid)
       }
 
-      let issuerRegistration = await walletController.getIssuerRegistration(
-        issuerId: offer.issuerName
-      )
+      let issuerRegistration = await walletController.getIssuerRegistration(for: offer)
       if case .blocked(let reason) = issuerRegistration {
         return .registrationBlocked(reason)
       }
@@ -324,7 +322,7 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
 }
 
 public enum OfferRequestPartialState: Sendable {
-  case success(DocumentOfferUIModel, IssuerRegistration)
+  case success(DocumentOfferUIModel, IssuerRegistration?)
   case registrationBlocked(IssuerRegistration.BlockedReason)
   case failure(Error)
 }

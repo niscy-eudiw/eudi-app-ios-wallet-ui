@@ -199,9 +199,11 @@ The app treats the two directions differently, and the asymmetry is deliberate:
 
 * **Issuance refuses.** A document is stored only when the issuer's registration is verified and
   covers what is being issued. A registration that fails validation, or that does not list the
-  offered attestation, stops the flow on the "Issuance blocked" alert, and any document the kit
-  already wrote to storage is deleted behind the scenes. The same applies to a registration that was
-  never established at all — but only while `wrprcTrustPolicy` is `.enforce`; see below.
+  offered attestation, stops the flow on the "Issuance blocked" alert. A credential offer is
+  resolved before anything is issued, so that refusal happens up front; the issuer-list flow only
+  learns the outcome after the kit has issued, so any document it already wrote to storage is
+  deleted behind the scenes. The same applies to a registration that was never established at all —
+  but only while `wrprcTrustPolicy` is `.enforce`; see below.
 * **Presentation warns.** A request whose registration could not be validated, or that reaches
   beyond the registered scope, still reaches the consent screen. It is shown without the verified
   badge, the claims outside the registered scope are marked, and Share stays disabled until the user

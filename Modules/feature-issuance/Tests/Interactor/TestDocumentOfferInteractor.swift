@@ -34,9 +34,9 @@ final class TestDocumentOfferInteractor: EudiTest {
     self.walletKitController = MockWalletKitController()
     self.configLogic = MockConfigLogic()
     stub(walletKitController) { mock in
-      // Issuer registration is a wallet-kit 0.38.0 stub returning verified; tests that need a
-      // different scenario override this.
-      when(mock.getIssuerRegistration(issuerId: any())).thenReturn(
+      // The offer carries the issuer's registration; tests that need a different scenario
+      // override this.
+      when(mock.getIssuerRegistration(for: any())).thenReturn(
         .verified(
           details: RegistrationDetails(
             tradeName: "issuer",

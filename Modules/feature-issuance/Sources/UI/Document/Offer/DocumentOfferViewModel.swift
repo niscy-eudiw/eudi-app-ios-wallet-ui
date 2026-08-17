@@ -102,7 +102,7 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
     switch state {
     case .success(let uiModel, let issuerRegistration):
       isRiskAcknowledged = false
-      let isProviderVerified = issuerRegistration.details != nil
+      let isProviderVerified = issuerRegistration?.details != nil
       setState {
         $0.copy(
           isLoading: false,
@@ -125,12 +125,12 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
         )
         .copy(error: nil)
         .copy(
-          issuerRegistration: issuerRegistration.toRegistrationData(
+          issuerRegistration: issuerRegistration?.toRegistrationData(
             issuerName: uiModel.issuerName,
             issuerLogo: uiModel.issuerLogo
           )
         )
-        .copy(registrationWarning: issuerRegistration.toWarning())
+        .copy(registrationWarning: issuerRegistration?.toWarning())
       }
     case .registrationBlocked:
       setState {

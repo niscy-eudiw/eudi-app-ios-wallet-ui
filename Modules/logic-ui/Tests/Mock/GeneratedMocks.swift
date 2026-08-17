@@ -4030,9 +4030,19 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration {
+    public func getIssuerRegistration(for p0: OfferedIssuanceModel) async -> IssuerRegistration? {
         return await cuckoo_manager.call(
-            "getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration",
+            "getIssuerRegistration(for p0: OfferedIssuanceModel) async -> IssuerRegistration?",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.getIssuerRegistration(for: p0)
+        )
+    }
+
+    public func getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration? {
+        return await cuckoo_manager.call(
+            "getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration?",
             parameters: (p0),
             escapingParameters: (p0),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
@@ -4407,10 +4417,18 @@ return await cuckoo_manager.call(
             ))
         }
         
-        func getIssuerRegistration<M1: Cuckoo.Matchable>(issuerId p0: M1) -> Cuckoo.ProtocolStubFunction<(String), IssuerRegistration> where M1.MatchedType == String {
+        func getIssuerRegistration<M1: Cuckoo.Matchable>(for p0: M1) -> Cuckoo.ProtocolStubFunction<(OfferedIssuanceModel), IssuerRegistration?> where M1.MatchedType == OfferedIssuanceModel {
+            let matchers: [Cuckoo.ParameterMatcher<(OfferedIssuanceModel)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "getIssuerRegistration(for p0: OfferedIssuanceModel) async -> IssuerRegistration?",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func getIssuerRegistration<M1: Cuckoo.Matchable>(issuerId p0: M1) -> Cuckoo.ProtocolStubFunction<(String), IssuerRegistration?> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration",
+                method: "getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration?",
                 parameterMatchers: matchers
             ))
         }
@@ -4953,10 +4971,22 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func getIssuerRegistration<M1: Cuckoo.Matchable>(issuerId p0: M1) -> Cuckoo.__DoNotUse<(String), IssuerRegistration> where M1.MatchedType == String {
+        func getIssuerRegistration<M1: Cuckoo.Matchable>(for p0: M1) -> Cuckoo.__DoNotUse<(OfferedIssuanceModel), IssuerRegistration?> where M1.MatchedType == OfferedIssuanceModel {
+            let matchers: [Cuckoo.ParameterMatcher<(OfferedIssuanceModel)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "getIssuerRegistration(for p0: OfferedIssuanceModel) async -> IssuerRegistration?",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func getIssuerRegistration<M1: Cuckoo.Matchable>(issuerId p0: M1) -> Cuckoo.__DoNotUse<(String), IssuerRegistration?> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
-                "getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration",
+                "getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration?",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -5167,8 +5197,12 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
-    public func getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration {
-        return DefaultValueRegistry.defaultValue(for: (IssuerRegistration).self)
+    public func getIssuerRegistration(for p0: OfferedIssuanceModel) async -> IssuerRegistration? {
+        return DefaultValueRegistry.defaultValue(for: (IssuerRegistration?).self)
+    }
+    
+    public func getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration? {
+        return DefaultValueRegistry.defaultValue(for: (IssuerRegistration?).self)
     }
     
     public func getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.RequestedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool) async -> RelyingPartyRegistration {

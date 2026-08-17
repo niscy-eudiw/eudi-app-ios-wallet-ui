@@ -962,8 +962,11 @@ The app treats the two directions differently, and the asymmetry is intentional:
   covers the credential being issued. A registration that fails validation, or that does not list
   the offered attestation, stops the flow on the "Issuance blocked" alert and reports it the same
   way an authentication failure does, because the distinction does not change what the user can do
-  about it. WalletKit writes issued documents to storage before the app sees the outcome, so the app
-  deletes them itself when it refuses.
+  about it. *When* it is caught depends on the flow. A credential offer is resolved before anything
+  is issued, so the offer screen already knows the issuer's registration and refuses up front. The
+  issuer-list flow has no such step — WalletKit validates that issuance's certificate as part of
+  issuing and only reports the outcome afterwards, and because it writes the documents to storage
+  before the app sees that outcome, the app deletes them itself when it refuses.
 * **Presentation warns rather than blocks.** A request whose registration could not be validated
   still reaches the consent screen, shown without the verified badge and behind a warning the user
   must acknowledge before sharing. A request whose registration *is* verified but that reaches

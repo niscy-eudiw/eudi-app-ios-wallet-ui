@@ -32,8 +32,8 @@ final class TestAddDocumentInteractor: EudiTest {
     self.walletKitController = MockWalletKitController()
 
     stub(walletKitController) { mock in
-      // Issuer registration is a wallet-kit 0.38.0 stub returning verified; tests that need a
-      // different scenario override this.
+      // The issuer-list flow has no pre-issuance registration; tests that need a different
+      // scenario override this.
       when(mock.getIssuerRegistration(issuerId: any())).thenReturn(
         .verified(
           details: RegistrationDetails(

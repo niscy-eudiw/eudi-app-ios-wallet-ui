@@ -155,7 +155,7 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
       return .registrationBlocked(reason)
     case .notVerified:
       guard hasAcknowledgedRegistrationWarning else { return .registrationNotVerified }
-    case .verified:
+    case .verified, .none:
       break
     }
 

@@ -96,7 +96,8 @@ public protocol WalletKitController: Sendable {
   func removeAllFailedReIssuedDocuments() async throws
 
   func refreshUsageCounters() async throws
-  func getIssuerRegistration(issuerId: String) async -> IssuerRegistration
+  func getIssuerRegistration(for offer: OfferedIssuanceModel) async -> IssuerRegistration?
+  func getIssuerRegistration(issuerId: String) async -> IssuerRegistration?
 
   func getVerifierRegistration(
     policy: WrpRegistrationPolicy?,
@@ -332,8 +333,13 @@ final actor WalletKitControllerImpl: WalletKitController {
       return isIssuerRegistrationEnforced ? .notVerified : nil
     }
 
-    let hasWarnings = (warnings ?? [:]).contains { !$0.value.isEmpty }
-    guard !hasWarnings else { return .notVerified }
+    let raised = (warnings ?? [:]).filter { !$0.value.isEmpty }
+    
+    if raised.contains(where: { !$0.key.isEmpty }) {
+      return .blocked(reason: .attestationNotRegistered)
+    }
+
+    guard raised.isEmpty else { return .notVerified }
 
     let intendedUse = policy.srvDescription?.first?.value ?? policy.purpose?.first?.value
 
@@ -523,20 +529,15 @@ final actor WalletKitControllerImpl: WalletKitController {
       return false
     }
   }
-
-  /// Placeholder details for the credential offer screen: resolving an offer carries no WRPRC today,
-  /// so nothing here is validated. Replace once the kit returns the registration before issuance.
-  func getIssuerRegistration(issuerId: String) async -> IssuerRegistration {
-    .verified(
-      details: RegistrationDetails(
-        tradeName: issuerId,
-        uniqueId: "rp:\(issuerId):prod",
-        logoUrl: nil,
-        intendedUse: "We will use your identity data to issue the documents included in this offer.",
-        privacyPolicyUrl: URL(string: "https://issuer.eudiw.dev/privacy"),
-        serviceDescription: "Credential issuance"
-      )
+  func getIssuerRegistration(for offer: OfferedIssuanceModel) async -> IssuerRegistration? {
+    makeIssuerRegistration(
+      policy: offer.wrpVciRegistrationPolicy,
+      warnings: offer.wrpVciWarnings
     )
+  }
+
+  func getIssuerRegistration(issuerId: String) async -> IssuerRegistration? {
+    nil
   }
 
   func getVerifierRegistrationForFailedRequest() async -> RelyingPartyRegistration? {
