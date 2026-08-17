@@ -196,12 +196,17 @@ private struct DocumentOfferViewContainer: View {
     offerUri: "offer uri",
     allowIssue: true,
     initialized: true,
-    contentHeaderConfig: .init(
-      appIconAndTextData: AppIconAndTextData(
-        appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
+    issuerRegistration: RelyingPartyRegistrationData(
+      primary: RegisteredParty(
+        name: .custom("EUDI Issuer"),
+        identifier: .relyingPartyId(["rp:eudi-issuer:prod"]),
+        isVerified: true
+      ),
+      privacyPolicyUrl: URL(string: "https://issuer.example/privacy"),
+      intendedUse: .custom(
+        "We will use your identity data to issue the documents included in this offer."
       )
     ),
-    issuerRegistration: nil,
     registrationWarning: nil
   )
 
@@ -233,12 +238,12 @@ private struct DocumentOfferViewContainer: View {
     offerUri: "offer uri",
     allowIssue: true,
     initialized: true,
-    contentHeaderConfig: .init(
-      appIconAndTextData: AppIconAndTextData(
-        appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
+    issuerRegistration: RelyingPartyRegistrationData(
+      primary: RegisteredParty(
+        name: .custom(LocalizableStringKey.unknownIssuer.toString),
+        isVerified: false
       )
     ),
-    issuerRegistration: nil,
     registrationWarning: nil
   )
 

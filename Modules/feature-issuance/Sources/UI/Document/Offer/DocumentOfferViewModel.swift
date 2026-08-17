@@ -29,7 +29,6 @@ struct DocumentOfferViewState: ViewState {
   let offerUri: String
   let allowIssue: Bool
   let initialized: Bool
-  let contentHeaderConfig: ContentHeaderConfig
   let issuerRegistration: RelyingPartyRegistrationData?
   let registrationWarning: RegistrationWarning?
 
@@ -77,11 +76,6 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
         offerUri: offerUri,
         allowIssue: false,
         initialized: false,
-        contentHeaderConfig: .init(
-          appIconAndTextData: AppIconAndTextData(
-            appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
-          )
-        ),
         issuerRegistration: nil,
         registrationWarning: nil
       )
@@ -102,30 +96,16 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
     switch state {
     case .success(let uiModel, let issuerRegistration):
       isRiskAcknowledged = false
-      let isProviderVerified = issuerRegistration?.details != nil
       setState {
         $0.copy(
           isLoading: false,
           documentOfferUiModel: uiModel,
           allowIssue: !uiModel.uiOffers.isEmpty,
-          initialized: true,
-          contentHeaderConfig: .init(
-            appIconAndTextData: AppIconAndTextData(
-              appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
-            ),
-            description: .dataSharingTitle,
-            mainText: .issuanceRequest,
-            icon: .remoteImage(uiModel.issuerLogo, nil),
-            relyingPartyData: RelyingPartyData(
-              isVerified: isProviderVerified,
-              name: .custom(uiModel.issuerName),
-              description: .issuerWantWalletAddition
-            )
-          )
+          initialized: true
         )
         .copy(error: nil)
         .copy(
-          issuerRegistration: issuerRegistration?.toRegistrationData(
+          issuerRegistration: issuerRegistration.toRegistrationData(
             issuerName: uiModel.issuerName,
             issuerLogo: uiModel.issuerLogo
           )

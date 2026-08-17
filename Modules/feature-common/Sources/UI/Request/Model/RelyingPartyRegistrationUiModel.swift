@@ -41,14 +41,16 @@ public enum RegistrationWarning: Sendable, Equatable {
 
 public extension RelyingPartyRegistration {
 
-  func toRegistrationData(fallbackName: LocalizableStringKey) -> RelyingPartyRegistrationData? {
+  /// Who is asking, always. The identity block comes from the request itself, so it survives a
+  /// registration that failed or was never evaluated — only the certificate's own sections drop
+  /// away with it. Hiding the requester precisely when its registration is doubtful would tell the
+  /// user least about the party they should scrutinise most.
+  func toRegistrationData(fallbackName: LocalizableStringKey) -> RelyingPartyRegistrationData {
     let showVerifiedBadge = switch registration {
     case .verified: true
     case .notVerified: false
     case .notSupported: isVerified
     }
-
-    guard registration != .notSupported else { return nil }
 
     let details = registration.details
 
@@ -76,21 +78,24 @@ public extension RelyingPartyRegistration {
   }
 }
 
-public extension IssuerRegistration {
+public extension Optional where Wrapped == IssuerRegistration {
 
-  func toRegistrationData(issuerName: String, issuerLogo: URL? = nil) -> RelyingPartyRegistrationData? {
-    guard let details else { return nil }
+  func toRegistrationData(issuerName: String, issuerLogo: URL? = nil) -> RelyingPartyRegistrationData {
+    let details = self?.details
     return RelyingPartyRegistrationData(
       primary: RegisteredParty(
         name: .custom(issuerName),
-        identifier: .relyingPartyId([details.uniqueId]),
-        isVerified: true,
-        logoUrl: details.logoUrl ?? issuerLogo
+        identifier: details.map { LocalizableStringKey.relyingPartyId([$0.uniqueId]) },
+        isVerified: details != nil,
+        logoUrl: details?.logoUrl ?? issuerLogo
       ),
-      privacyPolicyUrl: details.privacyPolicyUrl,
-      intendedUse: details.intendedUse.map { LocalizableStringKey.custom($0) }
+      privacyPolicyUrl: details?.privacyPolicyUrl,
+      intendedUse: details?.intendedUse.map { LocalizableStringKey.custom($0) }
     )
   }
+}
+
+public extension IssuerRegistration {
 
   func toWarning() -> RegistrationWarning? {
     return switch self {
