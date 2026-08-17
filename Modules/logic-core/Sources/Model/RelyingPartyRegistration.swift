@@ -58,6 +58,17 @@ public enum RegistrationStatus: Sendable, Equatable {
     guard case .verified(_, let overaskedClaims) = self else { return [] }
     return overaskedClaims
   }
+
+  public func resolveRequesterName(
+    registrationName: String?,
+    accessCertificateName: String?
+  ) -> String? {
+    switch self {
+    case .verified: registrationName ?? accessCertificateName
+    case .notVerified: accessCertificateName ?? registrationName
+    case .notSupported: accessCertificateName
+    }
+  }
 }
 
 public struct RegistrationDetails: Sendable, Equatable {

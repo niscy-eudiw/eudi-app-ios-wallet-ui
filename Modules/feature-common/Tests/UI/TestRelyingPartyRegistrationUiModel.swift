@@ -118,6 +118,47 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
     XCTAssertEqual(data.primary.isVerified, false)
   }
 
+  func testResolveRequesterName_whenVerified_thenTheRegistrationNameWins() {
+    // Registrar-attested and proven bound to the signer, so it outranks the certificate subject
+    let name = RegistrationStatus.verified(details: details(), overaskedClaims: [])
+      .resolveRequesterName(registrationName: "NordicBank A/S", accessCertificateName: "nordicbank.example")
+
+    XCTAssertEqual(name, "NordicBank A/S")
+  }
+
+  func testResolveRequesterName_whenNotVerified_thenTheAccessCertificateNameWins() {
+    // An unverified registration proves nothing, and its name is the one an impersonator picks
+    let name = RegistrationStatus.notVerified
+      .resolveRequesterName(registrationName: "Definitely Your Bank", accessCertificateName: "nordicbank.example")
+
+    XCTAssertEqual(name, "nordicbank.example")
+  }
+
+  func testResolveRequesterName_whenNamesAreMissing_thenFallsBackToTheOtherLayer() {
+    XCTAssertEqual(
+      RegistrationStatus.verified(details: details(), overaskedClaims: [])
+        .resolveRequesterName(registrationName: nil, accessCertificateName: "nordicbank.example"),
+      "nordicbank.example"
+    )
+    XCTAssertEqual(
+      RegistrationStatus.notVerified
+        .resolveRequesterName(registrationName: "Definitely Your Bank", accessCertificateName: nil),
+      "Definitely Your Bank"
+    )
+    XCTAssertNil(
+      RegistrationStatus.notSupported
+        .resolveRequesterName(registrationName: "Definitely Your Bank", accessCertificateName: nil)
+    )
+  }
+
+  func testResolveRequesterName_whenNotEvaluated_thenTheRegistrationIsIgnored() {
+    // Nothing was checked, so an unchecked certificate's name must not be shown at all
+    let name = RegistrationStatus.notSupported
+      .resolveRequesterName(registrationName: "Definitely Your Bank", accessCertificateName: "nordicbank.example")
+
+    XCTAssertEqual(name, "nordicbank.example")
+  }
+
   func testIssuerToRegistrationData_whenCertificateHasNoLogo_thenFallsBackToIssuerMetadata() {
     let metadataLogo = URL(string: "https://issuer.example/logo.png")
     let registration: IssuerRegistration? = .verified(details: details())

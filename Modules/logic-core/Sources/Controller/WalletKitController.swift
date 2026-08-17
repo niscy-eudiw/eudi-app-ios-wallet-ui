@@ -594,7 +594,10 @@ final actor WalletKitControllerImpl: WalletKitController {
     : .notVerified
 
     return RelyingPartyRegistration(
-      name: policy.name ?? verifierName,
+      name: status.resolveRequesterName(
+        registrationName: policy.name,
+        accessCertificateName: verifierName
+      ),
       uniqueId: policy.sub,
       isVerified: verifierIsTrusted,
       logoUrl: nil,
