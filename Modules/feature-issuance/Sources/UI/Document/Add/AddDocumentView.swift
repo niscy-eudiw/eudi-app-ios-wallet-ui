@@ -61,14 +61,6 @@ struct AddDocumentView<Router: RouterHost>: View {
         onClose: { viewModel.isRegistrationBlockedSheetShowing = false }
       )
     }
-    .sheetDialog(isPresented: $viewModel.isRegistrationWarningSheetShowing) {
-      WarningProceedSheetView(
-        title: .issuanceRegistrationWarningTitle,
-        message: .issuanceRegistrationWarningMessage,
-        onProceed: { viewModel.onRegistrationWarningProceed() },
-        onCancel: { viewModel.onRegistrationWarningCancel() }
-      )
-    }
     .task {
       await self.viewModel.initialize()
     }

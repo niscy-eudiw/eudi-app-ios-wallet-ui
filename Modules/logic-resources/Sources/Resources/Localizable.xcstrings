@@ -1,17 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "understand_risks_proceed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I understand the risks and agree to proceed"
-          }
-        }
-      }
-    },
     "relying_party_overasked_warning" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34,17 +23,6 @@
         }
       }
     },
-    "issuer_not_verified_warning" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Warning: The information registered about the entity could not be obtained. Review carefully before accepting the offered documents."
-          }
-        }
-      }
-    },
     "issuance_registration_blocked_title" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -63,28 +41,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This issuance request has been blocked because the provider is not registered for it.\n\nNo document has been added to your Wallet."
-          }
-        }
-      }
-    },
-    "issuance_registration_warning_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Warning"
-          }
-        }
-      }
-    },
-    "issuance_registration_warning_message" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The information registered about the provider could not be obtained. Review carefully before proceeding."
           }
         }
       }

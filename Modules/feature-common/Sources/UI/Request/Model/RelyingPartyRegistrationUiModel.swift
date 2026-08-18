@@ -21,21 +21,16 @@ public enum RegistrationWarning: Sendable, Equatable {
 
   case relyingPartyNotVerified
   case relyingPartyOverasked
-  case issuerNotVerified
 
   public var message: LocalizableStringKey {
     return switch self {
     case .relyingPartyNotVerified: .relyingPartyNotVerifiedWarning
     case .relyingPartyOverasked: .relyingPartyOveraskedWarning
-    case .issuerNotVerified: .issuerNotVerifiedWarning
     }
   }
 
   public var acknowledgement: LocalizableStringKey {
-    return switch self {
-    case .relyingPartyNotVerified, .relyingPartyOverasked: .understandRisksAgree
-    case .issuerNotVerified: .understandRisksProceed
-    }
+    return .understandRisksAgree
   }
 }
 
@@ -82,16 +77,5 @@ public extension Optional where Wrapped == IssuerRegistration {
       privacyPolicyUrl: details?.privacyPolicyUrl,
       intendedUse: details?.intendedUse.map { LocalizableStringKey.custom($0) }
     )
-  }
-}
-
-public extension IssuerRegistration {
-
-  func toWarning() -> RegistrationWarning? {
-    return switch self {
-    case .verified: nil
-    case .notVerified: .issuerNotVerified
-    case .blocked: nil
-    }
   }
 }

@@ -980,8 +980,9 @@ Production requirements:
 * Set `wrprcProviders` to the production registration trusted list. It is the only trust source for
   this layer.
 * Keep `validateIssuerRegistrationCertificate` enabled, and confirm every production issuer
-  publishes `issuer_info`. A missing WRPRC is a hard failure in the OpenID4VCI library rather than a
-  warning, so enabling this against an issuer that does not publish it fails every issuance.
+  publishes `issuer_info`. An issuer that publishes none never reaches the validation hook, so no
+  registration is established and the app refuses; enabling this against such an issuer fails every
+  issuance.
 * Keep `wrprcTrustPolicy` at `.enforce`. It governs the WRPRC trust-chain check, and it also decides
   whether a registration that was never established refuses the issuance — under `.warning` such an
   issuance proceeds and the app stores the document.

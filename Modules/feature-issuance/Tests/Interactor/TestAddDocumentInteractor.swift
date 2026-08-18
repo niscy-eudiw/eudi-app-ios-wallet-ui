@@ -189,7 +189,7 @@ final class TestAddDocumentInteractor: EudiTest {
         identifiers: equal(to: configIds),
         docTypeIdentifier: equal(to: identifier)
       )).thenReturn(
-        IssuanceResult(documents: [document], issuerRegistration: .notVerified)
+        IssuanceResult(documents: [document], issuerRegistration: .blocked(reason: .notRegisteredAsProvider))
       )
       when(mock.deleteDocument(with: any(), status: any())).thenDoNothing()
     }
@@ -198,8 +198,7 @@ final class TestAddDocumentInteractor: EudiTest {
     let result = await interactor.issueDocument(
       issuerId: issuerId,
       configIds: configIds,
-      docTypeIdentifier: identifier,
-      hasAcknowledgedRegistrationWarning: false
+      docTypeIdentifier: identifier
     )
 
     // Then
@@ -229,8 +228,7 @@ final class TestAddDocumentInteractor: EudiTest {
     let result = await interactor.issueDocument(
       issuerId: issuerId,
       configIds: configIds,
-      docTypeIdentifier: identifier,
-      hasAcknowledgedRegistrationWarning: false
+      docTypeIdentifier: identifier
     )
     
     // Then
@@ -255,8 +253,7 @@ final class TestAddDocumentInteractor: EudiTest {
     let result = await interactor.issueDocument(
       issuerId: issuerId,
       configIds: configIds,
-      docTypeIdentifier: identifier,
-      hasAcknowledgedRegistrationWarning: false
+      docTypeIdentifier: identifier
     )
     
     // Then
@@ -284,8 +281,7 @@ final class TestAddDocumentInteractor: EudiTest {
     let result = await interactor.issueDocument(
       issuerId: issuerId,
       configIds: configIds,
-      docTypeIdentifier: identifier,
-      hasAcknowledgedRegistrationWarning: false
+      docTypeIdentifier: identifier
     )
     
     // Then
@@ -317,8 +313,7 @@ final class TestAddDocumentInteractor: EudiTest {
     let result = await interactor.issueDocument(
       issuerId: issuerId,
       configIds: configIds,
-      docTypeIdentifier: identifier,
-      hasAcknowledgedRegistrationWarning: false
+      docTypeIdentifier: identifier
     )
 
     // Then
@@ -585,8 +580,7 @@ final class TestAddDocumentInteractor: EudiTest {
 
     // When
     let result = await interactor.issueDocument(
-      issuerId: issuerId, configIds: configIds, docTypeIdentifier: identifier,
-      hasAcknowledgedRegistrationWarning: false
+      issuerId: issuerId, configIds: configIds, docTypeIdentifier: identifier
     )
 
     // Then
@@ -627,8 +621,7 @@ final class TestAddDocumentInteractor: EudiTest {
 
     // When
     let result = await interactor.issueDocument(
-      issuerId: issuerId, configIds: configIds, docTypeIdentifier: identifier,
-      hasAcknowledgedRegistrationWarning: false
+      issuerId: issuerId, configIds: configIds, docTypeIdentifier: identifier
     )
 
     // Then
@@ -716,8 +709,7 @@ final class TestAddDocumentInteractor: EudiTest {
     let result = await interactor.issueDocument(
       issuerId: "issuer.dev",
       configIds: ["doc"],
-      docTypeIdentifier: DocumentTypeIdentifier(rawValue: "eu.europa.ec.eudi.pid.1"),
-      hasAcknowledgedRegistrationWarning: false
+      docTypeIdentifier: DocumentTypeIdentifier(rawValue: "eu.europa.ec.eudi.pid.1")
     )
 
     // Then
@@ -731,56 +723,6 @@ final class TestAddDocumentInteractor: EudiTest {
       )
     default:
       XCTFail("Expected .registrationBlocked, got \(result)")
-    }
-  }
-
-  func testIssueDocument_WhenProviderNotVerifiedAndUnacknowledged_ThenAsksForApproval() async {
-    // Given
-    stubIssuerRegistration(.notVerified)
-
-    // When
-    let result = await interactor.issueDocument(
-      issuerId: "issuer.dev",
-      configIds: ["doc"],
-      docTypeIdentifier: DocumentTypeIdentifier(rawValue: "eu.europa.ec.eudi.pid.1"),
-      hasAcknowledgedRegistrationWarning: false
-    )
-
-    // Then
-    switch result {
-    case .registrationNotVerified:
-      verify(walletKitController, never()).issueDocuments(
-        issuerId: any(),
-        identifiers: any(),
-        docTypeIdentifier: any()
-      )
-    default:
-      XCTFail("Expected .registrationNotVerified, got \(result)")
-    }
-  }
-
-  func testIssueDocument_WhenProviderNotVerifiedButAcknowledged_ThenIssuanceProceeds() async {
-    // Given
-    stubIssuerRegistration(.notVerified)
-    let issuerId = "issuer.dev"
-    let configIds = ["deferred-doc"]
-    let identifier = DocumentTypeIdentifier(rawValue: "eu.europa.ec.eudi.pid.1")
-    stubResumeDynamicIssuanceDefferedSuccess(document: Constants.issuedPendingDocument)
-
-    // When
-    let result = await interactor.issueDocument(
-      issuerId: issuerId,
-      configIds: configIds,
-      docTypeIdentifier: identifier,
-      hasAcknowledgedRegistrationWarning: true
-    )
-
-    // Then
-    switch result {
-    case .success:
-      XCTAssertTrue(true)
-    default:
-      XCTFail("Expected .success, got \(result)")
     }
   }
 }

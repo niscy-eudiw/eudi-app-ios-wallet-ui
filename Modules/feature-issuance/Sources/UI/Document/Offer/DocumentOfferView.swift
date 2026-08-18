@@ -45,7 +45,6 @@ struct DocumentOfferView<Router: RouterHost>: View {
     ) {
       DocumentOfferViewContainer(
         viewState: viewModel.viewState,
-        isRiskAcknowledged: $viewModel.isRiskAcknowledged,
         onIssueDocuments: viewModel.onIssueDocuments
       )
     }
@@ -73,17 +72,7 @@ struct DocumentOfferView<Router: RouterHost>: View {
 private struct DocumentOfferViewContainer: View {
 
   let viewState: DocumentOfferViewState
-  @Binding var isRiskAcknowledged: Bool
   let onIssueDocuments: () -> Void
-
-  private var registrationWarning: RegistrationWarning? {
-    guard viewState.initialized, !viewState.isLoading else { return nil }
-    return viewState.registrationWarning
-  }
-
-  private var canIssue: Bool {
-    viewState.allowIssue && (registrationWarning == nil || isRiskAcknowledged)
-  }
 
   var body: some View {
     content()
@@ -134,15 +123,6 @@ private struct DocumentOfferViewContainer: View {
   @ViewBuilder
   private func bottomBar() -> some View {
     VStack(spacing: SPACING_MEDIUM) {
-      if let registrationWarning {
-        WarningAcknowledgementView(
-          message: registrationWarning.message,
-          acknowledgementText: registrationWarning.acknowledgement,
-          isAcknowledged: $isRiskAcknowledged
-        )
-        .padding(.horizontal, Theme.shared.dimension.padding)
-      }
-
       issueButton()
     }
     .padding(.top, SPACING_MEDIUM)
@@ -156,7 +136,7 @@ private struct DocumentOfferViewContainer: View {
       style: .primary,
       title: .issueButton,
       isLoading: viewState.isLoading,
-      isEnabled: canIssue,
+      isEnabled: viewState.allowIssue,
       onAction: onIssueDocuments()
     )
     .combineChilrenAccessibility(
@@ -206,14 +186,12 @@ private struct DocumentOfferViewContainer: View {
       intendedUse: .custom(
         "We will use your identity data to issue the documents included in this offer."
       )
-    ),
-    registrationWarning: nil
+    )
   )
 
   ContentScreenView {
     DocumentOfferViewContainer(
       viewState: viewState,
-      isRiskAcknowledged: .constant(false),
       onIssueDocuments: {}
     )
   }
@@ -243,14 +221,12 @@ private struct DocumentOfferViewContainer: View {
         name: .custom(LocalizableStringKey.unknownIssuer.toString),
         isVerified: false
       )
-    ),
-    registrationWarning: nil
+    )
   )
 
   ContentScreenView {
     DocumentOfferViewContainer(
       viewState: viewState,
-      isRiskAcknowledged: .constant(false),
       onIssueDocuments: {}
     )
   }

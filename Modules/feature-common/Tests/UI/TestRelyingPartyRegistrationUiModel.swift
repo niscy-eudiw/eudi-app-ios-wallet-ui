@@ -204,14 +204,6 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
     XCTAssertEqual(data.primary.isVerified, false)
     XCTAssertNil(data.privacyPolicyUrl)
   }
-
-  func testIssuerToWarning_whenNotVerified_thenReturnsIssuerWarning() {
-    XCTAssertEqual(IssuerRegistration.notVerified.toWarning(), .issuerNotVerified)
-    XCTAssertNil(IssuerRegistration.verified(details: details()).toWarning())
-    XCTAssertNil(
-      IssuerRegistration.blocked(reason: .notRegisteredAsProvider).toWarning()
-    )
-  }
 }
 
 private extension TestRelyingPartyRegistrationUiModel {

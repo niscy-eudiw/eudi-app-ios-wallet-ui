@@ -213,7 +213,7 @@ Two settings govern the issuance side, and both must be on for it to refuse anyt
 
 | Setting | Where | Effect |
 |---|---|---|
-| `validateIssuerRegistrationCertificate` | `WalletKitConfig` | Turns WRPRC validation on for OpenID4VCI. Off means no registration is ever evaluated and issuance never refuses on this basis. A missing WRPRC is a hard failure in the OpenID4VCI library rather than a warning, so enabling this against an issuer that does not publish `issuer_info` fails every issuance. |
+| `validateIssuerRegistrationCertificate` | `WalletKitConfig` | Turns WRPRC validation on for OpenID4VCI. Off means no registration is ever evaluated and issuance never refuses on this basis. An issuer that publishes no `issuer_info` never reaches the validation hook at all, so no registration is established and the app refuses on that basis; enabling this against such an issuer fails every issuance. |
 | `wrprcTrustPolicy` | `TrustConfiguration` | Governs the WRPRC **trust chain** check only. `.enforce` rejects a certificate that does not chain to the registration trusted list, and makes an unestablished registration refuse the issuance. `.warning` records the problem and lets the issuance through. |
 
 Note what `wrprcTrustPolicy` does **not** cover: an expired certificate and a missing status list

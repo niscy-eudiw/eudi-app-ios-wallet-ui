@@ -889,6 +889,36 @@ final class TestDocumentOfferInteractor: EudiTest {
     }
   }
 
+  func testProcessOfferRequest_WhenIssuerRegistrationIsBlocked_ThenReturnRegistrationBlocked() async {
+    // Given: the offer resolves, but the issuer never established a registration — the case of an
+    // issuer that publishes no registration certificate at all.
+    let uri = "uri"
+    let offer = OfferedIssuanceModel(
+      issuerName: "issuerName",
+      issuerLogoUrl: "https://logo",
+      docModels: [],
+      txCodeSpec: nil
+    )
+    stub(walletKitController) { mock in
+      mock.resolveOfferUrlDocTypes(offerUri: uri).thenReturn(offer)
+      mock.fetchIssuedDocuments(with: any()).thenReturn([Constants.createEuPidModel()])
+      when(mock.getIssuerRegistration(for: any())).thenReturn(
+        .blocked(reason: .notRegisteredAsProvider)
+      )
+    }
+
+    // When
+    let result = await interactor.processOfferRequest(with: uri)
+
+    // Then: the flow stops before the offer screen is built, rather than issuing and undoing it.
+    switch result {
+    case .registrationBlocked(let reason):
+      XCTAssertEqual(reason, .notRegisteredAsProvider)
+    default:
+      XCTFail("Expected registrationBlocked, got \(result)")
+    }
+  }
+
   func testProcessOfferRequest_WhenResolveOfferUrlDocTypes_ThenReturnSuccess() async {
     // Given
     let expectedDocumentOfferUIModel = DocumentOfferUIModel(

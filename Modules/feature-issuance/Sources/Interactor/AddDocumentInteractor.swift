@@ -23,8 +23,7 @@ public protocol AddDocumentInteractor: Sendable {
   func issueDocument(
     issuerId: String,
     configIds: [String],
-    docTypeIdentifier: DocumentTypeIdentifier,
-    hasAcknowledgedRegistrationWarning: Bool
+    docTypeIdentifier: DocumentTypeIdentifier
   ) async -> IssueResultPartialState
   func resumeDynamicIssuance() async -> IssueDynamicDocumentPartialState
   func fetchStoredDocuments(documentIds: [String]) async -> IssueDocumentsPartialState
@@ -146,17 +145,11 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
   public func issueDocument(
     issuerId: String,
     configIds: [String],
-    docTypeIdentifier: DocumentTypeIdentifier,
-    hasAcknowledgedRegistrationWarning: Bool
+    docTypeIdentifier: DocumentTypeIdentifier
   ) async -> IssueResultPartialState {
 
-    switch await walletController.getIssuerRegistration(issuerId: issuerId) {
-    case .blocked(let reason):
+    if case .blocked(let reason) = await walletController.getIssuerRegistration(issuerId: issuerId) {
       return .registrationBlocked(reason)
-    case .notVerified:
-      guard hasAcknowledgedRegistrationWarning else { return .registrationNotVerified }
-    case .verified, .none:
-      break
     }
 
     do {
@@ -288,7 +281,6 @@ public enum IssueResultPartialState: Sendable {
   case dynamicIssuance(RemoteSessionCoordinator)
   case issuerNotTrusted
   case registrationBlocked(IssuerRegistration.BlockedReason)
-  case registrationNotVerified
   case failure(Error)
 }
 

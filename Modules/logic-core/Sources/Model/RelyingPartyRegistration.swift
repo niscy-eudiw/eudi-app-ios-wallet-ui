@@ -112,7 +112,6 @@ public enum IssuerRegistration: Sendable, Equatable {
 
   case verified(details: RegistrationDetails)
   case blocked(reason: BlockedReason)
-  case notVerified
 
   public enum BlockedReason: Sendable, Equatable {
     case notRegisteredAsProvider

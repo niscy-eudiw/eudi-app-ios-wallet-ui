@@ -30,7 +30,6 @@ struct DocumentOfferViewState: ViewState {
   let allowIssue: Bool
   let initialized: Bool
   let issuerRegistration: RelyingPartyRegistrationData?
-  let registrationWarning: RegistrationWarning?
 
   var title: LocalizableStringKey {
     return .requestCredentialOfferTitle([documentOfferUiModel.issuerName])
@@ -50,7 +49,6 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
 
   var isTrustBlockedAlertShowing: Bool = false
   var isRegistrationBlockedSheetShowing: Bool = false
-  var isRiskAcknowledged: Bool = false
 
   private let interactor: DocumentOfferInteractor
 
@@ -76,8 +74,7 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
         offerUri: offerUri,
         allowIssue: false,
         initialized: false,
-        issuerRegistration: nil,
-        registrationWarning: nil
+        issuerRegistration: nil
       )
     )
   }
@@ -95,7 +92,6 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
 
     switch state {
     case .success(let uiModel, let issuerRegistration):
-      isRiskAcknowledged = false
       setState {
         $0.copy(
           isLoading: false,
@@ -110,7 +106,6 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
             issuerLogo: uiModel.issuerLogo
           )
         )
-        .copy(registrationWarning: issuerRegistration?.toWarning())
       }
     case .registrationBlocked:
       setState {
@@ -251,7 +246,6 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
         )
         .copy(error: nil)
         .copy(issuerRegistration: nil)
-        .copy(registrationWarning: nil)
     }
     Task {
       await self.initialize()

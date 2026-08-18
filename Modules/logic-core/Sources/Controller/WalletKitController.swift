@@ -330,27 +330,25 @@ final actor WalletKitControllerImpl: WalletKitController {
   ) -> IssuerRegistration? {
 
     guard let policy else {
-      return isIssuerRegistrationEnforced ? .notVerified : nil
+      return isIssuerRegistrationEnforced ? .blocked(reason: .notRegisteredAsProvider) : nil
     }
 
     let raised = (warnings ?? [:]).filter { !$0.value.isEmpty }
-    
+
     if raised.contains(where: { !$0.key.isEmpty }) {
       return .blocked(reason: .attestationNotRegistered)
     }
 
-    guard raised.isEmpty else { return .notVerified }
-
-    let intendedUse = policy.srvDescription?.first?.value ?? policy.purpose?.first?.value
+    guard raised.isEmpty else { return .blocked(reason: .notRegisteredAsProvider) }
 
     return .verified(
       details: RegistrationDetails(
         tradeName: policy.name ?? policy.sub,
         uniqueId: policy.sub,
         logoUrl: nil,
-        intendedUse: intendedUse,
+        intendedUse: policy.purpose?.localizedValue,
         privacyPolicyUrl: policy.privacyPolicy.flatMap { URL(string: $0) },
-        serviceDescription: intendedUse
+        serviceDescription: policy.srvDescription?.localizedValue
       )
     )
   }
@@ -577,16 +575,15 @@ final actor WalletKitControllerImpl: WalletKitController {
       )
     }
 
-    let intendedUse = policy.srvDescription?.first?.value ?? policy.purpose?.first?.value
     let privacyPolicyUrl = policy.privacyPolicy.flatMap { URL(string: $0) }
 
     let subjectDetails = RegistrationDetails(
       tradeName: policy.name ?? policy.sub,
       uniqueId: policy.sub,
       logoUrl: nil,
-      intendedUse: intendedUse,
+      intendedUse: policy.purpose?.localizedValue,
       privacyPolicyUrl: privacyPolicyUrl,
-      serviceDescription: intendedUse
+      serviceDescription: policy.srvDescription?.localizedValue
     )
 
     let status: RegistrationStatus = trustViolations.isEmpty

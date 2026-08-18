@@ -275,15 +275,11 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case privacyPolicy
   case intendedUse
   case understandRisksAgree
-  case understandRisksProceed
   case relyingPartyNotVerifiedWarning
   case relyingPartyOveraskedWarning
   case notRegisteredData
-  case issuerNotVerifiedWarning
   case issuanceRegistrationBlockedTitle
   case issuanceRegistrationBlockedMessage
-  case issuanceRegistrationWarningTitle
-  case issuanceRegistrationWarningMessage
   case continueButton
 }
 

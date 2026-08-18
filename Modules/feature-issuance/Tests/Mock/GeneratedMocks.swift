@@ -1427,13 +1427,13 @@ public class MockAddDocumentInteractor: AddDocumentInteractor, Cuckoo.ProtocolMo
         )
     }
 
-    public func issueDocument(issuerId p0: String, configIds p1: [String], docTypeIdentifier p2: DocumentTypeIdentifier, hasAcknowledgedRegistrationWarning p3: Bool) async -> IssueResultPartialState {
+    public func issueDocument(issuerId p0: String, configIds p1: [String], docTypeIdentifier p2: DocumentTypeIdentifier) async -> IssueResultPartialState {
         return await cuckoo_manager.call(
-            "issueDocument(issuerId p0: String, configIds p1: [String], docTypeIdentifier p2: DocumentTypeIdentifier, hasAcknowledgedRegistrationWarning p3: Bool) async -> IssueResultPartialState",
-            parameters: (p0, p1, p2, p3),
-            escapingParameters: (p0, p1, p2, p3),
+            "issueDocument(issuerId p0: String, configIds p1: [String], docTypeIdentifier p2: DocumentTypeIdentifier) async -> IssueResultPartialState",
+            parameters: (p0, p1, p2),
+            escapingParameters: (p0, p1, p2),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.issueDocument(issuerId: p0, configIds: p1, docTypeIdentifier: p2, hasAcknowledgedRegistrationWarning: p3)
+            defaultCall: await __defaultImplStub!.issueDocument(issuerId: p0, configIds: p1, docTypeIdentifier: p2)
         )
     }
 
@@ -1472,10 +1472,10 @@ public class MockAddDocumentInteractor: AddDocumentInteractor, Cuckoo.ProtocolMo
             ))
         }
         
-        func issueDocument<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable, M4: Cuckoo.Matchable>(issuerId p0: M1, configIds p1: M2, docTypeIdentifier p2: M3, hasAcknowledgedRegistrationWarning p3: M4) -> Cuckoo.ProtocolStubFunction<(String, [String], DocumentTypeIdentifier, Bool), IssueResultPartialState> where M1.MatchedType == String, M2.MatchedType == [String], M3.MatchedType == DocumentTypeIdentifier, M4.MatchedType == Bool {
-            let matchers: [Cuckoo.ParameterMatcher<(String, [String], DocumentTypeIdentifier, Bool)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }, wrap(matchable: p3) { $0.3 }]
+        func issueDocument<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable>(issuerId p0: M1, configIds p1: M2, docTypeIdentifier p2: M3) -> Cuckoo.ProtocolStubFunction<(String, [String], DocumentTypeIdentifier), IssueResultPartialState> where M1.MatchedType == String, M2.MatchedType == [String], M3.MatchedType == DocumentTypeIdentifier {
+            let matchers: [Cuckoo.ParameterMatcher<(String, [String], DocumentTypeIdentifier)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }]
             return .init(stub: cuckoo_manager.createStub(for: MockAddDocumentInteractor.self,
-                method: "issueDocument(issuerId p0: String, configIds p1: [String], docTypeIdentifier p2: DocumentTypeIdentifier, hasAcknowledgedRegistrationWarning p3: Bool) async -> IssueResultPartialState",
+                method: "issueDocument(issuerId p0: String, configIds p1: [String], docTypeIdentifier p2: DocumentTypeIdentifier) async -> IssueResultPartialState",
                 parameterMatchers: matchers
             ))
         }
@@ -1522,10 +1522,10 @@ public class MockAddDocumentInteractor: AddDocumentInteractor, Cuckoo.ProtocolMo
         
         
         @discardableResult
-        func issueDocument<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable, M4: Cuckoo.Matchable>(issuerId p0: M1, configIds p1: M2, docTypeIdentifier p2: M3, hasAcknowledgedRegistrationWarning p3: M4) -> Cuckoo.__DoNotUse<(String, [String], DocumentTypeIdentifier, Bool), IssueResultPartialState> where M1.MatchedType == String, M2.MatchedType == [String], M3.MatchedType == DocumentTypeIdentifier, M4.MatchedType == Bool {
-            let matchers: [Cuckoo.ParameterMatcher<(String, [String], DocumentTypeIdentifier, Bool)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }, wrap(matchable: p3) { $0.3 }]
+        func issueDocument<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable>(issuerId p0: M1, configIds p1: M2, docTypeIdentifier p2: M3) -> Cuckoo.__DoNotUse<(String, [String], DocumentTypeIdentifier), IssueResultPartialState> where M1.MatchedType == String, M2.MatchedType == [String], M3.MatchedType == DocumentTypeIdentifier {
+            let matchers: [Cuckoo.ParameterMatcher<(String, [String], DocumentTypeIdentifier)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }]
             return cuckoo_manager.verify(
-                "issueDocument(issuerId p0: String, configIds p1: [String], docTypeIdentifier p2: DocumentTypeIdentifier, hasAcknowledgedRegistrationWarning p3: Bool) async -> IssueResultPartialState",
+                "issueDocument(issuerId p0: String, configIds p1: [String], docTypeIdentifier p2: DocumentTypeIdentifier) async -> IssueResultPartialState",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -1566,7 +1566,7 @@ public class AddDocumentInteractorStub:AddDocumentInteractor, @unchecked Sendabl
         return DefaultValueRegistry.defaultValue(for: (ScopedDocumentsPartialState).self)
     }
     
-    public func issueDocument(issuerId p0: String, configIds p1: [String], docTypeIdentifier p2: DocumentTypeIdentifier, hasAcknowledgedRegistrationWarning p3: Bool) async -> IssueResultPartialState {
+    public func issueDocument(issuerId p0: String, configIds p1: [String], docTypeIdentifier p2: DocumentTypeIdentifier) async -> IssueResultPartialState {
         return DefaultValueRegistry.defaultValue(for: (IssueResultPartialState).self)
     }
     
@@ -12353,22 +12353,6 @@ import logic_resources
 
 
 // MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Sheet/TrustBlockedSheetView.swift'
-
-import Cuckoo
-import SwiftUI
-import logic_resources
-@testable import logic_core
-@testable import logic_business
-@testable import logic_analytics
-@testable import logic_ui
-@testable import logic_api
-@testable import logic_authentication
-@testable import feature_common
-@testable import feature_issuance
-
-
-
-// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Sheet/WarningProceedSheetView.swift'
 
 import Cuckoo
 import SwiftUI
