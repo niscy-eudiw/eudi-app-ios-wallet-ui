@@ -983,16 +983,15 @@ Production requirements:
   publishes `issuer_info`. An issuer that publishes none never reaches the validation hook, so no
   registration is established and the app refuses; enabling this against such an issuer fails every
   issuance.
-* Keep `wrprcTrustPolicy` at `.enforce`. It governs the WRPRC trust-chain check, and it also decides
-  whether a registration that was never established refuses the issuance — under `.warning` such an
-  issuance proceeds and the app stores the document.
+* Keep `wrprcVciTrustPolicy` at `.enforce`. It decides whether a failed WRPRC check refuses the
+  issuance — under `.warning` such an issuance proceeds and the app stores the document. Leave
+  `wrprcVpTrustPolicy` at `.warning`: presentations are required to reach the consent screen behind
+  an acknowledgement rather than terminate.
 * Confirm each issuer's registered scope actually covers what it offers, before release. An issuer
   authenticated but not registered for a credential it issues is refused at runtime.
-* Note what `wrprcTrustPolicy` does not cover: an expired certificate and a missing status list
-  always fail regardless of the policy, and a status list that cannot be retrieved is always a
-  warning. Under `.enforce`, a transient failure reaching the status list surfaces as a refused
-  issuance, so confirm the status endpoints of your issuers are as available as the issuers
-  themselves.
+* Note what neither policy covers: a status list that cannot be retrieved is always a warning and
+  never a refusal on its own. Still confirm the status endpoints of your issuers are as available as
+  the issuers themselves, since an unreachable list means revocation goes unnoticed.
 * Test both directions: a party on the registration list succeeds; one that is absent, expired, or
   out of scope is refused on issuance and warned about on presentation.
 

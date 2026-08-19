@@ -39,19 +39,23 @@ public struct RelyingPartyRegistration: Sendable, Equatable {
   }
 
   public var isFullyVerified: Bool {
-    isVerified && registration != .notVerified
+    if case .notVerified = registration { return false }
+    return isVerified
   }
 }
 
 public enum RegistrationStatus: Sendable, Equatable {
 
   case verified(details: RegistrationDetails, overaskedClaims: [RequestedClaim])
-  case notVerified
+  case notVerified(details: RegistrationDetails?)
   case notSupported
 
   public var details: RegistrationDetails? {
-    guard case .verified(let details, _) = self else { return nil }
-    return details
+    switch self {
+    case .verified(let details, _): details
+    case .notVerified(let details): details
+    case .notSupported: nil
+    }
   }
 
   public var overaskedClaims: [RequestedClaim] {

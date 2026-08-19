@@ -260,7 +260,8 @@ struct WalletKitConfigImpl: WalletKitConfig {
       defaultPolicy: .warning,
       requireSignedMetadata: true,
       statusTrustPolicy: .warning,
-      wrprcTrustPolicy: .enforce
+      wrprcVpTrustPolicy: .warning,
+      wrprcVciTrustPolicy: .enforce
     )
   }
 

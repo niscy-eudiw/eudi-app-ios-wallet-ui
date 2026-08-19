@@ -18,7 +18,6 @@ import UIKit
 import XCTest
 @testable import logic_core
 @testable import EudiWalletKit
-import struct OpenID4VP.PolicyViolation
 
 final class Constants {}
 
@@ -213,7 +212,7 @@ extension Constants {
 
     var wrpVerifierPolicy: WrpRegistrationPolicy?
 
-    var wrpVerifierWarnings: [String: [PolicyViolation]]?
+    var wrpVerifierWarnings: [String: [PresentationPolicyViolation]]?
 
     func waitForDisconnect() async throws {}
     

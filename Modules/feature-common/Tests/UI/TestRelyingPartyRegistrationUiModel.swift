@@ -49,7 +49,7 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
 
   func testToWarning_whenNotVerified_thenReturnsNotVerifiedWarning() {
     // Given
-    let registration = relyingParty(status: .notVerified)
+    let registration = relyingParty(status: .notVerified(details: details()))
 
     // When
     let data = registration.toRegistrationData(fallbackName: .unknownVerifier)
@@ -110,12 +110,32 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
 
   func testToRegistrationData_whenNotVerified_thenStillNamesTheRequester() {
     // The party whose registration failed is the one the user most needs identified
-    let registration = relyingParty(status: .notVerified)
+    let registration = relyingParty(status: .notVerified(details: details()))
 
     let data = registration.toRegistrationData(fallbackName: .unknownVerifier)
 
     XCTAssertEqual(data.primary.name, .custom("NordicBank A/S"))
     XCTAssertEqual(data.primary.isVerified, false)
+  }
+
+  func testToRegistrationData_whenNotVerified_thenStillDescribesTheRequester() {
+    let registration = relyingParty(status: .notVerified(details: details()))
+
+    let data = registration.toRegistrationData(fallbackName: .unknownVerifier)
+
+    XCTAssertEqual(data.intendedUse, .custom("Onboarding"))
+    XCTAssertEqual(data.privacyPolicyUrl, URL(string: "https://nordicbank.example/privacy"))
+    XCTAssertFalse(registration.isFullyVerified)
+  }
+
+  func testToRegistrationData_whenNotVerifiedAndUndecodable_thenOnlyTheNameSurvives() {
+    let registration = relyingParty(status: .notVerified(details: nil))
+
+    let data = registration.toRegistrationData(fallbackName: .unknownVerifier)
+
+    XCTAssertEqual(data.primary.name, .custom("NordicBank A/S"))
+    XCTAssertNil(data.intendedUse)
+    XCTAssertNil(data.privacyPolicyUrl)
   }
 
   func testResolveRequesterName_whenVerified_thenTheRegistrationNameWins() {
@@ -128,7 +148,7 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
 
   func testResolveRequesterName_whenNotVerified_thenTheAccessCertificateNameWins() {
     // An unverified registration proves nothing, and its name is the one an impersonator picks
-    let name = RegistrationStatus.notVerified
+    let name = RegistrationStatus.notVerified(details: nil)
       .resolveRequesterName(registrationName: "Definitely Your Bank", accessCertificateName: "nordicbank.example")
 
     XCTAssertEqual(name, "nordicbank.example")
@@ -141,7 +161,7 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
       "nordicbank.example"
     )
     XCTAssertEqual(
-      RegistrationStatus.notVerified
+      RegistrationStatus.notVerified(details: nil)
         .resolveRequesterName(registrationName: "Definitely Your Bank", accessCertificateName: nil),
       "Definitely Your Bank"
     )

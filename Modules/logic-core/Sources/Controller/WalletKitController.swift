@@ -17,7 +17,6 @@ import logic_business
 import SwiftUI
 import logic_storage
 import logic_api
-import struct OpenID4VCI.PolicyViolation
 
 private enum KeyIdentifier: String, KeyChainWrapper {
   public var value: String {
@@ -97,7 +96,7 @@ public protocol WalletKitController: Sendable {
 
   func refreshUsageCounters() async throws
   func getIssuerRegistration(for offer: OfferedIssuanceModel) async -> IssuerRegistration?
-  func getIssuerRegistration(issuerId: String) async -> IssuerRegistration?
+  func getIssuerRegistration(issuerId: String, configIds: [String]) async -> IssuerRegistration?
 
   func getVerifierRegistration(
     policy: WrpRegistrationPolicy?,
@@ -320,22 +319,22 @@ final actor WalletKitControllerImpl: WalletKitController {
 
   private var isIssuerRegistrationEnforced: Bool {
     guard walletKitConfig.validateIssuerRegistrationCertificate else { return false }
-    if case .enforce = walletKitConfig.trustConfiguration.wrprcTrustPolicy { return true }
+    if case .enforce = walletKitConfig.trustConfiguration.wrprcVciTrustPolicy { return true }
     return false
   }
 
   private func makeIssuerRegistration(
     policy: WrpRegistrationPolicy?,
-    warnings: [String: [PolicyViolation]]?
+    warnings: [String: [RegistrationPolicyViolation]]?
   ) -> IssuerRegistration? {
 
     guard let policy else {
       return isIssuerRegistrationEnforced ? .blocked(reason: .notRegisteredAsProvider) : nil
     }
 
-    let raised = (warnings ?? [:]).filter { !$0.value.isEmpty }
+    let raised = (warnings ?? [:]).values.flatMap { $0 }
 
-    if raised.contains(where: { !$0.key.isEmpty }) {
+    if raised.contains(where: { if case .credentialNotCovered = $0.reason { true } else { false } }) {
       return .blocked(reason: .attestationNotRegistered)
     }
 
@@ -354,16 +353,31 @@ final actor WalletKitControllerImpl: WalletKitController {
   }
 
   func reIssueDocument(identifier: String, isBackgroundOperation: Bool) async throws -> WalletStorage.Document {
+    let document = fetchDocument(with: identifier)
+
+    if let issuerId = document?.credentialIssuerIdentifier,
+       let configId = document?.configurationIdentifier,
+       case .blocked = await getIssuerRegistration(issuerId: issuerId, configIds: [configId]) {
+      throw WalletError(
+        description: "Issuer registration does not cover \(configId)",
+        code: .invalidWrprc
+      )
+    }
+
     let credentialOptions = await resolveCredentialOptions(
       documentId: identifier,
-      documentTypeIdentifier: fetchDocument(with: identifier)?.documentTypeIdentifier
+      documentTypeIdentifier: document?.documentTypeIdentifier
     )
-    return try await wallet.reissueDocument(
+    let response = try await wallet.reissueDocument(
       documentId: identifier,
       credentialOptions: credentialOptions,
       keyOptions: walletKitConfig.keyOptions,
       backgroundOnly: isBackgroundOperation
     )
+    guard let document = response.documents.first else {
+      throw WalletCoreError.unableToIssueAndStore
+    }
+    return document
   }
 
   func requestDeferredIssuance(with doc: WalletStorage.Document) async throws -> any DocClaimsDecodable {
@@ -534,8 +548,17 @@ final actor WalletKitControllerImpl: WalletKitController {
     )
   }
 
-  func getIssuerRegistration(issuerId: String) async -> IssuerRegistration? {
-    nil
+  func getIssuerRegistration(issuerId: String, configIds: [String]) async -> IssuerRegistration? {
+    guard let response = try? await wallet.resolveIssuerRegistration(
+      issuerName: issuerId,
+      credentialConfigurationIds: configIds
+    ) else {
+      return nil
+    }
+    return makeIssuerRegistration(
+      policy: response.wrpIssuerPolicy,
+      warnings: response.wrpIssuerWarnings
+    )
   }
 
   func getVerifierRegistrationForFailedRequest() async -> RelyingPartyRegistration? {
@@ -571,7 +594,7 @@ final actor WalletKitControllerImpl: WalletKitController {
         uniqueId: nil,
         isVerified: verifierIsTrusted,
         logoUrl: nil,
-        registration: .notSupported
+        registration: trustViolations.isEmpty ? .notSupported : .notVerified(details: nil)
       )
     }
 
@@ -588,7 +611,7 @@ final actor WalletKitControllerImpl: WalletKitController {
 
     let status: RegistrationStatus = trustViolations.isEmpty
     ? .verified(details: subjectDetails, overaskedClaims: overaskedClaims)
-    : .notVerified
+    : .notVerified(details: subjectDetails)
 
     return RelyingPartyRegistration(
       name: status.resolveRequesterName(

@@ -170,7 +170,8 @@ The primary trust source is an ETSI LoTE (List of Trusted Entities) source that 
       defaultPolicy: .warning,
       requireSignedMetadata: true,
       statusTrustPolicy: .warning,
-      wrprcTrustPolicy: .enforce
+      wrprcVpTrustPolicy: .warning,
+      wrprcVciTrustPolicy: .enforce
     )
   }
 
@@ -203,23 +204,28 @@ The app treats the two directions differently, and the asymmetry is deliberate:
   resolved before anything is issued, so that refusal happens up front; the issuer-list flow only
   learns the outcome after the kit has issued, so any document it already wrote to storage is
   deleted behind the scenes. The same applies to a registration that was never established at all —
-  but only while `wrprcTrustPolicy` is `.enforce`; see below.
+  but only while `wrprcVciTrustPolicy` is `.enforce`; see below.
 * **Presentation warns.** A request whose registration could not be validated, or that reaches
   beyond the registered scope, still reaches the consent screen. It is shown without the verified
   badge, the claims outside the registered scope are marked, and Share stays disabled until the user
-  acknowledges the warning. The acknowledgement is deliberately not remembered between requests.
+  acknowledges the warning. The acknowledgement is deliberately not remembered between requests. A
+  certificate that failed validation still describes the requester where it decoded far enough to
+  do so, since the warning and the missing badge already carry the verdict.
 
 Two settings govern the issuance side, and both must be on for it to refuse anything:
 
 | Setting | Where | Effect |
 |---|---|---|
 | `validateIssuerRegistrationCertificate` | `WalletKitConfig` | Turns WRPRC validation on for OpenID4VCI. Off means no registration is ever evaluated and issuance never refuses on this basis. An issuer that publishes no `issuer_info` never reaches the validation hook at all, so no registration is established and the app refuses on that basis; enabling this against such an issuer fails every issuance. |
-| `wrprcTrustPolicy` | `TrustConfiguration` | Governs the WRPRC **trust chain** check only. `.enforce` rejects a certificate that does not chain to the registration trusted list, and makes an unestablished registration refuse the issuance. `.warning` records the problem and lets the issuance through. |
+| `wrprcVciTrustPolicy` | `TrustConfiguration` | Decides what a failed WRPRC check does to an **issuance**. `.enforce` refuses: an expired, revoked or suspended certificate, a missing status list, a broken trust chain, or an offer reaching past the registered scope all stop the flow. `.warning` records the problem and lets the issuance through. |
 
-Note what `wrprcTrustPolicy` does **not** cover: an expired certificate and a missing status list
-always fail regardless of the policy, while a status list that cannot be retrieved is always a
-warning. A transient network failure reaching the status list therefore surfaces as a refused
-issuance under `.enforce`.
+`wrprcVpTrustPolicy` is the same decision for **presentations**, and the app deliberately sets it to
+`.warning` so a failed check reaches the consent screen behind an acknowledgement rather than ending
+the flow. A single policy governed both directions until wallet-kit 0.40.2, which could not express
+that asymmetry.
+
+Note what neither policy covers: a status list that cannot be retrieved is always a warning, never a
+refusal, so a transient network failure does not block on its own.
 
 4. VP API
 

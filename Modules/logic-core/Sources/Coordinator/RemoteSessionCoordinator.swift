@@ -43,7 +43,7 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
   private let session: PresentationSession
 
   var relyingPartyRegistration: WrpRegistrationPolicy? { session.wrpVerifierPolicy }
-  var relyingPartyWarningViolations: [String] { (session.wrpVerifierWarnings?[""] ?? []).map(\.violation) }
+  var relyingPartyWarningViolations: [String] { (session.wrpVerifierWarnings?[""] ?? []).map(\.message) }
 
   init(session: PresentationSession) {
     self.session = session

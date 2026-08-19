@@ -48,7 +48,7 @@ struct DocumentOfferViewState: ViewState {
 final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, DocumentOfferViewState> {
 
   var isTrustBlockedAlertShowing: Bool = false
-  var isRegistrationBlockedSheetShowing: Bool = false
+  var isRegistrationBlockedAlertShowing: Bool = false
 
   private let interactor: DocumentOfferInteractor
 
@@ -111,11 +111,12 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
       setState {
         $0.copy(
           isLoading: false,
+          documentOfferUiModel: DocumentOfferUIModel.empty(),
           allowIssue: false,
           initialized: false
         ).copy(error: nil)
       }
-      isRegistrationBlockedSheetShowing = true
+      isRegistrationBlockedAlertShowing = true
     case .failure(let error):
       setState {
         $0.copy(
@@ -206,7 +207,7 @@ final class DocumentOfferViewModel<Router: RouterHost>: ViewModel<Router, Docume
   }
 
   func onRegistrationBlockedClose() {
-    isRegistrationBlockedSheetShowing = false
+    isRegistrationBlockedAlertShowing = false
     onPop()
   }
 

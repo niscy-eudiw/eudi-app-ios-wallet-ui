@@ -32,9 +32,7 @@ final class TestAddDocumentInteractor: EudiTest {
     self.walletKitController = MockWalletKitController()
 
     stub(walletKitController) { mock in
-      // The issuer-list flow has no pre-issuance registration; tests that need a different
-      // scenario override this.
-      when(mock.getIssuerRegistration(issuerId: any())).thenReturn(
+      when(mock.getIssuerRegistration(issuerId: any(), configIds: any())).thenReturn(
         .verified(
           details: RegistrationDetails(
             tradeName: "issuer",
@@ -733,7 +731,7 @@ private extension TestAddDocumentInteractor {
   /// so scenarios are expressed by stubbing the lookup.
   func stubIssuerRegistration(_ registration: IssuerRegistration) {
     stub(walletKitController) { stub in
-      when(stub.getIssuerRegistration(issuerId: any())).thenReturn(registration)
+      when(stub.getIssuerRegistration(issuerId: any(), configIds: any())).thenReturn(registration)
     }
   }
 }

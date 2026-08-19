@@ -18,7 +18,6 @@ import logic_business
 @testable import logic_ui
 @testable import logic_test
 @testable import logic_core
-import struct OpenID4VP.PolicyViolation
 
 final class TestDeepLinkController: EudiTest {
   
@@ -544,7 +543,7 @@ private extension TestDeepLinkController {
 
     var wrpVerifierPolicy: WrpRegistrationPolicy?
 
-    var wrpVerifierWarnings: [String: [PolicyViolation]]?
+    var wrpVerifierWarnings: [String: [PresentationPolicyViolation]]?
 
     func waitForDisconnect() async throws {}
     

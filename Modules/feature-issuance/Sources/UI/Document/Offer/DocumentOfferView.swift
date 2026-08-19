@@ -56,13 +56,14 @@ struct DocumentOfferView<Router: RouterHost>: View {
         Button(.close) { viewModel.onTrustBlockedClose() }
       }
     )
-    .sheetDialog(isPresented: $viewModel.isRegistrationBlockedSheetShowing) {
-      TrustBlockedSheetView(
-        title: .issuanceRegistrationBlockedTitle,
-        message: .issuanceRegistrationBlockedMessage,
-        onClose: { viewModel.onRegistrationBlockedClose() }
-      )
-    }
+    .alertView(
+      isPresented: $viewModel.isRegistrationBlockedAlertShowing,
+      title: .issuanceRegistrationBlockedTitle,
+      message: .issuanceRegistrationBlockedMessage,
+      actions: {
+        Button(.close) { viewModel.onRegistrationBlockedClose() }
+      }
+    )
     .task {
       await viewModel.initialize()
     }
@@ -81,7 +82,9 @@ private struct DocumentOfferViewContainer: View {
   @MainActor
   @ViewBuilder
   private func content() -> some View {
-    if viewState.documentOfferUiModel.uiOffers.isEmpty {
+    if !viewState.initialized, !viewState.isLoading {
+      Color.clear
+    } else if viewState.documentOfferUiModel.uiOffers.isEmpty {
       noDocumentsFound()
     } else {
       scrollableContent()

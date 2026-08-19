@@ -42,7 +42,7 @@ struct AddDocumentViewState: ViewState {
 final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocumentViewState> {
 
   var isTrustBlockedAlertShowing: Bool = false
-  var isRegistrationBlockedSheetShowing: Bool = false
+  var isRegistrationBlockedAlertShowing: Bool = false
 
   private let interactor: AddDocumentInteractor
   private let deepLinkController: DeepLinkController
@@ -296,7 +296,7 @@ final class AddDocumentViewModel<Router: RouterHost>: ViewModel<Router, AddDocum
           )
           .copy(error: nil)
         }
-        isRegistrationBlockedSheetShowing = true
+        isRegistrationBlockedAlertShowing = true
       case .failure(let error):
         setState {
           $0.copy(

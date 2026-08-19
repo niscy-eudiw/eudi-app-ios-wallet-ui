@@ -148,7 +148,7 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
     docTypeIdentifier: DocumentTypeIdentifier
   ) async -> IssueResultPartialState {
 
-    if case .blocked(let reason) = await walletController.getIssuerRegistration(issuerId: issuerId) {
+    if case .blocked(let reason) = await walletController.getIssuerRegistration(issuerId: issuerId, configIds: configIds) {
       return .registrationBlocked(reason)
     }
 

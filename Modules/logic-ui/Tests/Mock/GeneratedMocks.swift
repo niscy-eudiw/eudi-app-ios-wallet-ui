@@ -3553,7 +3553,6 @@ import Cuckoo
 import SwiftUI
 import logic_storage
 import logic_api
-import struct OpenID4VCI.PolicyViolation
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -4040,13 +4039,13 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration? {
+    public func getIssuerRegistration(issuerId p0: String, configIds p1: [String]) async -> IssuerRegistration? {
         return await cuckoo_manager.call(
-            "getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration?",
-            parameters: (p0),
-            escapingParameters: (p0),
+            "getIssuerRegistration(issuerId p0: String, configIds p1: [String]) async -> IssuerRegistration?",
+            parameters: (p0, p1),
+            escapingParameters: (p0, p1),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.getIssuerRegistration(issuerId: p0)
+            defaultCall: await __defaultImplStub!.getIssuerRegistration(issuerId: p0, configIds: p1)
         )
     }
 
@@ -4425,10 +4424,10 @@ return await cuckoo_manager.call(
             ))
         }
         
-        func getIssuerRegistration<M1: Cuckoo.Matchable>(issuerId p0: M1) -> Cuckoo.ProtocolStubFunction<(String), IssuerRegistration?> where M1.MatchedType == String {
-            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+        func getIssuerRegistration<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(issuerId p0: M1, configIds p1: M2) -> Cuckoo.ProtocolStubFunction<(String, [String]), IssuerRegistration?> where M1.MatchedType == String, M2.MatchedType == [String] {
+            let matchers: [Cuckoo.ParameterMatcher<(String, [String])>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration?",
+                method: "getIssuerRegistration(issuerId p0: String, configIds p1: [String]) async -> IssuerRegistration?",
                 parameterMatchers: matchers
             ))
         }
@@ -4983,10 +4982,10 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func getIssuerRegistration<M1: Cuckoo.Matchable>(issuerId p0: M1) -> Cuckoo.__DoNotUse<(String), IssuerRegistration?> where M1.MatchedType == String {
-            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+        func getIssuerRegistration<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(issuerId p0: M1, configIds p1: M2) -> Cuckoo.__DoNotUse<(String, [String]), IssuerRegistration?> where M1.MatchedType == String, M2.MatchedType == [String] {
+            let matchers: [Cuckoo.ParameterMatcher<(String, [String])>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
             return cuckoo_manager.verify(
-                "getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration?",
+                "getIssuerRegistration(issuerId p0: String, configIds p1: [String]) async -> IssuerRegistration?",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -5201,7 +5200,7 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (IssuerRegistration?).self)
     }
     
-    public func getIssuerRegistration(issuerId p0: String) async -> IssuerRegistration? {
+    public func getIssuerRegistration(issuerId p0: String, configIds p1: [String]) async -> IssuerRegistration? {
         return DefaultValueRegistry.defaultValue(for: (IssuerRegistration?).self)
     }
     
@@ -6483,6 +6482,18 @@ import OpenID4VCI
 
 import Cuckoo
 import OpenID4VCI
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/PolicyPurpose+Localized.swift'
+
+import Cuckoo
+import Foundation
+import EudiWalletKit
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -8267,18 +8278,6 @@ import logic_resources
 
 
 // MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Sheet/SheetContainerView.swift'
-
-import Cuckoo
-import SwiftUI
-import logic_resources
-@testable import logic_core
-@testable import logic_business
-@testable import logic_analytics
-@testable import logic_ui
-
-
-
-// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Sheet/TrustBlockedSheetView.swift'
 
 import Cuckoo
 import SwiftUI
