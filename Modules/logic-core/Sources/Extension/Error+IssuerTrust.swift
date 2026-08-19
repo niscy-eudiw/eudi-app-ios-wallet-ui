@@ -25,6 +25,8 @@ public extension Error {
 
     if self is WRPRCError { return true }
 
+    if self is RegistrationRefusedError { return true }
+
     if let walletError = self as? WalletError {
 
       if walletError.code == .trustError || walletError.code == .invalidWrprc { return true }

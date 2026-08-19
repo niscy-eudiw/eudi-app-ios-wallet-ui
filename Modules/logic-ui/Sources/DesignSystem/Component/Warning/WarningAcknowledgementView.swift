@@ -25,6 +25,7 @@ public struct WarningAcknowledgementView: View {
     Theme.shared.color.red
   }
   private var backgroundOpacity: Double { 0.2 }
+  private var iconSize: Double { 20 }
   private var foregroundColor: Color {
     Theme.shared.color.primaryLabel
   }
@@ -43,6 +44,10 @@ public struct WarningAcknowledgementView: View {
     VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
       HStack(alignment: .center, spacing: SPACING_SMALL) {
         Theme.shared.image.exclamationmarkTriangleFill
+          .renderingMode(.template)
+          .resizable()
+          .scaledToFit()
+          .frame(width: iconSize, height: iconSize)
           .foregroundColor(accentColor)
 
         Text(message)
@@ -54,7 +59,6 @@ public struct WarningAcknowledgementView: View {
       }
 
       Divider()
-        .overlay(accentColor)
 
       Toggle(isOn: $isAcknowledged) {
         Text(acknowledgementText)
@@ -63,6 +67,7 @@ public struct WarningAcknowledgementView: View {
           .multilineTextAlignment(.leading)
           .fixedSize(horizontal: false, vertical: true)
       }
+      .padding(.leading, iconSize + SPACING_SMALL)
     }
     .padding(SPACING_MEDIUM)
     .frame(maxWidth: .infinity, alignment: .leading)

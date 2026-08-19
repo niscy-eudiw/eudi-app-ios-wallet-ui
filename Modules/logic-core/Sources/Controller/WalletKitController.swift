@@ -358,10 +358,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     if let issuerId = document?.credentialIssuerIdentifier,
        let configId = document?.configurationIdentifier,
        case .blocked = await getIssuerRegistration(issuerId: issuerId, configIds: [configId]) {
-      throw WalletError(
-        description: "Issuer registration does not cover \(configId)",
-        code: .invalidWrprc
-      )
+      throw RegistrationRefusedError()
     }
 
     let credentialOptions = await resolveCredentialOptions(

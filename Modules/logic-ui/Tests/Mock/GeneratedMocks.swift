@@ -6377,6 +6377,17 @@ public class DocumentRegistrationManagerStub:DocumentRegistrationManager, @unche
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Error/RegistrationRefusedError.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Error/WalletCoreError.swift'
 
 import Cuckoo
