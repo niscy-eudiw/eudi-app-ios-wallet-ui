@@ -101,7 +101,7 @@ public protocol WalletKitController: Sendable {
   func getVerifierRegistration(
     policy: WrpRegistrationPolicy?,
     trustViolations: [String],
-    overaskedClaims: [logic_core.RequestedClaim],
+    overaskedClaims: [logic_core.OveraskedClaim],
     verifierName: String?,
     verifierIsTrusted: Bool
   ) async -> RelyingPartyRegistration
@@ -581,7 +581,7 @@ final actor WalletKitControllerImpl: WalletKitController {
   func getVerifierRegistration(
     policy: WrpRegistrationPolicy?,
     trustViolations: [String],
-    overaskedClaims: [RequestedClaim],
+    overaskedClaims: [OveraskedClaim],
     verifierName: String?,
     verifierIsTrusted: Bool
   ) async -> RelyingPartyRegistration {
