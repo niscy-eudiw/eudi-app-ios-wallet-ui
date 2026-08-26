@@ -585,13 +585,24 @@ final actor WalletKitControllerImpl: WalletKitController {
     verifierName: String?,
     verifierIsTrusted: Bool
   ) async -> RelyingPartyRegistration {
+
+    let unregistered = RelyingPartyRegistration(
+      name: verifierName,
+      uniqueId: nil,
+      isVerified: verifierIsTrusted,
+      logoUrl: nil,
+      registration: .notSupported
+    )
+
+    guard walletKitConfig.validateIssuerRegistrationCertificate else { return unregistered }
+
     guard let policy else {
-      return RelyingPartyRegistration(
+      return trustViolations.isEmpty ? unregistered : RelyingPartyRegistration(
         name: verifierName,
         uniqueId: nil,
         isVerified: verifierIsTrusted,
         logoUrl: nil,
-        registration: trustViolations.isEmpty ? .notSupported : .notVerified(details: nil)
+        registration: .notVerified(details: nil)
       )
     }
 
@@ -739,6 +750,8 @@ private extension WalletKitControllerImpl {
     await self.stopPresentation()
 
     let data = urlString.data(using: .utf8) ?? Data()
+
+    wallet.openID4VpConfig = walletKitConfig.vpConfig
 
     let session = await wallet.beginPresentation(flow: .openid4vp(qrCode: data))
     let remoteSessionCoordinator = DIGraph.shared.resolver.force(
