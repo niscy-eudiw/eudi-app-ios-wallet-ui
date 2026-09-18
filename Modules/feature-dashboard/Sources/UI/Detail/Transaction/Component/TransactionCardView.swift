@@ -18,6 +18,10 @@ import logic_resources
 import logic_ui
 
 public struct TransactionCardView: View {
+
+  @Environment(\.openURL) private var openURL
+  @State private var isExpanded = false
+
   private let backgroundColor: Color
   private let transactionDetailsCardData: TransactionDetailsCardData
   private let isLoading: Bool
@@ -37,45 +41,93 @@ public struct TransactionCardView: View {
       VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
 
         VStack(alignment: .leading, spacing: SPACING_EXTRA_SMALL) {
-          Text(transactionDetailsCardData.transactionTypeLabel)
+          Text(transactionDetailsCardData.partyLabel)
             .typography(Theme.shared.font.labelSmall)
+            .fontWeight(.semibold)
             .foregroundStyle(Theme.shared.color.secondaryLabel)
-          if let relyingPartyName = transactionDetailsCardData.relyingPartyName {
-            Text(relyingPartyName)
-              .typography(Theme.shared.font.bodyLarge)
-              .foregroundStyle(Theme.shared.color.primaryLabel)
-              .if(transactionDetailsCardData.relyingPartyIsVerified ?? false) {
-                $0.rightImage(
-                  image: Theme.shared.image.verified,
-                  spacing: SPACING_SMALL
-                ).foregroundStyle(Theme.shared.color.success)
-              }
+
+          Text(transactionDetailsCardData.partyName ?? transactionDetailsCardData.transactionTypeLabel)
+            .typography(Theme.shared.font.bodyLarge)
+            .fontWeight(.medium)
+            .foregroundStyle(Theme.shared.color.primaryLabel)
+
+          ForEach(Array(transactionDetailsCardData.partySubtitles.enumerated()), id: \.offset) { _, subtitle in
+            Text(subtitle)
+              .typography(Theme.shared.font.bodyMedium)
+              .foregroundStyle(Theme.shared.color.secondaryLabel)
           }
         }
 
-        HStack {
+        HStack(alignment: .bottom) {
           VStack(alignment: .leading, spacing: SPACING_EXTRA_SMALL) {
             Text(.transactionDetailsScreenCardDateLabel)
-              .typography(Theme.shared.font.bodyMedium)
-              .foregroundStyle(Theme.shared.color.secondaryLabel)
+              .typography(Theme.shared.font.labelSmall)
               .fontWeight(.semibold)
+              .foregroundStyle(Theme.shared.color.secondaryLabel)
+
             Text(transactionDetailsCardData.transactionDate)
               .typography(Theme.shared.font.bodyMedium)
-              .foregroundStyle(Theme.shared.color.secondaryLabel)
+              .foregroundStyle(Theme.shared.color.primaryLabel)
           }
 
           Spacer()
 
-          HStack(spacing: SPACING_SMALL) {
-            Text(transactionDetailsCardData.transactionStatusLabel)
-              .typography(Theme.shared.font.labelMedium)
-              .foregroundStyle(Theme.shared.color.primaryLabel)
+          Text(transactionDetailsCardData.transactionStatusLabel)
+            .typography(Theme.shared.font.labelMedium)
+            .foregroundStyle(Theme.shared.color.white)
+            .padding(.horizontal, SPACING_MEDIUM)
+            .padding(.vertical, SPACING_SMALL)
+            .background(transactionDetailsCardData.transactionIsCompleted ? Theme.shared.color.green : Theme.shared.color.red)
+            .cornerRadius(8)
+        }
+
+        if let nonCompletionReason = transactionDetailsCardData.nonCompletionReason {
+          Text(nonCompletionReason)
+            .typography(Theme.shared.font.bodyMedium)
+            .foregroundStyle(Theme.shared.color.secondaryLabel)
+        }
+
+        if !transactionDetailsCardData.details.isEmpty {
+          Button {
+            withAnimation { isExpanded.toggle() }
+          } label: {
+            Text(isExpanded ? .hideDetails : .viewDetails)
+              .typography(Theme.shared.font.bodyLarge)
+              .fontWeight(.medium)
+              .foregroundStyle(Theme.shared.color.accent)
+              .frame(maxWidth: .infinity)
+          }.gone(if: isExpanded)
+
+          if isExpanded {
+            VStack(spacing: .zero) {
+              ForEach(Array(transactionDetailsCardData.details.enumerated()), id: \.offset) { index, group in
+                ForEach(group) { field in
+                  WrapListItemView(
+                    listItem: field.listItem,
+                    mainTextVerticalPadding: SPACING_EXTRA_SMALL,
+                    minHeight: false
+                  ) {
+                    if let url = field.url {
+                      openURL(url)
+                    }
+                  }
+                }
+                if index < transactionDetailsCardData.details.count - 1 {
+                  ListDividerView()
+                }
+              }
+
+              Button {
+                withAnimation { isExpanded.toggle() }
+              } label: {
+                Text(isExpanded ? .hideDetails : .viewDetails)
+                  .typography(Theme.shared.font.bodyLarge)
+                  .fontWeight(.medium)
+                  .foregroundStyle(Theme.shared.color.accent)
+                  .frame(maxWidth: .infinity)
+              }.gone(if: !isExpanded)
+            }
           }
-          .padding(.horizontal, SPACING_SMALL)
-          .padding(.vertical, SPACING_SMALL)
-          .background(transactionDetailsCardData.transactionIsCompleted ? Theme.shared.color.green : Theme.shared.color.red)
-          .cornerRadius(8)
-          .foregroundStyle(Theme.shared.color.primaryLabel)
         }
       }
       .padding(.all, SPACING_MEDIUM)
@@ -88,12 +140,17 @@ public struct TransactionCardView: View {
   VStack(spacing: 16) {
     TransactionCardView(
       transactionDetailsCardData: TransactionDetailsCardData(
-        transactionTypeLabel: .custom("Data sharing"),
+        transactionTypeLabel: .custom("Presentation"),
         transactionStatusLabel: .custom("Completed"),
         transactionIsCompleted: true,
-        transactionDate: .custom("16 February 2024"),
-        relyingPartyName: .custom("TravelBook Inc."),
-        relyingPartyIsVerified: true
+        transactionDate: .custom("16 Feb 2024 11:07 AM"),
+        partyLabel: .transactionDetailsRelyingPartyLabel,
+        partyName: .custom("TravelBook"),
+        partySubtitles: [.custom("LEI 123")],
+        details: [
+          [.field(id: "purpose", label: .transactionDetailsPurposeLabel, value: "Age verification")],
+          [.field(id: "registrar", label: .transactionDetailsRegistrarLabel, value: "https://registry.example", url: URL(string: "https://registry.example"))]
+        ]
       )
     )
   }

@@ -448,8 +448,6 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "issuance")
     case .deletion:
       bundle.localizedString(forKey: "deletion")
-    case .withoutRelyingName:
-      bundle.localizedString(forKey: "without_relying_name")
     case .errorFetchTransactionLog:
       bundle.localizedString(forKey: "fetch_error_transaction_log")
     case .incomplete:
@@ -560,6 +558,184 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "issuance_registration_blocked_title")
     case .issuanceRegistrationBlockedMessage:
       bundle.localizedString(forKey: "issuance_registration_blocked_message")
+    case .notCompleted:
+      bundle.localizedString(forKey: "not_completed")
+    case .reissuance:
+      bundle.localizedString(forKey: "reissuance")
+    case .filterByParty:
+      bundle.localizedString(forKey: "filter_by_party")
+    case .withoutPartyName:
+      bundle.localizedString(forKey: "without_party_name")
+    case .transactionTypeDataDeletionRequest:
+      bundle.localizedString(forKey: "transaction_type_data_deletion_request")
+    case .transactionTypeDpaReport:
+      bundle.localizedString(forKey: "transaction_type_dpa_report")
+    case .transactionDetailsDeleteButton:
+      bundle.localizedString(forKey: "transaction_details_delete_button")
+    case .transactionDetailsDeleteTitle:
+      bundle.localizedString(forKey: "transaction_details_delete_title")
+    case .transactionDetailsDeleteMessage:
+      bundle.localizedString(forKey: "transaction_details_delete_message")
+    case .transactionDetailsDeleteError:
+      bundle.localizedString(forKey: "transaction_details_delete_error")
+    case .transactionDetailsDataRequested:
+      bundle.localizedString(forKey: "transaction_details_data_requested")
+    case .transactionDetailsIssuanceSection:
+      bundle.localizedString(forKey: "transaction_details_issuance_section")
+    case .transactionDetailsCredentialsSection:
+      bundle.localizedString(forKey: "transaction_details_credentials_section")
+    case .transactionDetailsTechnicalSection:
+      bundle.localizedString(forKey: "transaction_details_technical_section")
+    case .transactionDetailsDataDeletionSection:
+      bundle.localizedString(forKey: "transaction_details_data_deletion_section")
+    case .transactionDetailsNoDataRequested:
+      bundle.localizedString(forKey: "transaction_details_no_data_requested")
+    case .transactionDetailsNoDataShared:
+      bundle.localizedString(forKey: "transaction_details_no_data_shared")
+    case .transactionDetailsNoClaims:
+      bundle.localizedString(forKey: "transaction_details_no_claims")
+    case .transactionDetailsNoInformation:
+      bundle.localizedString(forKey: "transaction_details_no_information")
+    case .transactionDetailsUnknownClaim:
+      bundle.localizedString(forKey: "transaction_details_unknown_claim")
+    case .transactionDetailsNameLabel:
+      bundle.localizedString(forKey: "transaction_details_name_label")
+    case .transactionDetailsIdentifierLabel:
+      bundle.localizedString(forKey: "transaction_details_identifier_label")
+    case .transactionDetailsIdentifierSchemeLabel:
+      bundle.localizedString(forKey: "transaction_details_identifier_scheme_label")
+    case .transactionDetailsContactLabel:
+      bundle.localizedString(forKey: "transaction_details_contact_label")
+    case .transactionDetailsCountryLabel:
+      bundle.localizedString(forKey: "transaction_details_country_label")
+    case .transactionDetailsPurposeLabel:
+      bundle.localizedString(forKey: "transaction_details_purpose_label")
+    case .transactionDetailsRegistrarLabel:
+      bundle.localizedString(forKey: "transaction_details_registrar_label")
+    case .transactionDetailsPrivacyPolicyLabel:
+      bundle.localizedString(forKey: "transaction_details_privacy_policy_label")
+    case .transactionDetailsIssuerTypeLabel:
+      bundle.localizedString(forKey: "transaction_details_issuer_type_label")
+    case .transactionDetailsIssuedCountLabel:
+      bundle.localizedString(forKey: "transaction_details_issued_count_label")
+    case .transactionDetailsTriggerLabel:
+      bundle.localizedString(forKey: "transaction_details_trigger_label")
+    case .transactionDetailsRequestedByYou:
+      bundle.localizedString(forKey: "transaction_details_requested_by_you")
+    case .transactionDetailsRequestedByIssuer:
+      bundle.localizedString(forKey: "transaction_details_requested_by_issuer")
+    case .transactionDetailsRenewedByWallet:
+      bundle.localizedString(forKey: "transaction_details_renewed_by_wallet")
+    case .transactionDetailsCertificateLabel:
+      bundle.localizedString(forKey: "transaction_details_certificate_label")
+    case .transactionDetailsFilenameLabel:
+      bundle.localizedString(forKey: "transaction_details_filename_label")
+    case .transactionDetailsFilesizeLabel:
+      bundle.localizedString(forKey: "transaction_details_filesize_label")
+    case .transactionDetailsDigestLabel:
+      bundle.localizedString(forKey: "transaction_details_digest_label")
+    case .transactionDetailsIssuedCount(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_details_issued_count", arguments: args)
+    case .transactionDetailsBytes(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_details_bytes", arguments: args)
+    case .transactionDetailsActionUnavailable:
+      bundle.localizedString(forKey: "transaction_details_action_unavailable")
+    case .transactionDetailsActionOpenFailed:
+      bundle.localizedString(forKey: "transaction_details_action_open_failed")
+    case .transactionDetailsActionStarted:
+      bundle.localizedString(forKey: "transaction_details_action_started")
+    case .transactionDetailsActionError:
+      bundle.localizedString(forKey: "transaction_details_action_error")
+    case .transactionDetailsDeletionEmailSubject(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_details_deletion_email_subject", arguments: args)
+    case .transactionDetailsDeletionEmailBody(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_details_deletion_email_body", arguments: args)
+    case .transactionDetailsReportEmailSubject(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_details_report_email_subject", arguments: args)
+    case .transactionDetailsReportEmailBody(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_details_report_email_body", arguments: args)
+    case .hideDetails:
+      bundle.localizedString(forKey: "hide_details")
+    case .transactionDetailsRelyingPartyLabel:
+      bundle.localizedString(forKey: "transaction_details_relying_party_label")
+    case .transactionDetailsIssuerLabel:
+      bundle.localizedString(forKey: "transaction_details_issuer_label")
+    case .transactionDetailsSigningServiceLabel:
+      bundle.localizedString(forKey: "transaction_details_signing_service_label")
+    case .transactionDetailsAuthorityLabel:
+      bundle.localizedString(forKey: "transaction_details_authority_label")
+    case .transactionDetailsIntermediaryLabel:
+      bundle.localizedString(forKey: "transaction_details_intermediary_label")
+    case .transactionDetailsRequestDeletionSection:
+      bundle.localizedString(forKey: "transaction_details_request_deletion_section")
+    case .transactionDetailsReportSection:
+      bundle.localizedString(forKey: "transaction_details_report_section")
+    case .transactionDetailsPreviousDeletionRequests(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_details_previous_deletion_requests", arguments: args)
+    case .transactionDetailsPreviousReports(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_details_previous_reports", arguments: args)
+    case .transactionActionReportTitle:
+      bundle.localizedString(forKey: "transaction_action_report_title")
+    case .transactionActionAuthorityLabel:
+      bundle.localizedString(forKey: "transaction_action_authority_label")
+    case .transactionActionReportMessageBold:
+      bundle.localizedString(forKey: "transaction_action_report_message_bold")
+    case .transactionActionReportMessage(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_action_report_message", arguments: args)
+    case .transactionActionReportFollowUp(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_action_report_follow_up", arguments: args)
+    case .transactionActionCall:
+      bundle.localizedString(forKey: "transaction_action_call")
+    case .transactionActionOpenEmail:
+      bundle.localizedString(forKey: "transaction_action_open_email")
+    case .transactionActionVisitWebsite:
+      bundle.localizedString(forKey: "transaction_action_visit_website")
+    case .transactionActionUnknownParty:
+      bundle.localizedString(forKey: "transaction_action_unknown_party")
+    case .transactionHistoryDeletionTitle(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_history_deletion_title", arguments: args)
+    case .transactionHistoryReportTitle(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_history_report_title", arguments: args)
+    case .transactionHistoryDeletionDisclaimer:
+      bundle.localizedString(forKey: "transaction_history_deletion_disclaimer")
+    case .transactionHistoryReportDisclaimer:
+      bundle.localizedString(forKey: "transaction_history_report_disclaimer")
+    case .transactionHistoryDeletionMessage:
+      bundle.localizedString(forKey: "transaction_history_deletion_message")
+    case .transactionHistoryReportMessage:
+      bundle.localizedString(forKey: "transaction_history_report_message")
+    case .transactionHistoryChannelPhone:
+      bundle.localizedString(forKey: "transaction_history_channel_phone")
+    case .transactionHistoryChannelEmail:
+      bundle.localizedString(forKey: "transaction_history_channel_email")
+    case .transactionHistoryChannelWebsite:
+      bundle.localizedString(forKey: "transaction_history_channel_website")
+    case .transactionHistoryChannelOther:
+      bundle.localizedString(forKey: "transaction_history_channel_other")
+    case .transactionActionDeletionScreenTitle:
+      bundle.localizedString(forKey: "transaction_action_deletion_screen_title")
+    case .transactionActionDeletionIntroWebsite(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_action_deletion_intro_website", arguments: args)
+    case .transactionActionDeletionIntroEmail(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_action_deletion_intro_email", arguments: args)
+    case .transactionActionDeletionIntroPhone(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_action_deletion_intro_phone", arguments: args)
+    case .transactionActionDeletionNoticeBold:
+      bundle.localizedString(forKey: "transaction_action_deletion_notice_bold")
+    case .transactionActionDeletionNoticeWebsite:
+      bundle.localizedString(forKey: "transaction_action_deletion_notice_website")
+    case .transactionActionDeletionNoticeEmail:
+      bundle.localizedString(forKey: "transaction_action_deletion_notice_email")
+    case .transactionActionDeletionNoticePhone:
+      bundle.localizedString(forKey: "transaction_action_deletion_notice_phone")
+    case .transactionActionDeletionLegal(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_action_deletion_legal", arguments: args)
+    case .transactionActionContinueWebsite(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_action_continue_website", arguments: args)
+    case .transactionActionContinueEmail:
+      bundle.localizedString(forKey: "transaction_action_continue_email")
+    case .transactionActionContinuePhone(let args):
+      bundle.localizedStringWithArguments(forKey: "transaction_action_continue_phone", arguments: args)
     case .continueButton:
       bundle.localizedString(forKey: "continue_button")
     }

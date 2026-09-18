@@ -1325,6 +1325,7 @@ import Cuckoo
 import Cuckoo
 import Foundation
 import EudiRQESUi
+import MdocDataModel18013
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -4832,9 +4833,9 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func fetchTransactionLog(with p0: String) async throws -> TransactionLogItem {
+    public func fetchTransactionLog(with p0: String) async throws -> TransactionLogDomain {
         return try await cuckoo_manager.callThrows(
-            "fetchTransactionLog(with p0: String) async throws -> TransactionLogItem",
+            "fetchTransactionLog(with p0: String) async throws -> TransactionLogDomain",
             parameters: (p0),
             escapingParameters: (p0),
             errorType: Swift.Error.self,
@@ -4843,14 +4844,58 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func fetchTransactionLogs() async throws -> [TransactionLogItem] {
+    public func fetchTransactionLogs() async throws -> [TransactionLogDomain] {
         return try await cuckoo_manager.callThrows(
-            "fetchTransactionLogs() async throws -> [TransactionLogItem]",
+            "fetchTransactionLogs() async throws -> [TransactionLogDomain]",
             parameters: (),
             escapingParameters: (),
             errorType: Swift.Error.self,
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
             defaultCall: await __defaultImplStub!.fetchTransactionLogs()
+        )
+    }
+
+    public func deleteTransactionLog(with p0: String) async throws {
+        return try await cuckoo_manager.callThrows(
+            "deleteTransactionLog(with p0: String) async throws",
+            parameters: (p0),
+            escapingParameters: (p0),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.deleteTransactionLog(with: p0)
+        )
+    }
+
+    public func fetchPresentationActions(parentPresentationId p0: String) async throws -> [TransactionLogDomain] {
+        return try await cuckoo_manager.callThrows(
+            "fetchPresentationActions(parentPresentationId p0: String) async throws -> [TransactionLogDomain]",
+            parameters: (p0),
+            escapingParameters: (p0),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.fetchPresentationActions(parentPresentationId: p0)
+        )
+    }
+
+    public func recordDataDeletionRequest(for p0: TransactionLogDomain.Presentation, contactUrl p1: URL) async throws {
+        return try await cuckoo_manager.callThrows(
+            "recordDataDeletionRequest(for p0: TransactionLogDomain.Presentation, contactUrl p1: URL) async throws",
+            parameters: (p0, p1),
+            escapingParameters: (p0, p1),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.recordDataDeletionRequest(for: p0, contactUrl: p1)
+        )
+    }
+
+    public func recordDpaReport(for p0: TransactionLogDomain.Presentation, contactUrl p1: URL) async throws {
+        return try await cuckoo_manager.callThrows(
+            "recordDpaReport(for p0: TransactionLogDomain.Presentation, contactUrl p1: URL) async throws",
+            parameters: (p0, p1),
+            escapingParameters: (p0, p1),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.recordDpaReport(for: p0, contactUrl: p1)
         )
     }
 
@@ -5250,18 +5295,50 @@ return await cuckoo_manager.call(
             ))
         }
         
-        func fetchTransactionLog<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubThrowingFunction<(String), TransactionLogItem,Swift.Error> where M1.MatchedType == String {
+        func fetchTransactionLog<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubThrowingFunction<(String), TransactionLogDomain,Swift.Error> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "fetchTransactionLog(with p0: String) async throws -> TransactionLogItem",
+                method: "fetchTransactionLog(with p0: String) async throws -> TransactionLogDomain",
                 parameterMatchers: matchers
             ))
         }
         
-        func fetchTransactionLogs() -> Cuckoo.ProtocolStubThrowingFunction<(), [TransactionLogItem],Swift.Error> {
+        func fetchTransactionLogs() -> Cuckoo.ProtocolStubThrowingFunction<(), [TransactionLogDomain],Swift.Error> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "fetchTransactionLogs() async throws -> [TransactionLogItem]",
+                method: "fetchTransactionLogs() async throws -> [TransactionLogDomain]",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func deleteTransactionLog<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubNoReturnThrowingFunction<(String),Swift.Error> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "deleteTransactionLog(with p0: String) async throws",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func fetchPresentationActions<M1: Cuckoo.Matchable>(parentPresentationId p0: M1) -> Cuckoo.ProtocolStubThrowingFunction<(String), [TransactionLogDomain],Swift.Error> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "fetchPresentationActions(parentPresentationId p0: String) async throws -> [TransactionLogDomain]",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func recordDataDeletionRequest<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(for p0: M1, contactUrl p1: M2) -> Cuckoo.ProtocolStubNoReturnThrowingFunction<(TransactionLogDomain.Presentation, URL),Swift.Error> where M1.MatchedType == TransactionLogDomain.Presentation, M2.MatchedType == URL {
+            let matchers: [Cuckoo.ParameterMatcher<(TransactionLogDomain.Presentation, URL)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "recordDataDeletionRequest(for p0: TransactionLogDomain.Presentation, contactUrl p1: URL) async throws",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func recordDpaReport<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(for p0: M1, contactUrl p1: M2) -> Cuckoo.ProtocolStubNoReturnThrowingFunction<(TransactionLogDomain.Presentation, URL),Swift.Error> where M1.MatchedType == TransactionLogDomain.Presentation, M2.MatchedType == URL {
+            let matchers: [Cuckoo.ParameterMatcher<(TransactionLogDomain.Presentation, URL)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "recordDpaReport(for p0: TransactionLogDomain.Presentation, contactUrl p1: URL) async throws",
                 parameterMatchers: matchers
             ))
         }
@@ -5760,10 +5837,10 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func fetchTransactionLog<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(String), TransactionLogItem> where M1.MatchedType == String {
+        func fetchTransactionLog<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(String), TransactionLogDomain> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
-                "fetchTransactionLog(with p0: String) async throws -> TransactionLogItem",
+                "fetchTransactionLog(with p0: String) async throws -> TransactionLogDomain",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -5772,10 +5849,58 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func fetchTransactionLogs() -> Cuckoo.__DoNotUse<(), [TransactionLogItem]> {
+        func fetchTransactionLogs() -> Cuckoo.__DoNotUse<(), [TransactionLogDomain]> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "fetchTransactionLogs() async throws -> [TransactionLogItem]",
+                "fetchTransactionLogs() async throws -> [TransactionLogDomain]",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func deleteTransactionLog<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(String), Void> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "deleteTransactionLog(with p0: String) async throws",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func fetchPresentationActions<M1: Cuckoo.Matchable>(parentPresentationId p0: M1) -> Cuckoo.__DoNotUse<(String), [TransactionLogDomain]> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "fetchPresentationActions(parentPresentationId p0: String) async throws -> [TransactionLogDomain]",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func recordDataDeletionRequest<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(for p0: M1, contactUrl p1: M2) -> Cuckoo.__DoNotUse<(TransactionLogDomain.Presentation, URL), Void> where M1.MatchedType == TransactionLogDomain.Presentation, M2.MatchedType == URL {
+            let matchers: [Cuckoo.ParameterMatcher<(TransactionLogDomain.Presentation, URL)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
+            return cuckoo_manager.verify(
+                "recordDataDeletionRequest(for p0: TransactionLogDomain.Presentation, contactUrl p1: URL) async throws",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func recordDpaReport<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(for p0: M1, contactUrl p1: M2) -> Cuckoo.__DoNotUse<(TransactionLogDomain.Presentation, URL), Void> where M1.MatchedType == TransactionLogDomain.Presentation, M2.MatchedType == URL {
+            let matchers: [Cuckoo.ParameterMatcher<(TransactionLogDomain.Presentation, URL)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
+            return cuckoo_manager.verify(
+                "recordDpaReport(for p0: TransactionLogDomain.Presentation, contactUrl p1: URL) async throws",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -6074,12 +6199,28 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
-    public func fetchTransactionLog(with p0: String) async throws -> TransactionLogItem {
-        return DefaultValueRegistry.defaultValue(for: (TransactionLogItem).self)
+    public func fetchTransactionLog(with p0: String) async throws -> TransactionLogDomain {
+        return DefaultValueRegistry.defaultValue(for: (TransactionLogDomain).self)
     }
     
-    public func fetchTransactionLogs() async throws -> [TransactionLogItem] {
-        return DefaultValueRegistry.defaultValue(for: ([TransactionLogItem]).self)
+    public func fetchTransactionLogs() async throws -> [TransactionLogDomain] {
+        return DefaultValueRegistry.defaultValue(for: ([TransactionLogDomain]).self)
+    }
+    
+    public func deleteTransactionLog(with p0: String) async throws {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func fetchPresentationActions(parentPresentationId p0: String) async throws -> [TransactionLogDomain] {
+        return DefaultValueRegistry.defaultValue(for: ([TransactionLogDomain]).self)
+    }
+    
+    public func recordDataDeletionRequest(for p0: TransactionLogDomain.Presentation, contactUrl p1: URL) async throws {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func recordDpaReport(for p0: TransactionLogDomain.Presentation, contactUrl p1: URL) async throws {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
     public func isDocumentRevoked(with p0: String) async -> Bool {
@@ -7422,12 +7563,24 @@ import Cuckoo
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/TransactionLog+Extensions.swift'
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/TransactionEntry+Extensions.swift'
 
 import Cuckoo
-import logic_storage
-import Security
 import Foundation
+import MdocDataModel18013
+import logic_storage
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_authentication
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/TransactionLogDomain+Entry.swift'
+
+import Cuckoo
+import Foundation
+import MdocDataModel18013
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -7635,9 +7788,32 @@ import Cuckoo
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/TransactionLogItem.swift'
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/TransactionActionChannel.swift'
 
 import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_authentication
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/TransactionDataProtectionAction.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_authentication
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/TransactionLogDomain.swift'
+
+import Cuckoo
+import Foundation
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics

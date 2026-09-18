@@ -13,30 +13,25 @@
  * ANY KIND, either express or implied. See the Licence for the specific language
  * governing permissions and limitations under the Licence.
  */
-import Foundation
-import logic_business
+import logic_ui
 
-struct TransactionFilterableAttributes: FilterableAttributes {
-  let sortingKey: String
-  var searchTags: [String]
-  let status: TransactionStatus?
-  let creationDate: Date?
-  let partyName: String?
-  let transactionType: TransactionType?
+public enum TransactionDetailsLocators: String, LocatorType {
+  case deleteNavigationBarButton
+  case confirmDialogDeleteButton
+  case confirmDialogCancelButton
 
-  init(
-    sortingKey: String,
-    searchTags: [String],
-    status: TransactionStatus? = nil,
-    creationDate: Date? = nil,
-    partyName: String? = nil,
-    transactionType: TransactionType? = .presentation
-  ) {
-    self.sortingKey = sortingKey
-    self.searchTags = searchTags
-    self.status = status
-    self.creationDate = creationDate
-    self.partyName = partyName
-    self.transactionType = transactionType
+  public var id: String {
+    switch self {
+    case .deleteNavigationBarButton:
+      return "transaction_details_delete_navigation_bar_button"
+    case .confirmDialogDeleteButton:
+      return "transaction_details_dialog_delete_transaction_positive_button"
+    case .confirmDialogCancelButton:
+      return "transaction_details_dialog_delete_transaction_negative_button"
+    }
+  }
+
+  public var trait: AccessibilityTraits? {
+    .isButton
   }
 }

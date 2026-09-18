@@ -14,29 +14,8 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
-import logic_business
 
-struct TransactionFilterableAttributes: FilterableAttributes {
-  let sortingKey: String
-  var searchTags: [String]
-  let status: TransactionStatus?
-  let creationDate: Date?
-  let partyName: String?
-  let transactionType: TransactionType?
-
-  init(
-    sortingKey: String,
-    searchTags: [String],
-    status: TransactionStatus? = nil,
-    creationDate: Date? = nil,
-    partyName: String? = nil,
-    transactionType: TransactionType? = .presentation
-  ) {
-    self.sortingKey = sortingKey
-    self.searchTags = searchTags
-    self.status = status
-    self.creationDate = creationDate
-    self.partyName = partyName
-    self.transactionType = transactionType
-  }
+public enum TransactionDataProtectionAction: String, Sendable, Equatable {
+  case requestDataDeletion
+  case reportSuspiciousTransaction
 }
