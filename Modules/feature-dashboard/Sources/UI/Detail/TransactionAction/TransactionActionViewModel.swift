@@ -13,6 +13,7 @@
  * ANY KIND, either express or implied. See the Licence for the specific language
  * governing permissions and limitations under the Licence.
  */
+import SwiftUI
 import UIKit
 import logic_ui
 import logic_core
@@ -26,7 +27,15 @@ struct TransactionActionViewState: ViewState {
   let ui: TransactionActionUiModel
   let isLoading: Bool
   let error: ContentErrorView.Config?
-  let actionFeedback: LocalizableStringKey?
+  let externalAction: TransactionActionViewState.ExternalAction
+}
+
+extension TransactionActionViewState {
+  enum ExternalAction {
+    case idle
+    case opened
+    case leftApp
+  }
 }
 
 @Observable
@@ -50,7 +59,7 @@ final class TransactionActionViewModel<Router: RouterHost>: ViewModel<Router, Tr
         ui: TransactionActionUiModel.mock(),
         isLoading: true,
         error: nil,
-        actionFeedback: nil
+        externalAction: .idle
       )
     )
   }
@@ -75,7 +84,7 @@ final class TransactionActionViewModel<Router: RouterHost>: ViewModel<Router, Tr
 
   func onContactSelected(_ contact: TransactionActionContactUi) {
     guard !viewState.isLoading else { return }
-    setState { $0.copy(isLoading: true).copy(error: nil, actionFeedback: nil) }
+    setState { $0.copy(isLoading: true).copy(error: nil).copy(externalAction: .idle) }
     Task {
       switch await interactor.performDataProtectionAction(
         transactionId: viewState.transactionId,
@@ -126,18 +135,39 @@ final class TransactionActionViewModel<Router: RouterHost>: ViewModel<Router, Tr
     router.pop()
   }
 
+  func setPhase(with phase: ScenePhase) {
+    switch phase {
+    case .background:
+      if viewState.externalAction == .opened {
+        setState { $0.copy(externalAction: .leftApp) }
+      }
+    case .active:
+      if viewState.externalAction == .leftApp {
+        setState { $0.copy(externalAction: .idle) }
+        pop()
+      }
+    default:
+      break
+    }
+  }
+
   private func openActionChannel(_ url: URL) async {
     let opened = await UIApplication.shared.open(url)
+    guard opened else {
+      setState {
+        $0.copy(isLoading: false, externalAction: .idle)
+          .copy(
+            error: .init(
+              description: .transactionDetailsActionOpenFailed,
+              cancelAction: self.dismissError(),
+              action: { Task { await self.openActionChannel(url) } }
+            )
+          )
+      }
+      return
+    }
     setState {
-      $0.copy(
-        isLoading: false,
-        error: opened ? nil : .init(
-          description: .transactionDetailsActionOpenFailed,
-          cancelAction: self.dismissError(),
-          action: { Task { await self.openActionChannel(url) } }
-        ),
-        actionFeedback: .transactionDetailsActionStarted
-      )
+      $0.copy(isLoading: false, externalAction: .opened).copy(error: nil)
     }
   }
 

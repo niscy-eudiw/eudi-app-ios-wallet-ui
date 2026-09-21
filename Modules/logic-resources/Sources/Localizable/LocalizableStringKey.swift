@@ -326,7 +326,6 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case transactionDetailsDigestLabel
   case transactionDetailsActionUnavailable
   case transactionDetailsActionOpenFailed
-  case transactionDetailsActionStarted
   case transactionDetailsActionError
   case transactionDetailsDeletionEmailSubject([String])
   case transactionDetailsDeletionEmailBody([String])

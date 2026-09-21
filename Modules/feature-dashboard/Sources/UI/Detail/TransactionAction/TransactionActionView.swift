@@ -20,6 +20,8 @@ import logic_core
 
 struct TransactionActionView<Router: RouterHost>: View {
 
+  @Environment(\.scenePhase) private var scenePhase
+
   @State private var viewModel: TransactionActionViewModel<Router>
 
   init(with viewModel: TransactionActionViewModel<Router>) {
@@ -43,6 +45,9 @@ struct TransactionActionView<Router: RouterHost>: View {
     .task {
       await viewModel.getContent()
     }
+    .onChange(of: scenePhase) {
+      viewModel.setPhase(with: scenePhase)
+    }
   }
 }
 
@@ -61,12 +66,6 @@ private struct TransactionActionViewContainer: View {
             confirmation(ui)
           case .contactList(let ui):
             contactList(ui)
-          }
-
-          if let actionFeedback = state.actionFeedback {
-            Text(actionFeedback)
-              .typography(Theme.shared.font.bodyMedium)
-              .foregroundStyle(Theme.shared.color.success)
           }
 
           if case .contactList = state.ui.content, state.ui.contacts.isEmpty {

@@ -4077,7 +4077,6 @@ import logic_resources
 // MARK: - Mocks generated from file: '../Modules/feature-dashboard/Sources/UI/Detail/Transaction/Model/TransactionDetailsCardData.swift'
 
 import Cuckoo
-import Foundation
 import logic_resources
 @testable import logic_core
 @testable import logic_business
@@ -4219,6 +4218,7 @@ import logic_resources
 // MARK: - Mocks generated from file: '../Modules/feature-dashboard/Sources/UI/Detail/TransactionAction/TransactionActionViewModel.swift'
 
 import Cuckoo
+import SwiftUI
 import UIKit
 import logic_resources
 @testable import logic_core

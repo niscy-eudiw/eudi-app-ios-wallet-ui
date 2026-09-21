@@ -3371,18 +3371,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your action was recorded, but this contact could not be opened. Retry to open it again, or cancel to return to the transaction."
-          }
-        }
-      }
-    },
-    "transaction_details_action_started": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your action has been recorded. Complete it in the external app."
+            "value": "This contact could not be opened. Retry to open it again, or cancel to return to the transaction."
           }
         }
       }

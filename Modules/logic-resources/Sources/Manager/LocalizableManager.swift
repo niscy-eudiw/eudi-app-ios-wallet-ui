@@ -652,8 +652,6 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "transaction_details_action_unavailable")
     case .transactionDetailsActionOpenFailed:
       bundle.localizedString(forKey: "transaction_details_action_open_failed")
-    case .transactionDetailsActionStarted:
-      bundle.localizedString(forKey: "transaction_details_action_started")
     case .transactionDetailsActionError:
       bundle.localizedString(forKey: "transaction_details_action_error")
     case .transactionDetailsDeletionEmailSubject(let args):
