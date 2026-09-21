@@ -226,7 +226,6 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case signing
   case issuance
   case deletion
-  case withoutRelyingName
   case errorFetchTransactionLog
   case incomplete
   case justNow
@@ -280,6 +279,100 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case notRegisteredData
   case issuanceRegistrationBlockedTitle
   case issuanceRegistrationBlockedMessage
+  case notCompleted
+  case reissuance
+  case filterByParty
+  case withoutPartyName
+  case transactionTypeDataDeletionRequest
+  case transactionTypeDpaReport
+  case transactionDetailsDeleteButton
+  case transactionDetailsDeleteTitle
+  case transactionDetailsDeleteMessage
+  case transactionDetailsDeleteError
+  case transactionDetailsTitlePresentation
+  case transactionDetailsTitleIssuance
+  case transactionDetailsTitleReissuance
+  case transactionDetailsTitleDeletion
+  case transactionDetailsTitleSigning
+  case transactionDetailsTitleDataDeletionRequest
+  case transactionDetailsTitleDpaReport
+  case transactionDetailsDataRequested
+  case transactionDetailsIssuanceSection
+  case transactionDetailsCredentialsSection
+  case transactionDetailsTechnicalSection
+  case transactionDetailsDataDeletionSection
+  case transactionDetailsNoDataRequested
+  case transactionDetailsNoDataShared
+  case transactionDetailsNoClaims
+  case transactionDetailsNoInformation
+  case transactionDetailsUnknownClaim
+  case transactionDetailsIdentifierLabel
+  case transactionDetailsIdentifierSchemeLabel
+  case transactionDetailsContactLabel
+  case transactionDetailsPurposeLabel
+  case transactionDetailsRegistrarLabel
+  case transactionDetailsPrivacyPolicyLabel
+  case transactionDetailsIssuerTypeLabel
+  case transactionDetailsIssuedCountLabel
+  case transactionDetailsIssuedCount([String])
+  case transactionDetailsTriggerLabel
+  case transactionDetailsRequestedByYou
+  case transactionDetailsRequestedByIssuer
+  case transactionDetailsRenewedByWallet
+  case transactionDetailsCertificateLabel
+  case transactionDetailsFilenameLabel
+  case transactionDetailsFilesizeLabel
+  case transactionDetailsBytes([String])
+  case transactionDetailsDigestLabel
+  case transactionDetailsActionUnavailable
+  case transactionDetailsActionOpenFailed
+  case transactionDetailsActionStarted
+  case transactionDetailsActionError
+  case transactionDetailsDeletionEmailSubject([String])
+  case transactionDetailsDeletionEmailBody([String])
+  case transactionDetailsReportEmailSubject([String])
+  case transactionDetailsReportEmailBody([String])
+  case hideDetails
+  case transactionDetailsRelyingPartyLabel
+  case transactionDetailsIssuerLabel
+  case transactionDetailsSigningServiceLabel
+  case transactionDetailsAuthorityLabel
+  case transactionDetailsIntermediaryLabel
+  case transactionDetailsRequestDeletionSection
+  case transactionDetailsReportSection
+  case transactionDetailsPreviousDeletionRequests([String])
+  case transactionDetailsPreviousReports([String])
+  case transactionActionReportTitle
+  case transactionActionAuthorityLabel
+  case transactionActionReportMessageBold
+  case transactionActionReportMessage([String])
+  case transactionActionReportFollowUp([String])
+  case transactionActionCall
+  case transactionActionOpenEmail
+  case transactionActionVisitWebsite
+  case transactionActionUnknownParty
+  case transactionHistoryDeletionTitle([String])
+  case transactionHistoryReportTitle([String])
+  case transactionHistoryDeletionDisclaimer
+  case transactionHistoryReportDisclaimer
+  case transactionHistoryDeletionMessage
+  case transactionHistoryReportMessage
+  case transactionHistoryChannelPhone
+  case transactionHistoryChannelEmail
+  case transactionHistoryChannelWebsite
+  case transactionHistoryChannelOther
+  case transactionActionDeletionScreenTitle
+  case transactionActionDeletionIntroWebsite([String])
+  case transactionActionDeletionIntroEmail([String])
+  case transactionActionDeletionIntroPhone([String])
+  case transactionActionDeletionNoticeBold
+  case transactionActionDeletionNoticeWebsite
+  case transactionActionDeletionNoticeEmail
+  case transactionActionDeletionNoticePhone
+  case transactionActionDeletionLegal([String])
+  case transactionActionContinueWebsite([String])
+  case transactionActionContinueEmail
+  case transactionActionContinuePhone([String])
   case continueButton
 }
 

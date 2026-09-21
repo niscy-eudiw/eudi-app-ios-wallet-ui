@@ -270,8 +270,8 @@ final class TestTransactionTabInteractor: EudiTest {
 
   func testInitializeFilters_WhenTransactionsHaveRelyingParty_ThenRelyingPartyGroupIsPopulated() async {
     // Given: transactions with two distinct relying parties and one with no
-    // relying-party name. addDynamicFilters → addRelyingPartyName should
-    // produce a FILTER_BY_RELYING_PARY_NAME group containing the "none" item
+    // party name. addDynamicFilters → addPartyNames should
+    // produce a FILTER_BY_PARTY_NAME group containing the "none" item
     // plus two named items, sorted alphabetically.
     let txUiA = TransactionTabUIModel(
       id: "1",
@@ -302,21 +302,21 @@ final class TestTransactionTabInteractor: EudiTest {
         payload: txUiA,
         attributes: TransactionFilterableAttributes(
           sortingKey: "verifier a", searchTags: ["a"],
-          relyingPartyName: "Verifier A"
+          partyName: "Verifier A"
         )
       ),
       FilterableItem(
         payload: txUiB,
         attributes: TransactionFilterableAttributes(
           sortingKey: "verifier b", searchTags: ["b"],
-          relyingPartyName: "Verifier B"
+          partyName: "Verifier B"
         )
       ),
       FilterableItem(
         payload: txUiNone,
         attributes: TransactionFilterableAttributes(
           sortingKey: "none", searchTags: ["none"],
-          relyingPartyName: nil
+          partyName: nil
         )
       )
     ])
@@ -337,12 +337,12 @@ final class TestTransactionTabInteractor: EudiTest {
     )
 
     // Then
-    let relyingPartyGroup = capturedFilters?.filterGroups.first {
-      $0.id == FilterIds.FILTER_BY_RELYING_PARY_NAME
+    let partyGroup = capturedFilters?.filterGroups.first {
+      $0.id == FilterIds.FILTER_BY_PARTY_NAME
     }
-    XCTAssertNotNil(relyingPartyGroup)
-    let filterIds = relyingPartyGroup?.filters.map(\.id) ?? []
-    XCTAssertTrue(filterIds.contains(FilterIds.FILTER_BY_RELYING_PARTY_NONE))
+    XCTAssertNotNil(partyGroup)
+    let filterIds = partyGroup?.filters.map(\.id) ?? []
+    XCTAssertTrue(filterIds.contains(FilterIds.FILTER_BY_PARTY_NONE))
     XCTAssertTrue(filterIds.contains("Verifier A"))
     XCTAssertTrue(filterIds.contains("Verifier B"))
   }
@@ -437,7 +437,7 @@ private extension TestTransactionTabInteractor {
     }
   }
   
-  func stubFetchTransactions(with transactions: [TransactionLogItem]) {
+  func stubFetchTransactions(with transactions: [TransactionLogDomain]) {
     stub(walletKitController) { mock in
       when(mock.fetchTransactionLogs())
         .thenReturn(transactions)
