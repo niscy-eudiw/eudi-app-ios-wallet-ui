@@ -173,7 +173,7 @@ extension TransactionLogDomain {
     case .credentialReissuance(let log):
       partyName ?? log.details.credentials.first?.identifier.rawValue
     case .credentialDeletion(let log):
-      log.credential.identifier.rawValue
+      partyName ?? log.credential.identifier.rawValue
     case .signingSealing(let log):
       partyName ?? log.fileName?.nonBlank
     }

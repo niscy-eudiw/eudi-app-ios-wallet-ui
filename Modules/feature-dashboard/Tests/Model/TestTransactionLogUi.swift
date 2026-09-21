@@ -63,9 +63,18 @@ final class TestTransactionLogUi: EudiTest {
     XCTAssertEqual(log.transformToTransactionUI()?.transactionType, .reissuance)
   }
 
-  func testTransformToTransactionUI_WhenDeletion_ThenTitleIsTheCredential() {
+  func testTransformToTransactionUI_WhenDeletion_ThenTitleIsTheIssuer() {
     let log = TransactionLogDomain.credentialDeletion(
       .init(id: "4", time: time, result: .completed, credential: .init(identifier: .mDocPid), issuer: .init(name: "Issuer", identifier: nil, contacts: []))
+    )
+
+    XCTAssertEqual(log.transformToTransactionUI()?.name, "Issuer")
+    XCTAssertEqual(log.transformToTransactionUI()?.transactionType, .deletion)
+  }
+
+  func testTransformToTransactionUI_WhenDeletionHasNoIssuerName_ThenUsesTheCredential() {
+    let log = TransactionLogDomain.credentialDeletion(
+      .init(id: "4", time: time, result: .completed, credential: .init(identifier: .mDocPid), issuer: noParty)
     )
 
     XCTAssertEqual(log.transformToTransactionUI()?.name, DocumentTypeIdentifier.mDocPid.rawValue)
