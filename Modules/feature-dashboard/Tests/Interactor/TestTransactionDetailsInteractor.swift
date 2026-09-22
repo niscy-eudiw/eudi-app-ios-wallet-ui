@@ -96,7 +96,7 @@ extension TestTransactionDetailsInteractor {
     XCTAssertEqual(uiModel.sections.map(\.id), ["requested", "shared"])
     XCTAssertEqual(uiModel.sections[0].groups.first?.title, DocumentTypeIdentifier.mDocPid.rawValue)
     XCTAssertEqual(uiModel.sections[0].groups.first?.listItems.count, 1)
-    XCTAssertEqual(uiModel.transactionDetailsCardData.partyLabel, .transactionDetailsRelyingPartyLabel)
+    XCTAssertEqual(uiModel.transactionDetailsCardData.transactionTypeLabel, TransactionType.presentation.typeTitle)
     XCTAssertTrue(uiModel.transactionDetailsCardData.details.isEmpty)
   }
 

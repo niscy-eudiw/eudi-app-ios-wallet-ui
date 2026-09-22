@@ -21,9 +21,7 @@ public struct TransactionDetailsCardData: Equatable, Sendable {
   public let transactionStatusLabel: LocalizableStringKey
   public let transactionIsCompleted: Bool
   public let transactionDate: LocalizableStringKey
-  public let partyLabel: LocalizableStringKey
   public let partyName: LocalizableStringKey?
-  public let partySubtitles: [LocalizableStringKey]
   public let nonCompletionReason: LocalizableStringKey?
   public let details: [[TransactionDetailsFieldUi]]
 
@@ -32,9 +30,7 @@ public struct TransactionDetailsCardData: Equatable, Sendable {
     transactionStatusLabel: LocalizableStringKey,
     transactionIsCompleted: Bool,
     transactionDate: LocalizableStringKey,
-    partyLabel: LocalizableStringKey,
     partyName: LocalizableStringKey? = nil,
-    partySubtitles: [LocalizableStringKey] = [],
     nonCompletionReason: LocalizableStringKey? = nil,
     details: [[TransactionDetailsFieldUi]] = []
   ) {
@@ -42,9 +38,7 @@ public struct TransactionDetailsCardData: Equatable, Sendable {
     self.transactionStatusLabel = transactionStatusLabel
     self.transactionIsCompleted = transactionIsCompleted
     self.transactionDate = transactionDate
-    self.partyLabel = partyLabel
     self.partyName = partyName
-    self.partySubtitles = partySubtitles
     self.nonCompletionReason = nonCompletionReason
     self.details = details
   }
@@ -57,7 +51,6 @@ extension TransactionDetailsCardData {
       transactionStatusLabel: .custom("Completed"),
       transactionIsCompleted: true,
       transactionDate: .custom("24 Apr 2025 10:30"),
-      partyLabel: .transactionDetailsRelyingPartyLabel,
       partyName: .custom("EUDI remote verifier")
     )
   }

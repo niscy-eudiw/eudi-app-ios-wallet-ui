@@ -43,7 +43,7 @@ final class TransactionDetailsViewModel<Router: RouterHost>: ViewModel<Router, T
     super.init(
       router: router,
       initialState: .init(
-        title: .custom(""),
+        title: .transactionInformation,
         transactionDetailsUi: TransactionDetailsUiModel.mock(),
         isLoading: true,
         error: nil,
@@ -64,7 +64,6 @@ final class TransactionDetailsViewModel<Router: RouterHost>: ViewModel<Router, T
     case .success(let transactions):
       self.setState {
         $0.copy(
-          title: transactions.screenTitle,
           transactionDetailsUi: transactions,
           isLoading: false
         )

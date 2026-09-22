@@ -41,21 +41,15 @@ public struct TransactionCardView: View {
       VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
 
         VStack(alignment: .leading, spacing: SPACING_EXTRA_SMALL) {
-          Text(transactionDetailsCardData.partyLabel)
+          Text(transactionDetailsCardData.transactionTypeLabel)
             .typography(Theme.shared.font.labelSmall)
             .fontWeight(.semibold)
             .foregroundStyle(Theme.shared.color.secondaryLabel)
 
-          Text(transactionDetailsCardData.partyName ?? transactionDetailsCardData.transactionTypeLabel)
+          Text(transactionDetailsCardData.partyName ?? .unknown)
             .typography(Theme.shared.font.bodyLarge)
             .fontWeight(.medium)
             .foregroundStyle(Theme.shared.color.primaryLabel)
-
-          ForEach(Array(transactionDetailsCardData.partySubtitles.enumerated()), id: \.offset) { _, subtitle in
-            Text(subtitle)
-              .typography(Theme.shared.font.bodyMedium)
-              .foregroundStyle(Theme.shared.color.secondaryLabel)
-          }
         }
 
         HStack(alignment: .bottom) {
@@ -144,9 +138,7 @@ public struct TransactionCardView: View {
         transactionStatusLabel: .custom("Completed"),
         transactionIsCompleted: true,
         transactionDate: .custom("16 Feb 2024 11:07 AM"),
-        partyLabel: .transactionDetailsRelyingPartyLabel,
         partyName: .custom("TravelBook"),
-        partySubtitles: [.custom("LEI 123")],
         details: [
           [.field(id: "purpose", label: .transactionDetailsPurposeLabel, value: "Age verification")],
           [.field(id: "registrar", label: .transactionDetailsRegistrarLabel, value: "https://registry.example", url: URL(string: "https://registry.example"))]

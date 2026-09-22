@@ -289,13 +289,6 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case transactionDetailsDeleteTitle
   case transactionDetailsDeleteMessage
   case transactionDetailsDeleteError
-  case transactionDetailsTitlePresentation
-  case transactionDetailsTitleIssuance
-  case transactionDetailsTitleReissuance
-  case transactionDetailsTitleDeletion
-  case transactionDetailsTitleSigning
-  case transactionDetailsTitleDataDeletionRequest
-  case transactionDetailsTitleDpaReport
   case transactionDetailsDataRequested
   case transactionDetailsIssuanceSection
   case transactionDetailsCredentialsSection

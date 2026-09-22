@@ -103,25 +103,6 @@ public enum TransactionType: Sendable, Equatable {
       return .transactionTypeDpaReport
     }
   }
-
-  var detailsTitle: LocalizableStringKey {
-    switch self {
-    case .presentation:
-      return .transactionDetailsTitlePresentation
-    case .issuance:
-      return .transactionDetailsTitleIssuance
-    case .reissuance:
-      return .transactionDetailsTitleReissuance
-    case .deletion:
-      return .transactionDetailsTitleDeletion
-    case .signing:
-      return .transactionDetailsTitleSigning
-    case .dataDeletionRequest:
-      return .transactionDetailsTitleDataDeletionRequest
-    case .dpaReport:
-      return .transactionDetailsTitleDpaReport
-    }
-  }
 }
 
 extension TransactionLogDomain {

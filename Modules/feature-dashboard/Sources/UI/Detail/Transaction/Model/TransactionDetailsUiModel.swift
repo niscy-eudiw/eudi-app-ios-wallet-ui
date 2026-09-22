@@ -22,7 +22,6 @@ import logic_resources
 public struct TransactionDetailsUiModel: Equatable, Identifiable, Sendable {
 
   public let id: String
-  public let screenTitle: LocalizableStringKey
   public let transactionDetailsCardData: TransactionDetailsCardData
   public let sections: [TransactionDetailsSectionUi]
   public let presentationActions: TransactionPresentationActionsUi?
@@ -54,7 +53,6 @@ extension TransactionDetailsUiModel {
   static func mock() -> TransactionDetailsUiModel {
     TransactionDetailsUiModel(
       id: "id",
-      screenTitle: .transactionInformation,
       transactionDetailsCardData: TransactionDetailsCardData.mock(),
       sections: [
         .init(
@@ -71,8 +69,6 @@ extension TransactionDetailsUiModel {
 }
 
 private struct CardParty {
-  let label: LocalizableStringKey
-  let subtitles: [String]
   let details: [[TransactionDetailsFieldUi]]
 }
 
@@ -80,7 +76,6 @@ extension TransactionLogDomain {
   func toUiModel(actions: [TransactionLogDomain] = []) -> TransactionDetailsUiModel {
     .init(
       id: id,
-      screenTitle: transactionType.detailsTitle,
       transactionDetailsCardData: toCardData(),
       sections: toSections(),
       presentationActions: {
@@ -104,9 +99,7 @@ extension TransactionLogDomain {
       transactionStatusLabel: status.statusTitle,
       transactionIsCompleted: status == .completed,
       transactionDate: .custom(time.formattedTimestamp().toString),
-      partyLabel: party.label,
       partyName: partyName.map { .custom($0) },
-      partySubtitles: party.subtitles.map { .custom($0) },
       nonCompletionReason: reason?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
         ? .custom(reason!)
         : nil,
@@ -127,24 +120,24 @@ extension TransactionLogDomain {
         TransactionDetailsFieldUi.partyFields($0, prefix: "intermediary", label: .transactionDetailsIntermediaryLabel)
       } ?? []
       let groups = [registration, contacts, registrar, intermediary].filter { !$0.isEmpty }
-      return .init(label: .transactionDetailsRelyingPartyLabel, subtitles: log.party.subtitles, details: groups)
+      return .init(details: groups)
     case .credentialIssuance(let log):
-      return .init(label: .transactionDetailsIssuerLabel, subtitles: log.details.issuer.subtitles, details: [TransactionDetailsFieldUi.issuerFields(log.details)].filter { !$0.isEmpty })
+      return .init(details: [TransactionDetailsFieldUi.issuerFields(log.details)].filter { !$0.isEmpty })
     case .credentialReissuance(let log):
-      return .init(label: .transactionDetailsIssuerLabel, subtitles: log.details.issuer.subtitles, details: [TransactionDetailsFieldUi.issuerFields(log.details)].filter { !$0.isEmpty })
+      return .init(details: [TransactionDetailsFieldUi.issuerFields(log.details)].filter { !$0.isEmpty })
     case .credentialDeletion(let log):
       let fields = TransactionDetailsFieldUi.partyFields(log.issuer, prefix: "issuer", includeIdentity: false)
-      return .init(label: .transactionDetailsIssuerLabel, subtitles: log.issuer.subtitles, details: [fields].filter { !$0.isEmpty })
+      return .init(details: [fields].filter { !$0.isEmpty })
     case .signingSealing(let log):
       var details = TransactionDetailsFieldUi.partyFields(log.service, prefix: "service", includeIdentity: false)
       if let certificate = log.certificateSerialNumber {
         details.append(.field(id: "service:certificate", label: .transactionDetailsCertificateLabel, value: certificate))
       }
-      return .init(label: .transactionDetailsSigningServiceLabel, subtitles: log.service.subtitles, details: [details].filter { !$0.isEmpty })
-    case .dataDeletionRequest(let log):
-      return .init(label: .transactionDetailsRelyingPartyLabel, subtitles: log.party.subtitles, details: [])
-    case .dpaReport(let log):
-      return .init(label: .transactionDetailsAuthorityLabel, subtitles: [log.dpaCountry].compactMap { $0 }, details: [])
+      return .init(details: [details].filter { !$0.isEmpty })
+    case .dataDeletionRequest:
+      return .init(details: [])
+    case .dpaReport:
+      return .init(details: [])
     }
   }
 
@@ -170,12 +163,6 @@ extension TransactionLogDomain {
     case .dpaReport:
       return []
     }
-  }
-}
-
-private extension InteractingPartyDomain {
-  var subtitles: [String] {
-    [identifier?.value].compactMap { $0 }
   }
 }
 

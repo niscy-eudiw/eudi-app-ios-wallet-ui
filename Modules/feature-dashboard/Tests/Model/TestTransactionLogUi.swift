@@ -147,37 +147,6 @@ final class TestTransactionLogUi: EudiTest {
     )
   }
 
-  func testDetailsTitle_WhenEachType_ThenUsesItsOwnTitle() {
-    XCTAssertEqual(TransactionType.presentation.detailsTitle, .transactionDetailsTitlePresentation)
-    XCTAssertEqual(TransactionType.issuance.detailsTitle, .transactionDetailsTitleIssuance)
-    XCTAssertEqual(TransactionType.reissuance.detailsTitle, .transactionDetailsTitleReissuance)
-    XCTAssertEqual(TransactionType.deletion.detailsTitle, .transactionDetailsTitleDeletion)
-    XCTAssertEqual(TransactionType.signing.detailsTitle, .transactionDetailsTitleSigning)
-    XCTAssertEqual(TransactionType.dataDeletionRequest.detailsTitle, .transactionDetailsTitleDataDeletionRequest)
-    XCTAssertEqual(TransactionType.dpaReport.detailsTitle, .transactionDetailsTitleDpaReport)
-  }
-
-  func testDetailsTitle_WhenAllTypes_ThenNoTitleIsEmptyOrReused() {
-    let types: [TransactionType] = [
-      .presentation, .issuance, .reissuance, .deletion, .signing, .dataDeletionRequest, .dpaReport
-    ]
-
-    let rendered = types.map { $0.detailsTitle.toString }
-
-    XCTAssertEqual(Set(rendered).count, types.count)
-    XCTAssertFalse(rendered.contains { $0.isEmpty })
-  }
-
-  func testToUiModel_WhenEachType_ThenScreenTitleFollowsTheType() {
-    for log in allTransactionKinds {
-      XCTAssertEqual(log.toUiModel().screenTitle, log.transactionType.detailsTitle)
-    }
-  }
-
-  func testUiModelMock_WhenStillLoading_ThenKeepsTheGenericTitle() {
-    XCTAssertEqual(TransactionDetailsUiModel.mock().screenTitle, .transactionInformation)
-  }
-
   func testSearchTags_WhenPresentationHasIntermediary_ThenBothNamesAreSearchable() {
     let log = TransactionLogDomain.presentation(
       .init(
@@ -221,9 +190,7 @@ final class TestTransactionLogUi: EudiTest {
     let ui = log.toUiModel()
 
     XCTAssertEqual(ui.sections.map(\.id), ["issuance", "credentials"])
-    XCTAssertEqual(ui.transactionDetailsCardData.partyLabel, .transactionDetailsIssuerLabel)
     XCTAssertEqual(ui.transactionDetailsCardData.partyName, .custom("PID Provider"))
-    XCTAssertEqual(ui.transactionDetailsCardData.partySubtitles, [.custom("123")])
     XCTAssertEqual(ui.transactionDetailsCardData.details.map { $0.map(\.id) }, [["issuer:scheme", "issuer:contact:0", "issuer:type"]])
     XCTAssertNotNil(ui.transactionDetailsCardData.details[0][1].url)
     XCTAssertEqual(ui.sections[0].fields.map(\.id), ["issuance:count", "issuance:trigger"])
@@ -240,7 +207,6 @@ final class TestTransactionLogUi: EudiTest {
     let ui = log.toUiModel()
 
     XCTAssertEqual(ui.sections.map(\.id), ["document", "technical"])
-    XCTAssertEqual(ui.transactionDetailsCardData.partyLabel, .transactionDetailsSigningServiceLabel)
     XCTAssertEqual(ui.transactionDetailsCardData.details.map { $0.map(\.id) }, [["service:certificate"]])
     XCTAssertEqual(ui.sections[0].fields.map(\.id), ["document:name", "document:size"])
     XCTAssertEqual(ui.sections[1].groups.count, 1)
@@ -388,7 +354,6 @@ final class TestTransactionLogUi: EudiTest {
         ["intermediary:name"]
       ]
     )
-    XCTAssertEqual(ui.transactionDetailsCardData.partySubtitles, [.custom("123")])
     XCTAssertEqual(groups[0][2].listItem.overlineText, .transactionDetailsAuthorityLabel)
     XCTAssertNil(groups[0][3].listItem.overlineText)
     XCTAssertEqual(groups[1][1].url, URL(string: "mailto:support@verifier.example"))

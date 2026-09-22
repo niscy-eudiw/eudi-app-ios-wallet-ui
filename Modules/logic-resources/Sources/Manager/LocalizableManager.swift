@@ -578,20 +578,6 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "transaction_details_delete_message")
     case .transactionDetailsDeleteError:
       bundle.localizedString(forKey: "transaction_details_delete_error")
-    case .transactionDetailsTitlePresentation:
-      bundle.localizedString(forKey: "transaction_details_title_presentation")
-    case .transactionDetailsTitleIssuance:
-      bundle.localizedString(forKey: "transaction_details_title_issuance")
-    case .transactionDetailsTitleReissuance:
-      bundle.localizedString(forKey: "transaction_details_title_reissuance")
-    case .transactionDetailsTitleDeletion:
-      bundle.localizedString(forKey: "transaction_details_title_deletion")
-    case .transactionDetailsTitleSigning:
-      bundle.localizedString(forKey: "transaction_details_title_signing")
-    case .transactionDetailsTitleDataDeletionRequest:
-      bundle.localizedString(forKey: "transaction_details_title_data_deletion_request")
-    case .transactionDetailsTitleDpaReport:
-      bundle.localizedString(forKey: "transaction_details_title_dpa_report")
     case .transactionDetailsDataRequested:
       bundle.localizedString(forKey: "transaction_details_data_requested")
     case .transactionDetailsIssuanceSection:
