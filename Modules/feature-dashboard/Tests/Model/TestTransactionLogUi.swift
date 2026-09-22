@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import XCTest
+@testable import logic_business
 @testable import logic_core
 @testable import logic_resources
 @testable import logic_ui
@@ -24,6 +25,21 @@ import XCTest
 final class TestTransactionLogUi: EudiTest {
   private let time = Date(timeIntervalSince1970: 1_700_000_000)
   private let noParty = InteractingPartyDomain(name: nil, identifier: nil, contacts: [])
+
+  private var allTransactionKinds: [TransactionLogDomain] {
+    let issuance = IssuanceDetailsDomain(
+      issuer: noParty, issuerType: nil, requestedCount: 1, issuedCount: 1, credentials: [], isUserTriggered: nil
+    )
+    return [
+      .presentation(.init(id: "t1", time: time, result: .completed, party: noParty, intermediary: nil, registration: nil, claimsRequested: [], claimsPresented: [])),
+      .credentialIssuance(.init(id: "t2", time: time, result: .completed, details: issuance)),
+      .credentialReissuance(.init(id: "t3", time: time, result: .completed, details: issuance)),
+      .credentialDeletion(.init(id: "t4", time: time, result: .completed, credential: .init(identifier: .mDocPid), issuer: noParty)),
+      .signingSealing(.init(id: "t5", time: time, result: .completed, service: noParty, certificateSerialNumber: nil, fileName: nil, fileSizeBytes: nil, dtbsr: nil)),
+      .dataDeletionRequest(.init(id: "t6", time: time, result: .completed, parentPresentationId: "t1", party: noParty, claims: [])),
+      .dpaReport(.init(id: "t7", time: time, result: .completed, parentPresentationId: "t1", dpaName: nil, dpaCountry: nil))
+    ]
+  }
 
   func testTransformToTransactionUI_WhenPresentation_ThenUsesPartyNameAndType() {
     let ui = Constants.eudiRemoteVerifierMock.transformToTransactionUI()
@@ -100,6 +116,66 @@ final class TestTransactionLogUi: EudiTest {
 
     XCTAssertNil(request.transformToTransactionUI())
     XCTAssertNil(report.transformToTransactionUI())
+  }
+
+  func testTransformToTransactionUI_WhenVisibleType_ThenCarriesTheExactInstant() {
+    for log in allTransactionKinds where log.isVisibleInTransactionList {
+      XCTAssertEqual(log.transformToTransactionUI()?.transactionDate, log.time)
+    }
+  }
+
+  func testCategory_WhenAnyHourOfToday_ThenGroupsUnderToday() {
+    let calendar = Calendar.current
+    let startOfToday = calendar.startOfDay(for: Date())
+    let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday)!
+    let lastSecondOfToday = calendar.date(byAdding: .second, value: -1, to: startOfTomorrow)!
+
+    for instant in [startOfToday, Date(), lastSecondOfToday] {
+      XCTAssertEqual(
+        TransactionCategory.category(for: instant),
+        .month(dateTime: LocalizableStringKey.today.toString)
+      )
+    }
+  }
+
+  func testCategory_WhenMonthsAgo_ThenLabelIsThatMonthWithoutAnyShift() {
+    let old = Calendar.current.date(byAdding: .month, value: -3, to: Date())!
+
+    XCTAssertEqual(
+      TransactionCategory.category(for: old),
+      .month(dateTime: Date.monthYearFormatter.string(from: old).uppercased())
+    )
+  }
+
+  func testDetailsTitle_WhenEachType_ThenUsesItsOwnTitle() {
+    XCTAssertEqual(TransactionType.presentation.detailsTitle, .transactionDetailsTitlePresentation)
+    XCTAssertEqual(TransactionType.issuance.detailsTitle, .transactionDetailsTitleIssuance)
+    XCTAssertEqual(TransactionType.reissuance.detailsTitle, .transactionDetailsTitleReissuance)
+    XCTAssertEqual(TransactionType.deletion.detailsTitle, .transactionDetailsTitleDeletion)
+    XCTAssertEqual(TransactionType.signing.detailsTitle, .transactionDetailsTitleSigning)
+    XCTAssertEqual(TransactionType.dataDeletionRequest.detailsTitle, .transactionDetailsTitleDataDeletionRequest)
+    XCTAssertEqual(TransactionType.dpaReport.detailsTitle, .transactionDetailsTitleDpaReport)
+  }
+
+  func testDetailsTitle_WhenAllTypes_ThenNoTitleIsEmptyOrReused() {
+    let types: [TransactionType] = [
+      .presentation, .issuance, .reissuance, .deletion, .signing, .dataDeletionRequest, .dpaReport
+    ]
+
+    let rendered = types.map { $0.detailsTitle.toString }
+
+    XCTAssertEqual(Set(rendered).count, types.count)
+    XCTAssertFalse(rendered.contains { $0.isEmpty })
+  }
+
+  func testToUiModel_WhenEachType_ThenScreenTitleFollowsTheType() {
+    for log in allTransactionKinds {
+      XCTAssertEqual(log.toUiModel().screenTitle, log.transactionType.detailsTitle)
+    }
+  }
+
+  func testUiModelMock_WhenStillLoading_ThenKeepsTheGenericTitle() {
+    XCTAssertEqual(TransactionDetailsUiModel.mock().screenTitle, .transactionInformation)
   }
 
   func testSearchTags_WhenPresentationHasIntermediary_ThenBothNamesAreSearchable() {

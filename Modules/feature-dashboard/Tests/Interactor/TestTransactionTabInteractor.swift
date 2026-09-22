@@ -277,24 +277,21 @@ final class TestTransactionTabInteractor: EudiTest {
       id: "1",
       name: "Verifier A",
       status: .completed,
-      transactionDate: "1 Jan 2026 10:00",
-      transactionCategory: .category(for: "1 Jan 2026 10:00"),
+      transactionDate: Date(timeIntervalSince1970: 1_767_261_600),
       transactionType: .presentation
     )
     let txUiB = TransactionTabUIModel(
       id: "2",
       name: "Verifier B",
       status: .completed,
-      transactionDate: "1 Jan 2026 11:00",
-      transactionCategory: .category(for: "1 Jan 2026 11:00"),
+      transactionDate: Date(timeIntervalSince1970: 1_767_265_200),
       transactionType: .presentation
     )
     let txUiNone = TransactionTabUIModel(
       id: "3",
       name: "",
       status: .completed,
-      transactionDate: "1 Jan 2026 12:00",
-      transactionCategory: .category(for: "1 Jan 2026 12:00"),
+      transactionDate: Date(timeIntervalSince1970: 1_767_268_800),
       transactionType: .presentation
     )
     let filterable = FilterableList(items: [
@@ -411,8 +408,7 @@ private extension TestTransactionTabInteractor {
       id: "transaction-id",
       name: "EUDI Remote Verifier",
       status: .completed,
-      transactionDate: "15 May 2025 10:30 am",
-      transactionCategory: .category(for: "15 May 2025 10:30 am"),
+      transactionDate: Date(timeIntervalSince1970: 1_747_305_000),
       transactionType: .presentation
     )
   

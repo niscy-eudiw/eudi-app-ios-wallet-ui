@@ -22,7 +22,7 @@ public struct TransactionTabUIModel: Identifiable, Sendable, Equatable, Filterab
   public let id: String
   public let name: String
   public let status: TransactionStatus
-  public let transactionDate: String
+  public let transactionDate: Date
   public let transactionCategory: TransactionCategory
   public let transactionType: TransactionType
 
@@ -30,8 +30,7 @@ public struct TransactionTabUIModel: Identifiable, Sendable, Equatable, Filterab
     id: String,
     name: String,
     status: TransactionStatus,
-    transactionDate: String,
-    transactionCategory: TransactionCategory,
+    transactionDate: Date,
     transactionType: TransactionType
   ) {
     self.id = id
@@ -59,7 +58,7 @@ public struct TransactionTabUIModel: Identifiable, Sendable, Equatable, Filterab
   }
 
   private func formattedTransactionDate() -> LocalizableStringKey {
-    Date.fromFormattedTransactionString(transactionDate)?.formattedForTransactionDisplay() ?? .custom(transactionDate)
+    transactionDate.formattedForTransactionDisplay()
   }
 }
 
@@ -200,13 +199,11 @@ extension TransactionLogDomain {
 
   func transformToTransactionUI() -> TransactionTabUIModel? {
     guard isVisibleInTransactionList else { return nil }
-    let formattedDate = time.formattedAsDayMonthYearTime()
     return .init(
       id: id,
       name: transactionTitle,
       status: transactionStatus,
-      transactionDate: formattedDate,
-      transactionCategory: .category(for: formattedDate),
+      transactionDate: time,
       transactionType: transactionType
     )
   }
