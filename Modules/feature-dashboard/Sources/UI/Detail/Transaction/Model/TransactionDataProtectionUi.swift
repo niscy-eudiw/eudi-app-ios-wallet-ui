@@ -60,6 +60,10 @@ extension TransactionLogDomain.Presentation {
 }
 
 extension String {
+  var isBlankValue: Bool {
+    trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+
   var webUrl: URL? {
     guard
       let url = URL(string: self),

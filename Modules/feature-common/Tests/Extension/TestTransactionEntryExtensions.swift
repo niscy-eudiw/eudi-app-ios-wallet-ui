@@ -77,7 +77,8 @@ final class TestTransactionEntryExtensions: EudiTest {
       .init(
         name: "Verifier",
         identifier: .init(schemeUri: QualifiedIdentifier.lei, value: "123"),
-        contacts: ["GR", "https://verifier.example/support"]
+        contacts: ["GR", "https://verifier.example/support"],
+        type: TransactionEntry.Presentation.interactingPartyTypeDefault
       )
     )
     XCTAssertEqual(
@@ -142,7 +143,13 @@ final class TestTransactionEntryExtensions: EudiTest {
       return XCTFail("Expected a presentation")
     }
     XCTAssertEqual(presentation.result, .notCompleted(reason: "User cancelled authentication"))
-    XCTAssertEqual(presentation.party, .init(name: "Certificate CN", identifier: nil, contacts: []))
+    XCTAssertEqual(
+      presentation.party,
+      .init(
+        name: "Certificate CN", identifier: nil, contacts: [],
+        type: TransactionEntry.Presentation.interactingPartyTypeDefault
+      )
+    )
     XCTAssertNil(presentation.intermediary)
     XCTAssertNil(presentation.registration)
     XCTAssertTrue(presentation.claimsRequested.isEmpty)
@@ -198,9 +205,9 @@ final class TestTransactionEntryExtensions: EudiTest {
         issuer: .init(
           name: "PID Provider",
           identifier: .init(schemeUri: QualifiedIdentifier.euid, value: "789"),
-          contacts: ["https://issuer.example"]
+          contacts: ["https://issuer.example"],
+          type: "PIDProvider"
         ),
-        issuerType: "PIDProvider",
         requestedCount: 5,
         issuedCount: 3,
         credentials: [.init(identifier: .mDocPid)],
@@ -231,7 +238,7 @@ final class TestTransactionEntryExtensions: EudiTest {
     XCTAssertEqual(reissuance.details.isUserTriggered, false)
     XCTAssertEqual(reissuance.details.credentials, [.init(identifier: .other(formatType: "org.iso.18013.5.1.mDL"))])
     XCTAssertEqual(reissuance.details.issuer, .init(name: nil, identifier: nil, contacts: []))
-    XCTAssertNil(reissuance.details.issuerType)
+    XCTAssertNil(reissuance.details.issuer.type)
   }
 
   func testToTransactionLogDomain_whenCredentialDeletion_thenMapsCredentialAndIssuer() throws {
@@ -275,7 +282,14 @@ final class TestTransactionEntryExtensions: EudiTest {
     guard case .signingSealing(let signing)? = entry.toTransactionLogDomain(id: "row-7", parentPresentationId: nil) else {
       return XCTFail("Expected a signing transaction")
     }
-    XCTAssertEqual(signing.service, .init(name: "Wallet-Centric", identifier: nil, contacts: []))
+    XCTAssertEqual(
+      signing.service,
+      .init(
+        name: "Wallet-Centric", identifier: nil, contacts: [],
+        type: TransactionEntry.SigningSealing.interactingPartyTypeDefault
+      )
+    )
+    XCTAssertEqual(signing.signingTransactionIdentifier, "sign-1")
     XCTAssertEqual(signing.certificateSerialNumber, "serial-42")
     XCTAssertEqual(signing.fileName, "contract.pdf")
     XCTAssertEqual(signing.fileSizeBytes, 2048)

@@ -660,6 +660,12 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "transaction_details_authority_label")
     case .transactionDetailsIntermediaryLabel:
       bundle.localizedString(forKey: "transaction_details_intermediary_label")
+    case .transactionDetailsIntermediaryNameLabel:
+      bundle.localizedString(forKey: "transaction_details_intermediary_name_label")
+    case .transactionDetailsIntermediaryContactLabel:
+      bundle.localizedString(forKey: "transaction_details_intermediary_contact_label")
+    case .transactionDetailsSigningIdentifierLabel:
+      bundle.localizedString(forKey: "transaction_details_signing_identifier_label")
     case .transactionDetailsRequestDeletionSection:
       bundle.localizedString(forKey: "transaction_details_request_deletion_section")
     case .transactionDetailsReportSection:

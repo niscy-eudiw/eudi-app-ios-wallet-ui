@@ -330,6 +330,9 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case transactionDetailsSigningServiceLabel
   case transactionDetailsAuthorityLabel
   case transactionDetailsIntermediaryLabel
+  case transactionDetailsIntermediaryNameLabel
+  case transactionDetailsIntermediaryContactLabel
+  case transactionDetailsSigningIdentifierLabel
   case transactionDetailsRequestDeletionSection
   case transactionDetailsReportSection
   case transactionDetailsPreviousDeletionRequests([String])

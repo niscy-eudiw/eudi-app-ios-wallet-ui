@@ -154,6 +154,7 @@ public enum TransactionLogDomain: Sendable, Equatable {
     public let time: Date
     public let result: TransactionResultDomain
     public let service: InteractingPartyDomain
+    public let signingTransactionIdentifier: String?
     public let certificateSerialNumber: String?
     public let fileName: String?
     public let fileSizeBytes: Int?
@@ -164,6 +165,7 @@ public enum TransactionLogDomain: Sendable, Equatable {
       time: Date,
       result: TransactionResultDomain,
       service: InteractingPartyDomain,
+      signingTransactionIdentifier: String?,
       certificateSerialNumber: String?,
       fileName: String?,
       fileSizeBytes: Int?,
@@ -173,6 +175,7 @@ public enum TransactionLogDomain: Sendable, Equatable {
       self.time = time
       self.result = result
       self.service = service
+      self.signingTransactionIdentifier = signingTransactionIdentifier
       self.certificateSerialNumber = certificateSerialNumber
       self.fileName = fileName
       self.fileSizeBytes = fileSizeBytes
@@ -251,11 +254,18 @@ public struct InteractingPartyDomain: Sendable, Equatable {
   public let name: String?
   public let identifier: QualifiedIdentifierDomain?
   public let contacts: [String]
+  public let type: String?
 
-  public init(name: String?, identifier: QualifiedIdentifierDomain?, contacts: [String]) {
+  public init(
+    name: String?,
+    identifier: QualifiedIdentifierDomain?,
+    contacts: [String],
+    type: String? = nil
+  ) {
     self.name = name
     self.identifier = identifier
     self.contacts = contacts
+    self.type = type
   }
 }
 
@@ -297,7 +307,6 @@ public struct DpaContactDomain: Sendable, Equatable {
 
 public struct IssuanceDetailsDomain: Sendable, Equatable {
   public let issuer: InteractingPartyDomain
-  public let issuerType: String?
   public let requestedCount: Int
   public let issuedCount: Int
   public let credentials: [CredentialRefDomain]
@@ -305,14 +314,12 @@ public struct IssuanceDetailsDomain: Sendable, Equatable {
 
   public init(
     issuer: InteractingPartyDomain,
-    issuerType: String?,
     requestedCount: Int,
     issuedCount: Int,
     credentials: [CredentialRefDomain],
     isUserTriggered: Bool?
   ) {
     self.issuer = issuer
-    self.issuerType = issuerType
     self.requestedCount = requestedCount
     self.issuedCount = issuedCount
     self.credentials = credentials

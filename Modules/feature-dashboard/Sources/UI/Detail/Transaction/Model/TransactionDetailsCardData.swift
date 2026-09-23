@@ -22,6 +22,7 @@ public struct TransactionDetailsCardData: Equatable, Sendable {
   public let transactionIsCompleted: Bool
   public let transactionDate: LocalizableStringKey
   public let partyName: LocalizableStringKey?
+  public let partyType: LocalizableStringKey?
   public let nonCompletionReason: LocalizableStringKey?
   public let details: [[TransactionDetailsFieldUi]]
 
@@ -31,6 +32,7 @@ public struct TransactionDetailsCardData: Equatable, Sendable {
     transactionIsCompleted: Bool,
     transactionDate: LocalizableStringKey,
     partyName: LocalizableStringKey? = nil,
+    partyType: LocalizableStringKey? = nil,
     nonCompletionReason: LocalizableStringKey? = nil,
     details: [[TransactionDetailsFieldUi]] = []
   ) {
@@ -39,6 +41,7 @@ public struct TransactionDetailsCardData: Equatable, Sendable {
     self.transactionIsCompleted = transactionIsCompleted
     self.transactionDate = transactionDate
     self.partyName = partyName
+    self.partyType = partyType
     self.nonCompletionReason = nonCompletionReason
     self.details = details
   }

@@ -28,14 +28,14 @@ final class TestTransactionLogUi: EudiTest {
 
   private var allTransactionKinds: [TransactionLogDomain] {
     let issuance = IssuanceDetailsDomain(
-      issuer: noParty, issuerType: nil, requestedCount: 1, issuedCount: 1, credentials: [], isUserTriggered: nil
+      issuer: noParty, requestedCount: 1, issuedCount: 1, credentials: [], isUserTriggered: nil
     )
     return [
       .presentation(.init(id: "t1", time: time, result: .completed, party: noParty, intermediary: nil, registration: nil, claimsRequested: [], claimsPresented: [])),
       .credentialIssuance(.init(id: "t2", time: time, result: .completed, details: issuance)),
       .credentialReissuance(.init(id: "t3", time: time, result: .completed, details: issuance)),
       .credentialDeletion(.init(id: "t4", time: time, result: .completed, credential: .init(identifier: .mDocPid), issuer: noParty)),
-      .signingSealing(.init(id: "t5", time: time, result: .completed, service: noParty, certificateSerialNumber: nil, fileName: nil, fileSizeBytes: nil, dtbsr: nil)),
+      .signingSealing(.init(id: "t5", time: time, result: .completed, service: noParty, signingTransactionIdentifier: nil, certificateSerialNumber: nil, fileName: nil, fileSizeBytes: nil, dtbsr: nil)),
       .dataDeletionRequest(.init(id: "t6", time: time, result: .completed, parentPresentationId: "t1", party: noParty, claims: [])),
       .dpaReport(.init(id: "t7", time: time, result: .completed, parentPresentationId: "t1", dpaName: nil, dpaCountry: nil))
     ]
@@ -63,7 +63,7 @@ final class TestTransactionLogUi: EudiTest {
 
   func testTransformToTransactionUI_WhenIssuanceHasNoIssuerName_ThenUsesCredentialIdentifier() {
     let log = TransactionLogDomain.credentialIssuance(
-      .init(id: "2", time: time, result: .completed, details: .init(issuer: noParty, issuerType: nil, requestedCount: 1, issuedCount: 1, credentials: [.init(identifier: .sdJwtPid)], isUserTriggered: nil))
+      .init(id: "2", time: time, result: .completed, details: .init(issuer: noParty, requestedCount: 1, issuedCount: 1, credentials: [.init(identifier: .sdJwtPid)], isUserTriggered: nil))
     )
 
     XCTAssertEqual(log.transformToTransactionUI()?.name, DocumentTypeIdentifier.sdJwtPid.rawValue)
@@ -72,7 +72,7 @@ final class TestTransactionLogUi: EudiTest {
 
   func testTransformToTransactionUI_WhenReissuance_ThenTypeIsReissuance() {
     let log = TransactionLogDomain.credentialReissuance(
-      .init(id: "3", time: time, result: .completed, details: .init(issuer: .init(name: "Issuer", identifier: nil, contacts: []), issuerType: nil, requestedCount: 1, issuedCount: 1, credentials: [], isUserTriggered: false))
+      .init(id: "3", time: time, result: .completed, details: .init(issuer: .init(name: "Issuer", identifier: nil, contacts: []), requestedCount: 1, issuedCount: 1, credentials: [], isUserTriggered: false))
     )
 
     XCTAssertEqual(log.transformToTransactionUI()?.name, "Issuer")
@@ -99,7 +99,7 @@ final class TestTransactionLogUi: EudiTest {
 
   func testTransformToTransactionUI_WhenSigningHasNoServiceName_ThenUsesFileName() {
     let log = TransactionLogDomain.signingSealing(
-      .init(id: "5", time: time, result: .completed, service: noParty, certificateSerialNumber: nil, fileName: "contract.pdf", fileSizeBytes: nil, dtbsr: nil)
+      .init(id: "5", time: time, result: .completed, service: noParty, signingTransactionIdentifier: nil, certificateSerialNumber: nil, fileName: "contract.pdf", fileSizeBytes: nil, dtbsr: nil)
     )
 
     XCTAssertEqual(log.transformToTransactionUI()?.name, "contract.pdf")
@@ -147,6 +147,29 @@ final class TestTransactionLogUi: EudiTest {
     )
   }
 
+  func testToCardData_WhenPartyHasAType_ThenItIsShownUnderTheName() {
+    let log = TransactionLogDomain.presentation(
+      .init(
+        id: "1", time: time, result: .completed,
+        party: .init(name: "Verifier", identifier: nil, contacts: [], type: "ServiceProvider"),
+        intermediary: nil, registration: nil, claimsRequested: [], claimsPresented: []
+      )
+    )
+
+    let card = log.toUiModel().transactionDetailsCardData
+
+    XCTAssertEqual(card.partyName, .custom("Verifier"))
+    XCTAssertEqual(card.partyType, .custom("ServiceProvider"))
+  }
+
+  func testToCardData_WhenPartyHasNoType_ThenTheLineIsOmitted() {
+    let log = TransactionLogDomain.credentialDeletion(
+      .init(id: "4", time: time, result: .completed, credential: .init(identifier: .mDocPid), issuer: noParty)
+    )
+
+    XCTAssertNil(log.toUiModel().transactionDetailsCardData.partyType)
+  }
+
   func testSearchTags_WhenPresentationHasIntermediary_ThenBothNamesAreSearchable() {
     let log = TransactionLogDomain.presentation(
       .init(
@@ -162,7 +185,7 @@ final class TestTransactionLogUi: EudiTest {
 
   func testSearchTags_WhenSigning_ThenServiceAndFileNameAreSearchable() {
     let log = TransactionLogDomain.signingSealing(
-      .init(id: "5", time: time, result: .completed, service: .init(name: "QTSP", identifier: nil, contacts: []), certificateSerialNumber: nil, fileName: "contract.pdf", fileSizeBytes: nil, dtbsr: nil)
+      .init(id: "5", time: time, result: .completed, service: .init(name: "QTSP", identifier: nil, contacts: []), signingTransactionIdentifier: nil, certificateSerialNumber: nil, fileName: "contract.pdf", fileSizeBytes: nil, dtbsr: nil)
     )
 
     XCTAssertEqual(log.searchTags, ["QTSP", "contract.pdf"])
@@ -181,7 +204,7 @@ final class TestTransactionLogUi: EudiTest {
         id: "2", time: time, result: .notCompleted(reason: "Not all requested credentials were issued"),
         details: .init(
           issuer: .init(name: "PID Provider", identifier: .init(schemeUri: "http://data.europa.eu/eudi/id/LEI", value: "123"), contacts: ["https://issuer.example"]),
-          issuerType: "PIDProvider", requestedCount: 5, issuedCount: 3,
+          requestedCount: 5, issuedCount: 3,
           credentials: [.init(identifier: .mDocPid)], isUserTriggered: true
         )
       )
@@ -189,27 +212,30 @@ final class TestTransactionLogUi: EudiTest {
 
     let ui = log.toUiModel()
 
-    XCTAssertEqual(ui.sections.map(\.id), ["issuance", "credentials"])
+    XCTAssertEqual(ui.sections.map(\.id), ["credentials"])
     XCTAssertEqual(ui.transactionDetailsCardData.partyName, .custom("PID Provider"))
-    XCTAssertEqual(ui.transactionDetailsCardData.details.map { $0.map(\.id) }, [["issuer:scheme", "issuer:contact:0", "issuer:type"]])
-    XCTAssertNotNil(ui.transactionDetailsCardData.details[0][1].url)
-    XCTAssertEqual(ui.sections[0].fields.map(\.id), ["issuance:count", "issuance:trigger"])
-    XCTAssertEqual(ui.sections[1].fields.first?.listItem.mainContent, .text(.custom(DocumentTypeIdentifier.mDocPid.rawValue)))
+    XCTAssertEqual(ui.transactionDetailsCardData.details.map { $0.map(\.id) }, [["issuer:contact:0"]])
+    XCTAssertNotNil(ui.transactionDetailsCardData.details[0][0].url)
+    XCTAssertEqual(ui.sections[0].fields.first?.listItem.mainContent, .text(.custom(DocumentTypeIdentifier.mDocPid.rawValue)))
     XCTAssertEqual(ui.transactionDetailsCardData.nonCompletionReason, .custom("Not all requested credentials were issued"))
     XCTAssertFalse(ui.showsPresentationActions)
   }
 
-  func testToUiModel_WhenSigning_ThenDigestIsCollapsedInTechnicalSection() {
+  func testToUiModel_WhenSigning_ThenOnlyTheFilenameAndSigningIdentifierRemain() {
     let log = TransactionLogDomain.signingSealing(
-      .init(id: "5", time: time, result: .completed, service: .init(name: "QTSP", identifier: nil, contacts: []), certificateSerialNumber: "serial", fileName: "contract.pdf", fileSizeBytes: 2048, dtbsr: "ZGlnZXN0")
+      .init(
+        id: "5", time: time, result: .completed,
+        service: .init(name: "QTSP", identifier: nil, contacts: ["support@qtsp.example"]),
+        signingTransactionIdentifier: "sign-42", certificateSerialNumber: "serial",
+        fileName: "contract.pdf", fileSizeBytes: 2048, dtbsr: "ZGlnZXN0"
+      )
     )
 
     let ui = log.toUiModel()
 
-    XCTAssertEqual(ui.sections.map(\.id), ["document", "technical"])
-    XCTAssertEqual(ui.transactionDetailsCardData.details.map { $0.map(\.id) }, [["service:certificate"]])
-    XCTAssertEqual(ui.sections[0].fields.map(\.id), ["document:name", "document:size"])
-    XCTAssertEqual(ui.sections[1].groups.count, 1)
+    XCTAssertEqual(ui.sections.map(\.id), ["document"])
+    XCTAssertEqual(ui.transactionDetailsCardData.details.map { $0.map(\.id) }, [["signing:identifier"]])
+    XCTAssertEqual(ui.sections[0].fields.map(\.id), ["document:name"])
   }
 
   func testContacts_WhenNothingWasPresented_ThenDeletionCannotBeRequested() {
@@ -348,18 +374,16 @@ final class TestTransactionLogUi: EudiTest {
     XCTAssertEqual(
       groups.map { $0.map(\.id) },
       [
-        ["party:purpose", "party:privacy:0", "authority:name", "authority:country", "authority:contact:0"],
-        ["party:scheme", "party:contact:0", "party:contact:1"],
-        ["party:registrar"],
+        ["party:purpose"],
+        ["party:privacy:0"],
+        ["party:contact:0", "party:contact:1"],
         ["intermediary:name"]
       ]
     )
-    XCTAssertEqual(groups[0][2].listItem.overlineText, .transactionDetailsAuthorityLabel)
-    XCTAssertNil(groups[0][3].listItem.overlineText)
-    XCTAssertEqual(groups[1][1].url, URL(string: "mailto:support@verifier.example"))
-    XCTAssertEqual(groups[1][2].url, URL(string: "tel:+302101234567"))
-    XCTAssertEqual(groups[2][0].url, URL(string: "https://registry.example"))
-    XCTAssertEqual(groups[2][0].listItem.mainTextColor, Theme.shared.color.accent)
+    XCTAssertEqual(groups[1][0].url, URL(string: "https://verifier.example/privacy"))
+    XCTAssertEqual(groups[2][0].url, URL(string: "mailto:support@verifier.example"))
+    XCTAssertEqual(groups[2][1].url, URL(string: "tel:+302101234567"))
+    XCTAssertEqual(groups[3][0].listItem.overlineText, .transactionDetailsIntermediaryNameLabel)
     XCTAssertEqual(ui.sections[0].groups.first?.listItems.first?.title, LocalizableStringKey.transactionDetailsNoClaims.toString)
     XCTAssertTrue(ui.sections[1].isEmpty)
   }

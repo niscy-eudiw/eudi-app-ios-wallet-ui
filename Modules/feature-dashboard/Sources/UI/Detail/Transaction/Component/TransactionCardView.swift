@@ -50,6 +50,12 @@ public struct TransactionCardView: View {
             .typography(Theme.shared.font.bodyLarge)
             .fontWeight(.medium)
             .foregroundStyle(Theme.shared.color.primaryLabel)
+
+          if let partyType = transactionDetailsCardData.partyType {
+            Text(partyType)
+              .typography(Theme.shared.font.bodyMedium)
+              .foregroundStyle(Theme.shared.color.secondaryLabel)
+          }
         }
 
         HStack(alignment: .bottom) {
@@ -139,9 +145,10 @@ public struct TransactionCardView: View {
         transactionIsCompleted: true,
         transactionDate: .custom("16 Feb 2024 11:07 AM"),
         partyName: .custom("TravelBook"),
+        partyType: .custom("ServiceProvider"),
         details: [
           [.field(id: "purpose", label: .transactionDetailsPurposeLabel, value: "Age verification")],
-          [.field(id: "registrar", label: .transactionDetailsRegistrarLabel, value: "https://registry.example", url: URL(string: "https://registry.example"))]
+          [.field(id: "privacy", label: .transactionDetailsPrivacyPolicyLabel, value: "https://verifier.example/privacy", url: URL(string: "https://verifier.example/privacy"))]
         ]
       )
     )

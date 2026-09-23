@@ -69,6 +69,7 @@ extension TransactionDetailsUiModel {
 }
 
 private struct CardParty {
+  let type: String?
   let details: [[TransactionDetailsFieldUi]]
 }
 
@@ -100,6 +101,7 @@ extension TransactionLogDomain {
       transactionIsCompleted: status == .completed,
       transactionDate: .custom(time.formattedTimestamp().toString),
       partyName: partyName.map { .custom($0) },
+      partyType: party.type.map { .custom($0) },
       nonCompletionReason: reason?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
         ? .custom(reason!)
         : nil,
@@ -110,34 +112,28 @@ extension TransactionLogDomain {
   private var cardParty: CardParty {
     switch self {
     case .presentation(let log):
-      let registration = TransactionDetailsFieldUi.registrationFields(log.registration)
-        + TransactionDetailsFieldUi.authorityFields(log.registration?.dpa)
-      let contacts = TransactionDetailsFieldUi.partyFields(log.party, prefix: "party", includeIdentity: false)
-      let registrar: [TransactionDetailsFieldUi] = log.registration?.registrarUrl.map {
-        [.field(id: "party:registrar", label: .transactionDetailsRegistrarLabel, value: $0, url: $0.webUrl)]
-      } ?? []
-      let intermediary = log.intermediary.map {
-        TransactionDetailsFieldUi.partyFields($0, prefix: "intermediary", label: .transactionDetailsIntermediaryLabel)
-      } ?? []
-      let groups = [registration, contacts, registrar, intermediary].filter { !$0.isEmpty }
-      return .init(details: groups)
+      let purpose = TransactionDetailsFieldUi.purposeFields(log.registration)
+      let policies = TransactionDetailsFieldUi.privacyPolicyFields(log.registration)
+      let contacts = TransactionDetailsFieldUi.contactFields(log.party, prefix: "party")
+      let intermediary = log.intermediary.map { TransactionDetailsFieldUi.intermediaryFields($0) } ?? []
+      let groups = [purpose, policies, contacts, intermediary].filter { !$0.isEmpty }
+      return .init(type: log.party.type, details: groups)
     case .credentialIssuance(let log):
-      return .init(details: [TransactionDetailsFieldUi.issuerFields(log.details)].filter { !$0.isEmpty })
+      let contacts = TransactionDetailsFieldUi.contactFields(log.details.issuer, prefix: "issuer")
+      return .init(type: log.details.issuer.type, details: [contacts].filter { !$0.isEmpty })
     case .credentialReissuance(let log):
-      return .init(details: [TransactionDetailsFieldUi.issuerFields(log.details)].filter { !$0.isEmpty })
+      let trigger = TransactionDetailsFieldUi.triggerFields(log.details.isUserTriggered)
+      let contacts = TransactionDetailsFieldUi.contactFields(log.details.issuer, prefix: "issuer")
+      return .init(type: log.details.issuer.type, details: [trigger, contacts].filter { !$0.isEmpty })
     case .credentialDeletion(let log):
-      let fields = TransactionDetailsFieldUi.partyFields(log.issuer, prefix: "issuer", includeIdentity: false)
-      return .init(details: [fields].filter { !$0.isEmpty })
+      return .init(type: log.issuer.type, details: [])
     case .signingSealing(let log):
-      var details = TransactionDetailsFieldUi.partyFields(log.service, prefix: "service", includeIdentity: false)
-      if let certificate = log.certificateSerialNumber {
-        details.append(.field(id: "service:certificate", label: .transactionDetailsCertificateLabel, value: certificate))
-      }
-      return .init(details: [details].filter { !$0.isEmpty })
+      let identifier = TransactionDetailsFieldUi.signingIdentifierFields(log.signingTransactionIdentifier)
+      return .init(type: log.service.type, details: [identifier].filter { !$0.isEmpty })
     case .dataDeletionRequest:
-      return .init(details: [])
+      return .init(type: nil, details: [])
     case .dpaReport:
-      return .init(details: [])
+      return .init(type: nil, details: [])
     }
   }
 
@@ -149,11 +145,11 @@ extension TransactionLogDomain {
         .claims(id: "shared", title: .transactionDetailsDataShare, claims: log.claimsPresented, emptyText: .transactionDetailsNoDataShared)
       ]
     case .credentialIssuance(let log):
-      return TransactionDetailsSectionUi.issuance(log.details, isReissuance: false)
+      return TransactionDetailsSectionUi.credentialList(log.details.credentials)
     case .credentialReissuance(let log):
-      return TransactionDetailsSectionUi.issuance(log.details, isReissuance: true)
+      return TransactionDetailsSectionUi.credentialList(log.details.credentials)
     case .credentialDeletion(let log):
-      return [.credentials(id: "credentials", credentials: [log.credential])]
+      return TransactionDetailsSectionUi.credentialList([log.credential])
     case .signingSealing(let log):
       return TransactionDetailsSectionUi.signing(log)
     case .dataDeletionRequest(let log):
@@ -167,41 +163,20 @@ extension TransactionLogDomain {
 }
 
 extension TransactionDetailsSectionUi {
-  static func issuance(_ details: IssuanceDetailsDomain, isReissuance: Bool) -> [TransactionDetailsSectionUi] {
-    let trigger: LocalizableStringKey? = switch details.isUserTriggered {
-    case true?: .transactionDetailsRequestedByYou
-    case false?: isReissuance ? .transactionDetailsRenewedByWallet : .transactionDetailsRequestedByIssuer
-    case nil: nil
-    }
+  static func credentialList(_ credentials: [CredentialRefDomain]) -> [TransactionDetailsSectionUi] {
+    let rows = credentials.filter { !$0.identifier.rawValue.isBlankValue }
+    guard !rows.isEmpty else { return [] }
     return [
       .init(
-        id: "issuance",
-        title: .transactionDetailsIssuanceSection,
-        fields: [
-          .field(
-            id: "issuance:count",
-            label: .transactionDetailsIssuedCountLabel,
-            value: LocalizableStringKey.transactionDetailsIssuedCount([String(details.issuedCount), String(details.requestedCount)]).toString
-          ),
-          trigger.map { .field(id: "issuance:trigger", label: .transactionDetailsTriggerLabel, value: $0.toString) }
-        ].compactMap { $0 },
+        id: "credentials",
+        title: .transactionDetailsCredentialsSection,
+        fields: rows.enumerated().map { index, credential in
+          .field(id: "credentials:\(index)", label: nil, value: credential.identifier.rawValue)
+        },
         groups: [],
         emptyText: .transactionDetailsNoInformation
-      ),
-      .credentials(id: "credentials", credentials: details.credentials)
+      )
     ]
-  }
-
-  static func credentials(id: String, credentials: [CredentialRefDomain]) -> TransactionDetailsSectionUi {
-    .init(
-      id: id,
-      title: .transactionDetailsCredentialsSection,
-      fields: credentials.enumerated().map { index, credential in
-        .field(id: "\(id):\(index)", label: nil, value: credential.identifier.rawValue)
-      },
-      groups: [],
-      emptyText: .transactionDetailsNoInformation
-    )
   }
 
   static func claims(
@@ -232,98 +207,64 @@ extension TransactionDetailsSectionUi {
   }
 
   static func signing(_ log: TransactionLogDomain.SigningSealing) -> [TransactionDetailsSectionUi] {
-    var documentFields: [TransactionDetailsFieldUi] = []
-    if let fileName = log.fileName {
-      documentFields.append(.field(id: "document:name", label: .transactionDetailsFilenameLabel, value: fileName))
-    }
-    if let size = log.fileSizeBytes, size >= 0 {
-      documentFields.append(
-        .field(id: "document:size", label: .transactionDetailsFilesizeLabel, value: LocalizableStringKey.transactionDetailsBytes([String(size)]).toString)
+    guard let fileName = log.fileName, !fileName.isBlankValue else { return [] }
+    return [
+      .init(
+        id: "document",
+        title: .transactionDetailsDataSigned,
+        fields: [.field(id: "document:name", label: .transactionDetailsFilenameLabel, value: fileName)],
+        groups: [],
+        emptyText: .transactionDetailsNoInformation
       )
-    }
-    var sections: [TransactionDetailsSectionUi] = [
-      .init(id: "document", title: .transactionDetailsDataSigned, fields: documentFields, groups: [], emptyText: .transactionDetailsNoInformation)
     ]
-    if let digest = log.dtbsr, !digest.isEmpty {
-      sections.append(
-        .init(
-          id: "technical",
-          title: .transactionDetailsTechnicalSection,
-          fields: [],
-          groups: [
-            .init(
-              id: "technical:digest",
-              title: LocalizableStringKey.transactionDetailsDigestLabel.toString,
-              listItems: [.single(.init(collapsed: .init(id: "technical:digest:value", mainContent: .text(.custom(digest))), domainModel: nil))]
-            )
-          ],
-          emptyText: .transactionDetailsNoInformation
-        )
-      )
-    }
-    return sections
   }
 }
 
 extension TransactionDetailsFieldUi {
 
-  static func partyFields(
+  static func contactFields(
     _ party: InteractingPartyDomain,
     prefix: String,
-    label: LocalizableStringKey = .transactionDetailsContactLabel,
-    includeIdentity: Bool = true
+    label: LocalizableStringKey = .transactionDetailsContactLabel
   ) -> [TransactionDetailsFieldUi] {
+    party.contacts.enumerated().compactMap { index, contact in
+      guard !contact.isBlankValue else { return nil }
+      return .field(id: "\(prefix):contact:\(index)", label: label, value: contact, url: contact.contactUrl)
+    }
+  }
+
+  static func intermediaryFields(_ party: InteractingPartyDomain) -> [TransactionDetailsFieldUi] {
     var fields: [TransactionDetailsFieldUi] = []
-    if includeIdentity, let name = party.name {
-      fields.append(.field(id: "\(prefix):name", label: label, value: name))
+    if let name = party.name, !name.isBlankValue {
+      fields.append(.field(id: "intermediary:name", label: .transactionDetailsIntermediaryNameLabel, value: name))
     }
-    if includeIdentity, let identifier = party.identifier {
-      fields.append(.field(id: "\(prefix):identifier", label: .transactionDetailsIdentifierLabel, value: identifier.value))
-    }
-    if let identifier = party.identifier {
-      fields.append(.field(id: "\(prefix):scheme", label: .transactionDetailsIdentifierSchemeLabel, value: identifier.schemeUri))
-    }
-    for (index, contact) in party.contacts.enumerated() {
-      fields.append(.field(id: "\(prefix):contact:\(index)", label: label, value: contact, url: contact.contactUrl))
-    }
+    fields.append(
+      contentsOf: contactFields(party, prefix: "intermediary", label: .transactionDetailsIntermediaryContactLabel)
+    )
     return fields
   }
 
-  static func issuerFields(_ details: IssuanceDetailsDomain) -> [TransactionDetailsFieldUi] {
-    var fields = partyFields(details.issuer, prefix: "issuer", includeIdentity: false)
-    if let issuerType = details.issuerType {
-      fields.append(.field(id: "issuer:type", label: .transactionDetailsIssuerTypeLabel, value: issuerType))
-    }
-    return fields
+  static func purposeFields(_ registration: PresentationRegistrationDomain?) -> [TransactionDetailsFieldUi] {
+    guard let purpose = registration?.purpose, !purpose.isBlankValue else { return [] }
+    return [.field(id: "party:purpose", label: .transactionDetailsPurposeLabel, value: purpose)]
   }
 
-  static func registrationFields(_ registration: PresentationRegistrationDomain?) -> [TransactionDetailsFieldUi] {
-    guard let registration else { return [] }
-    var fields: [TransactionDetailsFieldUi] = []
-    if let purpose = registration.purpose {
-      fields.append(.field(id: "party:purpose", label: .transactionDetailsPurposeLabel, value: purpose))
+  static func privacyPolicyFields(_ registration: PresentationRegistrationDomain?) -> [TransactionDetailsFieldUi] {
+    (registration?.privacyPolicyUrls ?? []).enumerated().compactMap { index, policy in
+      guard !policy.isBlankValue else { return nil }
+      return .field(id: "party:privacy:\(index)", label: .transactionDetailsPrivacyPolicyLabel, value: policy, url: policy.webUrl)
     }
-    for (index, policy) in registration.privacyPolicyUrls.enumerated() {
-      fields.append(.field(id: "party:privacy:\(index)", label: .transactionDetailsPrivacyPolicyLabel, value: policy, url: policy.webUrl))
-    }
-    return fields
   }
 
-  static func authorityFields(_ dpa: DpaContactDomain?) -> [TransactionDetailsFieldUi] {
-    guard let dpa else { return [] }
-    var fields: [TransactionDetailsFieldUi] = []
-    if let name = dpa.name {
-      fields.append(.field(id: "authority:name", label: .transactionDetailsAuthorityLabel, value: name))
-    }
-    if let country = dpa.country {
-      fields.append(.field(id: "authority:country", label: fields.isEmpty ? .transactionDetailsAuthorityLabel : nil, value: country))
-    }
-    for (index, contact) in dpa.contacts.enumerated() {
-      fields.append(
-        .field(id: "authority:contact:\(index)", label: fields.isEmpty ? .transactionDetailsAuthorityLabel : nil, value: contact, url: contact.contactUrl)
-      )
-    }
-    return fields
+  static func triggerFields(_ isUserTriggered: Bool?) -> [TransactionDetailsFieldUi] {
+    guard let isUserTriggered else { return [] }
+    let value: LocalizableStringKey = isUserTriggered ? .transactionDetailsRequestedByYou : .transactionDetailsRenewedByWallet
+    return [.field(id: "issuance:trigger", label: .transactionDetailsTriggerLabel, value: value.toString)]
+  }
+
+  static func signingIdentifierFields(_ identifier: String?) -> [TransactionDetailsFieldUi] {
+    guard let identifier, !identifier.isBlankValue else { return [] }
+    return [.field(id: "signing:identifier", label: .transactionDetailsSigningIdentifierLabel, value: identifier)]
   }
 
   static func field(id: String, label: LocalizableStringKey?, value: String, url: URL? = nil) -> TransactionDetailsFieldUi {

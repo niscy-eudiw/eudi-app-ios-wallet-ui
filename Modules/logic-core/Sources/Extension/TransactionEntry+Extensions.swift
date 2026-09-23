@@ -34,7 +34,8 @@ extension TransactionEntry {
           party: .init(
             name: entry.interactingPartyName?.content,
             identifier: entry.interactingPartyIdentifier?.toDomain(),
-            contacts: entry.interactingPartyContact ?? []
+            contacts: entry.interactingPartyContact ?? [],
+            type: entry.interactingPartyType.nonBlankValue
           ),
           intermediary: entry.intermediaryDomain,
           registration: entry.registrationDomain,
@@ -83,8 +84,10 @@ extension TransactionEntry {
           service: .init(
             name: entry.interactingPartyName?.content,
             identifier: entry.interactingPartyIdentifier?.toDomain(),
-            contacts: entry.interactingPartyContact ?? []
+            contacts: entry.interactingPartyContact ?? [],
+            type: entry.interactingPartyType.nonBlankValue
           ),
+          signingTransactionIdentifier: entry.signingTransactionIdentifier?.nonBlankValue,
           certificateSerialNumber: entry.certificateIdentifier,
           fileName: entry.fileName,
           fileSizeBytes: entry.fileSize.flatMap { Int($0) },
@@ -207,9 +210,9 @@ private extension TransactionEntry.CredentialIssuanceDetails {
       issuer: .init(
         name: interactingPartyName?.content,
         identifier: interactingPartyIdentifier?.toDomain(),
-        contacts: interactingPartyContact ?? []
+        contacts: interactingPartyContact ?? [],
+        type: interactingPartyType?.nonBlankValue
       ),
-      issuerType: interactingPartyType,
       requestedCount: credentialNumberRequested,
       issuedCount: credentialNumberIssued,
       credentials: credentialIdentifier.map { .init(identifier: .init(rawValue: $0)) },
@@ -262,6 +265,11 @@ extension Array where Element == MultiLangString {
 }
 
 private extension String {
+  var nonBlankValue: String? {
+    let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmed.isEmpty ? nil : self
+  }
+
   var languageSubtag: String {
     components(separatedBy: "-").first?.lowercased() ?? lowercased()
   }

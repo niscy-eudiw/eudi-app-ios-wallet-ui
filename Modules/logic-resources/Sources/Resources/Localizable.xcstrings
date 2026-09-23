@@ -3420,6 +3420,39 @@
         }
       }
     },
+    "transaction_details_intermediary_name_label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intermediary name"
+          }
+        }
+      }
+    },
+    "transaction_details_intermediary_contact_label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intermediary contact"
+          }
+        }
+      }
+    },
+    "transaction_details_signing_identifier_label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signing transaction identifier"
+          }
+        }
+      }
+    },
     "transaction_details_request_deletion_section": {
       "extractionState": "manual",
       "localizations": {
