@@ -198,7 +198,7 @@ final class TestTransactionLogUi: EudiTest {
     XCTAssertEqual(ClaimRefDomain(segments: []).identifierPath, .transactionDetailsUnknownClaim)
   }
 
-  func testToUiModel_WhenIssuance_ThenBuildsIssuerIssuanceAndCredentialSections() {
+  func testToUiModel_WhenIssuance_ThenShowsCountsContactsAndIssuedCredentials() {
     let log = TransactionLogDomain.credentialIssuance(
       .init(
         id: "2", time: time, result: .notCompleted(reason: "Not all requested credentials were issued"),
@@ -213,12 +213,55 @@ final class TestTransactionLogUi: EudiTest {
     let ui = log.toUiModel()
 
     XCTAssertEqual(ui.sections.map(\.id), ["credentials"])
+    XCTAssertEqual(ui.sections[0].title, .transactionDetailsCredentialsIssuedSection)
     XCTAssertEqual(ui.transactionDetailsCardData.partyName, .custom("PID Provider"))
-    XCTAssertEqual(ui.transactionDetailsCardData.details.map { $0.map(\.id) }, [["issuer:contact:0"]])
-    XCTAssertNotNil(ui.transactionDetailsCardData.details[0][0].url)
+    XCTAssertEqual(
+      ui.transactionDetailsCardData.details.map { $0.map(\.id) },
+      [["issuance:requested", "issuance:issued"], ["issuer:contact:0"]]
+    )
+    XCTAssertEqual(ui.transactionDetailsCardData.details[0][0].listItem.mainContent, .text(.custom("5")))
+    XCTAssertEqual(ui.transactionDetailsCardData.details[0][1].listItem.mainContent, .text(.custom("3")))
+    XCTAssertNotNil(ui.transactionDetailsCardData.details[1][0].url)
     XCTAssertEqual(ui.sections[0].fields.first?.listItem.mainContent, .text(.custom(DocumentTypeIdentifier.mDocPid.rawValue)))
     XCTAssertEqual(ui.transactionDetailsCardData.nonCompletionReason, .custom("Not all requested credentials were issued"))
     XCTAssertFalse(ui.showsPresentationActions)
+  }
+
+  func testToUiModel_WhenReissuance_ThenCountsComeBeforeTriggerAndContacts() {
+    let log = TransactionLogDomain.credentialReissuance(
+      .init(
+        id: "3", time: time, result: .completed,
+        details: .init(
+          issuer: .init(name: "Issuer", identifier: nil, contacts: ["https://issuer.example"]),
+          requestedCount: 0, issuedCount: 0,
+          credentials: [], isUserTriggered: false
+        )
+      )
+    )
+
+    let ui = log.toUiModel()
+
+    XCTAssertTrue(ui.sections.isEmpty)
+    XCTAssertEqual(
+      ui.transactionDetailsCardData.details.map { $0.map(\.id) },
+      [["issuance:requested", "issuance:issued"], ["issuance:trigger"], ["issuer:contact:0"]]
+    )
+    XCTAssertEqual(ui.transactionDetailsCardData.details[0][1].listItem.mainContent, .text(.custom("0")))
+    XCTAssertEqual(
+      ui.transactionDetailsCardData.details[1][0].listItem.mainContent,
+      .text(.custom(LocalizableStringKey.transactionDetailsRenewedByWallet.toString))
+    )
+  }
+
+  func testToUiModel_WhenDeletion_ThenKeepsTheCredentialsHeading() {
+    let log = TransactionLogDomain.credentialDeletion(
+      .init(id: "4", time: time, result: .completed, credential: .init(identifier: .mDocPid), issuer: noParty)
+    )
+
+    let ui = log.toUiModel()
+
+    XCTAssertEqual(ui.sections.map(\.title), [.transactionDetailsCredentialsSection])
+    XCTAssertTrue(ui.transactionDetailsCardData.details.isEmpty)
   }
 
   func testToUiModel_WhenSigning_ThenOnlyTheFilenameAndSigningIdentifierRemain() {

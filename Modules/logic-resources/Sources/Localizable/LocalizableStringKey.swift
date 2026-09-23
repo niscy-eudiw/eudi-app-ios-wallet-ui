@@ -307,6 +307,8 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case transactionDetailsPrivacyPolicyLabel
   case transactionDetailsIssuerTypeLabel
   case transactionDetailsIssuedCountLabel
+  case transactionDetailsRequestedCountLabel
+  case transactionDetailsCredentialsIssuedSection
   case transactionDetailsIssuedCount([String])
   case transactionDetailsTriggerLabel
   case transactionDetailsRequestedByYou

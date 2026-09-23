@@ -119,12 +119,14 @@ extension TransactionLogDomain {
       let groups = [purpose, policies, contacts, intermediary].filter { !$0.isEmpty }
       return .init(type: log.party.type, details: groups)
     case .credentialIssuance(let log):
+      let counts = TransactionDetailsFieldUi.countFields(log.details)
       let contacts = TransactionDetailsFieldUi.contactFields(log.details.issuer, prefix: "issuer")
-      return .init(type: log.details.issuer.type, details: [contacts].filter { !$0.isEmpty })
+      return .init(type: log.details.issuer.type, details: [counts, contacts].filter { !$0.isEmpty })
     case .credentialReissuance(let log):
+      let counts = TransactionDetailsFieldUi.countFields(log.details)
       let trigger = TransactionDetailsFieldUi.triggerFields(log.details.isUserTriggered)
       let contacts = TransactionDetailsFieldUi.contactFields(log.details.issuer, prefix: "issuer")
-      return .init(type: log.details.issuer.type, details: [trigger, contacts].filter { !$0.isEmpty })
+      return .init(type: log.details.issuer.type, details: [counts, trigger, contacts].filter { !$0.isEmpty })
     case .credentialDeletion(let log):
       return .init(type: log.issuer.type, details: [])
     case .signingSealing(let log):
@@ -145,11 +147,11 @@ extension TransactionLogDomain {
         .claims(id: "shared", title: .transactionDetailsDataShare, claims: log.claimsPresented, emptyText: .transactionDetailsNoDataShared)
       ]
     case .credentialIssuance(let log):
-      return TransactionDetailsSectionUi.credentialList(log.details.credentials)
+      return TransactionDetailsSectionUi.credentialList(log.details.credentials, title: .transactionDetailsCredentialsIssuedSection)
     case .credentialReissuance(let log):
-      return TransactionDetailsSectionUi.credentialList(log.details.credentials)
+      return TransactionDetailsSectionUi.credentialList(log.details.credentials, title: .transactionDetailsCredentialsIssuedSection)
     case .credentialDeletion(let log):
-      return TransactionDetailsSectionUi.credentialList([log.credential])
+      return TransactionDetailsSectionUi.credentialList([log.credential], title: .transactionDetailsCredentialsSection)
     case .signingSealing(let log):
       return TransactionDetailsSectionUi.signing(log)
     case .dataDeletionRequest(let log):
@@ -163,13 +165,16 @@ extension TransactionLogDomain {
 }
 
 extension TransactionDetailsSectionUi {
-  static func credentialList(_ credentials: [CredentialRefDomain]) -> [TransactionDetailsSectionUi] {
+  static func credentialList(
+    _ credentials: [CredentialRefDomain],
+    title: LocalizableStringKey
+  ) -> [TransactionDetailsSectionUi] {
     let rows = credentials.filter { !$0.identifier.rawValue.isBlankValue }
     guard !rows.isEmpty else { return [] }
     return [
       .init(
         id: "credentials",
-        title: .transactionDetailsCredentialsSection,
+        title: title,
         fields: rows.enumerated().map { index, credential in
           .field(id: "credentials:\(index)", label: nil, value: credential.identifier.rawValue)
         },
@@ -254,6 +259,13 @@ extension TransactionDetailsFieldUi {
       guard !policy.isBlankValue else { return nil }
       return .field(id: "party:privacy:\(index)", label: .transactionDetailsPrivacyPolicyLabel, value: policy, url: policy.webUrl)
     }
+  }
+
+  static func countFields(_ details: IssuanceDetailsDomain) -> [TransactionDetailsFieldUi] {
+    [
+      .field(id: "issuance:requested", label: .transactionDetailsRequestedCountLabel, value: String(details.requestedCount)),
+      .field(id: "issuance:issued", label: .transactionDetailsIssuedCountLabel, value: String(details.issuedCount))
+    ]
   }
 
   static func triggerFields(_ isUserTriggered: Bool?) -> [TransactionDetailsFieldUi] {

@@ -614,6 +614,10 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "transaction_details_issuer_type_label")
     case .transactionDetailsIssuedCountLabel:
       bundle.localizedString(forKey: "transaction_details_issued_count_label")
+    case .transactionDetailsRequestedCountLabel:
+      bundle.localizedString(forKey: "transaction_details_requested_count_label")
+    case .transactionDetailsCredentialsIssuedSection:
+      bundle.localizedString(forKey: "transaction_details_credentials_issued_section")
     case .transactionDetailsTriggerLabel:
       bundle.localizedString(forKey: "transaction_details_trigger_label")
     case .transactionDetailsRequestedByYou:

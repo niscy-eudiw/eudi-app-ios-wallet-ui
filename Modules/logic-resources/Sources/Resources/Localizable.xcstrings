@@ -3167,6 +3167,28 @@
         }
       }
     },
+    "transaction_details_requested_count_label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credentials requested"
+          }
+        }
+      }
+    },
+    "transaction_details_credentials_issued_section": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CREDENTIALS ISSUED"
+          }
+        }
+      }
+    },
     "transaction_details_issued_count": {
       "extractionState": "manual",
       "localizations": {
