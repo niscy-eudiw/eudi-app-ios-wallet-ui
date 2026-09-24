@@ -317,6 +317,93 @@ final class TestTransactionLogUi: EudiTest {
     XCTAssertEqual(content.followUp, .transactionActionReportFollowUp(["APD-GBA"]))
   }
 
+  func testReportScreen_WhenTheDpaHasNoName_ThenTheCardAndNamedTextsAreDropped() {
+    let presentation = TransactionLogDomain.Presentation(
+      id: "1", time: time, result: .completed,
+      party: .init(name: "Verifier", identifier: nil, contacts: []),
+      intermediary: nil,
+      registration: .init(registrarUrl: nil, purpose: nil, privacyPolicyUrls: [], dpa: .init(name: nil, country: "BE", contacts: ["https://dpa.example"])),
+      claimsRequested: [], claimsPresented: []
+    )
+
+    guard case .contactList(let content) = presentation.toActionUiModel(transactionId: "1", action: .reportSuspiciousTransaction).content else {
+      return XCTFail("Expected the contact list layout for a report.")
+    }
+    XCTAssertNil(content.partyName)
+    XCTAssertEqual(content.message, .transactionActionReportMessageNoAuthority)
+    XCTAssertEqual(content.followUp, .transactionActionReportFollowUpNoAuthority)
+    XCTAssertEqual(content.messageBold, .transactionActionReportMessageBold)
+  }
+
+  func testReportScreen_WhenTheDpaNameIsBlank_ThenItCountsAsMissing() {
+    let presentation = TransactionLogDomain.Presentation(
+      id: "1", time: time, result: .completed,
+      party: .init(name: "Verifier", identifier: nil, contacts: []),
+      intermediary: nil,
+      registration: .init(registrarUrl: nil, purpose: nil, privacyPolicyUrls: [], dpa: .init(name: "   ", country: "BE", contacts: [])),
+      claimsRequested: [], claimsPresented: []
+    )
+
+    guard case .contactList(let content) = presentation.toActionUiModel(transactionId: "1", action: .reportSuspiciousTransaction).content else {
+      return XCTFail("Expected the contact list layout for a report.")
+    }
+    XCTAssertNil(content.partyName)
+    XCTAssertEqual(content.message, .transactionActionReportMessageNoAuthority)
+    XCTAssertEqual(content.followUp, .transactionActionReportFollowUpNoAuthority)
+  }
+
+  func testDeletionScreen_WhenThePartyHasNoName_ThenTheCardAndNamedTextsAreDropped() {
+    let presentation = TransactionLogDomain.Presentation(
+      id: "1", time: time, result: .completed,
+      party: .init(name: nil, identifier: nil, contacts: ["https://verifier.example/erasure"]),
+      intermediary: nil, registration: nil,
+      claimsRequested: [],
+      claimsPresented: [.init(credential: .init(identifier: .mDocPid), claims: [])]
+    )
+
+    guard case .confirmation(let content) = presentation.toActionUiModel(transactionId: "1", action: .requestDataDeletion).content else {
+      return XCTFail("Expected the confirmation layout for a deletion request.")
+    }
+    XCTAssertNil(content.intro)
+    XCTAssertNil(content.legal)
+    XCTAssertEqual(content.contact?.channel, .website)
+    XCTAssertEqual(content.buttonTitle, .continueButton)
+    XCTAssertEqual(content.noticeBold, .transactionActionDeletionNoticeBold)
+  }
+
+  func testDeletionScreen_WhenThePartyHasNoNameAndEmailIsUsed_ThenTheButtonKeepsItsTitle() {
+    let presentation = TransactionLogDomain.Presentation(
+      id: "1", time: time, result: .completed,
+      party: .init(name: nil, identifier: nil, contacts: ["support@verifier.example"]),
+      intermediary: nil, registration: nil,
+      claimsRequested: [],
+      claimsPresented: [.init(credential: .init(identifier: .mDocPid), claims: [])]
+    )
+
+    guard case .confirmation(let content) = presentation.toActionUiModel(transactionId: "1", action: .requestDataDeletion).content else {
+      return XCTFail("Expected the confirmation layout for a deletion request.")
+    }
+    XCTAssertNil(content.intro)
+    XCTAssertEqual(content.buttonTitle, .transactionActionContinueEmail)
+  }
+
+  func testDeletionScreen_WhenThereIsNoNameAndNoContact_ThenTheUnavailableNoticeStays() {
+    let presentation = TransactionLogDomain.Presentation(
+      id: "1", time: time, result: .completed,
+      party: .init(name: nil, identifier: nil, contacts: []),
+      intermediary: nil, registration: nil,
+      claimsRequested: [],
+      claimsPresented: [.init(credential: .init(identifier: .mDocPid), claims: [])]
+    )
+
+    guard case .confirmation(let content) = presentation.toActionUiModel(transactionId: "1", action: .requestDataDeletion).content else {
+      return XCTFail("Expected the confirmation layout for a deletion request.")
+    }
+    XCTAssertEqual(content.intro, .transactionDetailsActionUnavailable)
+    XCTAssertNil(content.legal)
+    XCTAssertEqual(content.buttonTitle, .continueButton)
+  }
+
   func testContacts_WhenSeveralMethodsExist_ThenWebsiteComesFirstAndPhoneLast() {
     let presentation = TransactionLogDomain.Presentation(
       id: "1", time: time, result: .completed,

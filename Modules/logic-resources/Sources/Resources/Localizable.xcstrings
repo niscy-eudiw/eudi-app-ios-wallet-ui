@@ -2887,7 +2887,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Party"
+            "value": "Relying Party"
           }
         }
       }
@@ -2898,7 +2898,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No party"
+            "value": "No Relying Party"
           }
         }
       }
@@ -3211,13 +3211,13 @@
         }
       }
     },
-    "transaction_details_requested_by_you": {
+    "transaction_details_initiated_by_wallet": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Requested by you"
+            "value": "The Wallet"
           }
         }
       }
@@ -3570,6 +3570,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "You will need to describe the transaction yourself. Any follow-up on the outcome will come from %@ directly, not the wallet."
+          }
+        }
+      }
+    },
+    "transaction_action_report_message_no_authority": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To report this transaction, contact the data protection authority directly, using whichever method works best for you below."
+          }
+        }
+      }
+    },
+    "transaction_action_report_follow_up_no_authority": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You will need to describe the transaction yourself. Any follow-up on the outcome will come from the data protection authority directly, not the wallet."
           }
         }
       }

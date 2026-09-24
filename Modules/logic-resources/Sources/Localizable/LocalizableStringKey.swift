@@ -311,7 +311,7 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case transactionDetailsCredentialsIssuedSection
   case transactionDetailsIssuedCount([String])
   case transactionDetailsTriggerLabel
-  case transactionDetailsRequestedByYou
+  case transactionDetailsInitiatedByWallet
   case transactionDetailsRequestedByIssuer
   case transactionDetailsRenewedByWallet
   case transactionDetailsCertificateLabel
@@ -343,7 +343,9 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case transactionActionAuthorityLabel
   case transactionActionReportMessageBold
   case transactionActionReportMessage([String])
+  case transactionActionReportMessageNoAuthority
   case transactionActionReportFollowUp([String])
+  case transactionActionReportFollowUpNoAuthority
   case transactionActionCall
   case transactionActionOpenEmail
   case transactionActionVisitWebsite

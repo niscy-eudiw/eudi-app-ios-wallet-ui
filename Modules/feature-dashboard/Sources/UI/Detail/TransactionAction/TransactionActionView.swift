@@ -100,14 +100,16 @@ private struct TransactionActionViewContainer: View {
 
   @ViewBuilder
   private func confirmation(_ ui: TransactionActionUiModel.ConfirmationUi) -> some View {
-    WrapCardView(backgroundColor: Theme.shared.color.groupedBackground) {
-      Text(ui.intro)
-        .typography(Theme.shared.font.bodyMedium)
-        .foregroundStyle(Theme.shared.color.primaryLabel)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.all, SPACING_MEDIUM)
+    if let intro = ui.intro {
+      WrapCardView(backgroundColor: Theme.shared.color.groupedBackground) {
+        Text(intro)
+          .typography(Theme.shared.font.bodyMedium)
+          .foregroundStyle(Theme.shared.color.primaryLabel)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.all, SPACING_MEDIUM)
+      }
+      .shimmer(isLoading: state.isLoading)
     }
-    .shimmer(isLoading: state.isLoading)
 
     VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
       if let notice = ui.notice {
@@ -121,31 +123,35 @@ private struct TransactionActionViewContainer: View {
           .foregroundStyle(Theme.shared.color.primaryLabel)
       }
 
-      Text(ui.legal)
-        .typography(Theme.shared.font.bodyMedium)
-        .foregroundStyle(Theme.shared.color.primaryLabel)
+      if let legal = ui.legal {
+        Text(legal)
+          .typography(Theme.shared.font.bodyMedium)
+          .foregroundStyle(Theme.shared.color.primaryLabel)
+      }
     }
     .shimmer(isLoading: state.isLoading)
   }
 
   @ViewBuilder
   private func contactList(_ ui: TransactionActionUiModel.ContactListUi) -> some View {
-    WrapCardView(backgroundColor: Theme.shared.color.groupedBackground) {
-      VStack(alignment: .leading, spacing: SPACING_EXTRA_SMALL) {
-        Text(ui.partyLabel)
-          .typography(Theme.shared.font.labelSmall)
-          .fontWeight(.semibold)
-          .foregroundStyle(Theme.shared.color.secondaryLabel)
+    if let partyName = ui.partyName {
+      WrapCardView(backgroundColor: Theme.shared.color.groupedBackground) {
+        VStack(alignment: .leading, spacing: SPACING_EXTRA_SMALL) {
+          Text(ui.partyLabel)
+            .typography(Theme.shared.font.labelSmall)
+            .fontWeight(.semibold)
+            .foregroundStyle(Theme.shared.color.secondaryLabel)
 
-        Text(ui.partyName)
-          .typography(Theme.shared.font.bodyLarge)
-          .fontWeight(.medium)
-          .foregroundStyle(Theme.shared.color.primaryLabel)
+          Text(partyName)
+            .typography(Theme.shared.font.bodyLarge)
+            .fontWeight(.medium)
+            .foregroundStyle(Theme.shared.color.primaryLabel)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.all, SPACING_MEDIUM)
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(.all, SPACING_MEDIUM)
+      .shimmer(isLoading: state.isLoading)
     }
-    .shimmer(isLoading: state.isLoading)
 
     VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
       (Text(ui.messageBold.toString).fontWeight(.bold) + Text(" " + ui.message.toString))

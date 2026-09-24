@@ -620,8 +620,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "transaction_details_credentials_issued_section")
     case .transactionDetailsTriggerLabel:
       bundle.localizedString(forKey: "transaction_details_trigger_label")
-    case .transactionDetailsRequestedByYou:
-      bundle.localizedString(forKey: "transaction_details_requested_by_you")
+    case .transactionDetailsInitiatedByWallet:
+      bundle.localizedString(forKey: "transaction_details_initiated_by_wallet")
     case .transactionDetailsRequestedByIssuer:
       bundle.localizedString(forKey: "transaction_details_requested_by_issuer")
     case .transactionDetailsRenewedByWallet:
@@ -686,8 +686,12 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "transaction_action_report_message_bold")
     case .transactionActionReportMessage(let args):
       bundle.localizedStringWithArguments(forKey: "transaction_action_report_message", arguments: args)
+    case .transactionActionReportMessageNoAuthority:
+      bundle.localizedString(forKey: "transaction_action_report_message_no_authority")
     case .transactionActionReportFollowUp(let args):
       bundle.localizedStringWithArguments(forKey: "transaction_action_report_follow_up", arguments: args)
+    case .transactionActionReportFollowUpNoAuthority:
+      bundle.localizedString(forKey: "transaction_action_report_follow_up_no_authority")
     case .transactionActionCall:
       bundle.localizedString(forKey: "transaction_action_call")
     case .transactionActionOpenEmail:

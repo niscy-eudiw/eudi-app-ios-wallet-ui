@@ -31,17 +31,17 @@ public struct TransactionActionUiModel: Equatable, Sendable {
   }
 
   public struct ConfirmationUi: Equatable, Sendable {
-    public let intro: LocalizableStringKey
+    public let intro: LocalizableStringKey?
     public let noticeBold: LocalizableStringKey
     public let notice: LocalizableStringKey?
-    public let legal: LocalizableStringKey
+    public let legal: LocalizableStringKey?
     public let buttonTitle: LocalizableStringKey
     public let contact: TransactionActionContactUi?
   }
 
   public struct ContactListUi: Equatable, Sendable {
     public let partyLabel: LocalizableStringKey
-    public let partyName: LocalizableStringKey
+    public let partyName: LocalizableStringKey?
     public let messageBold: LocalizableStringKey
     public let message: LocalizableStringKey
     public let followUp: LocalizableStringKey
@@ -82,11 +82,11 @@ extension TransactionActionChannel {
     }
   }
 
-  func continueTitle(party: String) -> LocalizableStringKey {
+  func continueTitle(party: String?) -> LocalizableStringKey {
     switch self {
-    case .phone: .transactionActionContinuePhone([party])
+    case .phone: party.map { .transactionActionContinuePhone([$0]) } ?? .continueButton
     case .email: .transactionActionContinueEmail
-    case .website: .transactionActionContinueWebsite([party])
+    case .website: party.map { .transactionActionContinueWebsite([$0]) } ?? .continueButton
     }
   }
 
@@ -137,18 +137,23 @@ extension TransactionLogDomain.Presentation {
     }
     switch action {
     case .requestDataDeletion:
-      let name = party.name ?? LocalizableStringKey.transactionActionUnknownParty.toString
+      let name = party.name?.nonBlankValue
       let preferred = contacts.first
+      let intro: LocalizableStringKey? = if let preferred {
+        name.map { preferred.channel.deletionIntro(party: $0) }
+      } else {
+        .transactionDetailsActionUnavailable
+      }
       return .init(
         transactionId: transactionId,
         action: action,
         title: .transactionActionDeletionScreenTitle,
         content: .confirmation(
           .init(
-            intro: preferred.map { $0.channel.deletionIntro(party: name) } ?? .transactionDetailsActionUnavailable,
+            intro: intro,
             noticeBold: .transactionActionDeletionNoticeBold,
             notice: preferred?.channel.deletionNotice,
-            legal: .transactionActionDeletionLegal([name, name]),
+            legal: name.map { .transactionActionDeletionLegal([$0, $0]) },
             buttonTitle: preferred.map { $0.channel.continueTitle(party: name) } ?? .continueButton,
             contact: preferred
           )
@@ -156,7 +161,7 @@ extension TransactionLogDomain.Presentation {
         contacts: contacts
       )
     case .reportSuspiciousTransaction:
-      let name = registration?.dpa?.name ?? LocalizableStringKey.transactionActionUnknownParty.toString
+      let name = registration?.dpa?.name?.nonBlankValue
       return .init(
         transactionId: transactionId,
         action: action,
@@ -164,10 +169,10 @@ extension TransactionLogDomain.Presentation {
         content: .contactList(
           .init(
             partyLabel: .transactionActionAuthorityLabel,
-            partyName: .custom(name),
+            partyName: name.map { .custom($0) },
             messageBold: .transactionActionReportMessageBold,
-            message: .transactionActionReportMessage([name]),
-            followUp: .transactionActionReportFollowUp([name])
+            message: name.map { .transactionActionReportMessage([$0]) } ?? .transactionActionReportMessageNoAuthority,
+            followUp: name.map { .transactionActionReportFollowUp([$0]) } ?? .transactionActionReportFollowUpNoAuthority
           )
         ),
         contacts: contacts

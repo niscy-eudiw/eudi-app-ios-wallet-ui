@@ -64,6 +64,10 @@ extension String {
     trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
 
+  var nonBlankValue: String? {
+    isBlankValue ? nil : self
+  }
+
   var webUrl: URL? {
     guard
       let url = URL(string: self),
