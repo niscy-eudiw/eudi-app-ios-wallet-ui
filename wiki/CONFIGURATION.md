@@ -301,9 +301,10 @@ struct WalletKitConfigImpl: WalletKitConfig {
 
 Via the *RQESConfig* class, which implements the *EudiRQESUiConfig* protocol from the RQESUi SDK, inside the logic-business module.
 
-The SDK protocol defines four members. `rssps` and `printLogs` are required; `translations` and
-`theme` have SDK-provided default implementations, so the wallet may omit them (and the reference app
-does — it overrides neither):
+The SDK protocol defines five members. `rssps` and `printLogs` are required; `translations`, `theme`
+and `transactionLogger` have SDK-provided default implementations, so the wallet may omit them. The
+reference app overrides neither `translations` nor `theme`, and supplies `transactionLogger` so that
+signing transactions are recorded alongside the presentation and issuance ones:
 
 ```swift
 public protocol EudiRQESUiConfig: Sendable {
@@ -311,8 +312,12 @@ public protocol EudiRQESUiConfig: Sendable {
   var printLogs: Bool { get }                                    // Required.
   var translations: [String: [LocalizableKey: String]] { get }  // Optional — defaults to [:] (English).
   var theme: ThemeProtocol { get }                               // Optional — defaults to the SDK theme.
+  var transactionLogger: (any TransactionLogger)? { get }       // Optional — defaults to nil (no logging).
 }
 ```
+
+The SDK emits one signing transaction entry per signed document, stored or updated by its
+`transactionIdentifier`. Failures inside the logger never interrupt signing.
 
 Based on the Build Variant and Type of the Wallet (e.g., Dev Debug)
 
@@ -321,10 +326,16 @@ final class RQESConfig: EudiRQESUiConfig {
 
   let buildVariant: AppBuildVariant
   let buildType: AppBuildType
+  let transactionLogger: (any TransactionLogger)?
 
-  init(buildVariant: AppBuildVariant, buildType: AppBuildType) {
+  init(
+    buildVariant: AppBuildVariant,
+    buildType: AppBuildType,
+    transactionLogger: (any TransactionLogger)? = nil
+  ) {
     self.buildVariant = buildVariant
     self.buildType = buildType
+    self.transactionLogger = transactionLogger
   }
 
   var rssps: [QTSPData] {
