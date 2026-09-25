@@ -130,7 +130,6 @@ private struct TransactionDetailsViewContainer: View {
             ForEach(section.fields) { field in
               WrapListItemView(
                 listItem: field.listItem,
-                mainTextVerticalPadding: SPACING_SMALL,
                 minHeight: false
               ) {
                 if let url = field.url {

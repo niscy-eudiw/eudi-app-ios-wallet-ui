@@ -10223,6 +10223,7 @@ import EudiWalletKit
 import MdocSecurity18013
 import enum OpenID4VP.ValidationError
 import enum OpenID4VCI.WRPRCError
+import enum OpenID4VCI.CredentialIssuerMetadataError
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
