@@ -409,8 +409,9 @@ in the theme. If you rename the product, search the catalog for `EUDI`/`Wallet` 
   `quick_pin_set_step_one_caption` — onboarding / PIN-setup copy.
 * `my_eu_wallet` ("My EU Wallet") — side-menu / navigation title.
 * `wallet_is_secured` ("Your wallet is secured!") — success copy.
-* `login_caption` / `login_caption_quick_pin_only` ("…access the EUDI Wallet…") — login auth prompts.
-  The system biometric prompt shows `biometry_unlock_reason`, which names no product.
+* `login_caption` / `login_caption_quick_pin_only` ("…access the EUDI Wallet…") — login auth prompts,
+  shown at app unlock and before a request in the ID Provider extension. The system biometric prompt
+  shows `biometry_unlock_reason`, which names no product.
 * `add_document_subtitle`, `add_documents_to_wallet`, `issuer_want_wallet_addition`,
   `request_data_no_document` — issuance/presentation copy.
 
@@ -535,8 +536,9 @@ Android's `ThemeManager.Builder`, and is intentionally left at `.default` in the
 * **Run both variants.** Build `Dev` and `Demo` and confirm the app icon is correct for each (the
   display name is shared by default).
 * **Screenshot the key surfaces:** splash, dashboard/home, a presentation request, the PIN screen,
-  document details, and the RQES signing flow. The start-up error alert is a system alert, which the
-  theme does not style.
+  document details, the RQES signing flow, and a request in the ID Provider extension, which opens with
+  the PIN or biometric login. The start-up error alert is a system alert, which the theme does not
+  style.
 
 ## Production and accessibility checklist
 

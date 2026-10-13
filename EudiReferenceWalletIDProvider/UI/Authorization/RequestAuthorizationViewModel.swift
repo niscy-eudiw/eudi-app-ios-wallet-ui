@@ -31,6 +31,8 @@ struct RequestAuthorizationViewState: ViewState {
 final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewState> {
   var showBiometryView: Bool = false
 
+  private var isRequestAuthorized: Bool = false
+
   private var context: ISO18013MobileDocumentRequestContext?
   private var interactor: RequestAuthorizationInteractor = DIGraph.shared.resolver.force(
     RequestAuthorizationInteractor.self
@@ -55,10 +57,27 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
     )
   }
 
+  /// Asks for the wallet PIN or biometrics before anything of the request is loaded. The view calls it
+  /// on every appearance, so it does nothing once the user has authenticated.
+  func initialize() {
+    guard !isRequestAuthorized, !showBiometryView else { return }
+    showBiometryView = true
+  }
+
+  /// The first authentication loads and shows the request; the one after Accept sends the response.
+  /// Only the success that closes the presented biometry screen counts, so a second signal from the
+  /// same screen cannot stand in for Accept.
   func handleBiometryAuthenticated() {
+    guard showBiometryView else { return }
     showBiometryView = false
+    let isAccepting = isRequestAuthorized
+    isRequestAuthorized = true
     Task {
-      await acceptVerification()
+      if isAccepting {
+        await acceptVerification()
+      } else {
+        await loadRequest()
+      }
     }
   }
 
@@ -124,8 +143,23 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
     context?.cancel()
   }
 
+  /// The login texts before the request is shown, the confirmation texts after Accept. Neither has a back
+  /// action: `ProviderBiometryRouter.pop()` is the success signal.
   func createBiometryConfig() -> UIConfig.Biometry {
-    UIConfig.Biometry(
+    guard isRequestAuthorized else {
+      return UIConfig.Biometry(
+        navigationTitle: .enterYourPin,
+        title: .loginTitle,
+        caption: .loginCaption,
+        quickPinOnlyCaption: .loginCaptionQuickPinOnly,
+        navigationSuccessType: .pop,
+        navigationBackType: nil,
+        isPreAuthorization: true,
+        shouldInitializeBiometricOnCreate: true,
+        displayNavigationBar: false
+      )
+    }
+    return UIConfig.Biometry(
       navigationTitle: .biometryConfirmRequest,
       caption: .requestDataShareBiometryCaption,
       quickPinOnlyCaption: .requestDataShareQuickPinCaption,

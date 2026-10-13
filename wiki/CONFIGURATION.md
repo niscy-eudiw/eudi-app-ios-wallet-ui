@@ -735,7 +735,7 @@ container.register(AuthenticationConfig.self) { _ in
 .inObjectScope(ObjectScope.container)
 ```
 
-The lockout is enforced by `PinThrottleController` and applied in both the login screen (`BiometryViewModel`) and the change-PIN validation step (`QuickPinViewModel`). While locked:
+The lockout is enforced by `PinThrottleController` and applied wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, and the Document Provider extension before it shows a request and again on Accept) and in the change-PIN validation step (`QuickPinViewModel`). While locked:
 
 * The PIN input field is disabled (no keyboard, no edits).
 * The proceed button is disabled.
@@ -836,6 +836,8 @@ The keychain access group for the extension is defined in `EudiReferenceWalletID
 
 `SHARED_APP_GROUP_IDENTIFIER` must match the main app's effective keychain group for the same build configuration (Dev or Demo), otherwise the extension cannot access the same keychain-backed wallet context.
 
+The extension also asks for the wallet PIN or biometrics before it shows a request. It reads the PIN record and the PIN lockout state from the same shared keychain group, and the biometry setting from the App Group (`com.apple.security.application-groups`, `group.$(SHARED_APP_GROUP_IDENTIFIER)`), so both entitlements must match the main app's.
+
 ### Step-by-step setup
 
 1. **Set `SHARED_APP_GROUP_IDENTIFIER` for all extension build configurations**
@@ -894,6 +896,7 @@ Registrations are reconciled against wallet storage after every operation that a
 - `SHARED_APP_GROUP_IDENTIFIER` is present for all extension configurations.
 - Main app and extension resolve to the same runtime keychain access group.
 - On iOS 26+, registered CBOR documents appear in the extension request flow.
+- The extension asks for the PIN or biometrics before it shows a request, and again on Accept.
 
 ## Trust Mark configuration
 

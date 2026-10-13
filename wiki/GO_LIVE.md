@@ -214,6 +214,7 @@ Keep these files under strict review:
 | `Modules/logic-authentication/Sources/Storage/KeychainPinStorageProvider.swift` | Defines PIN hashing, salt, PBKDF2 iteration count, and constant-time comparison. |
 | `Modules/logic-authentication/Sources/Controller/SystemBiometryController.swift` | Biometric unlock: the policy evaluated on a fresh `LAContext` and the Keychain probe read with it. |
 | `Modules/feature-startup/Sources/Interactor/StartupInteractor.swift` | The start-up gate: login, PIN creation only for a wallet without documents, or an error. |
+| `EudiReferenceWalletIDProvider/UI/Authorization/RequestAuthorizationViewModel.swift` | The extension's PIN or biometric check before a request is shown and again on Accept. |
 | `Modules/logic-authentication/Sources/Config/AuthenticationConfig.swift` | PIN lockout policy (max failed attempts, escalating lockout durations). |
 | `Modules/logic-authentication/Sources/Storage/KeychainPinThrottleProvider.swift` | Keychain-persisted PIN failure counter, lockout level, lockout window timestamps; clock-rollback detection. |
 | `Modules/logic-business/Sources/Controller/KeyChainController.swift` | Defines Keychain service, access group, accessibility class, and biometric Keychain validation. |
@@ -929,6 +930,13 @@ Current registration behavior:
 * Registration is only attempted on iOS 26 and later where the Digital Credentials API is available.
 * Only CBOR documents are registered (`document.docDataFormat == .cbor`).
 * Registrations are reconciled against storage rather than tracked incrementally, so a document deleted in the app is deregistered, and a registration left behind by an earlier build is removed on the next launch.
+
+Current request handling:
+
+* The extension is a separate process and does not share the app's unlocked session. It therefore
+  asks for the wallet PIN or biometrics first, with the same screen as the app's login, and reads the
+  request's documents only after that. No requested value is shown before the user has authenticated.
+* Accept asks for the PIN or biometrics again before the response is sent.
 
 Production validation:
 
@@ -2250,7 +2258,8 @@ Before release candidate approval, test:
 * Relayed OpenID4VP request and response handling.
 * Proximity QR/BLE.
 * Relayed proximity engagement where feasible.
-* Identity Document Provider extension presentment on supported iOS versions.
+* Identity Document Provider extension presentment on supported iOS versions, with the PIN or
+  biometric check before the request is shown and again on Accept.
 * Relayed or socially engineered Identity Document Provider extension presentment where feasible.
 * RQES signing.
 * RQES cancellation.

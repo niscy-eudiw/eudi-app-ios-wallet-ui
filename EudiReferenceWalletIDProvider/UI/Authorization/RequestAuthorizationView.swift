@@ -45,8 +45,8 @@ struct RequestAuthorizationView: View {
       }
       .shimmer(isLoading: viewModel.viewState.isLoading)
       .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .task {
-        await viewModel.loadRequest()
+      .onAppear {
+        viewModel.initialize()
       }
     }
   }
