@@ -164,7 +164,8 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
    for, a warning appears and "Share" stays disabled until you acknowledge it. With the setting off
    — its default — no registration is evaluated and the Verifier is named by its access certificate.
 8. Tap "Share".
-9. Enter the PIN you set up during the initial steps.
+9. Enter the PIN you set up during the initial steps, or use Face ID or Touch ID if you turned it on
+   in Settings. If the biometric check fails, enter the PIN.
 10. Upon successful submission, tap "Close".
 11. A browser will open, confirming that the Verifier has accepted your request.
 12. Return to the app. The flow is now complete.
@@ -182,7 +183,8 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
    subject to the same setting, a reader whose registration certificate cannot be validated raises a
    warning that keeps "Share" disabled until you acknowledge it.
 8. Tap "Share".
-9. Enter the PIN you set up during the initial steps.
+9. Enter the PIN you set up during the initial steps, or use Face ID or Touch ID if you turned it on
+   in Settings. If the biometric check fails, enter the PIN.
 10. Upon successful authentication, tap "Close".
 11. The Verifier will receive the data you chose to share.
 12. You will return to the "Home" tab of the "Dashboard" screen. The flow is now complete.

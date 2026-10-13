@@ -44,6 +44,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "generic_error_title")
     case .genericErrorDesc:
       bundle.localizedString(forKey: "generic_error_description")
+    case .keyChainReadError:
+      bundle.localizedString(forKey: "key_chain_read_error")
     case .biometryOpenSettings:
       bundle.localizedString(forKey: "biometry_open_settings")
     case .invalidQuickPin:
@@ -374,6 +376,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "quick_pin_confirm_pin")
     case .biometryConfirmRequest:
       bundle.localizedString(forKey: "biometry_confirm_request")
+    case .biometryUnlockReason:
+      bundle.localizedString(forKey: "biometry_unlock_reason")
     case .viewDetails:
       bundle.localizedString(forKey: "view_details")
     case .requestsTheFollowing:

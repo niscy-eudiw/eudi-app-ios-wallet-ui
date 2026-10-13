@@ -17,6 +17,7 @@
 import XCTest
 @testable import logic_test
 @testable import logic_authentication
+@testable import logic_business
 @preconcurrency import LocalAuthentication
 
 final class TestSystemBiometryController: EudiTest {
@@ -28,6 +29,8 @@ final class TestSystemBiometryController: EudiTest {
     var evaluateError: NSError? = nil
     var stubBiometryType: LABiometryType = .touchID
     var evaluatePolicyResult: (success: Bool, error: Error?) = (true, nil)
+    var evaluatedPolicies: [LAPolicy] = []
+    var isInvalidated = false
     
     override var biometryType: LABiometryType { stubBiometryType }
     
@@ -46,24 +49,50 @@ final class TestSystemBiometryController: EudiTest {
       localizedReason: String,
       reply: @escaping (Bool, Error?) -> Void
     ) {
+      evaluatedPolicies.append(policy)
       reply(evaluatePolicyResult.success, evaluatePolicyResult.error)
     }
     
-    override func invalidate() {}
+    override func invalidate() {
+      isInvalidated = true
+    }
+  }
+
+  final class RecordingLAContextProvider: @unchecked Sendable {
+
+    var evaluatePolicyResult: (success: Bool, error: Error?) = (true, nil)
+    private(set) var contexts: [StubLAContext] = []
+
+    private(set) var wasInvalidatedWhenRecorded: [Bool] = []
+
+    func makeContext() -> LAContext {
+      let context = StubLAContext()
+      context.evaluatePolicyResult = evaluatePolicyResult
+      contexts.append(context)
+      return context
+    }
+
+    func record(_ context: LAContext) {
+      wasInvalidatedWhenRecorded.append((context as? StubLAContext)?.isInvalidated ?? true)
+    }
   }
   
   // MARK: - Properties
   var biometryController: SystemBiometryController!
   var keyChainController: MockKeyChainController!
   var context: StubLAContext!
+  var contextProvider: RecordingLAContextProvider!
   
   // MARK: - Lifecycle
   override func setUp() {
     super.setUp()
     self.keyChainController = MockKeyChainController()
     self.context = StubLAContext()
+    let contextProvider = RecordingLAContextProvider()
+    self.contextProvider = contextProvider
     self.biometryController = SystemBiometryControllerImpl(
       context: context,
+      evaluationContextProvider: { contextProvider.makeContext() },
       keyChainController: keyChainController
     )
   }
@@ -72,6 +101,7 @@ final class TestSystemBiometryController: EudiTest {
     self.biometryController = nil
     self.keyChainController = nil
     self.context = nil
+    self.contextProvider = nil
     super.tearDown()
   }
   
@@ -177,7 +207,7 @@ final class TestSystemBiometryController: EudiTest {
     context.stubBiometryType = .touchID
     
     stub(keyChainController) { stub in
-      when(stub.validateKeyChainBiometry()).thenDoNothing()
+      when(stub.validateKeyChainBiometry(with: any())).thenDoNothing()
     }
     
     // When / Then: no error thrown
@@ -195,7 +225,7 @@ final class TestSystemBiometryController: EudiTest {
     context.stubBiometryType = .touchID
     
     stub(keyChainController) { stub in
-      when(stub.validateKeyChainBiometry())
+      when(stub.validateKeyChainBiometry(with: any()))
         .thenThrow(SystemBiometryError.biometricError)
       when(stub.clearKeyChainBiometry())
         .thenDoNothing()
@@ -258,6 +288,76 @@ final class TestSystemBiometryController: EudiTest {
     }
   }
   
+  func testRequestBiometricUnlock_WhenPolicyEvaluationReturnsFalse_ThenBiometricErrorWithoutKeychainProbe() async {
+    stubCanEvaluateBiometrics()
+    contextProvider.evaluatePolicyResult = (false, nil)
+
+    await assertUnlockFails(with: .biometricError)
+
+    verify(keyChainController, never()).validateKeyChainBiometry(with: any())
+    verify(keyChainController).clearKeyChainBiometry()
+    XCTAssertEqual(contextProvider.contexts.map(\.isInvalidated), [true])
+  }
+
+  func testRequestBiometricUnlock_WhenPolicyEvaluationIsCancelled_ThenBiometricErrorWithoutKeychainProbe() async {
+    stubCanEvaluateBiometrics()
+    contextProvider.evaluatePolicyResult = (
+      false,
+      NSError(domain: LAErrorDomain, code: LAError.Code.userCancel.rawValue, userInfo: nil)
+    )
+
+    await assertUnlockFails(with: .biometricError)
+
+    verify(keyChainController, never()).validateKeyChainBiometry(with: any())
+  }
+
+  func testRequestBiometricUnlock_WhenProbeItemIsMissing_ThenBiometricError() async {
+    stubCanEvaluateBiometrics()
+    stub(keyChainController) { stub in
+      when(stub.validateKeyChainBiometry(with: any())).thenThrow(KeyChainError.itemNotFound)
+      when(stub.clearKeyChainBiometry()).thenDoNothing()
+    }
+
+    await assertUnlockFails(with: .biometricError)
+
+    verify(keyChainController).clearKeyChainBiometry()
+  }
+
+  func testRequestBiometricUnlock_WhenPolicyEvaluated_ThenProbeReadsWithTheEvaluatedContext() async throws {
+    stubCanEvaluateBiometrics()
+    let probedContexts = RecordingLAContextProvider()
+    stub(keyChainController) { stub in
+      when(stub.validateKeyChainBiometry(with: any())).then { context in
+        probedContexts.record(context)
+      }
+    }
+
+    try await biometryController.requestBiometricUnlock()
+
+    let evaluationContext = try XCTUnwrap(contextProvider.contexts.first)
+    XCTAssertEqual(evaluationContext.evaluatedPolicies, [.deviceOwnerAuthenticationWithBiometrics])
+    XCTAssertEqual(evaluationContext.localizedFallbackTitle, "")
+    XCTAssertEqual(probedContexts.wasInvalidatedWhenRecorded, [false])
+    XCTAssertTrue(evaluationContext.isInvalidated)
+    verify(keyChainController).validateKeyChainBiometry(with: equal(to: evaluationContext as LAContext))
+    XCTAssertTrue(context.evaluatedPolicies.isEmpty)
+  }
+
+  func testRequestBiometricUnlock_WhenCalledTwice_ThenEachAttemptEvaluatesANewContext() async throws {
+    stubCanEvaluateBiometrics()
+    stub(keyChainController) { stub in
+      when(stub.validateKeyChainBiometry(with: any())).thenDoNothing()
+    }
+
+    try await biometryController.requestBiometricUnlock()
+    try await biometryController.requestBiometricUnlock()
+
+    let contexts = contextProvider.contexts
+    XCTAssertEqual(contexts.count, 2)
+    XCTAssertFalse(contexts[0] === contexts[1])
+    XCTAssertEqual(contexts.map(\.evaluatedPolicies.count), [1, 1])
+  }
+
   func testSystemBiometryError_id_ReturnsLocalizedDescription() {
     // Given
     let allErrors: [SystemBiometryError] = [
@@ -303,5 +403,28 @@ final class TestSystemBiometryController: EudiTest {
     // `action()` branch fires only when the real Settings app opens, so it
     // remains uncovered in unit tests by design.
     await biometryController.openSettings(action: {})
+  }
+}
+
+private extension TestSystemBiometryController {
+
+  func stubCanEvaluateBiometrics() {
+    context.canEvaluateReturn = true
+    context.evaluateError = nil
+    context.stubBiometryType = .faceID
+    stub(keyChainController) { stub in
+      when(stub.clearKeyChainBiometry()).thenDoNothing()
+    }
+  }
+
+  func assertUnlockFails(with expectedError: SystemBiometryError) async {
+    do {
+      try await biometryController.requestBiometricUnlock()
+      XCTFail("Expected requestBiometricUnlock to throw")
+    } catch let error as SystemBiometryError {
+      XCTAssertEqual(error, expectedError)
+    } catch {
+      XCTFail("Unexpected error: \(error)")
+    }
   }
 }

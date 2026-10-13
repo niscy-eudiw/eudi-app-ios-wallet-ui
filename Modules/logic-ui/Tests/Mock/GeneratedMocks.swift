@@ -638,6 +638,7 @@ import Cuckoo
 import Cuckoo
 import Foundation
 import Security
+import LocalAuthentication
 import KeychainAccess
 @testable import logic_core
 @testable import logic_business
@@ -779,14 +780,14 @@ public class MockKeyChainController: KeyChainController, Cuckoo.ProtocolMock, @u
         )
     }
 
-    public func validateKeyChainBiometry() throws {
+    public func validateKeyChainBiometry(with p0: LAContext) throws {
         return try cuckoo_manager.callThrows(
-            "validateKeyChainBiometry() throws",
-            parameters: (),
-            escapingParameters: (),
+            "validateKeyChainBiometry(with p0: LAContext) throws",
+            parameters: (p0),
+            escapingParameters: (p0),
             errorType: Swift.Error.self,
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: __defaultImplStub!.validateKeyChainBiometry()
+            defaultCall: __defaultImplStub!.validateKeyChainBiometry(with: p0)
         )
     }
 
@@ -857,10 +858,10 @@ public class MockKeyChainController: KeyChainController, Cuckoo.ProtocolMock, @u
             ))
         }
         
-        func validateKeyChainBiometry() -> Cuckoo.ProtocolStubNoReturnThrowingFunction<(),Swift.Error> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+        func validateKeyChainBiometry<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubNoReturnThrowingFunction<(LAContext),Swift.Error> where M1.MatchedType == LAContext {
+            let matchers: [Cuckoo.ParameterMatcher<(LAContext)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockKeyChainController.self,
-                method: "validateKeyChainBiometry() throws",
+                method: "validateKeyChainBiometry(with p0: LAContext) throws",
                 parameterMatchers: matchers
             ))
         }
@@ -955,10 +956,10 @@ public class MockKeyChainController: KeyChainController, Cuckoo.ProtocolMock, @u
         
         
         @discardableResult
-        func validateKeyChainBiometry() -> Cuckoo.__DoNotUse<(), Void> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+        func validateKeyChainBiometry<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(LAContext), Void> where M1.MatchedType == LAContext {
+            let matchers: [Cuckoo.ParameterMatcher<(LAContext)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
-                "validateKeyChainBiometry() throws",
+                "validateKeyChainBiometry(with p0: LAContext) throws",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -1015,7 +1016,7 @@ public class KeyChainControllerStub:KeyChainController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
-    public func validateKeyChainBiometry() throws {
+    public func validateKeyChainBiometry(with p0: LAContext) throws {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
@@ -1687,6 +1688,18 @@ public class DIGraphTypeStub:DIGraphType, @unchecked Sendable {
     }
 }
 
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Error/KeyChainError.swift'
+
+import Cuckoo
+import Foundation
+import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
 
 
 

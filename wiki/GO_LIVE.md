@@ -212,6 +212,7 @@ Keep these files under strict review:
 | `Modules/logic-core/Sources/Config/WalletProviderAttestationConfig.swift` | Defines the wallet provider attestation host. |
 | `Modules/logic-core/Sources/Controller/WalletKitController.swift` | Constructs `EudiWallet`, wires WalletKit config, starts presentation, issuance, revocation, logging, and document registration. |
 | `Modules/logic-authentication/Sources/Storage/KeychainPinStorageProvider.swift` | Defines PIN hashing, salt, PBKDF2 iteration count, and constant-time comparison. |
+| `Modules/logic-authentication/Sources/Controller/SystemBiometryController.swift` | Biometric unlock: the policy evaluated on a fresh `LAContext` and the Keychain probe read with it. |
 | `Modules/logic-authentication/Sources/Config/AuthenticationConfig.swift` | PIN lockout policy (max failed attempts, escalating lockout durations). |
 | `Modules/logic-authentication/Sources/Storage/KeychainPinThrottleProvider.swift` | Keychain-persisted PIN failure counter, lockout level, lockout window timestamps; clock-rollback detection. |
 | `Modules/logic-business/Sources/Controller/KeyChainController.swift` | Defines Keychain service, access group, accessibility class, and biometric Keychain validation. |
@@ -1451,6 +1452,15 @@ Biometric validation key:
   authenticationPolicy: [.biometryAny]
 )
 ```
+
+A biometric unlock first has the system evaluate `.deviceOwnerAuthenticationWithBiometrics` on a new
+`LAContext`, then writes this item with a fresh value and reads it back with the evaluated context, so the
+user sees one prompt. The unlock fails when the evaluation fails or returns `false`, when the item is
+missing, or when it holds another value (`SystemBiometryController`, `KeyChainController`). A failed
+write of the item fails it too. The prompt offers no device-passcode button (`localizedFallbackTitle` is
+empty): the wallet PIN is the fallback. The item is written again at every unlock under `.biometryAny`, so
+a change in biometric enrolment is not detected; that needs `.biometryCurrentSet` or a stored
+`evaluatedPolicyDomainState`.
 
 Production decisions:
 

@@ -410,6 +410,7 @@ in the theme. If you rename the product, search the catalog for `EUDI`/`Wallet` 
 * `my_eu_wallet` ("My EU Wallet") — side-menu / navigation title.
 * `wallet_is_secured` ("Your wallet is secured!") — success copy.
 * `login_caption` / `login_caption_quick_pin_only` ("…access the EUDI Wallet…") — login auth prompts.
+  The system biometric prompt shows `biometry_unlock_reason`, which names no product.
 * `add_document_subtitle`, `add_documents_to_wallet`, `issuer_want_wallet_addition`,
   `request_data_no_document` — issuance/presentation copy.
 

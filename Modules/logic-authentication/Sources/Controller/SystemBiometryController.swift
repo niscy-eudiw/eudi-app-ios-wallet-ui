@@ -16,6 +16,7 @@
 
 @preconcurrency import LocalAuthentication
 import logic_business
+import logic_resources
 import UIKit
 
 public enum SystemBiometryError: Error, LocalizedError, Identifiable, Sendable {
@@ -55,13 +56,18 @@ public protocol SystemBiometryController: Sendable {
 final actor SystemBiometryControllerImpl: SystemBiometryController {
 
   private let context: LAContext
+  private let evaluationContextProvider: @Sendable () -> LAContext
   private let keyChainController: KeyChainController
 
+  /// - Parameter evaluationContextProvider: Creates the context for each unlock attempt. A context that
+  ///   has evaluated once keeps succeeding without a prompt, so it is never reused.
   public init(
     context: LAContext = LAContext(),
+    evaluationContextProvider: @escaping @Sendable () -> LAContext = { LAContext() },
     keyChainController: KeyChainController
   ) {
     self.context = context
+    self.evaluationContextProvider = evaluationContextProvider
     self.keyChainController = keyChainController
   }
 
@@ -73,12 +79,26 @@ final actor SystemBiometryControllerImpl: SystemBiometryController {
     context.biometryType
   }
 
+  /// Succeeds only after the system has evaluated the biometric policy on a new context and the
+  /// keychain probe has been read with that context. The system's passcode fallback is hidden, as
+  /// on the keychain prompt this replaces; the wallet PIN is the fallback.
   public func requestBiometricUnlock() async throws {
 
     try canEvaluateForBiometrics()
 
+    let evaluationContext = evaluationContextProvider()
+    evaluationContext.localizedFallbackTitle = ""
+    defer { evaluationContext.invalidate() }
+
     do {
-      try keyChainController.validateKeyChainBiometry()
+      let isAuthenticated = try await evaluationContext.evaluatePolicy(
+        .deviceOwnerAuthenticationWithBiometrics,
+        localizedReason: LocalizableStringKey.biometryUnlockReason.toString
+      )
+      guard isAuthenticated else {
+        throw SystemBiometryError.biometricError
+      }
+      try keyChainController.validateKeyChainBiometry(with: evaluationContext)
     } catch {
       keyChainController.clearKeyChainBiometry()
       throw SystemBiometryError.biometricError

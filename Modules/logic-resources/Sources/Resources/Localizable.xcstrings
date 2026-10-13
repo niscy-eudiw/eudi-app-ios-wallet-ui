@@ -188,6 +188,17 @@
         }
       }
     },
+    "biometry_unlock_reason" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verify your identity to continue"
+          }
+        }
+      }
+    },
     "ble_disabled_modal_button" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1386,6 +1397,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Just now"
+          }
+        }
+      }
+    },
+    "key_chain_read_error" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The wallet could not read its protected data. Unlock your device and try again."
           }
         }
       }

@@ -15,6 +15,7 @@
  */
 import Foundation
 import Security
+@preconcurrency import LocalAuthentication
 @preconcurrency import KeychainAccess
 
 public protocol KeyChainWrapper {
@@ -27,7 +28,10 @@ public protocol KeyChainController: Sendable {
   func getValue(key: KeyChainWrapper) -> String?
   func getData(key: KeyChainWrapper) -> Data?
   func removeObject(key: KeyChainWrapper)
-  func validateKeyChainBiometry() throws
+  /// Writes the biometry probe with a fresh value and reads it back with `context`, which has already
+  /// evaluated the biometric policy, so the read does not prompt again. A missing item or another value
+  /// throws `KeyChainError.itemNotFound`.
+  func validateKeyChainBiometry(with context: LAContext) throws
   func clearKeyChainBiometry()
   @discardableResult func clear() -> Bool
 }
@@ -69,9 +73,10 @@ final class KeyChainControllerImpl: KeyChainController {
     try? keyChain.remove(key.value)
   }
 
-  public func validateKeyChainBiometry() throws {
-    try setBiometricKey()
-    try isBiometricKeyValid()
+  public func validateKeyChainBiometry(with context: LAContext) throws {
+    let value = UUID().uuidString
+    try setBiometricKey(value: value)
+    try isBiometricKeyValid(value: value, context: context)
   }
 
   public func clearKeyChainBiometry() {
@@ -99,22 +104,36 @@ private extension KeyChainControllerImpl {
     return status == errSecSuccess || status == errSecItemNotFound
   }
 
-  func setBiometricKey() throws {
+  func setBiometricKey(value: String) throws {
     try self.keyChain
       .accessibility(
         .whenPasscodeSetThisDeviceOnly,
         authenticationPolicy: [.biometryAny]
       )
-      .set(UUID().uuidString, key: self.biometryKey)
+      .set(value, key: self.biometryKey)
   }
 
-  func isBiometricKeyValid() throws {
+  func isBiometricKeyValid(value: String, context: LAContext) throws {
 
     let item = try self.keyChain
+      .authenticationContext(context)
       .get(self.biometryKey)
 
     if item != nil {
       clearKeyChainBiometry()
+    }
+
+    try Self.validateBiometricItem(item, value: value)
+  }
+}
+
+extension KeyChainControllerImpl {
+
+  /// Accepts the biometry probe only when the keychain returned the value just written; a missing
+  /// item fails. Internal so that unit tests can check the rule without a biometry-protected item.
+  static func validateBiometricItem(_ item: String?, value: String) throws {
+    guard let item, item == value else {
+      throw KeyChainError.itemNotFound
     }
   }
 }
