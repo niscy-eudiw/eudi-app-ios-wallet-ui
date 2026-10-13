@@ -23,10 +23,10 @@ public enum QuickPinPartialState: Sendable {
 public protocol QuickPinInteractor: Sendable {
   var maxFailedPinAttempts: Int { get }
 
-  func setPin(newPin: String) async
+  func setPin(newPin: String) async -> QuickPinPartialState
   func isPinValid(pin: String) async -> QuickPinPartialState
   func changePin(currentPin: String, newPin: String) async -> QuickPinPartialState
-  func hasPin() async -> Bool
+  func hasPin() async throws -> Bool
 
   func getPinLockoutState() async -> PinLockoutState
   func recordPinFailure() async -> PinLockoutState
@@ -52,8 +52,13 @@ final actor QuickPinInteractorImpl: QuickPinInteractor {
     self.maxFailedPinAttempts = authenticationConfig.maxFailedPinAttempts
   }
 
-  public func setPin(newPin: String) {
-    pinStorageController.setPin(with: newPin)
+  public func setPin(newPin: String) -> QuickPinPartialState {
+    do {
+      try pinStorageController.setPin(with: newPin)
+      return .success
+    } catch {
+      return .failure(error)
+    }
   }
 
   public func isPinValid(pin: String) -> QuickPinPartialState {
@@ -66,15 +71,14 @@ final actor QuickPinInteractorImpl: QuickPinInteractor {
 
   public func changePin(currentPin: String, newPin: String) -> QuickPinPartialState {
     if self.isCurrentPinValid(pin: currentPin) {
-      self.setPin(newPin: newPin)
-      return .success
+      return self.setPin(newPin: newPin)
     } else {
       return .failure(AuthenticationError.quickPinInvalid)
     }
   }
 
-  public func hasPin() -> Bool {
-    pinStorageController.hasPin()
+  public func hasPin() throws -> Bool {
+    try pinStorageController.hasPin()
   }
 
   public func getPinLockoutState() -> PinLockoutState {

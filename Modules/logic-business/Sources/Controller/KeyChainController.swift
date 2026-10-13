@@ -27,6 +27,16 @@ public protocol KeyChainController: Sendable {
   func storeValue(key: KeyChainWrapper, value: Data)
   func getValue(key: KeyChainWrapper) -> String?
   func getData(key: KeyChainWrapper) -> Data?
+  /// Reads a string, telling a missing item (`nil`) apart from a failed read, which throws
+  /// `KeyChainError.readFailed`.
+  func fetchValue(key: KeyChainWrapper) throws -> String?
+  /// Reads data, telling a missing item (`nil`) apart from a failed read, which throws
+  /// `KeyChainError.readFailed`.
+  func fetchData(key: KeyChainWrapper) throws -> Data?
+  /// Writes a string; a failed write, which `storeValue` ignores, throws `KeyChainError.writeFailed`.
+  func saveValue(key: KeyChainWrapper, value: String) throws
+  /// Writes data; a failed write, which `storeValue` ignores, throws `KeyChainError.writeFailed`.
+  func saveValue(key: KeyChainWrapper, value: Data) throws
   func removeObject(key: KeyChainWrapper)
   /// Writes the biometry probe with a fresh value and reads it back with `context`, which has already
   /// evaluated the biometric policy, so the read does not prompt again. A missing item or another value
@@ -69,6 +79,38 @@ final class KeyChainControllerImpl: KeyChainController {
     try? keyChain.getData(key.value)
   }
 
+  public func fetchValue(key: KeyChainWrapper) throws -> String? {
+    do {
+      return try keyChain.getString(key.value)
+    } catch {
+      throw KeyChainError.readFailed(status: keyChainStatus(of: error))
+    }
+  }
+
+  public func fetchData(key: KeyChainWrapper) throws -> Data? {
+    do {
+      return try keyChain.getData(key.value)
+    } catch {
+      throw KeyChainError.readFailed(status: keyChainStatus(of: error))
+    }
+  }
+
+  public func saveValue(key: KeyChainWrapper, value: String) throws {
+    do {
+      try keyChain.set(value, key: key.value)
+    } catch {
+      throw KeyChainError.writeFailed(status: keyChainStatus(of: error))
+    }
+  }
+
+  public func saveValue(key: KeyChainWrapper, value: Data) throws {
+    do {
+      try keyChain.set(value, key: key.value)
+    } catch {
+      throw KeyChainError.writeFailed(status: keyChainStatus(of: error))
+    }
+  }
+
   public func removeObject(key: KeyChainWrapper) {
     try? keyChain.remove(key.value)
   }
@@ -91,6 +133,11 @@ final class KeyChainControllerImpl: KeyChainController {
 }
 
 private extension KeyChainControllerImpl {
+  /// The keychain status a KeychainAccess error carries, or `errSecInternalError` for any other error.
+  func keyChainStatus(of error: Error) -> OSStatus {
+    (error as? Status)?.rawValue ?? errSecInternalError
+  }
+
   func clearDocumentStorage() -> Bool {
     var query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,

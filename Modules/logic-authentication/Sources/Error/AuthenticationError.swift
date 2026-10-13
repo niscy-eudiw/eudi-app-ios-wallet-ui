@@ -19,11 +19,14 @@ import logic_resources
 public enum AuthenticationError: LocalizedError {
 
   case quickPinInvalid
+  case pinNotFound
 
   public var errorDescription: String? {
     return switch self {
     case .quickPinInvalid:
       LocalizableStringKey.invalidQuickPin.toString
+    case .pinNotFound:
+      LocalizableStringKey.pinNotFoundError.toString
     }
   }
 }

@@ -60,11 +60,53 @@ final class TestQuickPinInteractor: EudiTest {
     }
     
     // When
-    await interactor.setPin(newPin: pin)
+    let state = await interactor.setPin(newPin: pin)
     
     // Then
     verify(pinStorageController).setPin(with: pin)
-    
+    guard case .success = state else {
+      return XCTFail("Wrong state \(state)")
+    }
+  }
+
+  func testSetPin_WhenStorageWriteFails_ThenReturnPartialStateFailure() async {
+    stub(pinStorageController) { mock in
+      when(mock.setPin(with: any())).thenThrow(KeyChainError.writeFailed(status: errSecNotAvailable))
+    }
+
+    let state = await interactor.setPin(newPin: "1234")
+
+    guard case .failure(let error) = state else {
+      return XCTFail("Wrong state \(state)")
+    }
+    XCTAssertEqual(error as? KeyChainError, .writeFailed(status: errSecNotAvailable))
+  }
+
+  func testChangePin_WhenStorageWriteFails_ThenReturnPartialStateFailure() async {
+    stub(pinStorageController) { mock in
+      when(mock.isPinValid(with: any())).thenReturn(true)
+      when(mock.setPin(with: any())).thenThrow(KeyChainError.writeFailed(status: errSecNotAvailable))
+    }
+
+    let state = await interactor.changePin(currentPin: "1234", newPin: "4321")
+
+    guard case .failure(let error) = state else {
+      return XCTFail("Wrong state \(state)")
+    }
+    XCTAssertEqual(error as? KeyChainError, .writeFailed(status: errSecNotAvailable))
+  }
+
+  func testHasPin_WhenStorageReadFails_ThenThrowsTheStorageError() async {
+    stub(pinStorageController) { mock in
+      when(mock.hasPin()).thenThrow(KeyChainError.readFailed(status: errSecInteractionNotAllowed))
+    }
+
+    do {
+      _ = try await interactor.hasPin()
+      XCTFail("Expected hasPin to throw")
+    } catch {
+      XCTAssertEqual(error as? KeyChainError, .readFailed(status: errSecInteractionNotAllowed))
+    }
   }
   
   func testIsPinValid_WhenStoredAndProvidedPinsMatch_ThenReturnPartialStateSuccess() async {
@@ -107,7 +149,7 @@ final class TestQuickPinInteractor: EudiTest {
     }
   }
   
-  func testHasPin_WhenThereIsAStoredPin_ThenReturnTrue() async {
+  func testHasPin_WhenThereIsAStoredPin_ThenReturnTrue() async throws {
     
     // Given
     stub(pinStorageController) { mock in
@@ -115,13 +157,13 @@ final class TestQuickPinInteractor: EudiTest {
     }
     
     // When
-    let answer = await interactor.hasPin()
+    let answer = try await interactor.hasPin()
     
     // Then
     XCTAssertTrue(answer)
   }
   
-  func testHasPin_WhenThereIsNoStoredPin_ThenReturnFalse() async {
+  func testHasPin_WhenThereIsNoStoredPin_ThenReturnFalse() async throws {
     
     // Given
     stub(pinStorageController) { mock in
@@ -129,7 +171,7 @@ final class TestQuickPinInteractor: EudiTest {
     }
     
     // When
-    let answer = await interactor.hasPin()
+    let answer = try await interactor.hasPin()
     
     // Then
     XCTAssertFalse(answer)

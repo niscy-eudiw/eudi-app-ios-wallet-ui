@@ -213,6 +213,7 @@ Keep these files under strict review:
 | `Modules/logic-core/Sources/Controller/WalletKitController.swift` | Constructs `EudiWallet`, wires WalletKit config, starts presentation, issuance, revocation, logging, and document registration. |
 | `Modules/logic-authentication/Sources/Storage/KeychainPinStorageProvider.swift` | Defines PIN hashing, salt, PBKDF2 iteration count, and constant-time comparison. |
 | `Modules/logic-authentication/Sources/Controller/SystemBiometryController.swift` | Biometric unlock: the policy evaluated on a fresh `LAContext` and the Keychain probe read with it. |
+| `Modules/feature-startup/Sources/Interactor/StartupInteractor.swift` | The start-up gate: login, PIN creation only for a wallet without documents, or an error. |
 | `Modules/logic-authentication/Sources/Config/AuthenticationConfig.swift` | PIN lockout policy (max failed attempts, escalating lockout durations). |
 | `Modules/logic-authentication/Sources/Storage/KeychainPinThrottleProvider.swift` | Keychain-persisted PIN failure counter, lockout level, lockout window timestamps; clock-rollback detection. |
 | `Modules/logic-business/Sources/Controller/KeyChainController.swift` | Defines Keychain service, access group, accessibility class, and biometric Keychain validation. |
@@ -1482,6 +1483,24 @@ Current PIN storage uses:
 * Constant-time comparison.
 * Keychain storage for salt, hash, and iteration count.
 
+The start-up gate fails closed:
+
+* A Keychain read that fails is reported (`KeyChainError.readFailed`), never taken for a missing PIN.
+  The start-up screen then shows an error with "Try again" instead of PIN creation.
+* PIN creation is offered only when the PIN record is absent and the wallet loaded its documents and
+  found none. With documents present, or when they cannot be loaded, the app shows an error instead.
+  The reference app offers no recovery from that state other than reinstalling. The Keychain survives
+  an uninstall; on the first launch after a reinstall the app deletes every document and its own
+  Keychain items (`StartupInteractor.manageStorageForFirstRun()`).
+* `setPin` writes the salt, hash and iteration count with their status checked. When a write fails it
+  puts back the previous record, or removes the partial one, and reports the error; the PIN screen
+  shows it. If putting the previous record back fails as well, all three items are removed; that
+  removal reports no error, so a failure there can still leave a mix. The three writes are not one
+  transaction. A process killed between them while the first PIN is set leaves a partial record,
+  which the gate treats as no PIN. Killed during a PIN change, after the salt and before the hash,
+  it leaves the new salt beside the old hash: a complete record that no PIN matches, so the user is
+  locked out until biometrics unlock the wallet or it is reinstalled.
+
 Production tasks:
 
 * Confirm PIN length, complexity, and retry UX.
@@ -1640,7 +1659,7 @@ Production decisions:
 | Device credential fallback | Decide whether passcode fallback is allowed. |
 | Biometric enrollment change | Test and define whether access is invalidated when biometrics change. |
 | High-risk operation step-up | Require re-authentication before issuance, presentation, RQES signing, reset, or document deletion where policy requires it. |
-| Recovery | Define user-facing recovery and reset policy. |
+| Recovery | Define user-facing recovery and reset policy. The reference app fails closed at start-up when the PIN record cannot be read, or when it is missing while documents exist or cannot be loaded; see [PIN Storage](#pin-storage). |
 
 ## Analytics And Telemetry
 
@@ -2213,6 +2232,8 @@ profiles, including the extension.
 Before release candidate approval, test:
 
 * First launch.
+* Start-up with the PIN record unreadable (device locked), and with documents but no PIN record: an
+  error with "Try again", never PIN creation.
 * PIN creation.
 * PIN change.
 * Incorrect PIN attempts and lockout.

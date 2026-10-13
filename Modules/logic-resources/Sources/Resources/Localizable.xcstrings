@@ -1412,6 +1412,17 @@
         }
       }
     },
+    "key_chain_write_error" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The wallet could not save its protected data. Try again."
+          }
+        }
+      }
+    },
     "learn_more" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1686,6 +1697,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PID Combined"
+          }
+        }
+      }
+    },
+    "pin_not_found_error" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The wallet's PIN could not be found, so the wallet cannot be opened."
           }
         }
       }

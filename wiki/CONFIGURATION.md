@@ -652,11 +652,11 @@ final class KeychainPinStorageProvider: PinStorageProvider {
     self.keyChainController = keyChainController
   }
 
-  func hasPin() -> Bool {
+  func hasPin() throws -> Bool {
     // Implementation
   }
 
-  func setPin(with pin: String) {
+  func setPin(with pin: String) throws {
     // Implementation
   }
 
@@ -674,6 +674,14 @@ container.register(PinStorageProvider.self) { r in
 }
 .inObjectScope(ObjectScope.graph)
 ```
+
+`hasPin()` must throw when the record cannot be read and return `false` only when there is no complete
+record, a partial one included: the start-up gate offers PIN creation only on `false`, and only for a
+wallet whose documents loaded and were none. `setPin(with:)` must write the whole record or leave the
+previous one (or none), and throw when it cannot. Read and write through `KeyChainController.fetchData`,
+`fetchValue` and `saveValue`, which throw `KeyChainError`; `getData`, `getValue` and `storeValue` discard
+the status. A process killed between the writes is not covered; see GO_LIVE
+[PIN Storage](GO_LIVE.md#pin-storage).
 
 The PIN storage layer handles hashing, persistence, and validation. Brute-force protection (failure counting, escalating lockouts) is a separate concern handled by `PinThrottleController` — see [PIN throttle configuration](#pin-throttle-configuration).
 

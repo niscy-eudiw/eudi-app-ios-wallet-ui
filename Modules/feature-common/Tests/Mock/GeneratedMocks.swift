@@ -612,9 +612,9 @@ public class MockQuickPinInteractor: QuickPinInteractor, Cuckoo.ProtocolMock, @u
     }
 
 
-    public func setPin(newPin p0: String) async {
+    public func setPin(newPin p0: String) async -> QuickPinPartialState {
         return await cuckoo_manager.call(
-            "setPin(newPin p0: String) async",
+            "setPin(newPin p0: String) async -> QuickPinPartialState",
             parameters: (p0),
             escapingParameters: (p0),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
@@ -642,11 +642,12 @@ public class MockQuickPinInteractor: QuickPinInteractor, Cuckoo.ProtocolMock, @u
         )
     }
 
-    public func hasPin() async -> Bool {
-        return await cuckoo_manager.call(
-            "hasPin() async -> Bool",
+    public func hasPin() async throws -> Bool {
+        return try await cuckoo_manager.callThrows(
+            "hasPin() async throws -> Bool",
             parameters: (),
             escapingParameters: (),
+            errorType: Swift.Error.self,
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
             defaultCall: await __defaultImplStub!.hasPin()
         )
@@ -693,10 +694,10 @@ public class MockQuickPinInteractor: QuickPinInteractor, Cuckoo.ProtocolMock, @u
             return .init(manager: cuckoo_manager, name: "maxFailedPinAttempts")
         }
         
-        func setPin<M1: Cuckoo.Matchable>(newPin p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(String)> where M1.MatchedType == String {
+        func setPin<M1: Cuckoo.Matchable>(newPin p0: M1) -> Cuckoo.ProtocolStubFunction<(String), QuickPinPartialState> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockQuickPinInteractor.self,
-                method: "setPin(newPin p0: String) async",
+                method: "setPin(newPin p0: String) async -> QuickPinPartialState",
                 parameterMatchers: matchers
             ))
         }
@@ -717,10 +718,10 @@ public class MockQuickPinInteractor: QuickPinInteractor, Cuckoo.ProtocolMock, @u
             ))
         }
         
-        func hasPin() -> Cuckoo.ProtocolStubFunction<(), Bool> {
+        func hasPin() -> Cuckoo.ProtocolStubThrowingFunction<(), Bool,Swift.Error> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockQuickPinInteractor.self,
-                method: "hasPin() async -> Bool",
+                method: "hasPin() async throws -> Bool",
                 parameterMatchers: matchers
             ))
         }
@@ -767,10 +768,10 @@ public class MockQuickPinInteractor: QuickPinInteractor, Cuckoo.ProtocolMock, @u
         
         
         @discardableResult
-        func setPin<M1: Cuckoo.Matchable>(newPin p0: M1) -> Cuckoo.__DoNotUse<(String), Void> where M1.MatchedType == String {
+        func setPin<M1: Cuckoo.Matchable>(newPin p0: M1) -> Cuckoo.__DoNotUse<(String), QuickPinPartialState> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
-                "setPin(newPin p0: String) async",
+                "setPin(newPin p0: String) async -> QuickPinPartialState",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -806,7 +807,7 @@ public class MockQuickPinInteractor: QuickPinInteractor, Cuckoo.ProtocolMock, @u
         func hasPin() -> Cuckoo.__DoNotUse<(), Bool> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "hasPin() async -> Bool",
+                "hasPin() async throws -> Bool",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -861,8 +862,8 @@ public class QuickPinInteractorStub:QuickPinInteractor, @unchecked Sendable {
 
 
     
-    public func setPin(newPin p0: String) async {
-        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    public func setPin(newPin p0: String) async -> QuickPinPartialState {
+        return DefaultValueRegistry.defaultValue(for: (QuickPinPartialState).self)
     }
     
     public func isPinValid(pin p0: String) async -> QuickPinPartialState {
@@ -873,7 +874,7 @@ public class QuickPinInteractorStub:QuickPinInteractor, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (QuickPinPartialState).self)
     }
     
-    public func hasPin() async -> Bool {
+    public func hasPin() async throws -> Bool {
         return DefaultValueRegistry.defaultValue(for: (Bool).self)
     }
     
@@ -2733,21 +2734,23 @@ public class MockPinStorageController: PinStorageController, Cuckoo.ProtocolMock
     }
 
 
-    public func hasPin() -> Bool {
-        return cuckoo_manager.call(
-            "hasPin() -> Bool",
+    public func hasPin() throws -> Bool {
+        return try cuckoo_manager.callThrows(
+            "hasPin() throws -> Bool",
             parameters: (),
             escapingParameters: (),
+            errorType: Swift.Error.self,
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
             defaultCall: __defaultImplStub!.hasPin()
         )
     }
 
-    public func setPin(with p0: String) {
-        return cuckoo_manager.call(
-            "setPin(with p0: String)",
+    public func setPin(with p0: String) throws {
+        return try cuckoo_manager.callThrows(
+            "setPin(with p0: String) throws",
             parameters: (p0),
             escapingParameters: (p0),
+            errorType: Swift.Error.self,
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
             defaultCall: __defaultImplStub!.setPin(with: p0)
         )
@@ -2770,18 +2773,18 @@ public class MockPinStorageController: PinStorageController, Cuckoo.ProtocolMock
             self.cuckoo_manager = manager
         }
         
-        func hasPin() -> Cuckoo.ProtocolStubFunction<(), Bool> {
+        func hasPin() -> Cuckoo.ProtocolStubThrowingFunction<(), Bool,Swift.Error> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockPinStorageController.self,
-                method: "hasPin() -> Bool",
+                method: "hasPin() throws -> Bool",
                 parameterMatchers: matchers
             ))
         }
         
-        func setPin<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(String)> where M1.MatchedType == String {
+        func setPin<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubNoReturnThrowingFunction<(String),Swift.Error> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockPinStorageController.self,
-                method: "setPin(with p0: String)",
+                method: "setPin(with p0: String) throws",
                 parameterMatchers: matchers
             ))
         }
@@ -2811,7 +2814,7 @@ public class MockPinStorageController: PinStorageController, Cuckoo.ProtocolMock
         func hasPin() -> Cuckoo.__DoNotUse<(), Bool> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "hasPin() -> Bool",
+                "hasPin() throws -> Bool",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -2823,7 +2826,7 @@ public class MockPinStorageController: PinStorageController, Cuckoo.ProtocolMock
         func setPin<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(String), Void> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
-                "setPin(with p0: String)",
+                "setPin(with p0: String) throws",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -2848,11 +2851,11 @@ public class PinStorageControllerStub:PinStorageController, @unchecked Sendable 
 
 
     
-    public func hasPin() -> Bool {
+    public func hasPin() throws -> Bool {
         return DefaultValueRegistry.defaultValue(for: (Bool).self)
     }
     
-    public func setPin(with p0: String) {
+    public func setPin(with p0: String) throws {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
@@ -3229,21 +3232,23 @@ class MockPinStorageProvider: PinStorageProvider, Cuckoo.ProtocolMock, @unchecke
     }
 
 
-    func hasPin() -> Bool {
-        return cuckoo_manager.call(
-            "hasPin() -> Bool",
+    func hasPin() throws -> Bool {
+        return try cuckoo_manager.callThrows(
+            "hasPin() throws -> Bool",
             parameters: (),
             escapingParameters: (),
+            errorType: Swift.Error.self,
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
             defaultCall: __defaultImplStub!.hasPin()
         )
     }
 
-    func setPin(with p0: String) {
-        return cuckoo_manager.call(
-            "setPin(with p0: String)",
+    func setPin(with p0: String) throws {
+        return try cuckoo_manager.callThrows(
+            "setPin(with p0: String) throws",
             parameters: (p0),
             escapingParameters: (p0),
+            errorType: Swift.Error.self,
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
             defaultCall: __defaultImplStub!.setPin(with: p0)
         )
@@ -3266,18 +3271,18 @@ class MockPinStorageProvider: PinStorageProvider, Cuckoo.ProtocolMock, @unchecke
             self.cuckoo_manager = manager
         }
         
-        func hasPin() -> Cuckoo.ProtocolStubFunction<(), Bool> {
+        func hasPin() -> Cuckoo.ProtocolStubThrowingFunction<(), Bool,Swift.Error> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockPinStorageProvider.self,
-                method: "hasPin() -> Bool",
+                method: "hasPin() throws -> Bool",
                 parameterMatchers: matchers
             ))
         }
         
-        func setPin<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(String)> where M1.MatchedType == String {
+        func setPin<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubNoReturnThrowingFunction<(String),Swift.Error> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockPinStorageProvider.self,
-                method: "setPin(with p0: String)",
+                method: "setPin(with p0: String) throws",
                 parameterMatchers: matchers
             ))
         }
@@ -3307,7 +3312,7 @@ class MockPinStorageProvider: PinStorageProvider, Cuckoo.ProtocolMock, @unchecke
         func hasPin() -> Cuckoo.__DoNotUse<(), Bool> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "hasPin() -> Bool",
+                "hasPin() throws -> Bool",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -3319,7 +3324,7 @@ class MockPinStorageProvider: PinStorageProvider, Cuckoo.ProtocolMock, @unchecke
         func setPin<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(String), Void> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
-                "setPin(with p0: String)",
+                "setPin(with p0: String) throws",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -3344,11 +3349,11 @@ class PinStorageProviderStub:PinStorageProvider, @unchecked Sendable {
 
 
     
-    func hasPin() -> Bool {
+    func hasPin() throws -> Bool {
         return DefaultValueRegistry.defaultValue(for: (Bool).self)
     }
     
-    func setPin(with p0: String) {
+    func setPin(with p0: String) throws {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
@@ -3943,6 +3948,50 @@ public class MockKeyChainController: KeyChainController, Cuckoo.ProtocolMock, @u
         )
     }
 
+    public func fetchValue(key p0: KeyChainWrapper) throws -> String? {
+        return try cuckoo_manager.callThrows(
+            "fetchValue(key p0: KeyChainWrapper) throws -> String?",
+            parameters: (p0),
+            escapingParameters: (p0),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.fetchValue(key: p0)
+        )
+    }
+
+    public func fetchData(key p0: KeyChainWrapper) throws -> Data? {
+        return try cuckoo_manager.callThrows(
+            "fetchData(key p0: KeyChainWrapper) throws -> Data?",
+            parameters: (p0),
+            escapingParameters: (p0),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.fetchData(key: p0)
+        )
+    }
+
+    public func saveValue(key p0: KeyChainWrapper, value p1: String) throws {
+        return try cuckoo_manager.callThrows(
+            "saveValue(key p0: KeyChainWrapper, value p1: String) throws",
+            parameters: (p0, p1),
+            escapingParameters: (p0, p1),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.saveValue(key: p0, value: p1)
+        )
+    }
+
+    public func saveValue(key p0: KeyChainWrapper, value p1: Data) throws {
+        return try cuckoo_manager.callThrows(
+            "saveValue(key p0: KeyChainWrapper, value p1: Data) throws",
+            parameters: (p0, p1),
+            escapingParameters: (p0, p1),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.saveValue(key: p0, value: p1)
+        )
+    }
+
     public func removeObject(key p0: KeyChainWrapper) {
         return cuckoo_manager.call(
             "removeObject(key p0: KeyChainWrapper)",
@@ -4019,6 +4068,38 @@ public class MockKeyChainController: KeyChainController, Cuckoo.ProtocolMock, @u
             let matchers: [Cuckoo.ParameterMatcher<(KeyChainWrapper)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockKeyChainController.self,
                 method: "getData(key p0: KeyChainWrapper) -> Data?",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func fetchValue<M1: Cuckoo.Matchable>(key p0: M1) -> Cuckoo.ProtocolStubThrowingFunction<(KeyChainWrapper), String?,Swift.Error> where M1.MatchedType == KeyChainWrapper {
+            let matchers: [Cuckoo.ParameterMatcher<(KeyChainWrapper)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockKeyChainController.self,
+                method: "fetchValue(key p0: KeyChainWrapper) throws -> String?",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func fetchData<M1: Cuckoo.Matchable>(key p0: M1) -> Cuckoo.ProtocolStubThrowingFunction<(KeyChainWrapper), Data?,Swift.Error> where M1.MatchedType == KeyChainWrapper {
+            let matchers: [Cuckoo.ParameterMatcher<(KeyChainWrapper)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockKeyChainController.self,
+                method: "fetchData(key p0: KeyChainWrapper) throws -> Data?",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func saveValue<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(key p0: M1, value p1: M2) -> Cuckoo.ProtocolStubNoReturnThrowingFunction<(KeyChainWrapper, String),Swift.Error> where M1.MatchedType == KeyChainWrapper, M2.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(KeyChainWrapper, String)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockKeyChainController.self,
+                method: "saveValue(key p0: KeyChainWrapper, value p1: String) throws",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func saveValue<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(key p0: M1, value p1: M2) -> Cuckoo.ProtocolStubNoReturnThrowingFunction<(KeyChainWrapper, Data),Swift.Error> where M1.MatchedType == KeyChainWrapper, M2.MatchedType == Data {
+            let matchers: [Cuckoo.ParameterMatcher<(KeyChainWrapper, Data)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockKeyChainController.self,
+                method: "saveValue(key p0: KeyChainWrapper, value p1: Data) throws",
                 parameterMatchers: matchers
             ))
         }
@@ -4117,6 +4198,54 @@ public class MockKeyChainController: KeyChainController, Cuckoo.ProtocolMock, @u
         
         
         @discardableResult
+        func fetchValue<M1: Cuckoo.Matchable>(key p0: M1) -> Cuckoo.__DoNotUse<(KeyChainWrapper), String?> where M1.MatchedType == KeyChainWrapper {
+            let matchers: [Cuckoo.ParameterMatcher<(KeyChainWrapper)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "fetchValue(key p0: KeyChainWrapper) throws -> String?",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func fetchData<M1: Cuckoo.Matchable>(key p0: M1) -> Cuckoo.__DoNotUse<(KeyChainWrapper), Data?> where M1.MatchedType == KeyChainWrapper {
+            let matchers: [Cuckoo.ParameterMatcher<(KeyChainWrapper)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "fetchData(key p0: KeyChainWrapper) throws -> Data?",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func saveValue<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(key p0: M1, value p1: M2) -> Cuckoo.__DoNotUse<(KeyChainWrapper, String), Void> where M1.MatchedType == KeyChainWrapper, M2.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(KeyChainWrapper, String)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
+            return cuckoo_manager.verify(
+                "saveValue(key p0: KeyChainWrapper, value p1: String) throws",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func saveValue<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(key p0: M1, value p1: M2) -> Cuckoo.__DoNotUse<(KeyChainWrapper, Data), Void> where M1.MatchedType == KeyChainWrapper, M2.MatchedType == Data {
+            let matchers: [Cuckoo.ParameterMatcher<(KeyChainWrapper, Data)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
+            return cuckoo_manager.verify(
+                "saveValue(key p0: KeyChainWrapper, value p1: Data) throws",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
         func removeObject<M1: Cuckoo.Matchable>(key p0: M1) -> Cuckoo.__DoNotUse<(KeyChainWrapper), Void> where M1.MatchedType == KeyChainWrapper {
             let matchers: [Cuckoo.ParameterMatcher<(KeyChainWrapper)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
@@ -4183,6 +4312,22 @@ public class KeyChainControllerStub:KeyChainController, @unchecked Sendable {
     
     public func getData(key p0: KeyChainWrapper) -> Data? {
         return DefaultValueRegistry.defaultValue(for: (Data?).self)
+    }
+    
+    public func fetchValue(key p0: KeyChainWrapper) throws -> String? {
+        return DefaultValueRegistry.defaultValue(for: (String?).self)
+    }
+    
+    public func fetchData(key p0: KeyChainWrapper) throws -> Data? {
+        return DefaultValueRegistry.defaultValue(for: (Data?).self)
+    }
+    
+    public func saveValue(key p0: KeyChainWrapper, value p1: String) throws {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func saveValue(key p0: KeyChainWrapper, value p1: Data) throws {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
     public func removeObject(key p0: KeyChainWrapper) {

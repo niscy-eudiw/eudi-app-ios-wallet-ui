@@ -20,11 +20,15 @@ import logic_resources
 public enum KeyChainError: LocalizedError, Equatable {
 
   case itemNotFound
+  case readFailed(status: OSStatus)
+  case writeFailed(status: OSStatus)
 
   public var errorDescription: String? {
     return switch self {
-    case .itemNotFound:
+    case .itemNotFound, .readFailed:
       LocalizableStringKey.keyChainReadError.toString
+    case .writeFailed:
+      LocalizableStringKey.keyChainWriteError.toString
     }
   }
 }

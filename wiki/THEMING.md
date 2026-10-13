@@ -535,7 +535,8 @@ Android's `ThemeManager.Builder`, and is intentionally left at `.default` in the
 * **Run both variants.** Build `Dev` and `Demo` and confirm the app icon is correct for each (the
   display name is shared by default).
 * **Screenshot the key surfaces:** splash, dashboard/home, a presentation request, the PIN screen,
-  document details, and the RQES signing flow.
+  document details, and the RQES signing flow. The start-up error alert is a system alert, which the
+  theme does not style.
 
 ## Production and accessibility checklist
 

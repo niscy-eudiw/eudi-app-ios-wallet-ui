@@ -23,10 +23,12 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case genericErrorTitle
   case genericErrorDesc
   case keyChainReadError
+  case keyChainWriteError
   case biometryOpenSettings
   case biometryConfirmRequest
   case biometryUnlockReason
   case invalidQuickPin
+  case pinNotFoundError
   case tryAgain
   case shareButton
   case cancelButton

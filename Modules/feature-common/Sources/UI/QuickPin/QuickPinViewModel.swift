@@ -297,7 +297,14 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
   }
 
   private func onSuccess() async {
-    await interactor.setPin(newPin: uiPinInputField)
+    switch await interactor.setPin(newPin: uiPinInputField) {
+    case .success:
+      break
+    case .failure(let error):
+      setState { $0.copy(pinError: .custom(error.errorMessage)) }
+      uiPinInputField = ""
+      return
+    }
 
     let visualKind: UIConfig.Success.VisualKind = viewState.config.isSetFlow ?
       .customIcon(

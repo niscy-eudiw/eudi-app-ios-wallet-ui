@@ -46,10 +46,14 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "generic_error_description")
     case .keyChainReadError:
       bundle.localizedString(forKey: "key_chain_read_error")
+    case .keyChainWriteError:
+      bundle.localizedString(forKey: "key_chain_write_error")
     case .biometryOpenSettings:
       bundle.localizedString(forKey: "biometry_open_settings")
     case .invalidQuickPin:
       bundle.localizedString(forKey: "invalid_quick_pin")
+    case .pinNotFoundError:
+      bundle.localizedString(forKey: "pin_not_found_error")
     case .tryAgain:
       bundle.localizedString(forKey: "try_again")
     case .shareButton:

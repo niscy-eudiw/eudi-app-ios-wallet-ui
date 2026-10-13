@@ -19,6 +19,55 @@ import XCTest
 
 final class TestKeyChainController: EudiTest {
 
+  private struct Key: KeyChainWrapper {
+    let value: String
+  }
+
+  var configLogic: MockConfigLogic!
+  var keyChainController: KeyChainController!
+
+  override func setUp() {
+    super.setUp()
+    self.configLogic = MockConfigLogic()
+    stub(configLogic) { mock in
+      when(mock.keyChainConfig.get).thenReturn(
+        KeyChainConfig(documentStorageServiceName: "eu.europa.ec.euidi.tests", keychainAccessGroup: "")
+      )
+    }
+    self.keyChainController = KeyChainControllerImpl(configLogic: configLogic)
+  }
+
+  override func tearDown() {
+    self.keyChainController = nil
+    self.configLogic = nil
+    super.tearDown()
+  }
+
+  /// The module test bundle has no keychain entitlement, so every keychain call fails with
+  /// `errSecMissingEntitlement`: the failed read must be reported, not taken for a missing item.
+  func testFetchValue_WhenTheKeychainRefusesTheRead_ThenThrowsReadFailedWithTheStatus() {
+    XCTAssertThrowsError(try keyChainController.fetchValue(key: Key(value: "value"))) { error in
+      XCTAssertEqual(error as? KeyChainError, .readFailed(status: errSecMissingEntitlement))
+    }
+  }
+
+  /// See `testFetchValue_WhenTheKeychainRefusesTheRead_ThenThrowsReadFailedWithTheStatus`.
+  func testFetchData_WhenTheKeychainRefusesTheRead_ThenThrowsReadFailedWithTheStatus() {
+    XCTAssertThrowsError(try keyChainController.fetchData(key: Key(value: "data"))) { error in
+      XCTAssertEqual(error as? KeyChainError, .readFailed(status: errSecMissingEntitlement))
+    }
+  }
+
+  /// See `testFetchValue_WhenTheKeychainRefusesTheRead_ThenThrowsReadFailedWithTheStatus`.
+  func testSaveValue_WhenTheKeychainRefusesTheWrite_ThenThrowsWriteFailedWithTheStatus() {
+    XCTAssertThrowsError(try keyChainController.saveValue(key: Key(value: "value"), value: "v")) { error in
+      XCTAssertEqual(error as? KeyChainError, .writeFailed(status: errSecMissingEntitlement))
+    }
+    XCTAssertThrowsError(try keyChainController.saveValue(key: Key(value: "data"), value: Data([1]))) { error in
+      XCTAssertEqual(error as? KeyChainError, .writeFailed(status: errSecMissingEntitlement))
+    }
+  }
+
   func testValidateBiometricItem_WhenItemIsMissing_ThenThrowsItemNotFound() {
     XCTAssertThrowsError(
       try KeyChainControllerImpl.validateBiometricItem(nil, value: "written")
