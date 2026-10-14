@@ -53,10 +53,12 @@ final actor DocumentDetailsInteractorImpl: DocumentDetailsInteractor {
     let revocationStatus = await walletController.getDocumentRevocationStatus(with: documentId)
     let isRevoked = revocationStatus != nil
     let hasStatusRefreshFailed = await walletController.hasStatusRefreshFailure(with: documentId)
+    let hasReIssuanceFailed = await walletController.hasReIssuanceFailure(with: documentId)
 
     let issuerDetailsCard = document?.transformToIssuerDetailsCardDataUi(
       revocationStatus: revocationStatus,
-      hasStatusRefreshFailed: hasStatusRefreshFailed
+      hasStatusRefreshFailed: hasStatusRefreshFailed,
+      hasReIssuanceFailed: hasReIssuanceFailed
     )
 
     if isBatchCounterEnabled() {
@@ -68,9 +70,17 @@ final actor DocumentDetailsInteractorImpl: DocumentDetailsInteractor {
   }
 
   /// Re-issuance can go through the issuer's sign-in from this screen, which is not a protected-flow
-  /// screen, so the session lock treats it as an external flow, as on Android.
+  /// screen, so the session lock treats it as an external flow, as on Android. A revoked, suspended or
+  /// unrecognised document is refused before anything starts at the issuer, because the new copy would
+  /// carry no revocation record and the block would be lost; so is any document whose records cannot be
+  /// read. The screen disables re-issue for a blocked document; this also covers one blocked while the
+  /// screen is open.
   func reIssueDocument(identifier: String) async -> DocumentDetailsReIssuancePartialState {
     do {
+      let blockedDocuments = try await walletController.fetchRevokedDocumentStatuses()
+      guard blockedDocuments[identifier] == nil else {
+        return .failure(WalletCoreError.documentBlocked)
+      }
       _ = try await sessionController.duringExternalFlow {
         try await walletController.reIssueDocument(
           identifier: identifier,

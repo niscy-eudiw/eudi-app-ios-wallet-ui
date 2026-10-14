@@ -69,7 +69,8 @@ final actor ReIssuanceWorkManagerImpl: ReIssuanceWorkManager {
 
   /// A revoked, suspended or unrecognised document is not re-issued, as on Android: the copy would get a
   /// new identifier and no record, which would undo the block. A failed read of the records skips the
-  /// round.
+  /// round. A round with nothing due clears the failure records too, as on Android, so that a document's
+  /// details do not keep an old "could not renew" notice.
   func checkReIssuance() async throws {
 
     let blockedDocuments = try await walletKitController.fetchRevokedDocumentStatuses()
@@ -80,7 +81,10 @@ final actor ReIssuanceWorkManagerImpl: ReIssuanceWorkManager {
       }
     }
 
-    guard !issuedDocuments.isEmpty else { return }
+    guard !issuedDocuments.isEmpty else {
+      try await removeAllFailedFromStorage()
+      return
+    }
 
     var succeed: [String] = []
     var failed: [String] = []

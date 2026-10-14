@@ -694,6 +694,17 @@
         }
       }
     },
+    "document_details_issuer_card_reissuance_failed_text" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The wallet could not renew this document automatically. Use Reissue document to try again."
+          }
+        }
+      }
+    },
     "document_details_issuer_card_status_refresh_failed_text" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -712,6 +723,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The issuer has suspended this document. It cannot be used for verification unless the issuer reinstates it."
+          }
+        }
+      }
+    },
+    "document_details_re_issue_blocked_text" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The issuer has revoked or suspended this document, so it cannot be reissued."
           }
         }
       }

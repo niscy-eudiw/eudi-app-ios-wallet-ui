@@ -46,9 +46,15 @@ struct IssuerDetailsCardView: View {
         )
       ),
       isLoading: self.isLoading,
-      expandsWhen: issuerDetails.hasStatusRefreshFailed
+      expandsWhen: issuerDetails.hasStatusRefreshFailed || issuerDetails.hasReIssuanceFailed
     ) {
       VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
+        if issuerDetails.hasReIssuanceFailed {
+          Text(LocalizableStringKey.documentDetailsIssuerCardReIssuanceFailedText)
+            .typography(Theme.shared.font.bodyMedium)
+            .foregroundStyle(Theme.shared.color.warning)
+        }
+
         if issuerDetails.hasStatusRefreshFailed {
           Text(LocalizableStringKey.documentDetailsIssuerCardStatusRefreshFailedText)
             .typography(Theme.shared.font.bodyMedium)

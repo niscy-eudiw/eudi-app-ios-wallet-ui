@@ -602,6 +602,10 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "document_details_issuer_card_suspended_message_text")
     case .documentDetailsIssuerCardStatusRefreshFailedText:
       bundle.localizedString(forKey: "document_details_issuer_card_status_refresh_failed_text")
+    case .documentDetailsIssuerCardReIssuanceFailedText:
+      bundle.localizedString(forKey: "document_details_issuer_card_reissuance_failed_text")
+    case .documentDetailsReIssueBlockedText:
+      bundle.localizedString(forKey: "document_details_re_issue_blocked_text")
     case .documentDetailsIssuerCardExpiredMessageText:
       bundle.localizedString(forKey: "document_details_issuer_card_expired_message_text")
     case .documentDetailsIssuerCardIssuedActionButtonText:

@@ -38,6 +38,9 @@ final class TestDocumentDetailsInteractor: EudiTest {
       when(mock.beginExternalFlow()).thenDoNothing()
       when(mock.endExternalFlow()).thenDoNothing()
     }
+    stub(walletKitController) { mock in
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn([:])
+    }
     self.interactor = DocumentDetailsInteractorImpl(
       walletController: walletKitController,
       prefsController: prefsController,
@@ -101,6 +104,26 @@ final class TestDocumentDetailsInteractor: EudiTest {
       XCTAssertTrue(isRevoked)
       XCTAssertEqual(issuerDocumentDetailsCard?.documentState, .suspended)
       XCTAssertEqual(issuerDocumentDetailsCard?.dateText, .documentDetailsSuspendedDocument)
+    case .failure:
+      XCTFail("Expected success, but got failure.")
+    }
+  }
+
+  func testFetchStoredDocument_WhenABackgroundRenewalFailed_ThenTheIssuerCardSaysSo() async throws {
+    let expectedDocument = Constants.createEuPidModel(credentialsUsageCounts: try .init(total: 10, remaining: 10))
+    let documentId = expectedDocument.id
+    stubFetchDocument(for: documentId, document: expectedDocument)
+    stubIsBookmarked(for: documentId, isBookmarked: false)
+    stubRevocationStatus(for: documentId, status: nil, hasReIssuanceFailed: true)
+    stubIsDocumentLowOnCredentials()
+    stubIsBatchCounterEnabled()
+
+    let result = await interactor.fetchStoredDocument(documentId: documentId)
+
+    switch result {
+    case .success(_, let issuerDocumentDetailsCard, _, _, _):
+      XCTAssertEqual(issuerDocumentDetailsCard?.hasReIssuanceFailed, true)
+      XCTAssertEqual(issuerDocumentDetailsCard?.hasStatusRefreshFailed, false)
     case .failure:
       XCTFail("Expected success, but got failure.")
     }
@@ -488,6 +511,54 @@ final class TestDocumentDetailsInteractor: EudiTest {
     verify(sessionController).endExternalFlow()
   }
 
+  func testReIssueDocument_WhenTheDocumentIsRevoked_ThenItIsRefusedBeforeTheIssuerIsContacted() async {
+    let identifier = Constants.euPidModelId
+    stub(walletKitController) { mock in
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn([identifier: .revoked])
+    }
+
+    let error = await assertReIssueRefused(identifier: identifier)
+
+    XCTAssertEqual(error as? WalletCoreError, .documentBlocked)
+  }
+
+  func testReIssueDocument_WhenTheDocumentIsSuspended_ThenItIsRefusedBeforeTheIssuerIsContacted() async {
+    let identifier = Constants.euPidModelId
+    stub(walletKitController) { mock in
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn([identifier: .suspended])
+    }
+
+    let error = await assertReIssueRefused(identifier: identifier)
+
+    XCTAssertEqual(error as? WalletCoreError, .documentBlocked)
+  }
+
+  func testReIssueDocument_WhenTheRevocationRecordsCannotBeRead_ThenItIsRefused() async {
+    let identifier = Constants.euPidModelId
+    stub(walletKitController) { mock in
+      when(mock.fetchRevokedDocumentStatuses()).thenThrow(WalletCoreError.unableFetchDocuments)
+    }
+
+    let error = await assertReIssueRefused(identifier: identifier)
+
+    XCTAssertEqual(error as? WalletCoreError, .unableFetchDocuments)
+  }
+
+  func testReIssueDocument_WhenAnotherDocumentIsBlocked_ThenThisOneIsReIssued() async {
+    let identifier = Constants.euPidModelId
+    stub(walletKitController) { mock in
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn(["another": .revoked])
+      when(mock.reIssueDocument(identifier: equal(to: identifier), isBackgroundOperation: equal(to: false)))
+        .thenReturn(Constants.issuedPendingDocument)
+    }
+
+    let result = await interactor.reIssueDocument(identifier: identifier)
+
+    guard case .success = result else {
+      return XCTFail("Expected success, got \(result)")
+    }
+  }
+
   func testReIssueDocument_WhenWalletKitControllerThrows_ThenReturnsFailure() async {
     // Given
     let identifier = "nonexistentId"
@@ -572,13 +643,31 @@ extension TestDocumentDetailsInteractor {
     }
   }
 
-  func stubRevocationStatus(for id: String, status: DocumentRevocationStatus?, hasStatusRefreshFailed: Bool = false) {
+  func stubRevocationStatus(
+    for id: String,
+    status: DocumentRevocationStatus?,
+    hasStatusRefreshFailed: Bool = false,
+    hasReIssuanceFailed: Bool = false
+  ) {
     stub(walletKitController) { stub in
       when(stub.getDocumentRevocationStatus(with: equal(to: id)))
         .thenReturn(status)
       when(stub.hasStatusRefreshFailure(with: equal(to: id)))
         .thenReturn(hasStatusRefreshFailed)
+      when(stub.hasReIssuanceFailure(with: equal(to: id)))
+        .thenReturn(hasReIssuanceFailed)
     }
+  }
+
+  func assertReIssueRefused(identifier: String, file: StaticString = #filePath, line: UInt = #line) async -> Error? {
+    let result = await interactor.reIssueDocument(identifier: identifier)
+    verify(walletKitController, never()).reIssueDocument(identifier: any(), isBackgroundOperation: any())
+    verify(sessionController, never()).beginExternalFlow()
+    guard case .failure(let error) = result else {
+      XCTFail("Expected failure, got \(result)", file: file, line: line)
+      return nil
+    }
+    return error
   }
   
   func stubShouldRebootTrue(for id: String) {

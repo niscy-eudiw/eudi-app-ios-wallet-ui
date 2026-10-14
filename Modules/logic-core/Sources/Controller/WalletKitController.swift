@@ -116,6 +116,8 @@ public protocol WalletKitController: Sendable {
 
   func storeFailedReIssuedDocuments(ids: [String]) async throws
   func removeAllFailedReIssuedDocuments() async throws
+  /// Whether the last background re-issuance could not renew the document.
+  func hasReIssuanceFailure(with id: String) async -> Bool
 
   func refreshUsageCounters() async throws
   func getIssuerRegistration(for offer: OfferedIssuanceModel) async -> IssuerRegistration?
@@ -388,8 +390,11 @@ final actor WalletKitControllerImpl: WalletKitController {
     )
   }
 
+  /// A renewed document keeps the original's bookmark, as on Android. A bookmark that cannot be copied
+  /// does not fail the renewal.
   func reIssueDocument(identifier: String, isBackgroundOperation: Bool) async throws -> WalletStorage.Document {
     let document = fetchDocument(with: identifier)
+    let isBookmarked = await isDocumentBookmarked(with: identifier)
 
     if let issuerId = document?.credentialIssuerIdentifier,
        let configId = document?.configurationIdentifier,
@@ -410,6 +415,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     guard let document = response.documents.first else {
       throw WalletCoreError.unableToIssueAndStore
     }
+    await bookmarkStorageController.carryBookmark(wasBookmarked: isBookmarked, to: response.documents.map(\.id))
     await reconcileRegistrations()
     return document
   }
@@ -828,6 +834,10 @@ final actor WalletKitControllerImpl: WalletKitController {
 
   func removeAllFailedReIssuedDocuments() async throws {
     try await failedReIssuedDocStorageController.deleteAll()
+  }
+
+  func hasReIssuanceFailure(with id: String) async -> Bool {
+    (try? await failedReIssuedDocStorageController.retrieve(id)) != nil
   }
 
   func refreshUsageCounters() async throws {

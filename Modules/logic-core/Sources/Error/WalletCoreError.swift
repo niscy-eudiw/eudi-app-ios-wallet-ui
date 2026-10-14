@@ -27,6 +27,7 @@ public enum WalletCoreError: LocalizedError, Equatable {
   case unableToFetchTransactionLog
   case unableToRecordTransactionAction
   case unableToFetchTrustMark
+  case documentBlocked
 
   public var errorDescription: String? {
     return switch self {
@@ -50,6 +51,8 @@ public enum WalletCoreError: LocalizedError, Equatable {
       LocalizableStringKey.transactionDetailsActionError.toString
     case .unableToFetchTrustMark:
       LocalizableStringKey.trustMarkLoadError.toString
+    case .documentBlocked:
+      LocalizableStringKey.documentDetailsReIssueBlockedText.toString
     }
   }
 }

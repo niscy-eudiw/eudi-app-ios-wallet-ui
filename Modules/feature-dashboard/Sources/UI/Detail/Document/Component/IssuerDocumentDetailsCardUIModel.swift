@@ -26,17 +26,22 @@ public struct IssuerDocumentDetailsCardUIModel: Equatable, Sendable {
   /// The last revocation check could not refresh the document's status: the card opens by itself and
   /// says so, as on Android.
   public let hasStatusRefreshFailed: Bool
+  /// The last background re-issuance could not renew the document: the card opens by itself and says
+  /// so, as on Android.
+  public let hasReIssuanceFailed: Bool
 
   public init(
     issuerName: LocalizableStringKey,
     issuerLogo: URL?,
     documentState: DocumentState,
-    hasStatusRefreshFailed: Bool = false
+    hasStatusRefreshFailed: Bool = false,
+    hasReIssuanceFailed: Bool = false
   ) {
     self.issuerName = issuerName
     self.issuerLogo = issuerLogo
     self.documentState = documentState
     self.hasStatusRefreshFailed = hasStatusRefreshFailed
+    self.hasReIssuanceFailed = hasReIssuanceFailed
   }
 
   var expandedMessageText: LocalizableStringKey {
@@ -107,7 +112,8 @@ public extension DocClaimsDecodable {
   /// An unrecognised status is shown as revoked, as on Android.
   func transformToIssuerDetailsCardDataUi(
     revocationStatus: DocumentRevocationStatus?,
-    hasStatusRefreshFailed: Bool = false
+    hasStatusRefreshFailed: Bool = false,
+    hasReIssuanceFailed: Bool = false
   ) -> IssuerDocumentDetailsCardUIModel {
     let documentState: IssuerDocumentDetailsCardUIModel.DocumentState
     let issuanceDate = self.createdAt.formattedForDocumentDetails()
@@ -134,7 +140,8 @@ public extension DocClaimsDecodable {
       issuerName: .custom(self.issuerName),
       issuerLogo: self.issuerLogo,
       documentState: documentState,
-      hasStatusRefreshFailed: hasStatusRefreshFailed
+      hasStatusRefreshFailed: hasStatusRefreshFailed,
+      hasReIssuanceFailed: hasReIssuanceFailed
     )
   }
 }

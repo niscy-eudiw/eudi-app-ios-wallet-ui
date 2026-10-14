@@ -68,6 +68,18 @@ final class TestReIssuanceWorkManager: EudiTest {
     }
   }
 
+  func testCheckReIssuance_WhenNothingIsDue_ThenTheOldFailureRecordsAreCleared() async throws {
+    stub(walletKitController) { mock in
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn(["a": .revoked])
+      when(mock.fetchIssuedDocuments()).thenReturn([FixtureDocument.make(id: "a")])
+    }
+
+    try await workManager.checkReIssuance()
+
+    verify(walletKitController).removeAllFailedReIssuedDocuments()
+    verify(walletKitController, never()).reIssueDocument(identifier: any(), isBackgroundOperation: any())
+  }
+
   func testCheckReIssuance_WhenTheRevocationRecordsCannotBeRead_ThenReIssuesNothing() async {
     stub(walletKitController) { mock in
       when(mock.fetchRevokedDocumentStatuses()).thenThrow(RuntimeError.genericError)

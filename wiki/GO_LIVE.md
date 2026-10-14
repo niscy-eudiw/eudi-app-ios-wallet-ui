@@ -1285,9 +1285,18 @@ The rules are the Android wallet's (`RevocationRecordUpdate`, Android's `revocat
 * The dashboard notice, "Revoked or suspended documents", lists only the documents a check blocks for
   the first time. A change from one blocked status to another (suspended to revoked) refreshes the
   screens without a new notice.
-* The app offers no manual re-issue for a blocked document, and the background re-issuance worker skips
-  blocked documents: a re-issued copy would get a new identifier and no record, which would undo the
-  block. If the records cannot be read, that round re-issues nothing.
+* **Re-issue** is disabled for a blocked document, and a manual re-issue that reaches
+  `DocumentDetailsInteractor.reIssueDocument` for one, for example a document blocked while its details
+  are open, is refused before the issuer is contacted ("The issuer has revoked or suspended this
+  document, so it cannot be reissued."), as is any document whose records cannot be read. The background
+  re-issuance worker skips blocked documents: a re-issued copy would get a new identifier and no record,
+  which would undo the block. If the records cannot be read, that round re-issues nothing. The Android
+  wallet applies the same rules.
+* A renewed document, manual or background, keeps the original's bookmark, as on Android.
+* A background re-issuance that cannot renew a document leaves a failed re-issuance record
+  (`FailedReIssuedDocument`): the document's issuer card opens by itself and says "The wallet could not
+  renew this document automatically. Use Reissue document to try again." Each background round replaces
+  the records.
 * A status that cannot be fetched leaves that document's record as it is, and the check goes on with
   the other documents. The document gets a refresh-failure record (`StatusRefreshFailure`): its issuer
   card opens by itself and says "The document's status could not be refreshed. The state shown is from

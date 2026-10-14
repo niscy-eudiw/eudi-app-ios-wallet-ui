@@ -11262,6 +11262,16 @@ return await cuckoo_manager.call(
         )
     }
 
+    public func hasReIssuanceFailure(with p0: String) async -> Bool {
+        return await cuckoo_manager.call(
+            "hasReIssuanceFailure(with p0: String) async -> Bool",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.hasReIssuanceFailure(with: p0)
+        )
+    }
+
     public func refreshUsageCounters() async throws {
         return try await cuckoo_manager.callThrows(
             "refreshUsageCounters() async throws",
@@ -11736,6 +11746,14 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
                 method: "removeAllFailedReIssuedDocuments() async throws",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func hasReIssuanceFailure<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubFunction<(String), Bool> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "hasReIssuanceFailure(with p0: String) async -> Bool",
                 parameterMatchers: matchers
             ))
         }
@@ -12422,6 +12440,18 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
+        func hasReIssuanceFailure<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(String), Bool> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "hasReIssuanceFailure(with p0: String) async -> Bool",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
         func refreshUsageCounters() -> Cuckoo.__DoNotUse<(), Void> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
@@ -12698,6 +12728,10 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
     
     public func removeAllFailedReIssuedDocuments() async throws {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func hasReIssuanceFailure(with p0: String) async -> Bool {
+        return DefaultValueRegistry.defaultValue(for: (Bool).self)
     }
     
     public func refreshUsageCounters() async throws {
@@ -14225,6 +14259,21 @@ import logic_storage
 
 
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/RevokedDocumentStorageController+Extensions.swift'
+
+import Cuckoo
+import logic_storage
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/StatusRefreshFailureStorageController+Extensions.swift'
 
 import Cuckoo
 import logic_storage
