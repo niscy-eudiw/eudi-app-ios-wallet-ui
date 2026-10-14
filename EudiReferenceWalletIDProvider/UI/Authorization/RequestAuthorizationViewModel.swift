@@ -24,12 +24,16 @@ struct RequestAuthorizationViewState: ViewState {
   let errorMessage: String?
   let isLoading: Bool
   let contentHeaderConfig: ContentHeaderConfig
+  /// The warning to acknowledge before Accept: `accessCertificateNotTrusted` while the requester is not
+  /// verified, which the reference app never reports it to be.
+  let warning: RegistrationWarning?
 }
 
 @MainActor
 @Observable
 final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewState> {
   var showBiometryView: Bool = false
+  var isRiskAcknowledged: Bool = false
 
   private var isRequestAuthorized: Bool = false
 
@@ -52,9 +56,15 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
             appIcon: ThemeManager.shared.image.logoEuDigitalIndentityWallet
           ),
           description: .dataSharingTitle
-        )
+        ),
+        warning: nil
       )
     )
+  }
+
+  /// Accept waits for the user to acknowledge the warning, as Share does in the app.
+  var canAccept: Bool {
+    viewState.warning == nil || isRiskAcknowledged
   }
 
   /// Asks for the wallet PIN or biometrics before anything of the request is loaded. The view calls it
@@ -104,7 +114,8 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
               name: .custom(uiModel.issuerName),
               description: .requestsTheFollowing
             )
-          )
+          ),
+          warning: uiModel.isRelyingPartyVerified ? nil : .accessCertificateNotTrusted
         )
       }
     } catch let error {
@@ -117,7 +128,9 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
     }
   }
 
+  /// Sends the response, unless a warning is still waiting for the user's acknowledgement.
   func acceptVerification() async {
+    guard canAccept else { return }
     setState {
       $0.copy(
         isLoading: true

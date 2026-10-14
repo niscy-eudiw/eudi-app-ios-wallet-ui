@@ -971,7 +971,8 @@ Registrations are reconciled against wallet storage after every operation that a
 - Main app and extension resolve to the same runtime keychain access group.
 - On iOS 26+, registered CBOR documents appear in the extension request flow.
 - The extension asks for the PIN or biometrics before it shows a request, and again on Accept.
-- The requester is shown without the verified badge: `DcApiHandler` returns no reader trust verdict (see GO_LIVE).
+- The requester is shown without the verified badge and with the warning that its identity could not be
+  verified; Accept waits for its acknowledgement. `DcApiHandler` returns no reader trust verdict (see GO_LIVE).
 
 ## Trust Mark configuration
 

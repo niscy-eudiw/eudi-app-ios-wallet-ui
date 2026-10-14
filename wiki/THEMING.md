@@ -541,7 +541,8 @@ Android's `ThemeManager.Builder`, and is intentionally left at `.default` in the
   both in `red` with the `errorIndicator` image, the issuer card in `red`, and the dashboard notice
   lists each under its own title), the RQES signing flow, and a request in the ID Provider
   extension, which opens with the PIN or biometric login and shows the requester without a verified
-  badge. The start-up error alert is a system alert, which the theme does not style.
+  badge and with the warning that its identity could not be verified. The start-up error alert is a
+  system alert, which the theme does not style.
 
 ## Production and accessibility checklist
 

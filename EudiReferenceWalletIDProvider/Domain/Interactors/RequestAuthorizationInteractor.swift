@@ -45,12 +45,14 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
   }
 
   /// `DcApiHandler` validates no reader certificate chain and returns no trust verdict, so the relying
-  /// party is never reported as verified. The authority key identifier is kept for a later lookup.
+  /// party is never reported as verified. The authority key identifier is kept for a later lookup. Without
+  /// a website origin the requester gets the generic name, not the one in its unvalidated certificate, as
+  /// on Android.
   func loadRequestData(
     context: ISO18013MobileDocumentRequestContext
   ) async throws -> AuthorizationUIModel {
-    let (docClaimsModels, _, authorityKeyIdentifier, rn) = try await dcApiHandler.validateRequest(context.request)
-    let websiteName = context.requestingWebsiteOrigin?.absoluteString ?? rn ?? "Website name not available"
+    let (docClaimsModels, _, authorityKeyIdentifier, _) = try await dcApiHandler.validateRequest(context.request)
+    let websiteName = context.requestingWebsiteOrigin?.absoluteString ?? LocalizableStringKey.unknownVerifier.toString
     let documents = docClaimsModels.compactMap {
       $0.transformToDocumentUi(isSensitive: false)
     }
