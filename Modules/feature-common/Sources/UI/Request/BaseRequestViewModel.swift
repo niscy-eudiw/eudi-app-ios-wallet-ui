@@ -173,9 +173,10 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
   }
 
   /// Shows the registration and its warning. `isRelyingPartyTrusted` is false for a relying party that
-  /// did not authenticate, which then gets the not-verified warning that keeps Share disabled. The remote
-  /// flow passes `true`: wallet-kit refuses an OpenID4VP verifier that did not authenticate before its
-  /// request reaches this screen.
+  /// did not authenticate, which then gets the access-certificate warning
+  /// (`RegistrationWarning.accessCertificateNotTrusted`) that keeps Share disabled. Both flows pass the
+  /// request's own verdict, as Android does; with the configured client identifier schemes wallet-kit
+  /// refuses an OpenID4VP verifier that did not authenticate before its request reaches this screen.
   public func onReceivedRegistration(_ registration: RelyingPartyRegistration, isRelyingPartyTrusted: Bool) {
     isRiskAcknowledged = false
     let resolvedName = registration.name.map { LocalizableStringKey.custom($0) }

@@ -634,6 +634,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "understand_risks_agree")
     case .relyingPartyNotVerifiedWarning:
       bundle.localizedString(forKey: "relying_party_not_verified_warning")
+    case .accessCertificateNotTrustedWarning:
+      bundle.localizedString(forKey: "access_certificate_not_trusted_warning")
     case .relyingPartyOveraskedWarning:
       bundle.localizedString(forKey: "relying_party_overasked_warning")
     case .notRegisteredData:

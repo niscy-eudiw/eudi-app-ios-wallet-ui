@@ -47,7 +47,10 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
         relyingParty: .custom(authenticationRequest.relyingParty),
         isTrusted: authenticationRequest.isTrusted
       )
-      self.onReceivedRegistration(authenticationRequest.relyingPartyRegistration, isRelyingPartyTrusted: true)
+      self.onReceivedRegistration(
+        authenticationRequest.relyingPartyRegistration,
+        isRelyingPartyTrusted: authenticationRequest.isTrusted
+      )
     case .notSecuredRequest:
       self.onTrustBlocked()
     case .failure(let error):

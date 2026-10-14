@@ -1035,9 +1035,12 @@ The app treats the two directions differently, and the asymmetry is intentional:
   not remembered between requests. Access-certificate failures continue to block outright where the
   protocol allows it. A proximity (BLE) reader that did not authenticate (no reader certificate, or
   one that failed validation) is not refused: ISO/IEC 18013-5 makes reader authentication optional,
-  and WalletKit checks it only for OpenID4VP. It gets the same warning, ahead of any registration
-  outcome and whatever `validateIssuerRegistrationCertificate` says: no badge, and Share stays
-  disabled until the user acknowledges it.
+  and WalletKit checks it only for OpenID4VP. It gets a warning of its own, "The identity of this
+  relying party could not be verified", ahead of any registration outcome and whatever
+  `validateIssuerRegistrationCertificate` says: no badge, the generic name instead of the one in its
+  certificate (a verified registration certificate still names it, as on Android), and Share disabled
+  until the user acknowledges it. The Android wallet shows the same warning
+  (`ACCESS_CERTIFICATE_NOT_TRUSTED`).
 
 Production requirements:
 

@@ -317,6 +317,7 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case intendedUse
   case understandRisksAgree
   case relyingPartyNotVerifiedWarning
+  case accessCertificateNotTrustedWarning
   case relyingPartyOveraskedWarning
   case notRegisteredData
   case issuanceRegistrationBlockedTitle

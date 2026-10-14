@@ -116,11 +116,12 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
   }
 
   private func createRequest() -> PresentationRequest {
-    PresentationRequest(
+    let isTrusted = session.readerAuthenticationStatus == .authenticated
+    return PresentationRequest(
       itemSets: session.disclosedDocumentSets.map(\.docElements),
-      relyingParty: session.readerCertIssuer ?? LocalizableStringKey.unknownVerifier.toString,
+      relyingParty: PresentationRequest.relyingPartyName(certificateName: session.readerCertIssuer, isTrusted: isTrusted),
       dataRequestInfo: session.readerCertValidationMessage ?? LocalizableStringKey.requestDataInfoNotice.toString,
-      isTrusted: session.readerAuthenticationStatus == .authenticated,
+      isTrusted: isTrusted,
       overaskedClaims: overaskedClaims,
       transactionDataSets: transactionDataSets.getValue()
     )

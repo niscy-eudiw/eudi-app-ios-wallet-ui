@@ -189,7 +189,9 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
    with the Verifier. You must select at least one attribute to proceed. As in the remote flow, and
    subject to the same setting, a reader whose registration certificate cannot be validated raises a
    warning that keeps "Share" disabled until you acknowledge it. A reader that does not authenticate
-   with a trusted reader certificate raises the same warning, whatever the setting.
+   with a trusted reader certificate is shown with a generic name (unless a verified registration
+   certificate names it) and the warning that its identity could not be verified, which keeps "Share"
+   disabled the same way, whatever the setting.
 8. Tap "Share".
 9. Enter the PIN you set up during the initial steps, or use Face ID or Touch ID if you turned it on
    in Settings. If the biometric check fails, enter the PIN.

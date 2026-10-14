@@ -19,11 +19,15 @@ import logic_resources
 
 public enum RegistrationWarning: Sendable, Equatable {
 
+  /// The relying party did not authenticate, so who is asking is not known. As Android's
+  /// `ACCESS_CERTIFICATE_NOT_TRUSTED`, it comes before any registration outcome.
+  case accessCertificateNotTrusted
   case relyingPartyNotVerified
   case relyingPartyOverasked
 
   public var message: LocalizableStringKey {
     return switch self {
+    case .accessCertificateNotTrusted: .accessCertificateNotTrustedWarning
     case .relyingPartyNotVerified: .relyingPartyNotVerifiedWarning
     case .relyingPartyOverasked: .relyingPartyOveraskedWarning
     }
@@ -52,10 +56,10 @@ public extension RelyingPartyRegistration {
   }
 
   /// The warning to acknowledge before sharing. A relying party that did not authenticate, such as a
-  /// proximity reader without a valid reader certificate, gets `relyingPartyNotVerified` whatever its
+  /// proximity reader without a valid reader certificate, gets `accessCertificateNotTrusted` whatever its
   /// registration says.
   func toWarning(isRelyingPartyTrusted: Bool) -> RegistrationWarning? {
-    guard isRelyingPartyTrusted else { return .relyingPartyNotVerified }
+    guard isRelyingPartyTrusted else { return .accessCertificateNotTrusted }
     return switch registration {
     case .verified(_, let overaskedClaims):
       overaskedClaims.isEmpty ? nil : .relyingPartyOverasked

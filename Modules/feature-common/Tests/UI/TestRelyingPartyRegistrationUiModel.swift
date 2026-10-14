@@ -65,7 +65,7 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
     XCTAssertEqual(registration.toWarning(isRelyingPartyTrusted: true), .relyingPartyNotVerified)
   }
 
-  func testToWarning_whenRelyingPartyIsNotTrusted_thenReturnsNotVerifiedWarningForEveryRegistration() {
+  func testToWarning_whenRelyingPartyIsNotTrusted_thenReturnsTheAccessCertificateWarningForEveryRegistration() {
     let overasked = OveraskedClaim(
       attestationType: "eu.europa.ec.eudi.pid.1",
       path: ClaimPath([.claim(name: "namespace"), .claim(name: "age")])
@@ -80,7 +80,7 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
     for status in statuses {
       XCTAssertEqual(
         relyingParty(status: status).toWarning(isRelyingPartyTrusted: false),
-        .relyingPartyNotVerified,
+        .accessCertificateNotTrusted,
         "\(status)"
       )
     }

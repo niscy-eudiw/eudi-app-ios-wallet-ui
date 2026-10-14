@@ -247,11 +247,15 @@ setting reaches `OpenId4VpConfiguration` and no registration policy is installed
 performs it inside WalletKit, which exposes no equivalent flag, but the app ignores the result.
 
 One check does not depend on the setting. A proximity reader that does not authenticate with a trusted
-reader certificate (no reader certificate, or one that failed validation) gets the not-verified warning
-ahead of any registration outcome: no verified badge, and Share stays disabled until the user
-acknowledges it (`RelyingPartyRegistration.toWarning(isRelyingPartyTrusted:)`). Remote presentation
-passes `true`: with the configured client identifier schemes, WalletKit refuses a verifier that does not
-authenticate before the consent screen.
+reader certificate (no reader certificate, or one that failed validation) gets the warning "The identity
+of this relying party could not be verified" ahead of any registration outcome: no verified badge, the
+generic name instead of the one in its certificate (a verified registration certificate still names it,
+as on Android), and Share stays disabled until the user acknowledges it
+(`RelyingPartyRegistration.toWarning(isRelyingPartyTrusted:)`, which returns
+`RegistrationWarning.accessCertificateNotTrusted`). Remote presentation passes the request's own verdict
+as well (`PresentationRequest.isTrusted`), as the Android wallet does. With the configured client
+identifier schemes, WalletKit refuses a verifier that does not authenticate before the consent screen,
+so the warning does not arise there in practice.
 
 Two settings govern the issuance side, and both must be on for it to refuse anything. The first of
 them governs presentation as well:
@@ -282,7 +286,7 @@ protocol WalletKitConfig: Sendable {
 }
 ```
 
-The preregistered scheme is optional. If you want to use it, please add the following: the `OpenID4VP` import and the `.preregistered` option in the `clientIdSchemes` array. List only schemes that authenticate the verifier: the remote consent screen assumes it (`onReceivedRegistration(_:isRelyingPartyTrusted: true)`), so adding `.redirectUri` would show an unauthenticated verifier without the not-verified warning.
+The preregistered scheme is optional. If you want to use it, please add the following: the `OpenID4VP` import and the `.preregistered` option in the `clientIdSchemes` array. List only schemes that authenticate the verifier. With `.redirectUri`, a verifier that did not authenticate would reach the consent screen, which passes the request's own verdict (`onReceivedRegistration(_:isRelyingPartyTrusted:)`) and so shows the access-certificate warning (`RegistrationWarning.accessCertificateNotTrusted`), with Share disabled until the user acknowledges it.
 
 ```swift
 import OpenID4VP
