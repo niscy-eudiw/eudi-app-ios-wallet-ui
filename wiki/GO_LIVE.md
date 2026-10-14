@@ -1430,6 +1430,17 @@ How the reference app handles a wallet link (`DeepLinkController.handleDeepLinkA
   with the transaction-code error (`DocumentOfferInteractor.processOfferRequest`).
 * Each presentation screen works on the session its route carries (`PresentationInteractorImpl`,
   `ProximityInteractorImpl`); a session started later cannot take its place.
+* The verifier's `redirect_uri` after a presentation is never treated as a wallet link: the success screen
+  opens it in the browser only if it is an `https` link with a host (`URL.openInBrowser(using:)`,
+  `URL.isHttpsWebLink`), and returns to the dashboard either way. A credential-offer, OpenID4VP, RQES or
+  any other redirect opens nothing. The Android wallet applies the same rule. A presentation made during
+  an issuance is the exception: its redirect is kept to resume the issuance
+  (`storeDynamicIssuancePendingUrl`), nothing opens, and the success screen returns to the issuance
+  screen.
+* A link of no wallet type (`DeepLink.Action.external`) opens the same way, in the browser and only if it
+  is `https`. The app registers custom schemes only and no associated domains, so iOS delivers none
+  today. A build that adds associated domains must keep them out of the links it opens in the browser,
+  because iOS would hand such a link back to the wallet.
 
 Files to review:
 
@@ -2341,6 +2352,8 @@ Before release candidate approval, test:
 * Malformed deep links.
 * A second presentation link while a remote request or a proximity presentation is on screen: the
   wallet returns to the dashboard and opens the new request.
+* A verifier redirect after a presentation: an `https` redirect opens in the browser; a credential-offer,
+  OpenID4VP or RQES redirect opens nothing and starts no flow.
 * Malicious credential offer.
 * A second credential offer while an offer is on screen: the wallet returns to the dashboard and opens
   the new offer; the first is not issued.

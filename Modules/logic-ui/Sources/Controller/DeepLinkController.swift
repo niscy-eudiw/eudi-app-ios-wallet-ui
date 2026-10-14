@@ -123,7 +123,7 @@ final class DeepLinkControllerImpl: DeepLinkController {
         )
       }
     case .external:
-      deepLinkExecutable.plainUrl.open()
+      deepLinkExecutable.plainUrl.openInBrowser()
     case .credential_offer, .haip_vci:
       let config = UIConfig.Generic(
         arguments: ["uri": deepLinkExecutable.plainUrl.absoluteString],
