@@ -536,10 +536,6 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "revoked_modal_description")
     case .suspended:
       bundle.localizedString(forKey: "suspended")
-    case .suspendedModalTitle:
-      bundle.localizedString(forKey: "suspended_modal_title")
-    case .suspendedModalDescription:
-      bundle.localizedString(forKey: "suspended_modal_description")
     case .issuanceBlockedTitle:
       bundle.localizedString(forKey: "issuance_blocked_bottom_sheet_title")
     case .issuanceBlockedMessage:
@@ -604,6 +600,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "document_details_issuer_card_revoked_message_text")
     case .documentDetailsIssuerCardSuspendedMessageText:
       bundle.localizedString(forKey: "document_details_issuer_card_suspended_message_text")
+    case .documentDetailsIssuerCardStatusRefreshFailedText:
+      bundle.localizedString(forKey: "document_details_issuer_card_status_refresh_failed_text")
     case .documentDetailsIssuerCardExpiredMessageText:
       bundle.localizedString(forKey: "document_details_issuer_card_expired_message_text")
     case .documentDetailsIssuerCardIssuedActionButtonText:

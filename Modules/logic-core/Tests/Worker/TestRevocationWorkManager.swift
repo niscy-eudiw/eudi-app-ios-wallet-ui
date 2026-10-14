@@ -35,6 +35,8 @@ final class TestRevocationWorkManager: EudiTest {
     stub(walletKitController) { mock in
       when(mock.storeRevokedDocuments(with: any())).thenDoNothing()
       when(mock.removeRevokedDocument(with: any())).thenDoNothing()
+      when(mock.storeStatusRefreshFailures(ids: any())).thenDoNothing()
+      when(mock.removeStatusRefreshFailures(ids: any())).thenDoNothing()
     }
   }
 
@@ -97,13 +99,48 @@ final class TestRevocationWorkManager: EudiTest {
     verify(walletKitController, never()).removeRevokedDocument(with: any())
   }
 
-  func testCheckRevocation_WhenAnotherStatusIsReported_ThenLeavesTheRecord() async throws {
+  func testCheckRevocation_WhenAStatusCannotBeInterpreted_ThenBlocksTheDocumentAsUnrecognised() async throws {
+    stubSweep(stored: [:], statuses: ["a": .applicationSpecific(3), "c": .reserved(3)])
+    let notified = expectation(forNotification: NSNotification.RevocationDashboard, object: nil) { notification in
+      RevocationDashboardPayload(userInfo: notification.userInfo)
+        == RevocationDashboardPayload(revoked: ["Document a": "a", "Document c": "c"], suspended: [:])
+    }
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController).storeRevokedDocuments(with: equal(to: ["a": .unrecognised, "c": .unrecognised]))
+    await fulfillment(of: [notified], timeout: 2)
+  }
+
+  func testCheckRevocation_WhenASuspendedDocumentGetsAStatusThatCannotBeInterpreted_ThenBecomesUnrecognised() async throws {
     stubSweep(stored: ["a": .suspended], statuses: ["a": .applicationSpecific(3)])
 
     try await workManager.checkRevocation()
 
+    verify(walletKitController).storeRevokedDocuments(with: equal(to: ["a": .unrecognised]))
     verify(walletKitController, never()).removeRevokedDocument(with: any())
+  }
+
+  func testCheckRevocation_WhenAnUnrecognisedDocumentIsReportedValid_ThenClearsTheRecord() async throws {
+    stubSweep(stored: ["a": .unrecognised], statuses: ["a": .valid])
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController).removeRevokedDocument(with: equal(to: "a"))
     verify(walletKitController, never()).storeRevokedDocuments(with: any())
+  }
+
+  func testCheckRevocation_WhenABlockedDocumentChangesStatus_ThenOnlyItsDetailsRefresh() async throws {
+    stubSweep(stored: ["a": .suspended], statuses: ["a": .invalid])
+    let detailsRefreshed = expectation(forNotification: NSNotification.DocumentDetailsRefresh, object: nil) { notification in
+      notification.userInfo?["ids"] as? [String] == ["a"]
+    }
+    let dashboardNotified = expectation(forNotification: NSNotification.RevocationDashboard, object: nil)
+    dashboardNotified.isInverted = true
+
+    try await workManager.checkRevocation()
+
+    await fulfillment(of: [detailsRefreshed, dashboardNotified], timeout: 2)
   }
 
   func testCheckRevocation_WhenOneStatusFetchFails_ThenTheOthersAreStillStored() async throws {
@@ -113,11 +150,68 @@ final class TestRevocationWorkManager: EudiTest {
 
     verify(walletKitController).storeRevokedDocuments(with: equal(to: ["a": .revoked, "c": .suspended]))
     verify(walletKitController, never()).removeRevokedDocument(with: any())
+    verify(walletKitController).storeStatusRefreshFailures(ids: equal(to: ["b"]))
+  }
+
+  func testCheckRevocation_WhenAFetchFails_ThenTheFailureIsRecordedAndTheDetailsRefresh() async throws {
+    stubSweep(stored: [:], statuses: [:], failing: ["a"])
+    let detailsRefreshed = expectation(forNotification: NSNotification.DocumentDetailsRefresh, object: nil) { notification in
+      notification.userInfo?["ids"] as? [String] == ["a"]
+    }
+    let dashboardNotified = expectation(forNotification: NSNotification.RevocationDashboard, object: nil)
+    dashboardNotified.isInverted = true
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController).storeStatusRefreshFailures(ids: equal(to: ["a"]))
+    verify(walletKitController, never()).storeRevokedDocuments(with: any())
+    await fulfillment(of: [detailsRefreshed, dashboardNotified], timeout: 2)
+  }
+
+  func testCheckRevocation_WhenAFetchFailsAgain_ThenNothingChanges() async throws {
+    stubSweep(stored: [:], statuses: [:], failing: ["a"], previousFailures: ["a"])
+    let detailsRefreshed = expectation(forNotification: NSNotification.DocumentDetailsRefresh, object: nil)
+    detailsRefreshed.isInverted = true
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController, never()).storeStatusRefreshFailures(ids: any())
+    verify(walletKitController, never()).removeStatusRefreshFailures(ids: any())
+    await fulfillment(of: [detailsRefreshed], timeout: 0.5)
+  }
+
+  func testCheckRevocation_WhenAFailedDocumentIsRefreshed_ThenItsFailureIsRemovedAndTheDetailsRefresh() async throws {
+    stubSweep(stored: [:], statuses: ["a": .valid], previousFailures: ["a"])
+    let detailsRefreshed = expectation(forNotification: NSNotification.DocumentDetailsRefresh, object: nil) { notification in
+      notification.userInfo?["ids"] as? [String] == ["a"]
+    }
+    let listRefreshed = expectation(forNotification: NSNotification.DocumentTabRefresh, object: nil)
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController).removeStatusRefreshFailures(ids: equal(to: ["a"]))
+    verify(walletKitController, never()).storeStatusRefreshFailures(ids: any())
+    await fulfillment(of: [detailsRefreshed, listRefreshed], timeout: 2)
+  }
+
+  func testCheckRevocation_WhenTheFailureRecordsCannotBeRead_ThenChangesNothing() async {
+    stubSweep(stored: [:], statuses: ["a": .invalid])
+    stub(walletKitController) { mock in
+      when(mock.fetchStatusRefreshFailures()).thenThrow(RuntimeError.genericError)
+    }
+
+    do {
+      try await workManager.checkRevocation()
+      XCTFail("Expected the sweep to stop")
+    } catch {
+      verify(walletKitController, never()).storeRevokedDocuments(with: any())
+      verify(walletKitController, never()).storeStatusRefreshFailures(ids: any())
+    }
   }
 
   func testCheckRevocation_WhenStoredRecordsCannotBeRead_ThenChangesNothing() async {
     stub(walletKitController) { mock in
-      when(mock.fetchIssuedDocuments()).thenReturn([Self.document(id: "a")])
+      when(mock.fetchIssuedDocuments()).thenReturn([FixtureDocument.make(id: "a")])
       when(mock.fetchRevokedDocumentStatuses()).thenThrow(RuntimeError.genericError)
       when(mock.getDocumentStatus(for: any())).thenReturn(.suspended)
     }
@@ -174,8 +268,9 @@ final class TestRevocationWorkManager: EudiTest {
 
   func testCheckRevocation_WhenDocumentHasNoStatusList_ThenItsRecordIsLeft() async throws {
     stub(walletKitController) { mock in
-      when(mock.fetchIssuedDocuments()).thenReturn([Self.document(id: "a", hasStatusList: false)])
+      when(mock.fetchIssuedDocuments()).thenReturn([FixtureDocument.make(id: "a", hasStatusList: false)])
       when(mock.fetchRevokedDocumentStatuses()).thenReturn(["a": .suspended])
+      when(mock.fetchStatusRefreshFailures()).thenReturn([])
     }
 
     try await workManager.checkRevocation()
@@ -223,52 +318,20 @@ final class TestRevocationWorkManager: EudiTest {
 
 private extension TestRevocationWorkManager {
 
-  struct TestMdocModel: DocClaimsDecodable {
-    var id: String
-    var createdAt: Date
-    var modifiedAt: Date?
-    var displayName: String?
-    var display: [MdocDataModel18013.DisplayMetadata]?
-    var issuerDisplay: [MdocDataModel18013.DisplayMetadata]?
-    var credentialIssuerIdentifier: String?
-    var configurationIdentifier: String?
-    var docType: String
-    var docClaims: [MdocDataModel18013.DocClaim]
-    var docDataFormat: MdocDataModel18013.DocDataFormat
-    var validFrom: Date?
-    var validUntil: Date?
-    var statusList: MdocDataModel18013.StatusList?
-    var secureAreaName: String?
-    var credentialsUsageCounts: MdocDataModel18013.CredentialsUsageCounts?
-    var credentialPolicy: MdocDataModel18013.CredentialPolicy
-    var ageOverXX: [Int: Bool]
-  }
-
-  static func document(id: String, hasStatusList: Bool = true) -> any DocClaimsDecodable {
-    TestMdocModel(
-      id: id,
-      createdAt: Date(),
-      displayName: "Document \(id)",
-      docType: "eu.europa.ec.eudi.pid.1",
-      docClaims: [],
-      docDataFormat: .cbor,
-      statusList: hasStatusList ? MdocDataModel18013.StatusList(idx: 0, uri: "https://status.example/\(id)") : nil,
-      credentialPolicy: .rotateUse,
-      ageOverXX: [:]
-    )
-  }
-
-  /// Stubs one sweep: a document for every id in `statuses` and `failing`, the stored records, and the
-  /// status each document's list reports. A document in `failing` cannot have its status fetched.
+  /// Stubs one sweep: a document for every id in `statuses` and `failing`, the stored records, the
+  /// documents whose last refresh failed, and the status each document's list reports. A document in
+  /// `failing` cannot have its status fetched.
   func stubSweep(
     stored: [String: DocumentRevocationStatus],
     statuses: [String: CredentialStatus],
-    failing: Set<String> = []
+    failing: Set<String> = [],
+    previousFailures: Set<String> = []
   ) {
     let ids = Set(statuses.keys).union(failing).sorted()
     stub(walletKitController) { mock in
-      when(mock.fetchIssuedDocuments()).thenReturn(ids.map { Self.document(id: $0) })
+      when(mock.fetchIssuedDocuments()).thenReturn(ids.map { FixtureDocument.make(id: $0) })
       when(mock.fetchRevokedDocumentStatuses()).thenReturn(stored)
+      when(mock.fetchStatusRefreshFailures()).thenReturn(previousFailures)
       when(mock.getDocumentStatus(for: any())).then { statusList in
         let id = String(statusList.uri.split(separator: "/").last ?? "")
         guard let status = statuses[id], !failing.contains(id) else {

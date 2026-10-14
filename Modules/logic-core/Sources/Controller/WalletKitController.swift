@@ -92,14 +92,24 @@ public protocol WalletKitController: Sendable {
 
   func isDocumentRevoked(with id: String) async -> Bool
   func fetchRevokedDocuments() async throws -> [String]
-  /// The revocation record of every document that has one. A record without a status counts as revoked.
-  /// An empty store gives an empty result; a failed read throws.
+  /// The revocation record of every document that has one. A record without a status, or with one this
+  /// build does not know, counts as unrecognised. An empty store gives an empty result; a failed read throws.
   func fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus]
   /// Stores or replaces the revocation record of each document.
   func storeRevokedDocuments(with statuses: [String: DocumentRevocationStatus]) async throws
   func removeRevokedDocument(with id: String) async throws
   /// The revocation record of one document, or `nil` if it has none.
   func getDocumentRevocationStatus(with id: String) async -> DocumentRevocationStatus?
+
+  /// The documents whose status could not be refreshed at the last revocation check. An empty store
+  /// gives an empty set; a failed read throws.
+  func fetchStatusRefreshFailures() async throws -> Set<String>
+  /// Records that the status of each document could not be refreshed.
+  func storeStatusRefreshFailures(ids: [String]) async throws
+  /// Removes the refresh-failure record of each document, after a check has read its status again.
+  func removeStatusRefreshFailures(ids: [String]) async throws
+  /// Whether the last revocation check could not refresh the document's status.
+  func hasStatusRefreshFailure(with id: String) async -> Bool
 
   func getDocumentStatus(for statusList: MdocDataModel18013.StatusList) async throws -> CredentialStatus
   func isDocumentLowOnCredentials(document: (any DocClaimsDecodable)?) async -> Bool
@@ -134,6 +144,7 @@ final actor WalletKitControllerImpl: WalletKitController {
   private let transactionLogStorageController: any TransactionLogStorageController
   private let revokedDocumentStorageController: any RevokedDocumentStorageController
   private let failedReIssuedDocStorageController: any FailedReIssuedDocStorageController
+  private let statusRefreshFailureStorageController: any StatusRefreshFailureStorageController
   private let documentRegistrationManager: DocumentRegistrationManager
 
   init(
@@ -145,6 +156,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     transactionLogStorageController: any TransactionLogStorageController,
     revokedDocumentStorageController: any RevokedDocumentStorageController,
     failedReIssuedDocStorageController: any FailedReIssuedDocStorageController,
+    statusRefreshFailureStorageController: any StatusRefreshFailureStorageController,
     networkSessionProvider: NetworkSessionProvider,
     documentRegistrationManager: DocumentRegistrationManager
   ) {
@@ -156,6 +168,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     self.transactionLogStorageController = transactionLogStorageController
     self.revokedDocumentStorageController = revokedDocumentStorageController
     self.failedReIssuedDocStorageController = failedReIssuedDocStorageController
+    self.statusRefreshFailureStorageController = statusRefreshFailureStorageController
     self.documentRegistrationManager = documentRegistrationManager
 
     guard let walletKit = try? EudiWallet(
@@ -237,6 +250,7 @@ final actor WalletKitControllerImpl: WalletKitController {
   func deleteDocument(with id: String, status: DocumentStatus) async throws {
     try await wallet.deleteDocument(id: id, status: status)
     try await revokedDocumentStorageController.delete(id)
+    try await statusRefreshFailureStorageController.delete(id)
     await reconcileRegistrations()
   }
 
@@ -779,6 +793,24 @@ final actor WalletKitControllerImpl: WalletKitController {
 
   func isDocumentRevoked(with id: String) async -> Bool {
     return (try? await revokedDocumentStorageController.retrieve(id)) != nil
+  }
+
+  func fetchStatusRefreshFailures() async throws -> Set<String> {
+    try await statusRefreshFailureStorageController.retrieveIdentifiers()
+  }
+
+  func storeStatusRefreshFailures(ids: [String]) async throws {
+    try await statusRefreshFailureStorageController.store(ids.map { StatusRefreshFailure(identifier: $0) })
+  }
+
+  func removeStatusRefreshFailures(ids: [String]) async throws {
+    for id in ids {
+      try await statusRefreshFailureStorageController.delete(id)
+    }
+  }
+
+  func hasStatusRefreshFailure(with id: String) async -> Bool {
+    (try? await statusRefreshFailureStorageController.retrieve(id)) != nil
   }
 
   func getDocumentRevocationStatus(with id: String) async -> DocumentRevocationStatus? {

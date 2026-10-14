@@ -96,14 +96,14 @@ final actor PresentationInteractorImpl: PresentationInteractor {
     do {
       let coordinator = presentationCoordinator
       let response = try await coordinator.requestReceived()
-      let revokedDocuments = (try? await walletKitController.fetchRevokedDocuments()) ?? []
+      let blockedDocuments = try await walletKitController.fetchRevokedDocumentStatuses()
       let registrationPolicy = coordinator.relyingPartyRegistration
       let overaskedClaims = response.overaskedClaims
       let transactionDataSets = response.transactionDataSets
       let presentable = response.itemSets
         .enumerated()
         .map { index, documentSet in
-          let documentSet = documentSet.filter { item in !revokedDocuments.contains(where: { $0 == item.docId }) }
+          let documentSet = documentSet.filter { item in blockedDocuments[item.docId] == nil }
           let transactionData = transactionDataSets.indices.contains(index) ? transactionDataSets[index] : [:]
           return RequestCombination(
             elements: documentSet,

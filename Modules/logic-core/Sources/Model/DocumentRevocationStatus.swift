@@ -15,9 +15,13 @@
  */
 import Foundation
 
-/// What a status list reported for a document the wallet keeps a revocation record for. A revoked
-/// document stays revoked; a suspended one is restored when the status list reports it valid again.
+/// What a status list reported for a document the wallet keeps a revocation record for. Every record
+/// blocks the document. A revoked document stays revoked; a suspended or unrecognised one is restored when
+/// the status list reports it valid again. The statuses are the Android wallet's.
 public enum DocumentRevocationStatus: String, Sendable, Equatable {
   case revoked
   case suspended
+  /// A status value the wallet cannot interpret (application-specific or reserved), or a record stored
+  /// before the status was kept. It blocks the document and is shown as revoked.
+  case unrecognised
 }

@@ -16,8 +16,10 @@
 import logic_storage
 
 extension RevokedDocument {
-  /// A record without a status was stored before the status was kept, so it may be a revocation.
+  /// A record without a status, or with one this build does not know, counts as unrecognised: it stays
+  /// blocked until the status list reports the document valid, and a revocation is recorded as such at
+  /// the next check.
   var revocationStatus: DocumentRevocationStatus {
-    status.flatMap(DocumentRevocationStatus.init(rawValue:)) ?? .revoked
+    status.flatMap(DocumentRevocationStatus.init(rawValue:)) ?? .unrecognised
   }
 }

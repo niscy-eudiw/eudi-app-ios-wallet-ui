@@ -270,8 +270,6 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case revokedModalTitle
   case revokedModalDescription
   case suspended
-  case suspendedModalTitle
-  case suspendedModalDescription
   case issuanceBlockedTitle
   case issuanceBlockedMessage
   case presentationBlockedTitle
@@ -302,6 +300,7 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case documentDetailsIssuerCardIssuedMessageText
   case documentDetailsIssuerCardRevokedMessageText
   case documentDetailsIssuerCardSuspendedMessageText
+  case documentDetailsIssuerCardStatusRefreshFailedText
   case documentDetailsIssuerCardExpiredMessageText
   case documentDetailsIssuerCardIssuedActionButtonText
   case batchIssuanceCounter

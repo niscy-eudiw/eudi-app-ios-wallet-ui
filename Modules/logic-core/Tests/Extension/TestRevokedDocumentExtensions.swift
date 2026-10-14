@@ -20,14 +20,15 @@ import logic_storage
 
 final class TestRevokedDocumentExtensions: EudiTest {
 
-  func testRevocationStatus_WhenStatusIsMissingOrUnknown_ThenCountsAsRevoked() {
-    XCTAssertEqual(RevokedDocument(identifier: "a").revocationStatus, .revoked)
-    XCTAssertEqual(RevokedDocument(identifier: "a", status: "unknown").revocationStatus, .revoked)
+  func testRevocationStatus_WhenStatusIsMissingOrUnknown_ThenIsUnrecognised() {
+    XCTAssertEqual(RevokedDocument(identifier: "a").revocationStatus, .unrecognised)
+    XCTAssertEqual(RevokedDocument(identifier: "a", status: "unknown").revocationStatus, .unrecognised)
   }
 
   func testRevocationStatus_WhenStatusIsStored_ThenMapsIt() {
     XCTAssertEqual(RevokedDocument(identifier: "a", status: "suspended").revocationStatus, .suspended)
     XCTAssertEqual(RevokedDocument(identifier: "a", status: "revoked").revocationStatus, .revoked)
+    XCTAssertEqual(RevokedDocument(identifier: "a", status: "unrecognised").revocationStatus, .unrecognised)
   }
 
   func testRetrieveRevocationStatuses_WhenStoreIsEmpty_ThenIsEmpty() async throws {
@@ -58,7 +59,7 @@ final class TestRevokedDocumentExtensions: EudiTest {
 
     let statuses = try await storage.retrieveRevocationStatuses()
 
-    XCTAssertEqual(statuses, ["a": .revoked, "b": .suspended])
+    XCTAssertEqual(statuses, ["a": .unrecognised, "b": .suspended])
   }
 }
 

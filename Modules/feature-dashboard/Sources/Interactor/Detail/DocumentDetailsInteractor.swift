@@ -52,8 +52,12 @@ final actor DocumentDetailsInteractorImpl: DocumentDetailsInteractor {
     let isBookmarked = await walletController.isDocumentBookmarked(with: documentId)
     let revocationStatus = await walletController.getDocumentRevocationStatus(with: documentId)
     let isRevoked = revocationStatus != nil
+    let hasStatusRefreshFailed = await walletController.hasStatusRefreshFailure(with: documentId)
 
-    let issuerDetailsCard = document?.transformToIssuerDetailsCardDataUi(revocationStatus: revocationStatus)
+    let issuerDetailsCard = document?.transformToIssuerDetailsCardDataUi(
+      revocationStatus: revocationStatus,
+      hasStatusRefreshFailed: hasStatusRefreshFailed
+    )
 
     if isBatchCounterEnabled() {
       let info = documentCredentialsInfoUi(usageCounts: document?.credentialsUsageCounts)

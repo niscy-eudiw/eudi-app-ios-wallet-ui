@@ -87,24 +87,12 @@ private struct DashboardViewContainer: View {
     content()
       .sheetDialog(isPresented: $isRevokedModalShowing) {
         VStack(spacing: .zero) {
+          ContentTitleView(
+            title: .revokedModalTitle,
+            caption: .revokedModalDescription
+          )
 
-          if !revokedDocuments.isEmpty {
-            ContentTitleView(
-              title: .revokedModalTitle,
-              caption: .revokedModalDescription
-            )
-
-            notificationList(for: revokedDocuments)
-          }
-
-          if !suspendedDocuments.isEmpty {
-            ContentTitleView(
-              title: .suspendedModalTitle,
-              caption: .suspendedModalDescription
-            )
-
-            notificationList(for: suspendedDocuments)
-          }
+          notificationList(for: revokedDocuments.merging(suspendedDocuments) { revoked, _ in revoked })
         }
       }
   }

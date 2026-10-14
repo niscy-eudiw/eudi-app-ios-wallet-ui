@@ -268,7 +268,7 @@ final class TestProximityInteractor: EudiTest {
       )
     }
     
-    stubFetchRevokedDocuments(with: [])
+    stubRevokedDocumentStatuses(with: [])
     
     // When
     let state = await interactor.onRequestReceived()
@@ -322,7 +322,7 @@ final class TestProximityInteractor: EudiTest {
         )
       )
     }
-    stubFetchRevokedDocuments(with: [])
+    stubRevokedDocumentStatuses(with: [])
 
     let state = await interactor.onRequestReceived()
 
@@ -350,7 +350,7 @@ final class TestProximityInteractor: EudiTest {
       when(mock.requestReceived()).thenThrow(expectedError)
     }
 
-    stubFetchRevokedDocuments(with: [])
+    stubRevokedDocumentStatuses(with: [])
 
     // When
     let state = await interactor.onRequestReceived()
@@ -374,7 +374,7 @@ final class TestProximityInteractor: EudiTest {
         .thenThrow(WalletError(description: "reader not trusted", code: .trustError))
     }
 
-    stubFetchRevokedDocuments(with: [])
+    stubRevokedDocumentStatuses(with: [])
 
     // When
     let state = await interactor.onRequestReceived()
@@ -515,7 +515,7 @@ final class TestProximityInteractor: EudiTest {
       when(mock.requestReceived()).thenReturn(mockResponse)
     }
     stub(walletKitController) { mock in
-      when(mock.fetchRevokedDocuments()).thenReturn(revokedDocIds)
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn(Self.statuses(revokedDocIds, as: .revoked))
     }
 
     // When
@@ -530,52 +530,48 @@ final class TestProximityInteractor: EudiTest {
     }
   }
 
-  func testOnRequestReceived_WhenFetchRevokedDocumentsThrowsAndItemsNotEmpty_ThenVerifySuccessState() async {
-    // Given
-    let mockResponse = Self.mockPresentationRequest
-
+  func testOnRequestReceived_WhenTheRevocationRecordsCannotBeRead_ThenFails() async {
     stub(presentationSessionCoordinator) { mock in
-      when(mock.requestReceived()).thenReturn(mockResponse)
+      when(mock.requestReceived()).thenReturn(Self.mockPresentationRequest)
     }
-
     stub(walletKitController) { mock in
-      when(mock.fetchRevokedDocuments()).thenThrow(RuntimeError.genericError)
+      when(mock.fetchRevokedDocumentStatuses()).thenThrow(RuntimeError.genericError)
     }
 
-    stub(walletKitController) { mock in
-      when(
-        mock.parseDocClaim(
-          docId: any(),
-          groupId: any(),
-          docClaim: any(),
-          type: any(),
-          parser: any()
-        )
-      ).thenReturn(
-       [
-        .primitive(
-          id: Constants.randomIdentifier,
-          title: "elementIdentifier",
-          documentId: Constants.isoMdlModelId,
-          nameSpace: "nameSpace",
-          path: ["elementIdentifier"],
-          type: .mdoc,
-          value: .string("value"),
-          status: .available(isRequired: false)
-        )
-       ]
-      )
-    }
-
-    // When
     let state = await interactor.onRequestReceived()
 
-    // Then
     switch state {
-    case .success:
-      XCTAssertTrue(true)
+    case .failure:
+      break
     default:
-      XCTFail("Expected success state, got \(state)")
+      XCTFail("Expected failure state, got \(state)")
+    }
+    verify(walletKitController, never()).parseDocClaim(
+      docId: any(),
+      groupId: any(),
+      docClaim: any(),
+      type: any(),
+      parser: any()
+    )
+  }
+
+  func testOnRequestReceived_WhenTheDocumentIsSuspendedOrUnrecognised_ThenItIsLeftOut() async {
+    let docIds = Self.mockPresentationRequest.itemSets.flatMap { $0 }.map(\.docId)
+    stub(presentationSessionCoordinator) { mock in
+      when(mock.requestReceived()).thenReturn(Self.mockPresentationRequest)
+    }
+
+    for status in [DocumentRevocationStatus.suspended, .unrecognised] {
+      stubRevokedDocumentStatuses(with: docIds, as: status)
+
+      let state = await interactor.onRequestReceived()
+
+      switch state {
+      case .success(let items, _, _, _, _):
+        XCTAssertTrue(items.isEmpty, "\(status)")
+      default:
+        XCTFail("Expected success state for \(status), got \(state)")
+      }
     }
   }
 }
@@ -630,9 +626,13 @@ private extension TestProximityInteractor {
     ]
   ]
   
-  func stubFetchRevokedDocuments(with revokedDocuments: [String]) {
+  func stubRevokedDocumentStatuses(with documentIds: [String], as status: DocumentRevocationStatus = .revoked) {
     stub(walletKitController) { mock in
-      when(mock.fetchRevokedDocuments()).thenReturn(revokedDocuments)
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn(Self.statuses(documentIds, as: status))
     }
+  }
+
+  static func statuses(_ documentIds: [String], as status: DocumentRevocationStatus) -> [String: DocumentRevocationStatus] {
+    Dictionary(documentIds.map { ($0, status) }, uniquingKeysWith: { first, _ in first })
   }
 }

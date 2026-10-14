@@ -45,9 +45,16 @@ struct IssuerDetailsCardView: View {
           image: Theme.shared.image.id
         )
       ),
-      isLoading: self.isLoading
+      isLoading: self.isLoading,
+      expandsWhen: issuerDetails.hasStatusRefreshFailed
     ) {
       VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
+        if issuerDetails.hasStatusRefreshFailed {
+          Text(LocalizableStringKey.documentDetailsIssuerCardStatusRefreshFailedText)
+            .typography(Theme.shared.font.bodyMedium)
+            .foregroundStyle(Theme.shared.color.warning)
+        }
+
         if let dateTextKey = issuerDetails.expandedDateText {
           Text(dateTextKey)
             .typography(Theme.shared.font.bodyMedium)

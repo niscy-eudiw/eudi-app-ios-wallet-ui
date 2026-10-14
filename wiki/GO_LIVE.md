@@ -156,7 +156,7 @@ The application is a modular iOS project. Important modules and targets for prod
 | `logic-core` | WalletKit integration, issuer configuration, presentation, document issuance, document registration, revocation, transaction logging. |
 | `logic-business` | Global app config, build variant parsing, RQES config, Keychain controller, preferences, Bluetooth and shared helpers. |
 | `logic-authentication` | PIN storage provider, PIN controller, biometric controller, PIN throttle/lockout, session lock (`SessionController`), authentication configuration. |
-| `logic-storage` | SwiftData storage for bookmarks, transactions, revoked and suspended documents, and failed reissuance data. |
+| `logic-storage` | SwiftData storage for bookmarks, transactions, revoked, suspended and unrecognised documents, status refresh failures, and failed reissuance data. |
 | `logic-api` | `URLSession` provider and network request helpers. |
 | `logic-analytics` | Optional analytics provider integration. |
 | `logic-resources` | Strings, images, theme, localized resources. |
@@ -211,7 +211,7 @@ Keep these files under strict review:
 | `Modules/logic-core/Sources/Config/WalletKitConfig.swift` | Main WalletKit production configuration: issuers, OpenID4VP, trust anchors, document categories, logging, revocation, and issuance rules. |
 | `Modules/logic-core/Sources/Config/WalletProviderAttestationConfig.swift` | Defines the wallet provider attestation host. |
 | `Modules/logic-core/Sources/Controller/WalletKitController.swift` | Constructs `EudiWallet`, wires WalletKit config, starts presentation, issuance, revocation, logging, and document registration. |
-| `Modules/logic-core/Sources/Worker/RevocationWorkManager.swift` | Status-list results: revoked, suspended, cleared. |
+| `Modules/logic-core/Sources/Worker/RevocationWorkManager.swift` | Status-list results: revoked, suspended, unrecognised, cleared, and refresh failures (`RevocationRecordUpdate`). |
 | `Modules/logic-authentication/Sources/Storage/KeychainPinStorageProvider.swift` | Defines PIN hashing, salt, PBKDF2 iteration count, and constant-time comparison. |
 | `Modules/logic-authentication/Sources/Controller/SystemBiometryController.swift` | Biometric unlock: the policy evaluated on a fresh `LAContext` and the Keychain probe read with it. |
 | `Modules/feature-startup/Sources/Interactor/StartupInteractor.swift` | The start-up gate: login, PIN creation only for a wallet without documents, or an error. |
@@ -937,7 +937,7 @@ Current registration behavior:
 * Registration is only attempted on iOS 26 and later where the Digital Credentials API is available.
 * Only CBOR documents are registered (`document.docDataFormat == .cbor`).
 * Registrations are reconciled against storage rather than tracked incrementally, so a document deleted in the app is deregistered, and a registration left behind by an earlier build is removed when the documents are next loaded, after login.
-* Revoked and suspended documents stay registered, and the extension can present them; see [Revocation And Status Checking](#revocation-and-status-checking).
+* Revoked, suspended and unrecognised documents stay registered, and the extension can present them; see [Revocation And Status Checking](#revocation-and-status-checking).
 
 Current request handling:
 
@@ -1267,22 +1267,33 @@ are tasks in the app's process; iOS background execution is not used.
 
 How the check treats what a status list reports (`RevocationWorkManager.checkRevocation()`):
 
-* An Invalid status stores the document as revoked. A revocation is permanent: a later Valid or
-  Suspended for the same document does not clear it.
+The rules are the Android wallet's (`RevocationRecordUpdate`, Android's `revocationUpdateFor`):
+
+* An Invalid status stores the document as revoked. A revocation is permanent: no later status
+  clears or changes it.
 * A Suspended status stores the document as suspended, unless it is already revoked. A later Valid
   clears the suspension, and a later Invalid turns it into a revocation.
-* A revoked or a suspended document is left out of remote and proximity presentations while the
-  records can be read; if they cannot, nothing is left out (the read error is discarded). The DC-API
-  extension does not consult these records. The documents list, the details screen, the issuer card
-  and the dashboard notice show which of the two it is; the list's "Revoked" filter lists both.
-* A record stored before the status was kept counts as revoked, so a document suspended before the
-  update stays blocked until the user removes it. The app offers no manual re-issue for a revoked or
-  suspended document. The background re-issuance worker does not skip such documents, and a re-issued
-  document gets a new identifier and no revocation record.
+* A status value the wallet cannot interpret (application-specific or reserved) stores the document
+  as unrecognised, unless it is already revoked. A later Valid clears it; a later Invalid or Suspended
+  records that status. A record stored before the status was kept counts as unrecognised too, so the
+  next check that reads the document's status replaces or clears it.
+* Every record blocks the document. A revoked, suspended or unrecognised document is left out of
+  remote and proximity presentations; if the records cannot be read, the request fails rather than
+  offer a blocked document. The DC-API extension does not consult these records. The documents list,
+  the details screen and the issuer card show a suspended document as suspended and the others as
+  revoked; the list's "Revoked" filter lists all of them.
+* The dashboard notice, "Revoked or suspended documents", lists only the documents a check blocks for
+  the first time. A change from one blocked status to another (suspended to revoked) refreshes the
+  screens without a new notice.
+* The app offers no manual re-issue for a blocked document, and the background re-issuance worker skips
+  blocked documents: a re-issued copy would get a new identifier and no record, which would undo the
+  block. If the records cannot be read, that round re-issues nothing.
 * A status that cannot be fetched leaves that document's record as it is, and the check goes on with
-  the other documents. The failure is not stored or shown. If the stored records cannot be read, the
-  check changes nothing.
-* Other status values (application-specific or reserved) leave the record as it is.
+  the other documents. The document gets a refresh-failure record (`StatusRefreshFailure`): its issuer
+  card opens by itself and says "The document's status could not be refreshed. The state shown is from
+  the last successful check." The next check that fetches the status removes the record. A failure
+  does not block the document. If the stored records or the failure records cannot be read, the check
+  changes nothing.
 
 Production decisions:
 
@@ -1527,7 +1538,7 @@ Production storage includes:
 * UserDefaults values.
 * App Group container data.
 * WalletKit log file.
-* Transaction records and revoked and suspended document records.
+* Transaction records, revocation records (revoked, suspended, unrecognised) and status refresh failures.
 
 ### Keychain
 
@@ -2366,7 +2377,9 @@ Before release candidate approval, test:
 * Backend unavailable.
 * Expired credential.
 * Revoked credential; suspended credential, and its return to Valid; a credential suspended before
-  the update (stays blocked).
+  the update (shown as revoked until the next check reads its status, which records it as suspended, or
+  clears it if the list reports it valid); a status list that cannot be fetched (the issuer card opens
+  with the refresh-failure notice).
 * Malformed deep links.
 * Session lock: 65 seconds in the background requires login, 10 seconds does not; 5 minutes without
   touching any screen, a sheet included, requires login, while touches keep the session; an issuance

@@ -694,13 +694,24 @@
         }
       }
     },
+    "document_details_issuer_card_status_refresh_failed_text" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The document's status could not be refreshed. The state shown is from the last successful check."
+          }
+        }
+      }
+    },
     "document_details_issuer_card_suspended_message_text" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This document cannot be used for verification while it is suspended."
+            "value" : "The issuer has suspended this document. It cannot be used for verification unless the issuer reinstates it."
           }
         }
       }
@@ -2708,7 +2719,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The following documents have been revoked."
+            "value" : "The issuers of the following documents have revoked or suspended them, so they cannot be used."
           }
         }
       }
@@ -2719,7 +2730,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Revoked documents"
+            "value" : "Revoked or suspended documents"
           }
         }
       }
@@ -3028,28 +3039,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Suspended"
-          }
-        }
-      }
-    },
-    "suspended_modal_description" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The following documents have been suspended."
-          }
-        }
-      }
-    },
-    "suspended_modal_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suspended documents"
           }
         }
       }

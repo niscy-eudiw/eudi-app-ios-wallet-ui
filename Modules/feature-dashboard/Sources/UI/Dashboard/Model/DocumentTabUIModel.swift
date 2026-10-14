@@ -75,10 +75,10 @@ extension DocClaimsDecodable {
     ? .failed
     : (self is DeferrredDocument)
     ? .pending
-    : revocationStatus == .revoked
-    ? .revoked
     : revocationStatus == .suspended
     ? .suspended
+    : revocationStatus != nil
+    ? .revoked
     : .issued
 
     let expiresAt = self.getExpiryDate(

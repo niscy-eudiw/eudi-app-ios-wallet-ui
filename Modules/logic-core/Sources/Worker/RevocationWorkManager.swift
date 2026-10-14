@@ -67,21 +67,27 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
     didRunInitialCheck ? configLogic.revocationIntervalSeconds : initialDelay
   }
 
-  /// One sweep over the issued documents that carry a status list. A revocation is permanent; a
-  /// suspension is cleared when the list reports the document valid again. A document whose status
-  /// cannot be fetched keeps its record and the sweep goes on. A failed read of the stored records
-  /// ends the sweep before anything is changed.
+  /// One sweep over the issued documents that carry a status list, with the Android wallet's rules
+  /// (`RevocationRecordUpdate`): a revocation is permanent; a suspended or unrecognised record is cleared
+  /// when the list reports the document valid again; a status value the wallet cannot interpret blocks
+  /// the document. A document whose status cannot be fetched keeps its record, gets a refresh-failure
+  /// record that the next successful check removes, and the sweep goes on. The dashboard notice lists
+  /// only documents newly blocked. A failed read of the stored records ends the sweep before anything is
+  /// changed.
   func checkRevocation() async throws {
 
     didRunInitialCheck = true
 
     let issuedDocuments = await walletKitController.fetchIssuedDocuments()
     let storedStatuses = try await walletKitController.fetchRevokedDocumentStatuses()
+    let previousFailures = try await walletKitController.fetchStatusRefreshFailures()
 
     var newStatuses: [String: DocumentRevocationStatus] = [:]
     var revokedDocuments: [String: String] = [:]
     var suspendedDocuments: [String: String] = [:]
-    var fromSuspendedToValid: [String] = []
+    var cleared: [String] = []
+    var failed: [String] = []
+    var refreshedAfterFailure: [String] = []
 
     for document in issuedDocuments {
 
@@ -91,42 +97,54 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
       do {
         status = try await walletKitController.getDocumentStatus(for: statusList)
       } catch {
+        failed.append(document.id)
         continue
+      }
+
+      if previousFailures.contains(document.id) {
+        refreshedAfterFailure.append(document.id)
       }
 
       let storedStatus = storedStatuses[document.id]
 
-      switch status {
-      case .invalid:
-        if storedStatus != .revoked {
-          newStatuses[document.id] = .revoked
+      switch RevocationRecordUpdate.after(stored: storedStatus, observed: status) {
+      case .keep:
+        continue
+      case .clear:
+        cleared.append(document.id)
+      case .record(let newStatus):
+        newStatuses[document.id] = newStatus
+        guard storedStatus == nil else { continue }
+        if newStatus == .suspended {
+          suspendedDocuments[document.displayName.orEmpty] = document.id
+        } else {
           revokedDocuments[document.displayName.orEmpty] = document.id
         }
-      case .suspended:
-        if storedStatus == nil {
-          newStatuses[document.id] = .suspended
-          suspendedDocuments[document.displayName.orEmpty] = document.id
-        }
-      case .valid:
-        if storedStatus == .suspended {
-          fromSuspendedToValid.append(document.id)
-        }
-      default:
-        continue
       }
     }
 
     if !newStatuses.isEmpty {
       try await storeRevokedDocuments(with: newStatuses)
-      await notifyListeners(revoked: revokedDocuments, suspended: suspendedDocuments)
+      if !revokedDocuments.isEmpty || !suspendedDocuments.isEmpty {
+        await notifyListeners(revoked: revokedDocuments, suspended: suspendedDocuments)
+      }
     }
 
-    if !fromSuspendedToValid.isEmpty {
-      try await removeRevokedDocuments(with: fromSuspendedToValid)
-      await notifyDocumentDetails(with: fromSuspendedToValid)
+    if !cleared.isEmpty {
+      try await removeRevokedDocuments(with: cleared)
     }
 
-    if !fromSuspendedToValid.isEmpty || !newStatuses.isEmpty {
+    let newFailures = failed.filter { !previousFailures.contains($0) }
+    if !newFailures.isEmpty {
+      try await walletKitController.storeStatusRefreshFailures(ids: newFailures)
+    }
+    if !refreshedAfterFailure.isEmpty {
+      try await walletKitController.removeStatusRefreshFailures(ids: refreshedAfterFailure)
+    }
+
+    let changed = Array(newStatuses.keys) + cleared + newFailures + refreshedAfterFailure
+    if !changed.isEmpty {
+      await notifyDocumentDetails(with: changed)
       await notifyDocumentTabListener()
     }
   }
@@ -150,7 +168,6 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
       object: nil,
       userInfo: RevocationDashboardPayload(revoked: revoked, suspended: suspended).userInfo
     )
-    await notifyDocumentDetails(with: Array(revoked.values) + Array(suspended.values))
   }
 
   @MainActor

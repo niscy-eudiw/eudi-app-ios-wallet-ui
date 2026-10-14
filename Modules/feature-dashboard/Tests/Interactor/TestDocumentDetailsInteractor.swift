@@ -77,6 +77,7 @@ final class TestDocumentDetailsInteractor: EudiTest {
       XCTAssertEqual(documentCredentialsInfoUi?.availableCredentials, 10)
       XCTAssertEqual(documentCredentialsInfoUi?.totalCredentials, 10)
       XCTAssertNotNil(issuerDocumentDetailsCard)
+      XCTAssertEqual(issuerDocumentDetailsCard?.hasStatusRefreshFailed, false)
       XCTAssertFalse(isBookmarked)
       XCTAssertFalse(isRevoked)
     case .failure:
@@ -100,6 +101,26 @@ final class TestDocumentDetailsInteractor: EudiTest {
       XCTAssertTrue(isRevoked)
       XCTAssertEqual(issuerDocumentDetailsCard?.documentState, .suspended)
       XCTAssertEqual(issuerDocumentDetailsCard?.dateText, .documentDetailsSuspendedDocument)
+    case .failure:
+      XCTFail("Expected success, but got failure.")
+    }
+  }
+
+  func testFetchStoredDocument_WhenTheStatusCouldNotBeRefreshed_ThenTheIssuerCardSaysSoWithoutBlocking() async throws {
+    let expectedDocument = Constants.createEuPidModel(credentialsUsageCounts: try .init(total: 10, remaining: 10))
+    let documentId = expectedDocument.id
+    stubFetchDocument(for: documentId, document: expectedDocument)
+    stubIsBookmarked(for: documentId, isBookmarked: false)
+    stubRevocationStatus(for: documentId, status: nil, hasStatusRefreshFailed: true)
+    stubIsDocumentLowOnCredentials()
+    stubIsBatchCounterEnabled()
+
+    let result = await interactor.fetchStoredDocument(documentId: documentId)
+
+    switch result {
+    case .success(_, let issuerDocumentDetailsCard, _, _, let isRevoked):
+      XCTAssertFalse(isRevoked)
+      XCTAssertEqual(issuerDocumentDetailsCard?.hasStatusRefreshFailed, true)
     case .failure:
       XCTFail("Expected success, but got failure.")
     }
@@ -551,10 +572,12 @@ extension TestDocumentDetailsInteractor {
     }
   }
 
-  func stubRevocationStatus(for id: String, status: DocumentRevocationStatus?) {
+  func stubRevocationStatus(for id: String, status: DocumentRevocationStatus?, hasStatusRefreshFailed: Bool = false) {
     stub(walletKitController) { stub in
       when(stub.getDocumentRevocationStatus(with: equal(to: id)))
         .thenReturn(status)
+      when(stub.hasStatusRefreshFailure(with: equal(to: id)))
+        .thenReturn(hasStatusRefreshFailed)
     }
   }
   

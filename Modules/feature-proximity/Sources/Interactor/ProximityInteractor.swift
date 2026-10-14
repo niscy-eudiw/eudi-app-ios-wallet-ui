@@ -119,8 +119,8 @@ final actor ProximityInteractorImpl: ProximityInteractor {
     do {
       let coordinator = proximitySessionCoordinator
       let response = try await coordinator.requestReceived()
-      let revokedDocuments = (try? await walletKitController.fetchRevokedDocuments()) ?? []
-      let documents = (response.itemSets.first ?? []).filter { item in !revokedDocuments.contains(where: { $0 == item.docId }) }
+      let blockedDocuments = try await walletKitController.fetchRevokedDocumentStatuses()
+      let documents = (response.itemSets.first ?? []).filter { item in blockedDocuments[item.docId] == nil }
       let registrationPolicy = coordinator.relyingPartyRegistration
       let overaskedClaims = response.overaskedClaims
       return .success(

@@ -539,7 +539,8 @@ Android's `ThemeManager.Builder`, and is intentionally left at `.default` in the
   proximity, including the warning a proximity reader without a trusted reader certificate raises),
   the PIN screen, document details, a revoked and a suspended document (the documents list draws
   both in `red` with the `errorIndicator` image, the issuer card in `red`, and the dashboard notice
-  lists each under its own title), the RQES signing flow, and a request in the ID Provider
+  lists both under one title), a document whose status could not be refreshed (its issuer card opens
+  with the notice in `warning`), the RQES signing flow, and a request in the ID Provider
   extension, which opens with the PIN or biometric login and shows the requester without a verified
   badge and with the warning that its identity could not be verified. The start-up error alert is a
   system alert, which the theme does not style.

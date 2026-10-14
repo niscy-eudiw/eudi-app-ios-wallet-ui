@@ -8717,6 +8717,49 @@ return await cuckoo_manager.call(
         )
     }
 
+    public func fetchStatusRefreshFailures() async throws -> Set<String> {
+        return try await cuckoo_manager.callThrows(
+            "fetchStatusRefreshFailures() async throws -> Set<String>",
+            parameters: (),
+            escapingParameters: (),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.fetchStatusRefreshFailures()
+        )
+    }
+
+    public func storeStatusRefreshFailures(ids p0: [String]) async throws {
+        return try await cuckoo_manager.callThrows(
+            "storeStatusRefreshFailures(ids p0: [String]) async throws",
+            parameters: (p0),
+            escapingParameters: (p0),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.storeStatusRefreshFailures(ids: p0)
+        )
+    }
+
+    public func removeStatusRefreshFailures(ids p0: [String]) async throws {
+        return try await cuckoo_manager.callThrows(
+            "removeStatusRefreshFailures(ids p0: [String]) async throws",
+            parameters: (p0),
+            escapingParameters: (p0),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.removeStatusRefreshFailures(ids: p0)
+        )
+    }
+
+    public func hasStatusRefreshFailure(with p0: String) async -> Bool {
+        return await cuckoo_manager.call(
+            "hasStatusRefreshFailure(with p0: String) async -> Bool",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.hasStatusRefreshFailure(with: p0)
+        )
+    }
+
     public func getDocumentStatus(for p0: MdocDataModel18013.StatusList) async throws -> CredentialStatus {
         return try await cuckoo_manager.callThrows(
             "getDocumentStatus(for p0: MdocDataModel18013.StatusList) async throws -> CredentialStatus",
@@ -9170,6 +9213,38 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
                 method: "getDocumentRevocationStatus(with p0: String) async -> DocumentRevocationStatus?",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func fetchStatusRefreshFailures() -> Cuckoo.ProtocolStubThrowingFunction<(), Set<String>,Swift.Error> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "fetchStatusRefreshFailures() async throws -> Set<String>",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func storeStatusRefreshFailures<M1: Cuckoo.Matchable>(ids p0: M1) -> Cuckoo.ProtocolStubNoReturnThrowingFunction<([String]),Swift.Error> where M1.MatchedType == [String] {
+            let matchers: [Cuckoo.ParameterMatcher<([String])>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "storeStatusRefreshFailures(ids p0: [String]) async throws",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func removeStatusRefreshFailures<M1: Cuckoo.Matchable>(ids p0: M1) -> Cuckoo.ProtocolStubNoReturnThrowingFunction<([String]),Swift.Error> where M1.MatchedType == [String] {
+            let matchers: [Cuckoo.ParameterMatcher<([String])>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "removeStatusRefreshFailures(ids p0: [String]) async throws",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func hasStatusRefreshFailure<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubFunction<(String), Bool> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "hasStatusRefreshFailure(with p0: String) async -> Bool",
                 parameterMatchers: matchers
             ))
         }
@@ -9792,6 +9867,54 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
+        func fetchStatusRefreshFailures() -> Cuckoo.__DoNotUse<(), Set<String>> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "fetchStatusRefreshFailures() async throws -> Set<String>",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func storeStatusRefreshFailures<M1: Cuckoo.Matchable>(ids p0: M1) -> Cuckoo.__DoNotUse<([String]), Void> where M1.MatchedType == [String] {
+            let matchers: [Cuckoo.ParameterMatcher<([String])>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "storeStatusRefreshFailures(ids p0: [String]) async throws",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func removeStatusRefreshFailures<M1: Cuckoo.Matchable>(ids p0: M1) -> Cuckoo.__DoNotUse<([String]), Void> where M1.MatchedType == [String] {
+            let matchers: [Cuckoo.ParameterMatcher<([String])>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "removeStatusRefreshFailures(ids p0: [String]) async throws",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func hasStatusRefreshFailure<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(String), Bool> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "hasStatusRefreshFailure(with p0: String) async -> Bool",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
         func getDocumentStatus<M1: Cuckoo.Matchable>(for p0: M1) -> Cuckoo.__DoNotUse<(MdocDataModel18013.StatusList), CredentialStatus> where M1.MatchedType == MdocDataModel18013.StatusList {
             let matchers: [Cuckoo.ParameterMatcher<(MdocDataModel18013.StatusList)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
@@ -10086,6 +10209,22 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (DocumentRevocationStatus?).self)
     }
     
+    public func fetchStatusRefreshFailures() async throws -> Set<String> {
+        return DefaultValueRegistry.defaultValue(for: (Set<String>).self)
+    }
+    
+    public func storeStatusRefreshFailures(ids p0: [String]) async throws {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func removeStatusRefreshFailures(ids p0: [String]) async throws {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func hasStatusRefreshFailure(with p0: String) async -> Bool {
+        return DefaultValueRegistry.defaultValue(for: (Bool).self)
+    }
+    
     public func getDocumentStatus(for p0: MdocDataModel18013.StatusList) async throws -> CredentialStatus {
         return DefaultValueRegistry.defaultValue(for: (CredentialStatus).self)
     }
@@ -10223,6 +10362,7 @@ public class WalletKitTrustMarkControllerStub:WalletKitTrustMarkController, @unc
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Coordinator/Model/PresentationRequest.swift'
 
 import Cuckoo
+import logic_resources
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -11990,6 +12130,21 @@ public class RequestItemConvertibleStub:RequestItemConvertible, @unchecked Senda
 
 import Cuckoo
 import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_issuance
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/RevocationRecordUpdate.swift'
+
+import Cuckoo
+import StatiumSwift
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics

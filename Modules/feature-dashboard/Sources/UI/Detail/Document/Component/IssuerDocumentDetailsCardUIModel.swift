@@ -23,15 +23,20 @@ public struct IssuerDocumentDetailsCardUIModel: Equatable, Sendable {
   public let issuerName: LocalizableStringKey
   public let issuerLogo: URL?
   public let documentState: DocumentState
+  /// The last revocation check could not refresh the document's status: the card opens by itself and
+  /// says so, as on Android.
+  public let hasStatusRefreshFailed: Bool
 
   public init(
     issuerName: LocalizableStringKey,
     issuerLogo: URL?,
     documentState: DocumentState,
+    hasStatusRefreshFailed: Bool = false
   ) {
     self.issuerName = issuerName
     self.issuerLogo = issuerLogo
     self.documentState = documentState
+    self.hasStatusRefreshFailed = hasStatusRefreshFailed
   }
 
   var expandedMessageText: LocalizableStringKey {
@@ -99,18 +104,20 @@ public struct IssuerDocumentDetailsCardUIModel: Equatable, Sendable {
 }
 
 public extension DocClaimsDecodable {
+  /// An unrecognised status is shown as revoked, as on Android.
   func transformToIssuerDetailsCardDataUi(
-    revocationStatus: DocumentRevocationStatus?
+    revocationStatus: DocumentRevocationStatus?,
+    hasStatusRefreshFailed: Bool = false
   ) -> IssuerDocumentDetailsCardUIModel {
     let documentState: IssuerDocumentDetailsCardUIModel.DocumentState
     let issuanceDate = self.createdAt.formattedForDocumentDetails()
     let expirationDate = self.getExpiryDate(parser: {
       Locale.current.localizedDateTime(date: $0, uiFormatter: "dd MMM yyyy")
     }) ?? ""
-    if revocationStatus == .revoked {
-      documentState = .revoked
-    } else if revocationStatus == .suspended {
+    if revocationStatus == .suspended {
       documentState = .suspended
+    } else if revocationStatus != nil {
+      documentState = .revoked
     } else if self.hasExpired {
       documentState = .expired(
         issuanceDate: issuanceDate,
@@ -126,7 +133,8 @@ public extension DocClaimsDecodable {
     return .init(
       issuerName: .custom(self.issuerName),
       issuerLogo: self.issuerLogo,
-      documentState: documentState
+      documentState: documentState,
+      hasStatusRefreshFailed: hasStatusRefreshFailed
     )
   }
 }

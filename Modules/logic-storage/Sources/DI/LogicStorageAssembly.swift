@@ -51,5 +51,10 @@ public final class LogicStorageAssembly: Assembly {
       FailedReIssuedDocStorageControllerImpl(swiftDataService: r.force(SwiftDataService.self))
     }
     .inObjectScope(ObjectScope.transient)
+
+    container.register((any StatusRefreshFailureStorageController).self) { r in
+      StatusRefreshFailureStorageControllerImpl(swiftDataService: r.force(SwiftDataService.self))
+    }
+    .inObjectScope(ObjectScope.transient)
   }
 }

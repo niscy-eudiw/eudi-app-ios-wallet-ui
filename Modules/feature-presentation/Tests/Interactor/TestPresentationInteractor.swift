@@ -234,7 +234,7 @@ final class TestPresentationInteractor: EudiTest {
       )
     }
 
-    stubFetchRevokedDocuments(with: ["revokedIdentifier"])
+    stubRevokedDocumentStatuses(with: ["revokedIdentifier"])
 
     // When
     let result = await interactor.onDeviceEngagement()
@@ -283,7 +283,7 @@ final class TestPresentationInteractor: EudiTest {
       )
     }
 
-    stubFetchRevokedDocuments(with: [])
+    stubRevokedDocumentStatuses(with: [])
 
     // When
     let state = await interactor.onRequestReceived()
@@ -308,7 +308,7 @@ final class TestPresentationInteractor: EudiTest {
       when(mock.requestReceived()).thenThrow(expectedError)
     }
 
-    stubFetchRevokedDocuments(with: ["revokedIdentifier"])
+    stubRevokedDocumentStatuses(with: ["revokedIdentifier"])
 
     // When
     let state = await interactor.onRequestReceived()
@@ -332,7 +332,7 @@ final class TestPresentationInteractor: EudiTest {
         .thenThrow(WalletError(description: "verifier not trusted", code: .trustError))
     }
 
-    stubFetchRevokedDocuments(with: [])
+    stubRevokedDocumentStatuses(with: [])
 
     // When
     let state = await interactor.onRequestReceived()
@@ -453,7 +453,7 @@ final class TestPresentationInteractor: EudiTest {
       when(mock.requestReceived()).thenReturn(mockResponse)
     }
     stub(walletKitController) { mock in
-      when(mock.fetchRevokedDocuments()).thenReturn(allDocIds)
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn(Self.statuses(allDocIds, as: .revoked))
     }
 
     stub(walletKitController) { mock in
@@ -480,49 +480,48 @@ final class TestPresentationInteractor: EudiTest {
     }
   }
 
-  func testOnRequestReceived_WhenFetchRevokedDocumentsThrows_ThenReturnsSuccess() async {
-    // Given
-    let mockResponse = Self.mockPresentationRequest
-
+  func testOnRequestReceived_WhenTheRevocationRecordsCannotBeRead_ThenFails() async {
     stub(presentationCoordinator) { mock in
-        when(mock.requestReceived()).thenReturn(mockResponse)
+      when(mock.requestReceived()).thenReturn(Self.mockPresentationRequest)
     }
     stub(walletKitController) { mock in
-        when(mock.fetchRevokedDocuments()).thenThrow(RuntimeError.genericError)
-    }
-    // Also stub parseDocClaim
-    stub(walletKitController) { mock in
-      when(
-        mock.parseDocClaim(
-          docId: any(),
-          groupId: any(),
-          docClaim: any(),
-          type: any(),
-          parser: any()
-        )
-      ).thenReturn([
-        .primitive(
-          id: Constants.randomIdentifier,
-          title: "elementIdentifier",
-          documentId: Constants.isoMdlModelId,
-          nameSpace: "nameSpace",
-          path: ["elementIdentifier"],
-          type: .mdoc,
-          value: .string("value"),
-          status: .available(isRequired: false)
-        )
-      ])
+      when(mock.fetchRevokedDocumentStatuses()).thenThrow(RuntimeError.genericError)
     }
 
-    // When
     let result = await interactor.onRequestReceived()
 
-    // Then
     switch result {
-    case .success:
-      XCTAssertTrue(true)
+    case .failure:
+      break
     default:
-      XCTFail("Expected success, got \(result)")
+      XCTFail("Expected failure, got \(result)")
+    }
+    verify(walletKitController, never()).parseDocClaim(
+      docId: any(),
+      groupId: any(),
+      docClaim: any(),
+      type: any(),
+      parser: any()
+    )
+  }
+
+  func testOnRequestReceived_WhenTheDocumentIsSuspendedOrUnrecognised_ThenItIsLeftOut() async {
+    let docIds = Self.mockPresentationRequest.itemSets.flatMap { $0 }.map(\.docId)
+    stub(presentationCoordinator) { mock in
+      when(mock.requestReceived()).thenReturn(Self.mockPresentationRequest)
+    }
+
+    for status in [DocumentRevocationStatus.suspended, .unrecognised] {
+      stubRevokedDocumentStatuses(with: docIds, as: status)
+
+      let result = await interactor.onRequestReceived()
+
+      switch result {
+      case .success(let model):
+        XCTAssertTrue(model.requestDataCombinations.isEmpty, "\(status)")
+      default:
+        XCTFail("Expected success for \(status), got \(result)")
+      }
     }
   }
 }
@@ -577,7 +576,7 @@ private extension TestPresentationInteractor {
     stub(presentationCoordinator) { mock in
       when(mock.requestReceived()).thenReturn(Self.mockPresentationRequest)
     }
-    stubFetchRevokedDocuments(with: [])
+    stubRevokedDocumentStatuses(with: [])
     stub(walletKitController) { mock in
       when(
         mock.parseDocClaim(
@@ -605,9 +604,13 @@ private extension TestPresentationInteractor {
     _ = await interactor.onRequestReceived()
   }
 
-  func stubFetchRevokedDocuments(with revokedDocuments: [String]) {
+  func stubRevokedDocumentStatuses(with documentIds: [String], as status: DocumentRevocationStatus = .revoked) {
     stub(walletKitController) { mock in
-      when(mock.fetchRevokedDocuments()).thenReturn(revokedDocuments)
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn(Self.statuses(documentIds, as: status))
     }
+  }
+
+  static func statuses(_ documentIds: [String], as status: DocumentRevocationStatus) -> [String: DocumentRevocationStatus] {
+    Dictionary(documentIds.map { ($0, status) }, uniquingKeysWith: { first, _ in first })
   }
 }

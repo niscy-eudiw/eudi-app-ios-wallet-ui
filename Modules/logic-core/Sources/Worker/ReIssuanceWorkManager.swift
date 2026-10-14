@@ -67,11 +67,17 @@ final actor ReIssuanceWorkManagerImpl: ReIssuanceWorkManager {
     reIssuanceTask = nil
   }
 
-  private func checkReIssuance() async throws {
+  /// A revoked, suspended or unrecognised document is not re-issued, as on Android: the copy would get a
+  /// new identifier and no record, which would undo the block. A failed read of the records skips the
+  /// round.
+  func checkReIssuance() async throws {
 
+    let blockedDocuments = try await walletKitController.fetchRevokedDocumentStatuses()
     var issuedDocuments: [any DocClaimsDecodable] = []
-    for document in await walletKitController.fetchIssuedDocuments() where await shouldReIssue(document) {
-      issuedDocuments.append(document)
+    for document in await walletKitController.fetchIssuedDocuments() where blockedDocuments[document.id] == nil {
+      if await shouldReIssue(document) {
+        issuedDocuments.append(document)
+      }
     }
 
     guard !issuedDocuments.isEmpty else { return }

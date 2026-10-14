@@ -42,6 +42,16 @@ final class TestDocumentRevocationUi: EudiTest {
     XCTAssertEqual(model.listItem.supportingText, .revoked)
   }
 
+  func testTransformToDocumentTabUi_WhenUnrecognised_ThenShowsRevoked() {
+    let model = Constants.createEuPidModel().transformToDocumentTabUi(
+      categories: [:],
+      revocationStatus: .unrecognised
+    )
+
+    XCTAssertEqual(model.value.state, .revoked)
+    XCTAssertEqual(model.listItem.supportingText, .revoked)
+  }
+
   func testTransformToDocumentTabUi_WhenNoRecord_ThenShowsIssued() {
     let model = Constants.createEuPidModel().transformToDocumentTabUi(
       categories: [:],
@@ -73,5 +83,24 @@ final class TestDocumentRevocationUi: EudiTest {
     XCTAssertEqual(card.documentState, .revoked)
     XCTAssertEqual(card.dateText, .documentDetailsRevokedDocument)
     XCTAssertEqual(card.expandedMessageText, .documentDetailsIssuerCardRevokedMessageText)
+  }
+
+  func testTransformToIssuerDetailsCardDataUi_WhenUnrecognised_ThenShowsRevokedTexts() {
+    let card = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(revocationStatus: .unrecognised)
+
+    XCTAssertEqual(card.documentState, .revoked)
+    XCTAssertEqual(card.dateText, .documentDetailsRevokedDocument)
+    XCTAssertEqual(card.expandedMessageText, .documentDetailsIssuerCardRevokedMessageText)
+  }
+
+  func testTransformToIssuerDetailsCardDataUi_WhenTheStatusCouldNotBeRefreshed_ThenFlagsTheCard() {
+    let failed = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(
+      revocationStatus: nil,
+      hasStatusRefreshFailed: true
+    )
+    let refreshed = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(revocationStatus: nil)
+
+    XCTAssertTrue(failed.hasStatusRefreshFailed)
+    XCTAssertFalse(refreshed.hasStatusRefreshFailed)
   }
 }
