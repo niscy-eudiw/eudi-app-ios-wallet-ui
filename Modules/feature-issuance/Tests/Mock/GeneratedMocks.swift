@@ -7702,6 +7702,7 @@ class WalletProviderAttestationConfigStub:WalletProviderAttestationConfig, @unch
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Controller/WalletKitController.swift'
 
 import Cuckoo
+import Security
 import SwiftUI
 import logic_storage
 @testable import logic_core
@@ -7890,6 +7891,17 @@ public class MockWalletKitController: WalletKitController, Cuckoo.ProtocolMock, 
             errorType: Swift.Error.self,
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
             defaultCall: await __defaultImplStub!.loadDocuments()
+        )
+    }
+
+    public func hasStoredDocuments() async throws -> Bool {
+        return try await cuckoo_manager.callThrows(
+            "hasStoredDocuments() async throws -> Bool",
+            parameters: (),
+            escapingParameters: (),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.hasStoredDocuments()
         )
     }
 
@@ -8420,6 +8432,14 @@ return await cuckoo_manager.call(
             ))
         }
         
+        func hasStoredDocuments() -> Cuckoo.ProtocolStubThrowingFunction<(), Bool,Swift.Error> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "hasStoredDocuments() async throws -> Bool",
+                parameterMatchers: matchers
+            ))
+        }
+        
         func issueDocuments<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable>(issuerId p0: M1, identifiers p1: M2, docTypeIdentifier p2: M3) -> Cuckoo.ProtocolStubThrowingFunction<(String, [String], DocumentTypeIdentifier), IssuanceResult,Swift.Error> where M1.MatchedType == String, M2.MatchedType == [String], M3.MatchedType == DocumentTypeIdentifier {
             let matchers: [Cuckoo.ParameterMatcher<(String, [String], DocumentTypeIdentifier)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
@@ -8906,6 +8926,18 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
                 "loadDocuments() async throws",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func hasStoredDocuments() -> Cuckoo.__DoNotUse<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "hasStoredDocuments() async throws -> Bool",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -9426,6 +9458,10 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
     
     public func loadDocuments() async throws {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func hasStoredDocuments() async throws -> Bool {
+        return DefaultValueRegistry.defaultValue(for: (Bool).self)
     }
     
     public func issueDocuments(issuerId p0: String, identifiers p1: [String], docTypeIdentifier p2: DocumentTypeIdentifier) async throws -> IssuanceResult {

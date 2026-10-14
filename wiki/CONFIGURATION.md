@@ -434,7 +434,7 @@ production values for every config surface listed below.
 | WalletKit storage/auth | `WalletKitConfig.swift`, `ConfigLogic.swift` | Production Keychain service/access group and `userAuthenticationRequired` decision. For LoA High PID and other high-assurance EAA/QEAA credentials, require strong local authentication and Keychain/Secure Enclave-backed protection unless an approved remote high-assurance key protection design replaces local key use. |
 | WalletKit attestation key options | `WalletKitConfig.swift` (`keyOptions`) | Curve, secure area, access protection, access control, and key purposes used when creating attestation/proof keys during issuance, reissuance, deferred issuance, and resume. For LoA High PID and other high-assurance EAA/QEAA credentials, require Secure Enclave (with `.P256`) plus appropriate `accessProtection`/`accessControl`, or an approved remote high-assurance key protection design. |
 | PIN throttle policy | `AuthenticationConfig.swift` in `logic-authentication` | Confirm `maxFailedPinAttempts` and `pinLockoutDurations` meet policy. Decide what happens once the final lockout tier is reached (e.g. wipe, support flow, device-credential step-up). |
-| Document / WalletKit key storage | `EudiWalletConfiguration`, `ConfigLogic.keyChainConfig`, WalletKit-supported storage APIs | Default app configuration uses WalletKit storage with the configured Keychain service and access group. If production requires alternative local secure storage, a remote-backed key service, or an external protection SDK, use WalletKit-supported extension points and document the exact SDK/API. |
+| Document / WalletKit key storage | `EudiWalletConfiguration`, `ConfigLogic.keyChainConfig`, WalletKit-supported storage APIs | Default app configuration uses WalletKit storage with the configured Keychain service and access group. If production requires alternative local secure storage, a remote-backed key service, or an external protection SDK, use WalletKit-supported extension points and document the exact SDK/API. Start-up reads wallet-storage's `KeyChainStorageService` items to decide whether PIN creation is safe (`WalletKitController.hasStoredDocuments()`); another `DataStorageService` needs its own implementation of that check, see GO_LIVE [PIN Storage](GO_LIVE.md#pin-storage). |
 | Wallet attestation key storage | `WalletKitAttestationProviderImpl`, `WalletProviderAttestationConfig.swift`, Wallet Provider policy | Use when wallet attestation keys must be generated, stored, attested, or unlocked by a custom provider, platform-backed key policy, or remote high-assurance key service. |
 | Issuance proof / DPoP key handling | `WalletKitConfig.swift` issuer configuration and WalletKit OpenID4VCI integration | Prefer DPoP where supported. Use WalletKit-supported custom key handling when proof-of-possession keys require specific authentication, Secure Enclave/Keychain policy, remote high-assurance protection, or issuer-specific key policy. |
 | Remote presentation ephemeral key handling | `WalletKitConfig.swift`, `WalletKitController.startRemotePresentation(...)`, WalletKit OpenID4VP integration | Ephemeral protocol key material must be generated per transaction, not reused across verifiers, and not persisted beyond the protocol flow. If WalletKit exposes a dedicated ephemeral key-storage option, configure it in the production integration and document the exact SDK API. |
@@ -683,12 +683,14 @@ container.register(PinStorageProvider.self) { r in
 ```
 
 `hasPin()` must throw when the record cannot be read and return `false` only when there is no complete
-record, a partial one included: the start-up gate offers PIN creation only on `false`, and only for a
-wallet whose documents loaded and were none. `setPin(with:)` must write the whole record or leave the
-previous one (or none), and throw when it cannot. Read and write through `KeyChainController.fetchData`,
-`fetchValue` and `saveValue`, which throw `KeyChainError`; `getData`, `getValue` and `storeValue` discard
-the status. A process killed between the writes is not covered; see GO_LIVE
-[PIN Storage](GO_LIVE.md#pin-storage).
+record, a partial one included: the start-up gate offers PIN creation only on `false`, and only when
+the Keychain holds no wallet-storage document item in any status, deferred and pending included
+(`WalletKitController.hasStoredDocuments()`; start-up loads none). Another `DataStorageService` must
+replace that check.
+`setPin(with:)` must write the whole record or leave the previous one (or none), and throw when it
+cannot. Read and write through `KeyChainController.fetchData`, `fetchValue` and `saveValue`, which throw
+`KeyChainError`; `getData`, `getValue` and `storeValue` discard the status. A process killed between the
+writes is not covered; see GO_LIVE [PIN Storage](GO_LIVE.md#pin-storage).
 
 The PIN storage layer handles hashing, persistence, and validation. Brute-force protection (failure counting, escalating lockouts) is a separate concern handled by `PinThrottleController` — see [PIN throttle configuration](#pin-throttle-configuration).
 
@@ -894,7 +896,7 @@ In `Modules/logic-core/Sources/Controller/WalletKitController.swift`, documents 
 
 Only CBOR documents are registered (`document.docDataFormat == .cbor`), which controls what the extension can serve for Identity Document requests.
 
-Registrations are reconciled against wallet storage after every operation that adds or removes a document, and on startup: a registration whose document is no longer held is removed.
+Registrations are reconciled against wallet storage after every operation that adds or removes a document, and when the dashboard first opens after login or PIN creation and loads the documents (start-up loads none): a registration whose document is no longer held is removed.
 
 ### Validation checklist
 

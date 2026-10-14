@@ -45,6 +45,9 @@ public protocol WalletKitController: Sendable {
   func clearAllDocuments() async throws
   func deleteDocument(with id: String, status: DocumentStatus) async throws
   func loadDocuments() async throws
+  /// Whether the wallet holds any document, read from the Keychain without loading one: the query asks
+  /// for no attributes and no data. A read error throws `KeyChainError.readFailed`.
+  func hasStoredDocuments() async throws -> Bool
   func issueDocuments(
     issuerId: String,
     identifiers: [String],
@@ -240,6 +243,13 @@ final actor WalletKitControllerImpl: WalletKitController {
   func loadDocuments() async throws {
     _ = try await wallet.loadAllDocuments()
     await reconcileRegistrations()
+  }
+
+  func hasStoredDocuments() throws -> Bool {
+    try StoredDocumentPresence(
+      serviceName: configLogic.keyChainConfig.documentStorageServiceName,
+      accessGroup: configLogic.keyChainConfig.keychainAccessGroup
+    ).hasDocuments()
   }
 
   func startProximityPresentation() async -> ProximitySessionCoordinator {

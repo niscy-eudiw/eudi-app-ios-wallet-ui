@@ -29,6 +29,7 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
   private let initialDelay: TimeInterval = 30
   private var revocationTask: Task<Void, Never>?
   private var isRunning = false
+  private var didRunInitialCheck = false
 
   init(configLogic: WalletKitConfig, walletKitController: WalletKitController) {
     self.configLogic = configLogic
@@ -45,7 +46,7 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
 
       guard let self else { return }
 
-      try? await Task.sleep(seconds: initialDelay)
+      try? await Task.sleep(seconds: self.firstCheckDelay())
 
       while await self.isRunning {
         try? await self.checkRevocation()
@@ -60,11 +61,19 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
     revocationTask = nil
   }
 
+  /// The first check of the process comes `initialDelay` after the workers start, which is after login.
+  /// Once it has run, a later start, after the workers were stopped, waits the full interval.
+  func firstCheckDelay() -> TimeInterval {
+    didRunInitialCheck ? configLogic.revocationIntervalSeconds : initialDelay
+  }
+
   /// One sweep over the issued documents that carry a status list. A revocation is permanent; a
   /// suspension is cleared when the list reports the document valid again. A document whose status
   /// cannot be fetched keeps its record and the sweep goes on. A failed read of the stored records
   /// ends the sweep before anything is changed.
   func checkRevocation() async throws {
+
+    didRunInitialCheck = true
 
     let issuedDocuments = await walletKitController.fetchIssuedDocuments()
     let storedStatuses = try await walletKitController.fetchRevokedDocumentStatuses()

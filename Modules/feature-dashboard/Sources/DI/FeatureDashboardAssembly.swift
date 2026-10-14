@@ -25,7 +25,9 @@ public final class FeatureDashboardAssembly: Assembly {
   public func assemble(container: Container) {
     container.register(DashboardInteractor.self) { r in
       DashboardInteractorImpl(
-        walletKitController: r.force(WalletKitController.self)
+        walletKitController: r.force(WalletKitController.self),
+        revocationWorkManager: r.force(RevocationWorkManager.self),
+        reIssuanceWorkManager: r.force(ReIssuanceWorkManager.self)
       )
     }
     .inObjectScope(ObjectScope.transient)

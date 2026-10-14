@@ -215,6 +215,7 @@ Keep these files under strict review:
 | `Modules/logic-authentication/Sources/Storage/KeychainPinStorageProvider.swift` | Defines PIN hashing, salt, PBKDF2 iteration count, and constant-time comparison. |
 | `Modules/logic-authentication/Sources/Controller/SystemBiometryController.swift` | Biometric unlock: the policy evaluated on a fresh `LAContext` and the Keychain probe read with it. |
 | `Modules/feature-startup/Sources/Interactor/StartupInteractor.swift` | The start-up gate: login, PIN creation only for a wallet without documents, or an error. |
+| `Modules/logic-core/Sources/Controller/StoredDocumentPresence.swift` | Start-up's document check: queries wallet-storage's `pdoc` Keychain items; must change with the storage service. |
 | `EudiReferenceWalletIDProvider/UI/Authorization/RequestAuthorizationViewModel.swift` | The extension's PIN or biometric check before a request is shown and again on Accept. |
 | `Modules/logic-authentication/Sources/Config/AuthenticationConfig.swift` | PIN lockout policy (max failed attempts, escalating lockout durations). |
 | `Modules/logic-authentication/Sources/Storage/KeychainPinThrottleProvider.swift` | Keychain-persisted PIN failure counter, lockout level, lockout window timestamps; clock-rollback detection. |
@@ -670,7 +671,7 @@ Current app-level configuration points:
 
 | Configuration point | Purpose | When to change |
 | --- | --- | --- |
-| `ConfigLogic.keyChainConfig.documentStorageServiceName` | Keychain service name passed to WalletKit and the Identity Document Provider extension. | Change only through a planned migration, because it must remain stable across upgrades and extension access. |
+| `ConfigLogic.keyChainConfig.documentStorageServiceName` | Keychain service name passed to WalletKit, the start-up document check and the Identity Document Provider extension. | Change only through a planned migration, because it must remain stable across upgrades and extension access. |
 | `ConfigLogic.keyChainConfig.keychainAccessGroup` | Runtime Keychain access group used by the main app and extension. | Change when production entitlements, App Groups, or Keychain Sharing groups are finalized. |
 | `WalletKitConfig.userAuthenticationRequired` | Local authentication gate for WalletKit secure storage access. | Enable for LoA High PID and other high-assurance credentials unless an approved remote high-assurance hardware-backed design replaces local key use. |
 | `WalletKitConfig.keyOptions` | Per-issuance `KeyOptions` (curve, secure area, access protection, access control, key purposes) applied to attestation/proof keys created by `issueDocuments`, `issueDocumentsByOfferUrl`, `reIssueDocument`, `requestDeferredIssuance`, and `resumePendingIssuance`. | Set explicitly for production. For LoA High PID and high-assurance EAA/QEAA, require Secure Enclave (P-256) with appropriate `accessProtection` (e.g. `.whenUnlockedThisDeviceOnly`) and `accessControl` (e.g. `.requireUserPresence`), unless an approved remote high-assurance hardware-backed design replaces local key use. See [Attestation Key Options](#attestation-key-options-keyoptions). |
@@ -696,6 +697,8 @@ Production implementation rules:
 * Test custom storage or key-management behavior with device lock changes, biometric enrollment
   changes, app upgrade, app reinstall, backup/restore attempts, low-storage conditions, extension
   access, issuer reissuance, and revocation/status refresh.
+* A custom `DataStorageService` also needs its own start-up document check; see
+  [PIN Storage](#pin-storage).
 
 ### Attestation Key Options (`keyOptions`)
 
@@ -930,7 +933,7 @@ Current registration behavior:
 * `WalletKitController` registers documents through `DocumentRegistrationManager`.
 * Registration is only attempted on iOS 26 and later where the Digital Credentials API is available.
 * Only CBOR documents are registered (`document.docDataFormat == .cbor`).
-* Registrations are reconciled against storage rather than tracked incrementally, so a document deleted in the app is deregistered, and a registration left behind by an earlier build is removed on the next launch.
+* Registrations are reconciled against storage rather than tracked incrementally, so a document deleted in the app is deregistered, and a registration left behind by an earlier build is removed when the documents are next loaded, after login.
 * Revoked and suspended documents stay registered, and the extension can present them; see [Revocation And Status Checking](#revocation-and-status-checking).
 
 Current request handling:
@@ -1203,6 +1206,9 @@ Current code configures `documentIssuanceConfig` with:
 * Background reissuance rule (`reIssuanceBackgroundRule`):
   * `backgroundIntervalSeconds: 300`
 
+The revocation and re-issuance workers start when the dashboard first opens, after login or PIN
+creation, never at launch; see [Revocation And Status Checking](#revocation-and-status-checking).
+
 Production decisions:
 
 | Decision | Guidance |
@@ -1239,6 +1245,17 @@ var revocationIntervalSeconds: TimeInterval {
   300
 }
 ```
+
+The revocation and re-issuance workers start when the dashboard first opens, after login or PIN
+creation, and the documents are loaded at the same point. Start-up loads none. One exception remains:
+a presentation link opened before login still builds its presentation session, which reads the issued
+documents from the Keychain, before the link is kept for after login (`Application.onOpenURL` starts the
+session before `DeepLinkController.handleDeepLinkAction` caches the link). The first revocation check
+runs 30 seconds after the workers start, and later checks follow every `revocationIntervalSeconds`.
+Nothing in the app stops the workers; they run until the process ends. If an integrator stops and
+restarts them after the first revocation check, the next revocation check waits the full interval; the
+re-issuance worker always waits 30 seconds after a start, then `backgroundIntervalSeconds`. The workers
+are tasks in the app's process; iOS background execution is not used.
 
 How the check treats what a status list reports (`RevocationWorkManager.checkRevocation()`):
 
@@ -1525,8 +1542,13 @@ The start-up gate fails closed:
 
 * A Keychain read that fails is reported (`KeyChainError.readFailed`), never taken for a missing PIN.
   The start-up screen then shows an error with "Try again" instead of PIN creation.
-* PIN creation is offered only when the PIN record is absent and the wallet loaded its documents and
-  found none. With documents present, or when they cannot be loaded, the app shows an error instead.
+* PIN creation is offered only when the PIN record is absent and the Keychain holds no document.
+  Start-up loads no document: it asks the Keychain whether wallet-storage keeps a document item in any
+  status, deferred included, reading neither its attributes nor its data (`StoredDocumentPresence`). With
+  documents present, or when that check fails, the app shows an error instead. The check reads
+  wallet-storage's `KeyChainStorageService` item layout; an integrator who supplies another
+  `DataStorageService` must replace it. Otherwise the check finds nothing and start-up offers PIN
+  creation over existing documents.
   The reference app offers no recovery from that state other than reinstalling. The Keychain survives
   an uninstall; on the first launch after a reinstall the app deletes every document and its own
   Keychain items (`StartupInteractor.manageStorageForFirstRun()`).
@@ -1697,7 +1719,7 @@ Production decisions:
 | Device credential fallback | Decide whether passcode fallback is allowed. |
 | Biometric enrollment change | Test and define whether access is invalidated when biometrics change. |
 | High-risk operation step-up | Require re-authentication before issuance, presentation, RQES signing, reset, or document deletion where policy requires it. |
-| Recovery | Define user-facing recovery and reset policy. The reference app fails closed at start-up when the PIN record cannot be read, or when it is missing while documents exist or cannot be loaded; see [PIN Storage](#pin-storage). |
+| Recovery | Define user-facing recovery and reset policy. The reference app fails closed at start-up when the PIN record cannot be read, or when it is missing while documents exist or the Keychain check for them fails; see [PIN Storage](#pin-storage). |
 
 ## Analytics And Telemetry
 
@@ -2270,8 +2292,8 @@ profiles, including the extension.
 Before release candidate approval, test:
 
 * First launch.
-* Start-up with the PIN record unreadable (device locked), and with documents but no PIN record: an
-  error with "Try again", never PIN creation.
+* Start-up with the PIN record unreadable (device locked), and with documents but no PIN record or
+  the document check failing: an error with "Try again", never PIN creation.
 * PIN creation.
 * PIN change.
 * Incorrect PIN attempts and lockout.

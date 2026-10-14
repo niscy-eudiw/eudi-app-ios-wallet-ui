@@ -64,7 +64,7 @@ final class TestStartupInteractor: EudiTest {
   func testInitialize_WhenIsNotFirstBootAndPinIsNotSet_ThenReturnQuickPinAppRoute() async throws {
     // Given
     let expectedConfig = QuickPinUiConfig(flow: .setWithActivation)
-    stubFetchDocuments(with: [])
+    stubHasStoredDocuments(false)
     stubHasPin(with: false)
     stubRunAtLeastOnce()
     // When
@@ -90,9 +90,7 @@ final class TestStartupInteractor: EudiTest {
   func testInitialize_WhenIsNotFirstBootAndPinIsSetAndHasIssuedDocuments_ThenReturnBiometricsAppRouteWithNavigationSuccessDashboard() async throws {
     // Given
     let expectedConfig = biometryConfig(with: true)
-    let expectedPid = Constants.createEuPidModel()
-    let expectedMdl = Constants.createIsoMdlModel()
-    stubFetchDocuments(with: [expectedPid, expectedMdl])
+    stubHasStoredDocuments(true)
     stubHasPin(with: true)
     stubRunAtLeastOnce()
     // When
@@ -118,7 +116,7 @@ final class TestStartupInteractor: EudiTest {
   func testInitialize_WhenIsNotFirstBootAndPinIsSetAndHasNoIssuedDocuments_ThenReturnBiometricsAppRouteWithNavigationSuccessAddDocument() async throws {
     // Given
     let expectedConfig = biometryConfig(with: false)
-    stubFetchDocuments(with: [])
+    stubHasStoredDocuments(false)
     stubHasPin(with: true)
     stubRunAtLeastOnce()
     // When
@@ -144,7 +142,7 @@ final class TestStartupInteractor: EudiTest {
   func testInitialize_WhenIsFirstBootAndPinIsNotSet_ThenClearDocumentStorageAndReturnQuickPinAppRoute() async throws {
     // Given
     let expectedConfig = QuickPinUiConfig(flow: .setWithActivation)
-    stubFetchDocuments(with: [])
+    stubHasStoredDocuments(false)
     stubHasPin(with: false)
     stubRunAtLeastOnce(false)
     // When
@@ -176,7 +174,7 @@ final class TestStartupInteractor: EudiTest {
         )
       )
     )
-    stubFetchDocuments(with: [])
+    stubHasStoredDocuments(false)
     stubHasPin(with: false)
     stubRunAtLeastOnce()
     stubTrustMarkIntroductionCompleted(false)
@@ -198,7 +196,7 @@ final class TestStartupInteractor: EudiTest {
         )
       )
     )
-    stubFetchDocuments(with: [Constants.createEuPidModel()])
+    stubHasStoredDocuments(true)
     stubHasPin(with: true)
     stubRunAtLeastOnce()
     stubTrustMarkIntroductionCompleted(false)
@@ -212,7 +210,7 @@ final class TestStartupInteractor: EudiTest {
 
   func testInitialize_WhenTrustMarkIntroductionIsNotCompletedAndIsFirstBoot_ThenClearDocumentStorageAndReturnTrustMarkWelcome() async throws {
     // Given
-    stubFetchDocuments(with: [])
+    stubHasStoredDocuments(false)
     stubHasPin(with: false)
     stubRunAtLeastOnce(false)
     stubTrustMarkIntroductionCompleted(false)
@@ -226,7 +224,7 @@ final class TestStartupInteractor: EudiTest {
   }
 
   func testInitialize_WhenPinIsNotSetAndHasDocuments_ThenFailsWithPinNotFound() async {
-    stubFetchDocuments(with: [Constants.createEuPidModel()])
+    stubHasStoredDocuments(true)
     stubHasPin(with: false)
     stubRunAtLeastOnce()
 
@@ -236,7 +234,7 @@ final class TestStartupInteractor: EudiTest {
   }
 
   func testInitialize_WhenPinRecordCannotBeRead_ThenFailsWithTheReadError() async {
-    stubFetchDocuments(with: [])
+    stubHasStoredDocuments(false)
     stub(quickPinInteractor) { mock in
       when(mock.hasPin()).thenThrow(KeyChainError.readFailed(status: errSecInteractionNotAllowed))
     }
@@ -247,18 +245,18 @@ final class TestStartupInteractor: EudiTest {
     XCTAssertEqual(failureError(from: state) as? KeyChainError, .readFailed(status: errSecInteractionNotAllowed))
   }
 
-  func testInitialize_WhenPinIsNotSetAndDocumentsCannotBeLoaded_ThenFailsWithTheLoadError() async {
-    stubDocumentsLoadFailure()
+  func testInitialize_WhenPinIsNotSetAndDocumentsCannotBeChecked_ThenFailsWithTheCheckError() async {
+    stubDocumentsCheckFailure()
     stubHasPin(with: false)
     stubRunAtLeastOnce()
 
     let state = await interactor.initialize(with: .zero)
 
-    XCTAssertEqual(failureError(from: state) as? KeyChainError, Self.documentsLoadError)
+    XCTAssertEqual(failureError(from: state) as? KeyChainError, Self.documentsCheckError)
   }
 
   func testInitialize_WhenFirstBootWipeFailsAndDocumentsRemain_ThenFailsAndWipesAgainNextTime() async {
-    stubFetchDocuments(with: [Constants.createEuPidModel()])
+    stubHasStoredDocuments(true)
     stubHasPin(with: false)
     stubRunAtLeastOnce(false)
     stubKeyChainClear(success: false)
@@ -270,7 +268,7 @@ final class TestStartupInteractor: EudiTest {
   }
 
   func testInitialize_WhenTrustMarkIntroductionIsNotCompletedAndPinCannotBeRead_ThenFailsWithoutTrustMark() async {
-    stubFetchDocuments(with: [])
+    stubHasStoredDocuments(false)
     stub(quickPinInteractor) { mock in
       when(mock.hasPin()).thenThrow(KeyChainError.readFailed(status: errSecInteractionNotAllowed))
     }
@@ -282,8 +280,8 @@ final class TestStartupInteractor: EudiTest {
     XCTAssertEqual(failureError(from: state) as? KeyChainError, .readFailed(status: errSecInteractionNotAllowed))
   }
 
-  func testInitialize_WhenPinIsSetAndDocumentsCannotBeLoaded_ThenReturnBiometricsAppRoute() async throws {
-    stubDocumentsLoadFailure()
+  func testInitialize_WhenPinIsSetAndDocumentsCannotBeChecked_ThenReturnBiometricsAppRoute() async throws {
+    stubDocumentsCheckFailure()
     stubHasPin(with: true)
     stubRunAtLeastOnce()
 
@@ -295,11 +293,55 @@ final class TestStartupInteractor: EudiTest {
     }
     XCTAssertEqual(config as? UIConfig.Biometry, biometryConfig(with: false))
   }
+
+  func testInitialize_WhenFirstBootWipesTheDocuments_ThenChecksForDocumentsAfterTheWipe() async throws {
+    let storage = WipeRecorder()
+    stubHasPin(with: false)
+    stubRunAtLeastOnce(false)
+    stub(walletKitController) { mock in
+      when(mock.clearAllDocuments()).then { storage.wipe() }
+      when(mock.hasStoredDocuments()).then { storage.hasDocuments }
+    }
+
+    let state = await interactor.initialize(with: .zero)
+
+    let route = try XCTUnwrap(successRoute(from: state))
+    guard case .featureCommonModule(let module) = route, case .quickPin = module else {
+      return XCTFail("Wrong route \(route)")
+    }
+  }
+
+  func testInitialize_WhenPinIsSetAndHasDocuments_ThenLoadsNoDocumentBeforeLogin() async {
+    stubHasStoredDocuments(true)
+    stubHasPin(with: true)
+    stubRunAtLeastOnce()
+
+    _ = await interactor.initialize(with: .zero)
+
+    verify(walletKitController).hasStoredDocuments()
+    verify(walletKitController, never()).loadDocuments()
+    verify(walletKitController, never()).fetchAllDocuments()
+  }
 }
 
 private extension TestStartupInteractor {
 
-  static let documentsLoadError = KeyChainError.readFailed(status: errSecDecode)
+  /// A document store that holds documents until the first-boot wipe clears it.
+  final class WipeRecorder: @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var isWiped = false
+
+    var hasDocuments: Bool {
+      lock.withLock { !isWiped }
+    }
+
+    func wipe() {
+      lock.withLock { isWiped = true }
+    }
+  }
+
+  static let documentsCheckError = KeyChainError.readFailed(status: errSecDecode)
 
   func successRoute(from state: StartupPartialState) -> AppRoute? {
     guard case .success(let route) = state else { return nil }
@@ -311,17 +353,15 @@ private extension TestStartupInteractor {
     return error
   }
 
-  func stubDocumentsLoadFailure() {
+  func stubDocumentsCheckFailure() {
     stub(walletKitController) { mock in
-      when(mock.loadDocuments()).thenThrow(Self.documentsLoadError)
-      when(mock.fetchAllDocuments()).thenReturn([])
+      when(mock.hasStoredDocuments()).thenThrow(Self.documentsCheckError)
     }
   }
-  
-  func stubFetchDocuments(with documents: [any DocClaimsDecodable]) {
+
+  func stubHasStoredDocuments(_ hasDocuments: Bool) {
     stub(walletKitController) { mock in
-      when(mock.loadDocuments()).thenDoNothing()
-      when(mock.fetchAllDocuments()).thenReturn(documents)
+      when(mock.hasStoredDocuments()).thenReturn(hasDocuments)
     }
   }
   

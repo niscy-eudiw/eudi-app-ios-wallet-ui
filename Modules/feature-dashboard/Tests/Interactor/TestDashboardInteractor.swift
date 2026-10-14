@@ -25,16 +25,25 @@ final class TestDashboardInteractor: EudiTest {
   
   var interactor: DashboardInteractor!
   var walletKitController: MockWalletKitController!
+  var revocationWorkManager: MockRevocationWorkManager!
+  var reIssuanceWorkManager: MockReIssuanceWorkManager!
   
   override func setUp() {
     self.walletKitController = MockWalletKitController()
+    self.revocationWorkManager = MockRevocationWorkManager()
+    self.reIssuanceWorkManager = MockReIssuanceWorkManager()
     self.interactor = DashboardInteractorImpl(
-      walletKitController: walletKitController
+      walletKitController: walletKitController,
+      revocationWorkManager: revocationWorkManager,
+      reIssuanceWorkManager: reIssuanceWorkManager
     )
   }
   
   override func tearDown() {
     self.interactor = nil
+    self.walletKitController = nil
+    self.revocationWorkManager = nil
+    self.reIssuanceWorkManager = nil
   }
   
   func testGetWalletKitController_WhenInteractorReturnsWalletKitController_ThenVerifyControllerIsInjected() async {
@@ -43,5 +52,39 @@ final class TestDashboardInteractor: EudiTest {
     
     // Then
     XCTAssertTrue(result is MockWalletKitController, "The result should be of type MockWalletKitController")
+  }
+
+  func testLoadDocuments_WhenCalled_ThenTheWalletLoadsItsDocuments() async {
+    stub(walletKitController) { mock in
+      when(mock.loadDocuments()).thenDoNothing()
+    }
+
+    await interactor.loadDocuments()
+
+    verify(walletKitController).loadDocuments()
+  }
+
+  func testLoadDocuments_WhenLoadingFails_ThenSwallowsTheError() async {
+    stub(walletKitController) { mock in
+      when(mock.loadDocuments()).thenThrow(WalletCoreError.unableFetchDocument)
+    }
+
+    await interactor.loadDocuments()
+
+    verify(walletKitController).loadDocuments()
+  }
+
+  func testStartWorkers_WhenCalled_ThenStartsBothWorkers() async {
+    stub(revocationWorkManager) { mock in
+      when(mock.start()).thenDoNothing()
+    }
+    stub(reIssuanceWorkManager) { mock in
+      when(mock.start()).thenDoNothing()
+    }
+
+    await interactor.startWorkers()
+
+    verify(revocationWorkManager).start()
+    verify(reIssuanceWorkManager).start()
   }
 }

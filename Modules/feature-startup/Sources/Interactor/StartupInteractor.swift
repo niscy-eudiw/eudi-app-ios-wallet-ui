@@ -52,23 +52,25 @@ final actor StartupInteractorImpl: StartupInteractor {
   }
 
   /// Routes to login when a PIN exists and to PIN creation only when the wallet is known to hold no
-  /// documents. A PIN record that cannot be read, or documents without one, end in `failure`.
+  /// documents. A PIN record that cannot be read, or documents without one, end in `failure`. No
+  /// document is loaded before login: whether any exist is read from the Keychain without them.
   public func initialize(with splashAnimationDuration: TimeInterval) async -> StartupPartialState {
     await manageStorageForFirstRun()
-    let documentsLoadError: Error?
+    let hasDocuments: Bool
+    let documentsCheckError: Error?
     do {
-      try await walletKitController.loadDocuments()
-      documentsLoadError = nil
+      hasDocuments = try await walletKitController.hasStoredDocuments()
+      documentsCheckError = nil
     } catch {
-      documentsLoadError = error
+      hasDocuments = false
+      documentsCheckError = error
     }
-    let hasDocuments = await !walletKitController.fetchAllDocuments().isEmpty
     try? await Task.sleep(nanoseconds: splashAnimationDuration.nanoseconds)
     let continuationRoute: AppRoute
     do {
       continuationRoute = try await getContinuationRoute(
         hasDocuments: hasDocuments,
-        documentsLoadError: documentsLoadError
+        documentsCheckError: documentsCheckError
       )
     } catch {
       return .failure(error)
@@ -87,7 +89,7 @@ final actor StartupInteractorImpl: StartupInteractor {
     )
   }
 
-  private func getContinuationRoute(hasDocuments: Bool, documentsLoadError: Error?) async throws -> AppRoute {
+  private func getContinuationRoute(hasDocuments: Bool, documentsCheckError: Error?) async throws -> AppRoute {
     if try await quickPinInteractor.hasPin() {
       return .featureCommonModule(
         .biometry(
@@ -109,8 +111,8 @@ final actor StartupInteractorImpl: StartupInteractor {
         )
       )
     } else {
-      if let documentsLoadError {
-        throw documentsLoadError
+      if let documentsCheckError {
+        throw documentsCheckError
       }
       guard !hasDocuments else {
         throw AuthenticationError.pinNotFound

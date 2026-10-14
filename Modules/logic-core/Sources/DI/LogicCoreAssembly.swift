@@ -85,7 +85,7 @@ public final class LogicCoreAssembly: Assembly {
         walletKitController: r.force(WalletKitController.self)
       )
     }
-    .inObjectScope(ObjectScope.graph)
+    .inObjectScope(ObjectScope.container)
 
     container.register(ReIssuanceWorkManager.self) { r in
       ReIssuanceWorkManagerImpl(
@@ -93,7 +93,7 @@ public final class LogicCoreAssembly: Assembly {
         walletKitController: r.force(WalletKitController.self)
       )
     }
-    .inObjectScope(ObjectScope.graph)
+    .inObjectScope(ObjectScope.container)
 
     container.register(WalletKitAttestationProvider.self) { r in
       WalletKitAttestationProviderImpl(

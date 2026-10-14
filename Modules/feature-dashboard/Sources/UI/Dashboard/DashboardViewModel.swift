@@ -44,6 +44,12 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
   private let interactor: DashboardInteractor
   @ObservationIgnored
   private let deepLinkController: DeepLinkController
+  @ObservationIgnored
+  private let homeTabInteractor: HomeTabInteractor
+  @ObservationIgnored
+  private let documentTabInteractor: DocumentTabInteractor
+  @ObservationIgnored
+  private let transactionTabInteractor: TransactionTabInteractor
 
   var selectedTab: SelectedTab = .home
   var isRevokedModalShowing: Bool = false {
@@ -65,6 +71,9 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
   ) {
     self.interactor = dashboardInteractor
     self.deepLinkController = deepLinkController
+    self.homeTabInteractor = homeTabInteractor
+    self.documentTabInteractor = documentTabInteractor
+    self.transactionTabInteractor = transactionTabInteractor
 
     super.init(
       router: router,
@@ -81,12 +90,6 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
         suspendedDocuments: [:],
         isPaused: false
       )
-    )
-
-    createTabs(
-      homeTabInteractor: homeTabInteractor,
-      documentTabInteractor: documentTabInteractor,
-      transactionTabInteractor: transactionTabInteractor
     )
 
     listenForRevokedModalChanges()
@@ -133,8 +136,19 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
     self.setState { $0.copy(isPaused: true) }
   }
 
+  /// The first appearance loads the documents, then builds the tabs and starts the workers, so the tabs
+  /// read loaded documents and a kept link finds them.
   func onCreate() async {
     onResume()
+    if viewState.homeTab == nil {
+      await interactor.loadDocuments()
+      createTabs(
+        homeTabInteractor: homeTabInteractor,
+        documentTabInteractor: documentTabInteractor,
+        transactionTabInteractor: transactionTabInteractor
+      )
+      await interactor.startWorkers()
+    }
     await handleDeepLink()
   }
 

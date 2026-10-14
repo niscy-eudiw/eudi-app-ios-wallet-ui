@@ -143,6 +143,24 @@ final class TestRevocationWorkManager: EudiTest {
     await fulfillment(of: [notified], timeout: 2)
   }
 
+  func testFirstCheckDelay_WhenNoCheckHasRun_ThenIsTheInitialDelay() async {
+    let delay = await workManager.firstCheckDelay()
+
+    XCTAssertEqual(delay, 30)
+  }
+
+  func testFirstCheckDelay_WhenACheckHasRun_ThenIsTheInterval() async throws {
+    stub(walletKitConfig) { mock in
+      when(mock.revocationIntervalSeconds.get).thenReturn(300)
+    }
+    stubSweep(stored: [:], statuses: [:])
+
+    try await workManager.checkRevocation()
+    let delay = await workManager.firstCheckDelay()
+
+    XCTAssertEqual(delay, 300)
+  }
+
   func testCheckRevocation_WhenClearingASuspensionFails_ThenTheRevocationIsStillStored() async {
     stubSweep(stored: ["b": .suspended], statuses: ["a": .invalid, "b": .valid])
     stub(walletKitController) { mock in
