@@ -26,13 +26,21 @@ final actor SessionCoordinatorHolderImpl: SessionCoordinatorHolder {
 
   private var activeRemoteCoordinator: RemoteSessionCoordinator?
   private var activeProximityCoordinator: ProximitySessionCoordinator?
+  /// The last stopped proximity coordinator, kept until the next one starts. The transfer library's
+  /// `MdocGattServer` holds wallet-kit's Bluetooth service, which this coordinator owns, only weakly, still reads
+  /// it after `stop()` (in a task, and when the reader disconnects later) and stops the app with `fatalError`
+  /// once it is gone.
+  private var stoppedProximityCoordinator: ProximitySessionCoordinator?
 
   init() {}
 
   /// Stops a running proximity session before letting it go, rather than leaving that to the coordinator's
   /// `deinit`, which runs only once every screen that holds the coordinator is gone.
   public func clear() {
-    activeProximityCoordinator?.stopPresentation()
+    if let activeProximityCoordinator {
+      activeProximityCoordinator.stopPresentation()
+      stoppedProximityCoordinator = activeProximityCoordinator
+    }
     activeRemoteCoordinator = nil
     activeProximityCoordinator = nil
   }
@@ -42,6 +50,7 @@ final actor SessionCoordinatorHolderImpl: SessionCoordinatorHolder {
   }
 
   public func setActiveProximityCoordinator(_ coordinator: ProximitySessionCoordinator) {
+    stoppedProximityCoordinator = nil
     activeProximityCoordinator = coordinator
   }
 
