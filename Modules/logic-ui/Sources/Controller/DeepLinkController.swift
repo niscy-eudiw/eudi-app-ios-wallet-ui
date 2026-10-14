@@ -23,10 +23,12 @@ public struct DeepLink {}
 
 public protocol DeepLinkController: Sendable {
   func hasDeepLink(url: URL) -> DeepLink.Executable?
+  /// Opens the link, or keeps it for later. A presentation link starts its session only when its request
+  /// screen opens. While the wallet is logged in, a presentation or signing link that arrives away from
+  /// the dashboard ends the flow on screen: the wallet returns to the dashboard, which opens the link.
   @MainActor func handleDeepLinkAction(
     routerHost: RouterHost,
-    deepLinkExecutable: DeepLink.Executable,
-    remoteSessionCoordinator: RemoteSessionCoordinator?
+    deepLinkExecutable: DeepLink.Executable
   )
   func getPendingDeepLinkAction() -> DeepLink.Executable?
   func cacheDeepLinkURL(url: URL)
@@ -37,13 +39,16 @@ final class DeepLinkControllerImpl: DeepLinkController {
 
   private let prefsController: PrefsController
   private let urlSchemaController: UrlSchemaController
+  private let walletKitController: WalletKitController
 
   init(
     prefsController: PrefsController,
-    urlSchemaController: UrlSchemaController
+    urlSchemaController: UrlSchemaController,
+    walletKitController: WalletKitController
   ) {
     self.prefsController = prefsController
     self.urlSchemaController = urlSchemaController
+    self.walletKitController = walletKitController
   }
 
   public func getPendingDeepLinkAction() -> DeepLink.Executable? {
@@ -65,22 +70,21 @@ final class DeepLinkControllerImpl: DeepLinkController {
 
   public func handleDeepLinkAction(
     routerHost: RouterHost,
-    deepLinkExecutable: DeepLink.Executable,
-    remoteSessionCoordinator: RemoteSessionCoordinator?
+    deepLinkExecutable: DeepLink.Executable
   ) {
 
     var isVciExecutable: Bool {
       deepLinkExecutable.action == .credential_offer && routerHost.userIsLoggedInWithNoDocuments()
     }
 
-    var isRqesPendingAction: Bool {
-      deepLinkExecutable.action == .rqes
+    var opensFromDashboard: Bool {
+      [.rqes, .openid4vp, .haip_vp].contains(deepLinkExecutable.action)
       && !routerHost.isScreenForeground(with: .featureDashboardModule(.dashboard))
     }
 
     var shouldPopToDashboardFirst: Bool {
       routerHost.userIsLoggedInWithDocuments()
-      && isRqesPendingAction
+      && opensFromDashboard
     }
 
     guard
@@ -102,17 +106,10 @@ final class DeepLinkControllerImpl: DeepLinkController {
 
     switch deepLinkExecutable.action {
     case .openid4vp, .haip_vp:
-      guard let remoteSessionCoordinator else {
-        fatalError("DeepLink Action OpenId4VP Requires Remote Session Coordinator")
-      }
-      if !routerHost.isScreenForeground(
-        with: .featurePresentationModule(
-          .presentationRequest(
-            presentationCoordinator: remoteSessionCoordinator,
-            originator: .featureDashboardModule(.dashboard)
-          )
+      Task { @MainActor in
+        let remoteSessionCoordinator = await walletKitController.startSameDevicePresentation(
+          deepLink: deepLinkExecutable.link
         )
-      ) {
         routerHost.push(
           with: .featurePresentationModule(
             .presentationRequest(
@@ -120,12 +117,6 @@ final class DeepLinkControllerImpl: DeepLinkController {
               originator: .featureDashboardModule(.dashboard)
             )
           )
-        )
-      } else {
-        NotificationCenter.default.post(
-          name: NSNotification.PresentationVC,
-          object: nil,
-          userInfo: ["session": remoteSessionCoordinator]
         )
       }
     case .external:
@@ -186,10 +177,6 @@ public extension DeepLink {
     public let link: URLComponents
     public let plainUrl: URL
     public let action: DeepLink.Action
-
-    public var requiresCoordinator: Bool {
-      action == .openid4vp
-    }
   }
 }
 
@@ -234,6 +221,5 @@ public extension DeepLink {
 }
 
 public extension NSNotification {
-  static let PresentationVC = Notification.Name.init("PresentationVC")
   static let CredentialOffer = Notification.Name.init("CredentialOffer")
 }

@@ -4679,10 +4679,21 @@ class WalletProviderAttestationConfigStub:WalletProviderAttestationConfig, @unch
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Controller/StoredDocumentPresence.swift'
+
+import Cuckoo
+import Foundation
+import Security
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_authentication
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Controller/WalletKitController.swift'
 
 import Cuckoo
-import Security
 import SwiftUI
 import logic_storage
 import logic_api
@@ -7993,6 +8004,28 @@ import struct OpenID4VP.ClaimPath
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/RevokedDocument+Extensions.swift'
+
+import Cuckoo
+import logic_storage
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_authentication
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/RevokedDocumentStorageController+Extensions.swift'
+
+import Cuckoo
+import logic_storage
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_authentication
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/String+Extensions.swift'
 
 import Cuckoo
@@ -8146,7 +8179,6 @@ import Cuckoo
 
 import Cuckoo
 import Foundation
-import logic_storage
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -8265,6 +8297,17 @@ public class RequestItemConvertibleStub:RequestItemConvertible, @unchecked Senda
 
 }
 
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/RevocationDashboardPayload.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_authentication
 
 
 

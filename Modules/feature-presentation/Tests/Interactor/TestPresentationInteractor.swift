@@ -26,23 +26,13 @@ import EudiWalletKit
 final class TestPresentationInteractor: EudiTest {
   var interactor: PresentationInteractor!
   var walletKitController: MockWalletKitController!
-  var sessionCoordinatorHolder: MockSessionCoordinatorHolder!
   var presentationCoordinator: MockRemoteSessionCoordinator!
 
   override func setUp() {
     walletKitController = MockWalletKitController()
-    sessionCoordinatorHolder = MockSessionCoordinatorHolder()
     presentationCoordinator = MockRemoteSessionCoordinator(
       session: Constants.mockPresentationSession
     )
-
-    stub(sessionCoordinatorHolder) { mock in
-      when(mock.getActiveRemoteCoordinator()).thenReturn(presentationCoordinator)
-    }
-
-    stub(sessionCoordinatorHolder) { mock in
-      when(mock.setActiveRemoteCoordinator(any())).thenDoNothing()
-    }
 
     stub(presentationCoordinator) { mock in
       when(mock.stopPresentation()).thenDoNothing()
@@ -74,15 +64,13 @@ final class TestPresentationInteractor: EudiTest {
 
     interactor = PresentationInteractorImpl(
       with: presentationCoordinator,
-      and: walletKitController,
-      also: sessionCoordinatorHolder
+      and: walletKitController
     )
   }
 
   override func tearDown() {
     interactor = nil
     walletKitController = nil
-    sessionCoordinatorHolder = nil
     presentationCoordinator = nil
   }
 
@@ -94,10 +82,6 @@ final class TestPresentationInteractor: EudiTest {
       when(mock.getStream()).thenReturn(expectedStream)
     }
 
-    stub(sessionCoordinatorHolder) { mock in
-      when(mock.getActiveRemoteCoordinator()).thenReturn(presentationCoordinator)
-    }
-
     // When
     let result = await interactor.getSessionStatePublisher()
 
@@ -105,26 +89,6 @@ final class TestPresentationInteractor: EudiTest {
     switch result {
       case .success(let stream):
         XCTAssertNotNil(stream)
-      default:
-        XCTFail("Expected success but got \(result)")
-    }
-  }
-
-  func testGetSessionStatePublisher_WhenActiveCoordinatorThrowsError_ThenReturnsFailureWithThatError() async {
-    // Given
-    let expectedError = RuntimeError.genericError
-
-    stub(sessionCoordinatorHolder) { mock in
-      when(mock.getActiveRemoteCoordinator()).thenThrow(expectedError)
-    }
-
-    // When
-    let result = await interactor.getSessionStatePublisher()
-
-    // Then
-    switch result {
-      case .failure(let error):
-        XCTAssertEqual(error.localizedDescription, expectedError.localizedDescription)
       default:
         XCTFail("Expected success but got \(result)")
     }
@@ -138,10 +102,6 @@ final class TestPresentationInteractor: EudiTest {
       when(mock.getStream()).thenReturn(expectedStream)
     }
 
-    stub(sessionCoordinatorHolder) { mock in
-      when(mock.getActiveRemoteCoordinator()).thenReturn(presentationCoordinator)
-    }
-
     // When
     let result = await interactor.getCoordinator()
 
@@ -154,39 +114,34 @@ final class TestPresentationInteractor: EudiTest {
     }
   }
 
-  func testGetCoordinator_WhenActiveCoordinatorThrowsError_ThenReturnsFailureWithThatError() async {
-    // Given
-    let expectedError = RuntimeError.genericError
-
-    stub(sessionCoordinatorHolder) { mock in
-      when(mock.getActiveRemoteCoordinator()).thenThrow(expectedError)
-    }
-
-    // When
+  func testGetCoordinator_WhenBuilt_ThenReturnsTheCoordinatorOfItsRoute() async {
     let result = await interactor.getCoordinator()
 
-    // Then
-    switch result {
-      case .failure(let error):
-        XCTAssertEqual(error.localizedDescription, expectedError.localizedDescription)
-      default:
-        XCTFail("Expected success but got \(result)")
+    guard case .success(let coordinator) = result else {
+      return XCTFail("Expected success but got \(result)")
     }
+    XCTAssertTrue(coordinator as AnyObject === presentationCoordinator)
   }
 
-  func testUpdatePresentationCoordinator_WhenUpdatingWithCoordinator_ThenCallsSetActiveRemoteCoordinatorTwice() async {
-    // Given
-    let expectedStream: AsyncStream<PresentationState> = AsyncStream { completion in }
-
+  func testOnSendResponse_WhenAnotherSessionHasStarted_ThenSendsOnTheCoordinatorOfItsRoute() async {
+    let otherCoordinator = MockRemoteSessionCoordinator(session: Constants.mockPresentationSession)
+    let otherInteractor = PresentationInteractorImpl(with: otherCoordinator, and: walletKitController)
     stub(presentationCoordinator) { mock in
-      when(mock.getStream()).thenReturn(expectedStream)
+      when(mock.getState()).thenReturn(.responseToSend(Self.mockRequestItems))
+      when(mock.sendResponse(response: any())).thenDoNothing()
+    }
+    stub(otherCoordinator) { mock in
+      when(mock.getState()).thenReturn(.loading)
     }
 
-    // When
-    let _ = await interactor.updatePresentationCoordinator(with: presentationCoordinator)
+    _ = await otherInteractor.getCoordinator()
+    let result = await interactor.onSendResponse()
 
-    // Then
-    verify(sessionCoordinatorHolder, times(2)).setActiveRemoteCoordinator(any())
+    guard case .sent = result else {
+      return XCTFail("Expected sent but got \(result)")
+    }
+    verify(presentationCoordinator).sendResponse(response: any())
+    verify(otherCoordinator, never()).sendResponse(response: any())
   }
 
   func testStoreDynamicIssuancePendingUrl_WhenCalledWithUrl_ThenCallsWalletKitControllerStoreDynamicIssuancePendingUrl() async {
@@ -415,32 +370,6 @@ final class TestPresentationInteractor: EudiTest {
     verify(presentationCoordinator).setState(presentationState: any())
   }
 
-  func testOnResponsePrepare_WhenSessionCoordinatorThrowsInvalidStateError_ThenReturnsFailureWithThatError() async {
-    // Given
-    let expectedError = PresentationSessionError.invalidState
-
-    await stubReceivedRequest()
-
-    stub(presentationCoordinator) { mock in
-      when(mock.setState(presentationState: any())).thenDoNothing()
-    }
-
-    stub(sessionCoordinatorHolder) { mock in
-      when(mock.getActiveRemoteCoordinator()).thenThrow(expectedError)
-    }
-
-    // When
-    let state = await interactor.onResponsePrepare(combinationIndex: 0)
-
-    // Then
-    switch state {
-    case .failure(let error):
-      XCTAssertEqual(error.localizedDescription, expectedError.localizedDescription)
-    default:
-      XCTFail("Wrong state \(state)")
-    }
-  }
-
   func testOnResponsePrepare_WhenTheCombinationIndexIsOutOfRange_ThenReturnsFailureWithConversionError() async {
     // Given
     let expectedError = PresentationSessionError.conversionToRequestItemModel
@@ -513,57 +442,6 @@ final class TestPresentationInteractor: EudiTest {
     }
 
     verify(presentationCoordinator).getState()
-  }
-
-  func testOnSendResponse_WhenCoordinatorStateIsResponseToSendAndActiveCoordinatorThrowsError_ThenReturnsFailureWithThatError() async {
-    // Given
-    let presetationState: PresentationState = .responseToSend(Self.mockRequestItems)
-    let expectedError = PresentationSessionError.invalidState
-
-    stub(presentationCoordinator) { mock in
-      when(mock.getState()).thenReturn(presetationState)
-    }
-
-    stub(sessionCoordinatorHolder) { mock in
-      when(mock.getActiveRemoteCoordinator()).thenThrow(expectedError)
-    }
-
-    // When
-    let state = await interactor.onSendResponse()
-
-    // Then
-    switch state {
-    case .failure(let error):
-      XCTAssertEqual(error.localizedDescription, expectedError.localizedDescription)
-    default:
-      XCTFail("Wrong state \(state)")
-    }
-  }
-
-  func testOnSendResponse_WhenSecondGetActiveRemoteCoordinatorThrows_ThenReturnsFailure() async {
-    // Given
-    let presentationState: PresentationState = .responseToSend(Self.mockRequestItems)
-    let expectedError = PresentationSessionError.invalidState
-
-    stub(sessionCoordinatorHolder) { mock in
-      when(mock.getActiveRemoteCoordinator())
-          .thenReturn(presentationCoordinator)
-          .thenThrow(expectedError)
-    }
-    stub(presentationCoordinator) { mock in
-      when(mock.getState()).thenReturn(presentationState)
-    }
-
-    // When
-    let result = await interactor.onSendResponse()
-
-    // Then
-    switch result {
-    case .failure(let error):
-      XCTAssertEqual(error.localizedDescription, expectedError.localizedDescription)
-    default:
-      XCTFail("Expected failure, got \(result)")
-    }
   }
 
   func testOnRequestReceived_WhenAllDocumentsRevoked_ThenReturnsSuccessWithNoCombinations() async {

@@ -25,14 +25,17 @@ final class TestDeepLinkController: EudiTest {
   var prefsController: MockPrefsController!
   var urlSchemaController: MockUrlSchemaController!
   var routerHost: MockRouterHost!
+  var walletKitController: MockWalletKitController!
 
   override func setUp() {
     self.prefsController = MockPrefsController()
     self.urlSchemaController = MockUrlSchemaController()
     self.routerHost = MockRouterHost()
+    self.walletKitController = MockWalletKitController()
     self.controller = DeepLinkControllerImpl(
       prefsController: prefsController,
-      urlSchemaController: urlSchemaController
+      urlSchemaController: urlSchemaController,
+      walletKitController: walletKitController
     )
   }
   
@@ -41,6 +44,7 @@ final class TestDeepLinkController: EudiTest {
     self.prefsController = nil
     self.urlSchemaController = nil
     self.routerHost = nil
+    self.walletKitController = nil
   }
   
   func testHasDeepLink_WhenUrlIsAValidOpenId4VPDeepLink_ThenReturnDeepLinkActionWithOpenId4VPType() {
@@ -90,67 +94,72 @@ final class TestDeepLinkController: EudiTest {
     // When
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: Self.mockedOpenId4VPDeepLinkAction,
-      remoteSessionCoordinator: nil
+      deepLinkExecutable: Self.mockedOpenId4VPDeepLinkAction
     )
     // Then
     verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
     verify(prefsController, times(0)).remove(forKey: Prefs.Key.cachedDeepLink)
+    verify(walletKitController, never()).startSameDevicePresentation(deepLink: any())
   }
 
-  func testHandleDeepLinkAction_WhenRouterReturnsAfterAuthorizationFlowAndActionIsOpenId4VPAndScreenNotForeground_ThenValidateCachingRemovalAndExecutionOfNavigation() async {
-    // Given
-    let sessionCoordinator = RemoteSessionCoordinatorImpl(
-      session: Self.mockPresentationSession
-    )
-    let appRoute = AppRoute.featurePresentationModule(.presentationRequest(presentationCoordinator: sessionCoordinator, originator: .featureDashboardModule(.dashboard)))
-    let pendingAction = Self.mockedOpenId4VPDeepLinkAction
-    
+  func testHandleDeepLinkAction_WhenLoggedInAndActionIsOpenId4VPAwayFromTheDashboard_ThenKeepsTheLinkAndReturnsToTheDashboardWithoutASession() async {
     stubHandleDeepLink(
-      action: pendingAction,
-      route: appRoute,
+      action: Self.mockedOpenId4VPDeepLinkAction,
+      route: nil,
       isAfterAuth: true,
       isScreenForeground: false
     )
-    
-    // When
+    stub(routerHost) { mock in
+      when(mock.popTo(with: any(), inclusive: any())).thenDoNothing()
+    }
+
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: pendingAction,
-      remoteSessionCoordinator: sessionCoordinator
+      deepLinkExecutable: Self.mockedOpenId4VPDeepLinkAction
     )
-    // Then
-    verify(prefsController, times(0)).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
-    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
-    verify(routerHost).push(with: appRoute)
+
+    verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
+    verify(routerHost).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)), inclusive: equal(to: false))
+    verify(routerHost, never()).push(with: any())
+    verify(walletKitController, never()).startSameDevicePresentation(deepLink: any())
   }
-  
-  func testHandleDeepLinkAction_WhenRouterReturnsAfterAuthorizationFlowAndActionIsOpenId4VPAndScreenIsForeground_ThenValidateCachingRemovalAndRouteNil() async {
-    // Given
+
+  func testHandleDeepLinkAction_WhenLoggedInAndActionIsOpenId4VPOnTheDashboard_ThenStartsTheSessionAndPushesItsRequest() async {
     let sessionCoordinator = RemoteSessionCoordinatorImpl(
       session: Self.mockPresentationSession
     )
-    let pendingAction = Self.mockedOpenId4VPDeepLinkAction
-    
+    let expectedRoute = AppRoute.featurePresentationModule(
+      .presentationRequest(
+        presentationCoordinator: sessionCoordinator,
+        originator: .featureDashboardModule(.dashboard)
+      )
+    )
     stubHandleDeepLink(
-      action: pendingAction,
+      action: Self.mockedOpenId4VPDeepLinkAction,
       route: nil,
       isAfterAuth: true,
       isScreenForeground: true
     )
-    
-    // When
+    stub(walletKitController) { mock in
+      when(mock.startSameDevicePresentation(deepLink: any())).thenReturn(sessionCoordinator)
+    }
+    let pushed = expectation(description: "request pushed")
+    stub(routerHost) { mock in
+      when(mock.push(with: equal(to: expectedRoute))).then { _ in pushed.fulfill() }
+    }
+
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: pendingAction,
-      remoteSessionCoordinator: sessionCoordinator
+      deepLinkExecutable: Self.mockedOpenId4VPDeepLinkAction
     )
-    // Then
-    verify(prefsController, times(0)).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
+    await fulfillment(of: [pushed], timeout: 2)
+
+    verify(prefsController, never()).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
     verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
-    verify(routerHost, times(0)).push(with: any())
+    verify(walletKitController).startSameDevicePresentation(deepLink: equal(to: Self.mockedOpenId4VPDeepLinkAction.link))
+    verify(routerHost).push(with: equal(to: expectedRoute))
   }
-  
+
   func testHandleDeepLinkAction_WhenRouterReturnsAfterAuthorizationFlowAndActionIsExternal_ThenValidateCachingRemovalAndNoInvocationOfRouter() async {
     // Given
     let pendingAction = Self.mockedExternalDeepLinkAction
@@ -165,8 +174,7 @@ final class TestDeepLinkController: EudiTest {
     // When
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: pendingAction,
-      remoteSessionCoordinator: nil
+      deepLinkExecutable: pendingAction
     )
     // Then
     verify(prefsController, times(0)).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
@@ -174,7 +182,7 @@ final class TestDeepLinkController: EudiTest {
     verify(routerHost, times(0)).push(with: any())
   }
   
-  func testGetPendingDeepLinkAction_WhenCachedDeepLinkIsValidAndActionRequiresCoordinator_ThenReturnDeepListActionAndVerifyCoordinatorFlag() {
+  func testGetPendingDeepLinkAction_WhenCachedDeepLinkIsAPresentationLink_ThenReturnDeepListAction() {
     // Given
     let expected = Self.mockedOpenId4VPDeepLinkAction
     stub(prefsController) { mock in
@@ -187,10 +195,9 @@ final class TestDeepLinkController: EudiTest {
     let action = controller.getPendingDeepLinkAction()
     // Then
     XCTAssertEqual(action, expected)
-    XCTAssertEqual(action?.requiresCoordinator, true)
   }
   
-  func testGetPendingDeepLinkAction_WhenCachedDeepLinkIsValidAndActionDoesNotRequireCoordinator_ThenReturnDeepListActionAndVerifyCoordinatorFlag() {
+  func testGetPendingDeepLinkAction_WhenCachedDeepLinkIsAnExternalLink_ThenReturnDeepListAction() {
     // Given
     let expected = Self.mockedExternalDeepLinkAction
     stub(prefsController) { mock in
@@ -203,7 +210,6 @@ final class TestDeepLinkController: EudiTest {
     let action = controller.getPendingDeepLinkAction()
     // Then
     XCTAssertEqual(action, expected)
-    XCTAssertEqual(action?.requiresCoordinator, false)
   }
   
   func testGetPendingDeepLinkAction_WhenCachedDeepLinkIsInvalid_ThenReturnDeepListActionNil() {
@@ -242,9 +248,6 @@ final class TestDeepLinkController: EudiTest {
 
   func testHandleDeepLinkAction_WhenCredentialOfferActionAndScreenIsNotForeground_ThenPushCredentialOfferRequest() async {
     // Given
-    let sessionCoordinator = RemoteSessionCoordinatorImpl(
-      session: Self.mockPresentationSession
-    )
     let pendingAction = Self.mockedCredentialOfferDeepLinkAction
 
     stubHandleDeepLink(
@@ -257,8 +260,7 @@ final class TestDeepLinkController: EudiTest {
     // When
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: pendingAction,
-      remoteSessionCoordinator: sessionCoordinator
+      deepLinkExecutable: pendingAction
     )
 
     // Then
@@ -284,8 +286,7 @@ final class TestDeepLinkController: EudiTest {
     // When
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: pendingAction,
-      remoteSessionCoordinator: nil
+      deepLinkExecutable: pendingAction
     )
 
     // Then
@@ -293,32 +294,54 @@ final class TestDeepLinkController: EudiTest {
     verify(routerHost).push(with: any())
   }
 
-  func testHandleDeepLinkAction_WhenActionIsHaipVpAndScreenNotForeground_ThenPushesPresentationRoute() async {
-    // Given: .haip_vp shares the openid4vp switch arm — must also push when not foreground
+  func testHandleDeepLinkAction_WhenActionIsHaipVpOnTheDashboard_ThenStartsTheSessionAndPushesItsRequest() async {
     let sessionCoordinator = RemoteSessionCoordinatorImpl(
       session: Self.mockPresentationSession
     )
-    let pendingAction = Self.mockedHaipVpDeepLinkAction
     stubHandleDeepLink(
-      action: pendingAction,
+      action: Self.mockedHaipVpDeepLinkAction,
+      route: nil,
+      isAfterAuth: true,
+      isScreenForeground: true
+    )
+    let pushed = expectation(description: "request pushed")
+    stub(routerHost) { mock in
+      when(mock.push(with: any())).then { _ in pushed.fulfill() }
+    }
+    stub(walletKitController) { mock in
+      when(mock.startSameDevicePresentation(deepLink: any())).thenReturn(sessionCoordinator)
+    }
+
+    await controller.handleDeepLinkAction(
+      routerHost: routerHost,
+      deepLinkExecutable: Self.mockedHaipVpDeepLinkAction
+    )
+    await fulfillment(of: [pushed], timeout: 2)
+
+    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
+    verify(walletKitController).startSameDevicePresentation(deepLink: any())
+    verify(routerHost).push(with: any())
+  }
+
+  func testHandleDeepLinkAction_WhenLoggedInAndActionIsHaipVpAwayFromTheDashboard_ThenReturnsToTheDashboard() async {
+    stubHandleDeepLink(
+      action: Self.mockedHaipVpDeepLinkAction,
       route: nil,
       isAfterAuth: true,
       isScreenForeground: false
     )
     stub(routerHost) { mock in
-      when(mock.push(with: any())).thenDoNothing()
+      when(mock.popTo(with: any(), inclusive: any())).thenDoNothing()
     }
 
-    // When
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: pendingAction,
-      remoteSessionCoordinator: sessionCoordinator
+      deepLinkExecutable: Self.mockedHaipVpDeepLinkAction
     )
 
-    // Then
-    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
-    verify(routerHost).push(with: any())
+    verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
+    verify(routerHost).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)), inclusive: equal(to: false))
+    verify(walletKitController, never()).startSameDevicePresentation(deepLink: any())
   }
 
   func testHandleDeepLinkAction_WhenActionIsHaipVciAndScreenNotForeground_ThenPushesIssuanceRoute() async {
@@ -337,8 +360,7 @@ final class TestDeepLinkController: EudiTest {
     // When
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: pendingAction,
-      remoteSessionCoordinator: nil
+      deepLinkExecutable: pendingAction
     )
 
     // Then
@@ -364,8 +386,7 @@ final class TestDeepLinkController: EudiTest {
     // When
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: pendingAction,
-      remoteSessionCoordinator: nil
+      deepLinkExecutable: pendingAction
     )
 
     // Then
@@ -393,8 +414,7 @@ final class TestDeepLinkController: EudiTest {
     // When
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: executable,
-      remoteSessionCoordinator: nil
+      deepLinkExecutable: executable
     )
 
     // Then
@@ -425,8 +445,7 @@ final class TestDeepLinkController: EudiTest {
     // When
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: executable,
-      remoteSessionCoordinator: nil
+      deepLinkExecutable: executable
     )
 
     // Then: the function reached the .rqes case and dispatched the resume Task

@@ -1635,16 +1635,6 @@ public class MockDashboardInteractor: DashboardInteractor, Cuckoo.ProtocolMock, 
     }
 
 
-    public func getWalletKitController() async -> WalletKitController {
-        return await cuckoo_manager.call(
-            "getWalletKitController() async -> WalletKitController",
-            parameters: (),
-            escapingParameters: (),
-            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.getWalletKitController()
-        )
-    }
-
     public func loadDocuments() async {
         return await cuckoo_manager.call(
             "loadDocuments() async",
@@ -1670,14 +1660,6 @@ public class MockDashboardInteractor: DashboardInteractor, Cuckoo.ProtocolMock, 
     
         public init(manager: Cuckoo.MockManager) {
             self.cuckoo_manager = manager
-        }
-        
-        func getWalletKitController() -> Cuckoo.ProtocolStubFunction<(), WalletKitController> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return .init(stub: cuckoo_manager.createStub(for: MockDashboardInteractor.self,
-                method: "getWalletKitController() async -> WalletKitController",
-                parameterMatchers: matchers
-            ))
         }
         
         func loadDocuments() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
@@ -1710,18 +1692,6 @@ public class MockDashboardInteractor: DashboardInteractor, Cuckoo.ProtocolMock, 
         
         
         @discardableResult
-        func getWalletKitController() -> Cuckoo.__DoNotUse<(), WalletKitController> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return cuckoo_manager.verify(
-                "getWalletKitController() async -> WalletKitController",
-                callMatcher: callMatcher,
-                parameterMatchers: matchers,
-                sourceLocation: sourceLocation
-            )
-        }
-        
-        
-        @discardableResult
         func loadDocuments() -> Cuckoo.__DoNotUse<(), Void> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
@@ -1749,10 +1719,6 @@ public class MockDashboardInteractor: DashboardInteractor, Cuckoo.ProtocolMock, 
 public class DashboardInteractorStub:DashboardInteractor, @unchecked Sendable {
 
 
-    
-    public func getWalletKitController() async -> WalletKitController {
-        return DefaultValueRegistry.defaultValue(for: (WalletKitController).self)
-    }
     
     public func loadDocuments() async {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
@@ -10192,10 +10158,25 @@ class WalletProviderAttestationConfigStub:WalletProviderAttestationConfig, @unch
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Controller/StoredDocumentPresence.swift'
+
+import Cuckoo
+import Foundation
+import Security
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Controller/WalletKitController.swift'
 
 import Cuckoo
-import Security
 import SwiftUI
 import logic_storage
 @testable import logic_core
@@ -13593,6 +13574,36 @@ import struct OpenID4VP.ClaimPath
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/RevokedDocument+Extensions.swift'
+
+import Cuckoo
+import logic_storage
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/RevokedDocumentStorageController+Extensions.swift'
+
+import Cuckoo
+import logic_storage
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/String+Extensions.swift'
 
 import Cuckoo
@@ -13798,7 +13809,6 @@ import Cuckoo
 
 import Cuckoo
 import Foundation
-import logic_storage
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -13937,6 +13947,21 @@ public class RequestItemConvertibleStub:RequestItemConvertible, @unchecked Senda
 
 }
 
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/RevocationDashboardPayload.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
 
 
 
@@ -14744,13 +14769,13 @@ public class MockDeepLinkController: DeepLinkController, Cuckoo.ProtocolMock, @u
         )
     }
 
-    public func handleDeepLinkAction(routerHost p0: RouterHost, deepLinkExecutable p1: DeepLink.Executable, remoteSessionCoordinator p2: RemoteSessionCoordinator?) {
+    public func handleDeepLinkAction(routerHost p0: RouterHost, deepLinkExecutable p1: DeepLink.Executable) {
         return cuckoo_manager.call(
-            "handleDeepLinkAction(routerHost p0: RouterHost, deepLinkExecutable p1: DeepLink.Executable, remoteSessionCoordinator p2: RemoteSessionCoordinator?)",
-            parameters: (p0, p1, p2),
-            escapingParameters: (p0, p1, p2),
+            "handleDeepLinkAction(routerHost p0: RouterHost, deepLinkExecutable p1: DeepLink.Executable)",
+            parameters: (p0, p1),
+            escapingParameters: (p0, p1),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: __defaultImplStub!.handleDeepLinkAction(routerHost: p0, deepLinkExecutable: p1, remoteSessionCoordinator: p2)
+            defaultCall: __defaultImplStub!.handleDeepLinkAction(routerHost: p0, deepLinkExecutable: p1)
         )
     }
 
@@ -14799,10 +14824,10 @@ public class MockDeepLinkController: DeepLinkController, Cuckoo.ProtocolMock, @u
             ))
         }
         
-        func handleDeepLinkAction<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable, M3: Cuckoo.OptionalMatchable>(routerHost p0: M1, deepLinkExecutable p1: M2, remoteSessionCoordinator p2: M3) -> Cuckoo.ProtocolStubNoReturnFunction<(RouterHost, DeepLink.Executable, RemoteSessionCoordinator?)> where M1.MatchedType == RouterHost, M2.MatchedType == DeepLink.Executable, M3.OptionalMatchedType == RemoteSessionCoordinator {
-            let matchers: [Cuckoo.ParameterMatcher<(RouterHost, DeepLink.Executable, RemoteSessionCoordinator?)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }]
+        func handleDeepLinkAction<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(routerHost p0: M1, deepLinkExecutable p1: M2) -> Cuckoo.ProtocolStubNoReturnFunction<(RouterHost, DeepLink.Executable)> where M1.MatchedType == RouterHost, M2.MatchedType == DeepLink.Executable {
+            let matchers: [Cuckoo.ParameterMatcher<(RouterHost, DeepLink.Executable)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
             return .init(stub: cuckoo_manager.createStub(for: MockDeepLinkController.self,
-                method: "handleDeepLinkAction(routerHost p0: RouterHost, deepLinkExecutable p1: DeepLink.Executable, remoteSessionCoordinator p2: RemoteSessionCoordinator?)",
+                method: "handleDeepLinkAction(routerHost p0: RouterHost, deepLinkExecutable p1: DeepLink.Executable)",
                 parameterMatchers: matchers
             ))
         }
@@ -14857,10 +14882,10 @@ public class MockDeepLinkController: DeepLinkController, Cuckoo.ProtocolMock, @u
         
         
         @discardableResult
-        func handleDeepLinkAction<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable, M3: Cuckoo.OptionalMatchable>(routerHost p0: M1, deepLinkExecutable p1: M2, remoteSessionCoordinator p2: M3) -> Cuckoo.__DoNotUse<(RouterHost, DeepLink.Executable, RemoteSessionCoordinator?), Void> where M1.MatchedType == RouterHost, M2.MatchedType == DeepLink.Executable, M3.OptionalMatchedType == RemoteSessionCoordinator {
-            let matchers: [Cuckoo.ParameterMatcher<(RouterHost, DeepLink.Executable, RemoteSessionCoordinator?)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }]
+        func handleDeepLinkAction<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(routerHost p0: M1, deepLinkExecutable p1: M2) -> Cuckoo.__DoNotUse<(RouterHost, DeepLink.Executable), Void> where M1.MatchedType == RouterHost, M2.MatchedType == DeepLink.Executable {
+            let matchers: [Cuckoo.ParameterMatcher<(RouterHost, DeepLink.Executable)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
             return cuckoo_manager.verify(
-                "handleDeepLinkAction(routerHost p0: RouterHost, deepLinkExecutable p1: DeepLink.Executable, remoteSessionCoordinator p2: RemoteSessionCoordinator?)",
+                "handleDeepLinkAction(routerHost p0: RouterHost, deepLinkExecutable p1: DeepLink.Executable)",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -14913,7 +14938,7 @@ public class DeepLinkControllerStub:DeepLinkController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (DeepLink.Executable?).self)
     }
     
-    public func handleDeepLinkAction(routerHost p0: RouterHost, deepLinkExecutable p1: DeepLink.Executable, remoteSessionCoordinator p2: RemoteSessionCoordinator?) {
+    public func handleDeepLinkAction(routerHost p0: RouterHost, deepLinkExecutable p1: DeepLink.Executable) {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     

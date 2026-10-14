@@ -29,22 +29,12 @@ final class TestProximityInteractor: EudiTest {
   var interactor: ProximityInteractor!
   var walletKitController: MockWalletKitController!
   var presentationSessionCoordinator: MockProximitySessionCoordinator!
-  var sessionHolder: MockSessionCoordinatorHolder!
   
   override func setUp() {
     self.walletKitController = MockWalletKitController()
     self.presentationSessionCoordinator = MockProximitySessionCoordinator(
       session: Constants.mockPresentationSession
     )
-    self.sessionHolder = MockSessionCoordinatorHolder()
-    
-    stub(sessionHolder) { mock in
-      when(mock.getActiveProximityCoordinator()).thenReturn(presentationSessionCoordinator)
-    }
-    
-    stub(sessionHolder) { mock in
-      when(mock.setActiveProximityCoordinator(any())).thenDoNothing()
-    }
     
     stub(presentationSessionCoordinator) { mock in
       when(mock.stopPresentation()).thenDoNothing()
@@ -76,8 +66,7 @@ final class TestProximityInteractor: EudiTest {
 
     self.interactor = ProximityInteractorImpl(
       with: presentationSessionCoordinator,
-      and: walletKitController,
-      also: sessionHolder
+      and: walletKitController
     )
   }
   
@@ -144,26 +133,6 @@ final class TestProximityInteractor: EudiTest {
     }
   }
   
-  func testGetSessionStatePublisher_WhenCoordinatorIsNotValid_ThenVerifyStateFailure() async {
-    // Given
-    let expectedError = RuntimeError.genericError
-    stub(sessionHolder) { mock in
-      when(mock.getActiveProximityCoordinator()).thenThrow(expectedError)
-    }
-    stub(sessionHolder) { mock in
-      when(mock.setActiveProximityCoordinator(any())).thenDoNothing()
-    }
-    // When
-    let state = await interactor.getSessionStatePublisher()
-    // Then
-    switch state {
-    case .failure(let error):
-      XCTAssertEqual(error.localizedDescription, expectedError.localizedDescription)
-    default:
-      XCTFail("Wrong state \(state)")
-    }
-  }
-  
   func testGetCoordinator_WhenCoordinatorIsValid_ThenVerifyStateSuccess() async {
     // When
     let state = await interactor.getCoordinator()
@@ -176,23 +145,15 @@ final class TestProximityInteractor: EudiTest {
     }
   }
   
-  func testGetCoordinator_WhenCoordinatorIsNotValid_ThenVerifyStateSuccess() async {
-    // Given
-    let expectedError = RuntimeError.genericError
-    stub(sessionHolder) { mock in
-      when(mock.getActiveProximityCoordinator()).thenThrow(expectedError)
-    }
-    // When
+  func testGetCoordinator_WhenBuilt_ThenReturnsTheCoordinatorOfItsRoute() async {
     let state = await interactor.getCoordinator()
-    // Then
-    switch state {
-    case .failure(let error):
-      XCTAssertEqual(error.localizedDescription, expectedError.localizedDescription)
-    default:
-      XCTFail("Wrong state \(state)")
+
+    guard case .success(let coordinator) = state else {
+      return XCTFail("Wrong state \(state)")
     }
+    XCTAssertTrue(coordinator as AnyObject === presentationSessionCoordinator)
   }
-  
+
   func testOnQRGeneration_WhenCoordinatorStartQrEngagementReturnsValidData_ThenVerifySuccessAndImage() async throws {
     // Given
     let expectedImage = try XCTUnwrap(UIImage(systemName: "qrcode"))
@@ -528,80 +489,21 @@ final class TestProximityInteractor: EudiTest {
     
     stub(presentationSessionCoordinator) { mock in
       when(mock.getState()).thenReturn(presetationState)
-    }
-    
-    stub(sessionHolder) { mock in
-      when(
-        mock.getActiveProximityCoordinator()
-      ).thenThrow(expectedError)
+      when(mock.sendResponse(response: any())).thenThrow(expectedError)
     }
     
     // When
     let state = await interactor.onSendResponse()
     
-    // Then
-    switch state {
-    case .failure(let error):
-      XCTAssertEqual(error.localizedDescription, PresentationSessionError.invalidState.localizedDescription)
-    default:
-      XCTFail("Wrong state \(state)")
-    }
-    
-    verify(presentationSessionCoordinator, times(0)).getState()
-    verify(presentationSessionCoordinator, times(0)).sendResponse(response: any())
-  }
-
-  func testOnResponsePrepare_WhenGetActiveProximityCoordinatorThrowsError_ThenVerifyFailureState() async {
-    // Given
-    let expectedError = RuntimeError.genericError
-    let validRequestItems = Self.mockUiModels()
-
-    stub(sessionHolder) { mock in
-      when(mock.getActiveProximityCoordinator()).thenThrow(expectedError)
-    }
-
-    // When
-    let state = await interactor.onResponsePrepare(requestItems: validRequestItems)
-
     // Then
     switch state {
     case .failure(let error):
       XCTAssertEqual(error.localizedDescription, expectedError.localizedDescription)
     default:
-      XCTFail("Expected failure state, got \(state)")
+      XCTFail("Wrong state \(state)")
     }
-  }
-
-  func testOnSendResponse_WhenGetActiveProximityCoordinatorThrowsError_ThenVerifyFailureState() async {
-    // Given
-    let presetationState: PresentationState = .responseToSend(Self.mockRequestItems)
-    let expectedError = PresentationSessionError.invalidState
-
-    stub(sessionHolder) { mock in
-      when(
-        mock.getActiveProximityCoordinator()
-      )
-      .thenReturn(presentationSessionCoordinator)
-      .thenThrow(expectedError)
-    }
-
-    stub(presentationSessionCoordinator) { mock in
-      when(mock.getState()).thenReturn(presetationState)
-    }
-
-    // When
-    let state = await interactor.onSendResponse()
-
-    // Then
-    switch state {
-    case .failure(let error):
-      XCTAssertEqual(
-        error.localizedDescription,
-        expectedError.localizedDescription
-      )
-    default:
-      XCTFail("Expected failure state, got \(state)")
-    }
+    
+    verify(presentationSessionCoordinator).sendResponse(response: any())
   }
 
   func testOnRequestReceived_WhenAllDocumentsAreRevoked_ThenVerifySuccessWithNoItems() async {

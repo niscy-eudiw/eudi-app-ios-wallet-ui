@@ -44,14 +44,14 @@ final actor SessionCoordinatorHolderImpl: SessionCoordinatorHolder {
 
   public func getActiveRemoteCoordinator() throws -> RemoteSessionCoordinator {
     guard let activeRemoteCoordinator else {
-      fatalError("RemoteSessionCoordinator is not set")
+      throw PresentationSessionError.noActiveSession
     }
     return activeRemoteCoordinator
   }
 
   public func getActiveProximityCoordinator() throws -> ProximitySessionCoordinator {
     guard let activeProximityCoordinator else {
-      fatalError("ProximitySessionCoordinator is not set")
+      throw PresentationSessionError.noActiveSession
     }
     return activeProximityCoordinator
   }

@@ -74,40 +74,31 @@ public protocol ProximityInteractor: Sendable {
 
 }
 
+/// Works on the session its route carries, never on another one started later.
 final actor ProximityInteractorImpl: ProximityInteractor {
 
+  private let proximitySessionCoordinator: ProximitySessionCoordinator
   private let walletKitController: WalletKitController
-  private let sessionCoordinatorHolder: SessionCoordinatorHolder
 
   init(
     with proximitySessionCoordinator: ProximitySessionCoordinator,
-    and walletKitController: WalletKitController,
-    also sessionCoordinatorHolder: SessionCoordinatorHolder
+    and walletKitController: WalletKitController
   ) {
+    self.proximitySessionCoordinator = proximitySessionCoordinator
     self.walletKitController = walletKitController
-    self.sessionCoordinatorHolder = sessionCoordinatorHolder
-    Task { await self.sessionCoordinatorHolder.setActiveProximityCoordinator(proximitySessionCoordinator) }
   }
 
   func getCoordinator() async -> ProximityCoordinatorPartialState {
-    do {
-      return .success(try await sessionCoordinatorHolder.getActiveProximityCoordinator())
-    } catch {
-      return .failure(error)
-    }
+    .success(proximitySessionCoordinator)
   }
 
   public func getSessionStatePublisher() async -> ProximityPublisherPartialState {
-    do {
-      return .success(try await sessionCoordinatorHolder.getActiveProximityCoordinator().getStream())
-    } catch {
-      return .failure(error)
-    }
+    .success(proximitySessionCoordinator.getStream())
   }
 
   public func onDeviceEngagement() async -> ProximityDeviceEngagementPartialState {
     do {
-      try await sessionCoordinatorHolder.getActiveProximityCoordinator().initialize()
+      try await proximitySessionCoordinator.initialize()
       return .success
     } catch {
       return .failure(error)
@@ -116,7 +107,7 @@ final actor ProximityInteractorImpl: ProximityInteractor {
 
   public func onQRGeneration() async -> ProximityQrCodePartialState {
     do {
-      let qrImage = try await self.sessionCoordinatorHolder.getActiveProximityCoordinator().startQrEngagement()
+      let qrImage = try await proximitySessionCoordinator.startQrEngagement()
       return .success(qrImage)
     } catch {
       return .failure(error)
@@ -126,7 +117,7 @@ final actor ProximityInteractorImpl: ProximityInteractor {
 
   public func onRequestReceived() async -> ProximityRequestPartialState {
     do {
-      let coordinator = try await sessionCoordinatorHolder.getActiveProximityCoordinator()
+      let coordinator = proximitySessionCoordinator
       let response = try await coordinator.requestReceived()
       let revokedDocuments = (try? await walletKitController.fetchRevokedDocuments()) ?? []
       let documents = (response.itemSets.first ?? []).filter { item in !revokedDocuments.contains(where: { $0 == item.docId }) }
@@ -161,11 +152,7 @@ final actor ProximityInteractorImpl: ProximityInteractor {
       return .failure(PresentationSessionError.conversionToRequestItemModel)
     }
 
-    do {
-      try await self.sessionCoordinatorHolder.getActiveProximityCoordinator().setState(presentationState: .responseToSend(requestConvertible))
-    } catch {
-      return .failure(error)
-    }
+    proximitySessionCoordinator.setState(presentationState: .responseToSend(requestConvertible))
 
     return .success(requestConvertible.items)
   }
@@ -173,14 +160,13 @@ final actor ProximityInteractorImpl: ProximityInteractor {
   public func onSendResponse() async -> ProximityResponsePartialState {
 
     guard
-      let state = try? await sessionCoordinatorHolder.getActiveProximityCoordinator().getState(),
-      case PresentationState.responseToSend(let responseItem) = state
+      case PresentationState.responseToSend(let responseItem) = await proximitySessionCoordinator.getState()
     else {
       return .failure(PresentationSessionError.invalidState)
     }
 
     do {
-      try await sessionCoordinatorHolder.getActiveProximityCoordinator().sendResponse(response: responseItem)
+      try await proximitySessionCoordinator.sendResponse(response: responseItem)
       return .sent
     } catch {
       return .failure(error)
@@ -193,6 +179,6 @@ final actor ProximityInteractorImpl: ProximityInteractor {
 
   public func stopPresentation() async {
     await walletKitController.stopPresentation()
-    try? await sessionCoordinatorHolder.getActiveProximityCoordinator().stopPresentation()
+    proximitySessionCoordinator.stopPresentation()
   }
 }

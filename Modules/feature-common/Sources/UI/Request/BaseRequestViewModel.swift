@@ -172,28 +172,6 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
     }
   }
 
-  public func resetState() {
-    isRiskAcknowledged = false
-    setState { previous in
-      .init(
-        isLoading: true,
-        error: nil,
-        errorTitle: nil,
-        showMissingCredentials: true,
-        items: RequestDataUiModel.mockData(),
-        combinations: [],
-        selectedCombinationIndex: 0,
-        relyingParty: .unknownVerifier,
-        isTrusted: false,
-        allowShare: false,
-        originator: previous.originator,
-        initialized: false,
-        relyingPartyRegistration: nil,
-        registrationWarning: nil
-      )
-    }
-  }
-
   /// Shows the registration and its warning. `isRelyingPartyTrusted` is false for a relying party that
   /// did not authenticate, which then gets the not-verified warning that keeps Share disabled. The remote
   /// flow passes `true`: wallet-kit refuses an OpenID4VP verifier that did not authenticate before its

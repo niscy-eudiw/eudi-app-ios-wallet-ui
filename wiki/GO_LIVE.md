@@ -1247,10 +1247,9 @@ var revocationIntervalSeconds: TimeInterval {
 ```
 
 The revocation and re-issuance workers start when the dashboard first opens, after login or PIN
-creation, and the documents are loaded at the same point. Start-up loads none. One exception remains:
-a presentation link opened before login still builds its presentation session, which reads the issued
-documents from the Keychain, before the link is kept for after login (`Application.onOpenURL` starts the
-session before `DeepLinkController.handleDeepLinkAction` caches the link). The first revocation check
+creation, and the documents are loaded at the same point. Start-up loads none, and a presentation link
+opened before login is kept without starting its session (see
+[Deep Links And Redirect URIs](#deep-links-and-redirect-uris)). The first revocation check
 runs 30 seconds after the workers start, and later checks follow every `revocationIntervalSeconds`.
 Nothing in the app stops the workers; they run until the process ends. If an integrator stops and
 restarts them after the first revocation check, the next revocation check waits the full interval; the
@@ -1414,6 +1413,20 @@ Production guidance:
 * Validate scheme, path, host, query parameters, request objects, and expected flow type.
 * Reject malformed, oversized, unexpected, or cross-flow URLs.
 * Threat-model same-device flows, QR flows, browser redirects, and extension flows.
+
+How the reference app handles a wallet link (`DeepLinkController.handleDeepLinkAction`):
+
+* Before login the link is kept for after login and starts nothing. A presentation link starts its
+  session only when its request screen opens.
+* While the wallet is logged in, a presentation or signing link that arrives away from the dashboard
+  ends the flow on screen: the wallet returns to the dashboard, which opens the link. A presentation in
+  progress, proximity included, is not replaced in place, and the flow that was ended does not resume.
+  The Android wallet behaves the same way, with one exception iOS does not need: an OpenID4VP link that
+  arrives while an issuance screen or document details is open is handled there as the issuance's own
+  presentation (`DYNAMIC_PRESENTATION`). On iOS, wallet-kit hands that presentation to the issuance
+  inside the app, without a link.
+* Each presentation screen works on the session its route carries (`PresentationInteractorImpl`,
+  `ProximityInteractorImpl`); a session started later cannot take its place.
 
 Files to review:
 
@@ -2323,6 +2336,8 @@ Before release candidate approval, test:
 * Revoked credential; suspended credential, and its return to Valid; a credential suspended before
   the update (stays blocked).
 * Malformed deep links.
+* A second presentation link while a remote request or a proximity presentation is on screen: the
+  wallet returns to the dashboard and opens the new request.
 * Malicious credential offer.
 * App update from previous production version.
 

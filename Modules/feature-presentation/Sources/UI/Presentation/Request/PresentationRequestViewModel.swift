@@ -124,17 +124,6 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
     viewState.relyingParty
   }
 
-  func handleDeepLinkNotification(with info: [AnyHashable: Any]) {
-    Task {
-      guard let session = info["session"] as? RemoteSessionCoordinator else {
-        return
-      }
-      resetState()
-      await interactor.updatePresentationCoordinator(with: session)
-      await doWork()
-    }
-  }
-
   private func getCoordinator() async {
     return switch await interactor.getCoordinator() {
     case .success(let remoteSessionCoordinator):

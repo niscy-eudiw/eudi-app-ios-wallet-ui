@@ -27,7 +27,6 @@ struct Application: App {
 
   private let routerHost: RouterHost
   private let deepLinkController: DeepLinkController
-  private let walletKitController: WalletKitController
 
   init() {
 
@@ -36,7 +35,6 @@ struct Application: App {
 
     self.routerHost = DIGraph.shared.resolver.force(RouterHost.self)
     self.deepLinkController = DIGraph.shared.resolver.force(DeepLinkController.self)
-    self.walletKitController = DIGraph.shared.resolver.force(WalletKitController.self)
     self.toolbarConfig = routerHost.getToolbarConfig()
   }
 
@@ -64,15 +62,10 @@ struct Application: App {
       }
       .onOpenURL { url in
         if let deepLink = deepLinkController.hasDeepLink(url: url) {
-          Task {
-            deepLinkController.handleDeepLinkAction(
-              routerHost: routerHost,
-              deepLinkExecutable: deepLink,
-              remoteSessionCoordinator: deepLink.requiresCoordinator
-              ? await walletKitController.startSameDevicePresentation(deepLink: deepLink.link)
-              : nil
-            )
-          }
+          deepLinkController.handleDeepLinkAction(
+            routerHost: routerHost,
+            deepLinkExecutable: deepLink
+          )
         }
       }
       .onChange(of: scenePhase) {

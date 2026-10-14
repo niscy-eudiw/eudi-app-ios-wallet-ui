@@ -53,7 +53,6 @@ public protocol PresentationInteractor: Sendable {
   func onRequestReceived() async -> PresentationRequestPartialState
   func onSendResponse() async -> RemoteSentResponsePartialState
   func onDeclineRequest() async
-  func updatePresentationCoordinator(with coordinator: RemoteSessionCoordinator) async
   func storeDynamicIssuancePendingUrl(with url: URL) async
   func stopPresentation() async
   func registrationForFailedRequest() async -> RelyingPartyRegistration?
@@ -64,51 +63,38 @@ private struct RequestCombination {
   let uiModels: [RequestDataUiModel]
 }
 
+/// Works on the session its route carries, never on another one started later.
 final actor PresentationInteractorImpl: PresentationInteractor {
 
-  private let sessionCoordinatorHolder: SessionCoordinatorHolder
+  private let presentationCoordinator: RemoteSessionCoordinator
   private let walletKitController: WalletKitController
 
   private var requestedItemSets: [[DocElements]] = []
 
   init(
     with presentationCoordinator: RemoteSessionCoordinator,
-    and walletKitController: WalletKitController,
-    also sessionCoordinatorHolder: SessionCoordinatorHolder
+    and walletKitController: WalletKitController
   ) {
+    self.presentationCoordinator = presentationCoordinator
     self.walletKitController = walletKitController
-    self.sessionCoordinatorHolder = sessionCoordinatorHolder
-    Task { await self.sessionCoordinatorHolder.setActiveRemoteCoordinator(presentationCoordinator) }
   }
 
   public func getSessionStatePublisher() async -> RemotePublisherPartialState {
-    do {
-      return .success(try await self.sessionCoordinatorHolder.getActiveRemoteCoordinator().getStream())
-    } catch {
-      return .failure(error)
-    }
+    .success(presentationCoordinator.getStream())
   }
 
   public func getCoordinator() async -> PresentationCoordinatorPartialState {
-    do {
-      return .success(try await self.sessionCoordinatorHolder.getActiveRemoteCoordinator())
-    } catch {
-      return .failure(error)
-    }
-  }
-
-  public func updatePresentationCoordinator(with coordinator: RemoteSessionCoordinator) async {
-    await self.sessionCoordinatorHolder.setActiveRemoteCoordinator(coordinator)
+    .success(presentationCoordinator)
   }
 
   public func onDeviceEngagement() async -> PresentationRequestPartialState {
-    try? await sessionCoordinatorHolder.getActiveRemoteCoordinator().initialize()
+    await presentationCoordinator.initialize()
     return await onRequestReceived()
   }
 
   public func onRequestReceived() async -> PresentationRequestPartialState {
     do {
-      let coordinator = try await sessionCoordinatorHolder.getActiveRemoteCoordinator()
+      let coordinator = presentationCoordinator
       let response = try await coordinator.requestReceived()
       let revokedDocuments = (try? await walletKitController.fetchRevokedDocuments()) ?? []
       let registrationPolicy = coordinator.relyingPartyRegistration
@@ -166,15 +152,7 @@ final actor PresentationInteractorImpl: PresentationInteractor {
       return .failure(PresentationSessionError.conversionToRequestItemModel)
     }
 
-    do {
-
-      try await self.sessionCoordinatorHolder
-        .getActiveRemoteCoordinator()
-        .setState(presentationState: .responseToSend(requestConvertible))
-
-    } catch {
-      return .failure(error)
-    }
+    presentationCoordinator.setState(presentationState: .responseToSend(requestConvertible))
 
     return .success(requestConvertible.items)
   }
@@ -182,14 +160,13 @@ final actor PresentationInteractorImpl: PresentationInteractor {
   public func onSendResponse() async -> RemoteSentResponsePartialState {
 
     guard
-      let state = try? await sessionCoordinatorHolder.getActiveRemoteCoordinator().getState(),
-      case PresentationState.responseToSend(let responseItem) = state
+      case PresentationState.responseToSend(let responseItem) = await presentationCoordinator.getState()
     else {
       return .failure(PresentationSessionError.invalidState)
     }
 
     do {
-      try await self.sessionCoordinatorHolder.getActiveRemoteCoordinator().sendResponse(response: responseItem)
+      try await presentationCoordinator.sendResponse(response: responseItem)
       return .sent
     } catch {
       return .failure(error)
@@ -197,7 +174,7 @@ final actor PresentationInteractorImpl: PresentationInteractor {
   }
 
   public func onDeclineRequest() async {
-    try? await sessionCoordinatorHolder.getActiveRemoteCoordinator().declineResponse()
+    try? await presentationCoordinator.declineResponse()
     await stopPresentation()
   }
 
@@ -211,6 +188,6 @@ final actor PresentationInteractorImpl: PresentationInteractor {
 
   public func stopPresentation() async {
     await walletKitController.stopPresentation()
-    try? await sessionCoordinatorHolder.getActiveRemoteCoordinator().stopPresentation()
+    presentationCoordinator.stopPresentation()
   }
 }

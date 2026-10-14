@@ -46,14 +46,6 @@ final class TestDashboardInteractor: EudiTest {
     self.reIssuanceWorkManager = nil
   }
   
-  func testGetWalletKitController_WhenInteractorReturnsWalletKitController_ThenVerifyControllerIsInjected() async {
-    // Given / When
-    let result = await interactor.getWalletKitController()
-    
-    // Then
-    XCTAssertTrue(result is MockWalletKitController, "The result should be of type MockWalletKitController")
-  }
-
   func testLoadDocuments_WhenCalled_ThenTheWalletLoadsItsDocuments() async {
     stub(walletKitController) { mock in
       when(mock.loadDocuments()).thenDoNothing()

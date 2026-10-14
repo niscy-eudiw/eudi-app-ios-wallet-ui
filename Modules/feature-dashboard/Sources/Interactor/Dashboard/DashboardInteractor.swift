@@ -16,7 +16,6 @@
 import logic_core
 
 public protocol DashboardInteractor: Sendable {
-  func getWalletKitController() async -> WalletKitController
   /// Loads the wallet's documents. Start-up loads none, so this is the first load after login.
   func loadDocuments() async
   /// Starts the revocation and re-issuance workers, which run only once the wallet is open.
@@ -47,9 +46,5 @@ final actor DashboardInteractorImpl: DashboardInteractor {
   func startWorkers() async {
     await revocationWorkManager.start()
     await reIssuanceWorkManager.start()
-  }
-
-  func getWalletKitController() -> WalletKitController {
-    self.walletKitController
   }
 }

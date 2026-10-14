@@ -160,10 +160,7 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
     if let deepLink = deepLinkController.getPendingDeepLinkAction() {
       deepLinkController.handleDeepLinkAction(
         routerHost: router,
-        deepLinkExecutable: deepLink,
-        remoteSessionCoordinator: deepLink.requiresCoordinator
-        ? await interactor.getWalletKitController().startSameDevicePresentation(deepLink: deepLink.link)
-        : nil
+        deepLinkExecutable: deepLink
       )
     }
   }

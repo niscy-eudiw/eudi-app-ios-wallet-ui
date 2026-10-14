@@ -24,8 +24,7 @@ public final class FeatureProximityAssembly: Assembly {
     container.register(ProximityInteractor.self) { r, session in
       ProximityInteractorImpl(
         with: session,
-        and: r.force(WalletKitController.self),
-        also: r.force(SessionCoordinatorHolder.self)
+        and: r.force(WalletKitController.self)
       )
     }
     .inObjectScope(ObjectScope.transient)
