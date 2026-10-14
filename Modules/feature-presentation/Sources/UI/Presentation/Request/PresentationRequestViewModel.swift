@@ -47,13 +47,13 @@ final class PresentationRequestViewModel<Router: RouterHost>: BaseRequestViewMod
         relyingParty: .custom(authenticationRequest.relyingParty),
         isTrusted: authenticationRequest.isTrusted
       )
-      self.onReceivedRegistration(authenticationRequest.relyingPartyRegistration)
+      self.onReceivedRegistration(authenticationRequest.relyingPartyRegistration, isRelyingPartyTrusted: true)
     case .notSecuredRequest:
       self.onTrustBlocked()
     case .failure(let error):
       self.onEmptyDocuments(error: error.errorMessage)
       if let registration = await interactor.registrationForFailedRequest() {
-        self.onReceivedRegistration(registration)
+        self.onReceivedRegistration(registration, isRelyingPartyTrusted: true)
       }
     }
   }

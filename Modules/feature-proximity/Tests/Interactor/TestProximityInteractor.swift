@@ -326,6 +326,61 @@ final class TestProximityInteractor: EudiTest {
     }
   }
   
+  func testOnRequestReceived_WhenReaderIsNotAuthenticated_ThenStateIsUntrusted() async {
+    let trusted = Self.mockPresentationRequest
+    let request = PresentationRequest(
+      itemSets: trusted.itemSets,
+      relyingParty: "Self-signed reader",
+      dataRequestInfo: trusted.dataRequestInfo,
+      isTrusted: false,
+      overaskedClaims: trusted.overaskedClaims,
+      transactionDataSets: trusted.transactionDataSets
+    )
+    stub(presentationSessionCoordinator) { mock in
+      when(mock.requestReceived()).thenReturn(request)
+    }
+    stub(walletKitController) { mock in
+      when(
+        mock.parseDocClaim(docId: any(), groupId: any(), docClaim: any(), type: any(), parser: any())
+      ).thenReturn([])
+      when(
+        mock.getVerifierRegistration(
+          policy: any(),
+          trustViolations: any(),
+          overaskedClaims: any(),
+          verifierName: any(),
+          verifierIsTrusted: equal(to: false)
+        )
+      ).thenReturn(
+        RelyingPartyRegistration(
+          name: "Self-signed reader",
+          uniqueId: nil,
+          isVerified: false,
+          logoUrl: nil,
+          registration: .notSupported
+        )
+      )
+    }
+    stubFetchRevokedDocuments(with: [])
+
+    let state = await interactor.onRequestReceived()
+
+    switch state {
+    case .success(_, let relyingParty, _, let isTrusted, _):
+      XCTAssertEqual(relyingParty, "Self-signed reader")
+      XCTAssertFalse(isTrusted)
+    default:
+      XCTFail("Wrong state \(state)")
+    }
+    verify(walletKitController).getVerifierRegistration(
+      policy: any(),
+      trustViolations: any(),
+      overaskedClaims: any(),
+      verifierName: any(),
+      verifierIsTrusted: equal(to: false)
+    )
+  }
+
   func testOnRequestReceived_WhenCoordinatorRequestReceivedThrowsError_ThenVerifyFailureState() async {
     // Given
     let expectedError = PresentationSessionError.conversionToRequestItemModel

@@ -194,7 +194,11 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
     }
   }
 
-  public func onReceivedRegistration(_ registration: RelyingPartyRegistration) {
+  /// Shows the registration and its warning. `isRelyingPartyTrusted` is false for a relying party that
+  /// did not authenticate, which then gets the not-verified warning that keeps Share disabled. The remote
+  /// flow passes `true`: wallet-kit refuses an OpenID4VP verifier that did not authenticate before its
+  /// request reaches this screen.
+  public func onReceivedRegistration(_ registration: RelyingPartyRegistration, isRelyingPartyTrusted: Bool) {
     isRiskAcknowledged = false
     let resolvedName = registration.name.map { LocalizableStringKey.custom($0) }
     setState {
@@ -202,7 +206,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
         .copy(relyingParty: resolvedName ?? $0.relyingParty)
         .copy(isTrusted: registration.isFullyVerified)
         .copy(relyingPartyRegistration: registration.toRegistrationData(fallbackName: .unknownVerifier))
-        .copy(registrationWarning: registration.toWarning())
+        .copy(registrationWarning: registration.toWarning(isRelyingPartyTrusted: isRelyingPartyTrusted))
     }
   }
 

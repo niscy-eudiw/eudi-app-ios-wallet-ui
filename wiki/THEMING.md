@@ -535,7 +535,9 @@ Android's `ThemeManager.Builder`, and is intentionally left at `.default` in the
 * **Run both appearances.** Toggle system dark mode and confirm both colorset appearances look correct.
 * **Run both variants.** Build `Dev` and `Demo` and confirm the app icon is correct for each (the
   display name is shared by default).
-* **Screenshot the key surfaces:** splash, dashboard/home, a presentation request, the PIN screen,
+* **Screenshot the key surfaces:** splash, dashboard/home, a presentation request (remote and
+  proximity, including the warning a proximity reader without a trusted reader certificate raises),
+  the PIN screen,
   document details, the RQES signing flow, and a request in the ID Provider extension, which opens with
   the PIN or biometric login and shows the requester without a verified badge. The start-up error alert is a system alert, which the theme does not
   style.

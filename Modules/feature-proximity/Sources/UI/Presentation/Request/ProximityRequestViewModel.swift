@@ -48,13 +48,13 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
         relyingParty: .custom(relyingParty),
         isTrusted: isTrusted
       )
-      self.onReceivedRegistration(registration)
+      self.onReceivedRegistration(registration, isRelyingPartyTrusted: isTrusted)
     case .notSecuredRequest:
       self.onTrustBlocked()
     case .failure(let error):
       self.onEmptyDocuments(error: error.errorMessage)
       if let registration = await interactor.registrationForFailedRequest() {
-        self.onReceivedRegistration(registration)
+        self.onReceivedRegistration(registration, isRelyingPartyTrusted: registration.isVerified)
       }
     }
   }

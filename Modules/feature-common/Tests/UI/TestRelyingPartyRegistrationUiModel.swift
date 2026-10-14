@@ -32,7 +32,7 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
     // Then
     XCTAssertEqual(data.primary.isVerified, true)
     XCTAssertEqual(data.intendedUse, .custom("Onboarding"))
-    XCTAssertNil(registration.toWarning())
+    XCTAssertNil(registration.toWarning(isRelyingPartyTrusted: true))
   }
 
   func testToWarning_whenOverasked_thenReturnsOveraskedWarning() {
@@ -50,7 +50,7 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
     )
 
     // When / Then
-    XCTAssertEqual(registration.toWarning(), .relyingPartyOverasked)
+    XCTAssertEqual(registration.toWarning(isRelyingPartyTrusted: true), .relyingPartyOverasked)
   }
 
   func testToWarning_whenNotVerified_thenReturnsNotVerifiedWarning() {
@@ -62,7 +62,39 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
 
     // Then
     XCTAssertEqual(data.primary.isVerified, false)
-    XCTAssertEqual(registration.toWarning(), .relyingPartyNotVerified)
+    XCTAssertEqual(registration.toWarning(isRelyingPartyTrusted: true), .relyingPartyNotVerified)
+  }
+
+  func testToWarning_whenRelyingPartyIsNotTrusted_thenReturnsNotVerifiedWarningForEveryRegistration() {
+    let overasked = OveraskedClaim(
+      attestationType: "eu.europa.ec.eudi.pid.1",
+      path: ClaimPath([.claim(name: "namespace"), .claim(name: "age")])
+    )
+    let statuses: [RegistrationStatus] = [
+      .verified(details: details(), overaskedClaims: []),
+      .verified(details: details(), overaskedClaims: [overasked]),
+      .notVerified(details: details()),
+      .notSupported
+    ]
+
+    for status in statuses {
+      XCTAssertEqual(
+        relyingParty(status: status).toWarning(isRelyingPartyTrusted: false),
+        .relyingPartyNotVerified,
+        "\(status)"
+      )
+    }
+  }
+
+  func testToWarning_whenRelyingPartyIsTrusted_thenFollowsTheRegistration() {
+    XCTAssertNil(relyingParty(status: .notSupported).toWarning(isRelyingPartyTrusted: true))
+    XCTAssertNil(
+      relyingParty(status: .verified(details: details(), overaskedClaims: [])).toWarning(isRelyingPartyTrusted: true)
+    )
+    XCTAssertEqual(
+      relyingParty(status: .notVerified(details: details())).toWarning(isRelyingPartyTrusted: true),
+      .relyingPartyNotVerified
+    )
   }
 
   func testToRegistrationData_whenNotSupported_thenStillNamesTheRequester() {
@@ -78,7 +110,7 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
     XCTAssertEqual(data.primary.isVerified, registration.isVerified)
     XCTAssertNil(data.intendedUse)
     XCTAssertNil(data.privacyPolicyUrl)
-    XCTAssertNil(registration.toWarning())
+    XCTAssertNil(registration.toWarning(isRelyingPartyTrusted: true))
   }
 
   func testToRegistrationData_whenRegistrationVerifiedButAccessCertificateIsNot_thenNoBadge() {

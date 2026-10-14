@@ -1025,7 +1025,11 @@ The app treats the two directions differently, and the asymmetry is intentional:
   beyond the registered scope keeps the badge, marks each requested claim outside that scope as
   "Not registered data", and gates sharing behind the same acknowledgement. The acknowledgement is
   not remembered between requests. Access-certificate failures continue to block outright where the
-  protocol allows it.
+  protocol allows it. A proximity (BLE) reader that did not authenticate (no reader certificate, or
+  one that failed validation) is not refused: ISO/IEC 18013-5 makes reader authentication optional,
+  and WalletKit checks it only for OpenID4VP. It gets the same warning, ahead of any registration
+  outcome and whatever `validateIssuerRegistrationCertificate` says: no badge, and Share stays
+  disabled until the user acknowledges it.
 
 Production requirements:
 
@@ -2262,6 +2266,8 @@ Before release candidate approval, test:
 * Cross-device presentation.
 * Relayed OpenID4VP request and response handling.
 * Proximity QR/BLE.
+* Proximity reader without, or with a failing, reader certificate: the warning, no badge, Share
+  disabled until acknowledged.
 * Relayed proximity engagement where feasible.
 * Identity Document Provider extension presentment on supported iOS versions, with the PIN or
   biometric check before the request is shown and again on Accept.

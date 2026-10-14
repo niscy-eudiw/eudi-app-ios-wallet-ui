@@ -51,7 +51,11 @@ public extension RelyingPartyRegistration {
     )
   }
 
-  func toWarning() -> RegistrationWarning? {
+  /// The warning to acknowledge before sharing. A relying party that did not authenticate, such as a
+  /// proximity reader without a valid reader certificate, gets `relyingPartyNotVerified` whatever its
+  /// registration says.
+  func toWarning(isRelyingPartyTrusted: Bool) -> RegistrationWarning? {
+    guard isRelyingPartyTrusted else { return .relyingPartyNotVerified }
     return switch registration {
     case .verified(_, let overaskedClaims):
       overaskedClaims.isEmpty ? nil : .relyingPartyOverasked

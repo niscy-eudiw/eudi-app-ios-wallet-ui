@@ -95,7 +95,9 @@ If you're planning to use this application in production, we recommend reviewing
   requires both — a provider that cannot be authenticated, or that is not registered for the
   document it offers, is refused and nothing is stored. On presentation, while registration checking
   is enabled, the registration is shown to the user and a request beyond its scope requires explicit
-  acknowledgement before sharing. See
+  acknowledgement before sharing. Whatever that setting, a proximity reader that does not
+  authenticate with a trusted reader certificate is shown with a warning, and sharing waits for the
+  same acknowledgement; a remote verifier that does not authenticate is refused. See
   [wiki/GO_LIVE.md](wiki/GO_LIVE.md#registration-certificates-the-second-trust-layer) for the
   production requirements this places on your backends.
 
@@ -185,7 +187,8 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
 7. The app's "Request" screen will load. Here, you can select or deselect which attributes to share
    with the Verifier. You must select at least one attribute to proceed. As in the remote flow, and
    subject to the same setting, a reader whose registration certificate cannot be validated raises a
-   warning that keeps "Share" disabled until you acknowledge it.
+   warning that keeps "Share" disabled until you acknowledge it. A reader that does not authenticate
+   with a trusted reader certificate raises the same warning, whatever the setting.
 8. Tap "Share".
 9. Enter the PIN you set up during the initial steps, or use Face ID or Touch ID if you turned it on
    in Settings. If the biometric check fails, enter the PIN.
