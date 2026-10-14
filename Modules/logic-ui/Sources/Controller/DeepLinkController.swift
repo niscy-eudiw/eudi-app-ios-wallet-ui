@@ -24,8 +24,9 @@ public struct DeepLink {}
 public protocol DeepLinkController: Sendable {
   func hasDeepLink(url: URL) -> DeepLink.Executable?
   /// Opens the link, or keeps it for later. A presentation link starts its session only when its request
-  /// screen opens. While the wallet is logged in, a presentation or signing link that arrives away from
-  /// the dashboard ends the flow on screen: the wallet returns to the dashboard, which opens the link.
+  /// screen opens. While the wallet is logged in, a presentation, signing or credential-offer link that
+  /// arrives away from the dashboard ends the flow on screen: the wallet returns to the dashboard, which
+  /// opens the link. A wallet without documents returns to the add-document screen for an offer.
   @MainActor func handleDeepLinkAction(
     routerHost: RouterHost,
     deepLinkExecutable: DeepLink.Executable
@@ -77,25 +78,27 @@ final class DeepLinkControllerImpl: DeepLinkController {
       deepLinkExecutable.action == .credential_offer && routerHost.userIsLoggedInWithNoDocuments()
     }
 
-    var opensFromDashboard: Bool {
-      [.rqes, .openid4vp, .haip_vp].contains(deepLinkExecutable.action)
-      && !routerHost.isScreenForeground(with: .featureDashboardModule(.dashboard))
+    var screenToReturnTo: AppRoute? {
+      let dashboard = AppRoute.featureDashboardModule(.dashboard)
+      let addDocument = AppRoute.featureIssuanceModule(.issuanceAddDocument(config: NoConfig()))
+      if routerHost.userIsLoggedInWithDocuments() {
+        let opensAWalletFlow = deepLinkExecutable.action != .external
+        return opensAWalletFlow && !routerHost.isScreenForeground(with: dashboard) ? dashboard : nil
+      }
+      return isVciExecutable && !routerHost.isScreenForeground(with: addDocument) ? addDocument : nil
     }
 
-    var shouldPopToDashboardFirst: Bool {
-      routerHost.userIsLoggedInWithDocuments()
-      && opensFromDashboard
-    }
+    let returnScreen = screenToReturnTo
 
     guard
-      !shouldPopToDashboardFirst && (routerHost.userIsLoggedInWithDocuments() || isVciExecutable)
+      returnScreen == nil && (routerHost.userIsLoggedInWithDocuments() || isVciExecutable)
     else {
       if let url = deepLinkExecutable.link.url {
         cacheDeepLinkURL(url: url)
       }
-      if shouldPopToDashboardFirst {
+      if let returnScreen {
         routerHost.popTo(
-          with: .featureDashboardModule(.dashboard),
+          with: returnScreen,
           inclusive: false
         )
       }
@@ -129,15 +132,7 @@ final class DeepLinkControllerImpl: DeepLinkController {
         : .push(.featureDashboardModule(.dashboard)),
         navigationCancelType: .pop
       )
-      if !routerHost.isScreenForeground(with: .featureIssuanceModule(.credentialOfferRequest(config: config))) {
-        routerHost.push(with: .featureIssuanceModule(.credentialOfferRequest(config: config)))
-      } else {
-        NotificationCenter.default.post(
-          name: NSNotification.CredentialOffer,
-          object: nil,
-          userInfo: ["uri": deepLinkExecutable.plainUrl.absoluteString]
-        )
-      }
+      routerHost.push(with: .featureIssuanceModule(.credentialOfferRequest(config: config)))
     case .rqes:
 
       guard let code = deepLinkExecutable.link.queryItems?.first(where: { $0.name == "code" })?.value else {
@@ -218,8 +213,4 @@ public extension DeepLink {
       }
     }
   }
-}
-
-public extension NSNotification {
-  static let CredentialOffer = Notification.Name.init("CredentialOffer")
 }

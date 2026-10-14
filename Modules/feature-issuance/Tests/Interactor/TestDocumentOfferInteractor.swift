@@ -872,6 +872,47 @@ final class TestDocumentOfferInteractor: EudiTest {
     }
   }
 
+  func testProcessOfferRequest_WhenTxCodeHasNoLength_ThenReturnsTransactionCodeFormatFailure() async {
+    let uri = "uri"
+    let offer = OfferedIssuanceModel(
+      issuerName: "issuerName",
+      issuerLogoUrl: "https://logo",
+      docModels: [],
+      txCodeSpec: TxCode(inputMode: .numeric, length: nil, description: "")
+    )
+    stub(walletKitController) { mock in
+      mock.resolveOfferUrlDocTypes(offerUri: uri).thenReturn(offer)
+      mock.fetchIssuedDocuments(with: any()).thenReturn([Constants.createEuPidModel()])
+    }
+
+    let result = await interactor.processOfferRequest(with: uri)
+
+    guard case .failure(let error) = result, case .transactionCodeFormat = error as? WalletCoreError else {
+      return XCTFail("Expected .transactionCodeFormat, got \(result)")
+    }
+  }
+
+  func testProcessOfferRequest_WhenTxCodeHasAValidLength_ThenIsNotRefusedForTheCode() async {
+    let uri = "uri"
+    let offer = OfferedIssuanceModel(
+      issuerName: "issuerName",
+      issuerLogoUrl: "https://logo",
+      docModels: [],
+      txCodeSpec: TxCode(inputMode: .numeric, length: 4, description: "")
+    )
+    stub(walletKitController) { mock in
+      mock.resolveOfferUrlDocTypes(offerUri: uri).thenReturn(offer)
+      mock.fetchIssuedDocuments(with: any()).thenReturn([Constants.createEuPidModel()])
+      mock.getIssuerRegistration(for: any()).thenReturn(nil)
+    }
+
+    let result = await interactor.processOfferRequest(with: uri)
+
+    if case .failure(let error) = result, case .transactionCodeFormat = error as? WalletCoreError {
+      XCTFail("A four-digit numeric code must be accepted")
+    }
+  }
+
   func testProcessOfferRequest_WhenTxCodeInputModeIsText_ThenReturnsTransactionCodeFormatFailure() async {
     // Given: inputMode == .text also trips the txCode guard regardless of length.
     let uri = "uri"

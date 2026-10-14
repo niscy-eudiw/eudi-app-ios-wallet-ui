@@ -57,8 +57,7 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
       let hasPidStored = await !walletController.fetchIssuedDocuments(with: [.mDocPid, .sdJwtPid]).isEmpty
 
       if let spec = offer.txCodeSpec,
-         let codeLength = spec.length,
-         !(codeMinLength...codeMaxLength).contains(codeLength) || spec.inputMode == .text {
+         spec.inputMode == .text || !(codeMinLength...codeMaxLength).contains(spec.length ?? 0) {
         return .failure(WalletCoreError.transactionCodeFormat(["\(codeMinLength)", "\(codeMaxLength)"]))
       }
 

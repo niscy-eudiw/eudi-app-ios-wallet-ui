@@ -1418,13 +1418,16 @@ How the reference app handles a wallet link (`DeepLinkController.handleDeepLinkA
 
 * Before login the link is kept for after login and starts nothing. A presentation link starts its
   session only when its request screen opens.
-* While the wallet is logged in, a presentation or signing link that arrives away from the dashboard
-  ends the flow on screen: the wallet returns to the dashboard, which opens the link. A presentation in
+* While the wallet is logged in, a presentation, signing or credential-offer link that arrives away from
+  the dashboard ends the flow on screen: the wallet returns to the dashboard, which opens the link. A
+  wallet without documents returns to the add-document screen for an offer. A presentation or an offer in
   progress, proximity included, is not replaced in place, and the flow that was ended does not resume.
   The Android wallet behaves the same way, with one exception iOS does not need: an OpenID4VP link that
   arrives while an issuance screen or document details is open is handled there as the issuance's own
   presentation (`DYNAMIC_PRESENTATION`). On iOS, wallet-kit hands that presentation to the issuance
   inside the app, without a link.
+* An offer whose transaction code has no length, a length outside 4 to 6 digits, or text input is refused
+  with the transaction-code error (`DocumentOfferInteractor.processOfferRequest`).
 * Each presentation screen works on the session its route carries (`PresentationInteractorImpl`,
   `ProximityInteractorImpl`); a session started later cannot take its place.
 
@@ -2339,6 +2342,9 @@ Before release candidate approval, test:
 * A second presentation link while a remote request or a proximity presentation is on screen: the
   wallet returns to the dashboard and opens the new request.
 * Malicious credential offer.
+* A second credential offer while an offer is on screen: the wallet returns to the dashboard and opens
+  the new offer; the first is not issued.
+* A credential offer whose transaction code has no length: refused.
 * App update from previous production version.
 
 ## Production Test Matrix

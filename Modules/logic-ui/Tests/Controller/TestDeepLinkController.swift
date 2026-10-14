@@ -246,50 +246,90 @@ final class TestDeepLinkController: EudiTest {
     verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
   }
 
-  func testHandleDeepLinkAction_WhenCredentialOfferActionAndScreenIsNotForeground_ThenPushCredentialOfferRequest() async {
-    // Given
-    let pendingAction = Self.mockedCredentialOfferDeepLinkAction
-
+  func testHandleDeepLinkAction_WhenLoggedInAndActionIsCredentialOfferOnTheDashboard_ThenPushesTheOfferScreen() async {
     stubHandleDeepLink(
-      action: pendingAction,
+      action: Self.mockedCredentialOfferDeepLinkAction,
       route: nil,
       isAfterAuth: true,
       isScreenForeground: true
-    )
-
-    // When
-    await controller.handleDeepLinkAction(
-      routerHost: routerHost,
-      deepLinkExecutable: pendingAction
-    )
-
-    // Then
-    verify(prefsController, times(0)).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
-    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
-    verify(routerHost, times(0)).push(with: any())
-  }
-
-  func testHandleDeepLinkAction_WhenCredentialOfferActionAndScreenIsNotForeground_ThenPushesIssuanceRoute() async {
-    // Given: post-auth, credential_offer action, screen NOT foreground -> push branch (line 142)
-    let pendingAction = Self.mockedCredentialOfferDeepLinkAction
-
-    stubHandleDeepLink(
-      action: pendingAction,
-      route: nil,
-      isAfterAuth: true,
-      isScreenForeground: false
     )
     stub(routerHost) { mock in
       when(mock.push(with: any())).thenDoNothing()
     }
 
-    // When
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: pendingAction
+      deepLinkExecutable: Self.mockedCredentialOfferDeepLinkAction
     )
 
-    // Then
+    verify(prefsController, never()).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
+    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
+    verify(routerHost).push(with: any())
+  }
+
+  func testHandleDeepLinkAction_WhenLoggedInAndActionIsCredentialOfferAwayFromTheDashboard_ThenKeepsTheLinkAndReturnsToTheDashboard() async {
+    stubHandleDeepLink(
+      action: Self.mockedCredentialOfferDeepLinkAction,
+      route: nil,
+      isAfterAuth: true,
+      isScreenForeground: false
+    )
+    stub(routerHost) { mock in
+      when(mock.popTo(with: any(), inclusive: any())).thenDoNothing()
+    }
+
+    await controller.handleDeepLinkAction(
+      routerHost: routerHost,
+      deepLinkExecutable: Self.mockedCredentialOfferDeepLinkAction
+    )
+
+    verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
+    verify(routerHost).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)), inclusive: equal(to: false))
+    verify(routerHost, never()).push(with: any())
+  }
+
+  func testHandleDeepLinkAction_WhenWalletHasNoDocumentsAndCredentialOfferArrivesAwayFromAddDocument_ThenReturnsToAddDocument() async {
+    stubHandleDeepLink(
+      action: Self.mockedCredentialOfferDeepLinkAction,
+      route: nil,
+      isAfterAuth: false,
+      isScreenForeground: false
+    )
+    stub(routerHost) { mock in
+      when(mock.userIsLoggedInWithNoDocuments()).thenReturn(true)
+      when(mock.popTo(with: any(), inclusive: any())).thenDoNothing()
+    }
+
+    await controller.handleDeepLinkAction(
+      routerHost: routerHost,
+      deepLinkExecutable: Self.mockedCredentialOfferDeepLinkAction
+    )
+
+    verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
+    verify(routerHost).popTo(
+      with: equal(to: AppRoute.featureIssuanceModule(.issuanceAddDocument(config: NoConfig()))),
+      inclusive: equal(to: false)
+    )
+    verify(routerHost, never()).push(with: any())
+  }
+
+  func testHandleDeepLinkAction_WhenWalletHasNoDocumentsAndCredentialOfferArrivesOnAddDocument_ThenPushesTheOfferScreen() async {
+    stubHandleDeepLink(
+      action: Self.mockedCredentialOfferDeepLinkAction,
+      route: nil,
+      isAfterAuth: false,
+      isScreenForeground: true
+    )
+    stub(routerHost) { mock in
+      when(mock.userIsLoggedInWithNoDocuments()).thenReturn(true)
+      when(mock.push(with: any())).thenDoNothing()
+    }
+
+    await controller.handleDeepLinkAction(
+      routerHost: routerHost,
+      deepLinkExecutable: Self.mockedCredentialOfferDeepLinkAction
+    )
+
     verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
     verify(routerHost).push(with: any())
   }
@@ -344,26 +384,22 @@ final class TestDeepLinkController: EudiTest {
     verify(walletKitController, never()).startSameDevicePresentation(deepLink: any())
   }
 
-  func testHandleDeepLinkAction_WhenActionIsHaipVciAndScreenNotForeground_ThenPushesIssuanceRoute() async {
-    // Given: .haip_vci shares the credential_offer switch arm
-    let pendingAction = Self.mockedHaipVciDeepLinkAction
+  func testHandleDeepLinkAction_WhenActionIsHaipVciOnTheDashboard_ThenPushesTheOfferScreen() async {
     stubHandleDeepLink(
-      action: pendingAction,
+      action: Self.mockedHaipVciDeepLinkAction,
       route: nil,
       isAfterAuth: true,
-      isScreenForeground: false
+      isScreenForeground: true
     )
     stub(routerHost) { mock in
       when(mock.push(with: any())).thenDoNothing()
     }
 
-    // When
     await controller.handleDeepLinkAction(
       routerHost: routerHost,
-      deepLinkExecutable: pendingAction
+      deepLinkExecutable: Self.mockedHaipVciDeepLinkAction
     )
 
-    // Then
     verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
     verify(routerHost).push(with: any())
   }
