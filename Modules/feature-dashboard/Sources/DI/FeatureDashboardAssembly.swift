@@ -17,6 +17,7 @@ import Swinject
 import logic_business
 import logic_core
 import feature_common
+import logic_authentication
 
 public final class FeatureDashboardAssembly: Assembly {
 
@@ -72,7 +73,8 @@ public final class FeatureDashboardAssembly: Assembly {
       DocumentDetailsInteractorImpl(
         walletController: r.force(WalletKitController.self),
         prefsController: r.force(PrefsController.self),
-        configLogic: r.force(ConfigLogic.self)
+        configLogic: r.force(ConfigLogic.self),
+        sessionController: r.force(SessionController.self)
       )
     }
     .inObjectScope(ObjectScope.transient)

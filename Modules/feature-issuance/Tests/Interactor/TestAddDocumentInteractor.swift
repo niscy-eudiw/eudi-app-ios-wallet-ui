@@ -26,6 +26,7 @@ final class TestAddDocumentInteractor: EudiTest {
   
   var interactor: AddDocumentInteractor!
   var walletKitController: MockWalletKitController!
+  var sessionController: MockSessionController!
   
   override func setUp() {
     super.setUp()
@@ -46,12 +47,19 @@ final class TestAddDocumentInteractor: EudiTest {
       )
     }
 
+    self.sessionController = MockSessionController()
+    stub(sessionController) { mock in
+      when(mock.beginExternalFlow()).thenDoNothing()
+      when(mock.endExternalFlow()).thenDoNothing()
+    }
     self.interactor = AddDocumentInteractorImpl(
-      walletController: walletKitController
+      walletController: walletKitController,
+      sessionController: sessionController
     )
   }
   
   override func tearDown() {
+    self.sessionController = nil
     self.interactor = nil
     self.walletKitController = nil
   }
@@ -261,6 +269,9 @@ final class TestAddDocumentInteractor: EudiTest {
     default:
       XCTFail("Expected .deferredSuccess but got \(result)")
     }
+
+    verify(sessionController).beginExternalFlow()
+    verify(sessionController).endExternalFlow()
   }
   
   func testIssueDocument_whenDefferedPendingDocument_thenReturnsFailure() async {
@@ -321,6 +332,9 @@ final class TestAddDocumentInteractor: EudiTest {
     default:
       XCTFail("Expected .issuerNotTrusted but got \(result)")
     }
+
+    verify(sessionController).beginExternalFlow()
+    verify(sessionController).endExternalFlow()
   }
 
   func testResumeDynamicIssuance_whenWalletThrowsTrustError_thenReturnsIssuerNotTrusted() async {

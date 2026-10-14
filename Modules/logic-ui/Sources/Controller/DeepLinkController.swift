@@ -15,6 +15,7 @@
  */
 
 import Foundation
+import os
 import logic_business
 import logic_core
 import EudiRQESUi
@@ -31,6 +32,7 @@ public protocol DeepLinkController: Sendable {
     routerHost: RouterHost,
     deepLinkExecutable: DeepLink.Executable
   )
+  /// The link kept for after login, or for the screen it waits for. It lives for this process only.
   func getPendingDeepLinkAction() -> DeepLink.Executable?
   func cacheDeepLinkURL(url: URL)
   func removeCachedDeepLinkURL()
@@ -38,26 +40,28 @@ public protocol DeepLinkController: Sendable {
 
 final class DeepLinkControllerImpl: DeepLinkController {
 
-  private let prefsController: PrefsController
   private let urlSchemaController: UrlSchemaController
   private let walletKitController: WalletKitController
+  private let openURL: @Sendable @MainActor (URL) -> Void
+  private let pendingLink = OSAllocatedUnfairLock<URL?>(initialState: nil)
 
+  /// Removes a link an earlier build kept in `UserDefaults`, so that it does not outlive its process.
+  /// `openURL` opens a link of no wallet type once `URL.openInBrowser(using:)` has accepted it as an `https`
+  /// link; the default is the system's opener.
   init(
     prefsController: PrefsController,
     urlSchemaController: UrlSchemaController,
-    walletKitController: WalletKitController
+    walletKitController: WalletKitController,
+    openURL: @escaping @Sendable @MainActor (URL) -> Void = { UIApplication.shared.open($0) }
   ) {
-    self.prefsController = prefsController
     self.urlSchemaController = urlSchemaController
     self.walletKitController = walletKitController
+    self.openURL = openURL
+    prefsController.remove(forKey: .cachedDeepLink)
   }
 
   public func getPendingDeepLinkAction() -> DeepLink.Executable? {
-    if let cachedLink = prefsController.getString(forKey: .cachedDeepLink),
-       let url = cachedLink.toCompatibleUrl() {
-      return hasDeepLink(url: url)
-    }
-    return nil
+    pendingLink.withLock { $0 }.flatMap(hasDeepLink(url:))
   }
 
   public func hasDeepLink(url: URL) -> DeepLink.Executable? {
@@ -93,7 +97,7 @@ final class DeepLinkControllerImpl: DeepLinkController {
     guard
       returnScreen == nil && (routerHost.userIsLoggedInWithDocuments() || isVciExecutable)
     else {
-      if let url = deepLinkExecutable.link.url {
+      if deepLinkExecutable.action != .external, let url = deepLinkExecutable.link.url {
         cacheDeepLinkURL(url: url)
       }
       if let returnScreen {
@@ -123,7 +127,7 @@ final class DeepLinkControllerImpl: DeepLinkController {
         )
       }
     case .external:
-      deepLinkExecutable.plainUrl.openInBrowser()
+      deepLinkExecutable.plainUrl.openInBrowser(using: openURL)
     case .credential_offer, .haip_vci:
       let config = UIConfig.Generic(
         arguments: ["uri": deepLinkExecutable.plainUrl.absoluteString],
@@ -158,11 +162,11 @@ final class DeepLinkControllerImpl: DeepLinkController {
   }
 
   public func cacheDeepLinkURL(url: URL) {
-    prefsController.setValue(url.absoluteString, forKey: .cachedDeepLink)
+    pendingLink.withLock { $0 = url }
   }
 
   public func removeCachedDeepLinkURL() {
-    prefsController.remove(forKey: .cachedDeepLink)
+    pendingLink.withLock { $0 = nil }
   }
 }
 

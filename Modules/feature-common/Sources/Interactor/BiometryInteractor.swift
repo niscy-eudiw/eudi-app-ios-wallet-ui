@@ -37,6 +37,9 @@ public protocol BiometryInteractor: Sendable {
   func getPinLockoutState() async -> PinLockoutState
   func recordPinFailure() async -> PinLockoutState
   func resetPinThrottle() async
+
+  /// Unlocks the wallet's session after a successful login.
+  func unlockSession() async
 }
 
 final actor BiometryInteractorImpl: BiometryInteractor {
@@ -62,6 +65,10 @@ final actor BiometryInteractorImpl: BiometryInteractor {
     self.pinThrottleController = pinThrottleController
     self.authenticationConfig = authenticationConfig
     self.maxFailedPinAttempts = authenticationConfig.maxFailedPinAttempts
+  }
+
+  public func unlockSession() async {
+    await quickPinInteractor.unlockSession()
   }
 
   public func getBiometryType() async -> LABiometryType {

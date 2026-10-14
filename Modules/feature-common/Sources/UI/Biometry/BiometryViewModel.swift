@@ -141,7 +141,7 @@ final class BiometryViewModel<Router: RouterHost>: ViewModel<Router, BiometrySta
       case .authenticated:
         await interactor.resetPinThrottle()
         stopLockoutTick()
-        self.authenticated()
+        await self.authenticated()
       case .failure(let error):
         if error != .biometricError {
           self.biometryError = error
@@ -190,7 +190,7 @@ final class BiometryViewModel<Router: RouterHost>: ViewModel<Router, BiometrySta
       case .success:
         await interactor.resetPinThrottle()
         stopLockoutTick()
-        self.authenticated()
+        await self.authenticated()
       case .failure(let error):
         let lockoutState = await interactor.recordPinFailure()
         switch lockoutState {
@@ -204,7 +204,12 @@ final class BiometryViewModel<Router: RouterHost>: ViewModel<Router, BiometrySta
     }
   }
 
-  private func authenticated() {
+  /// Login (`isPreAuthorization`) unlocks the session before the wallet opens; the confirmation before a
+  /// presentation does not.
+  private func authenticated() async {
+    if viewState.config.isPreAuthorization {
+      await interactor.unlockSession()
+    }
     doNavigation(navigationType: viewState.config.navigationSuccessType)
   }
 

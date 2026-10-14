@@ -26,16 +26,26 @@ final class TestDeepLinkController: EudiTest {
   var urlSchemaController: MockUrlSchemaController!
   var routerHost: MockRouterHost!
   var walletKitController: MockWalletKitController!
+  var opened: RecordingLinkOpener!
 
   override func setUp() {
     self.prefsController = MockPrefsController()
     self.urlSchemaController = MockUrlSchemaController()
     self.routerHost = MockRouterHost()
     self.walletKitController = MockWalletKitController()
+    stub(prefsController) { mock in
+      when(mock.remove(forKey: any())).thenDoNothing()
+    }
+    stub(urlSchemaController) { mock in
+      when(mock.retrieveSchemas(with: any())).thenReturn([])
+    }
+    let opened = RecordingLinkOpener()
+    self.opened = opened
     self.controller = DeepLinkControllerImpl(
       prefsController: prefsController,
       urlSchemaController: urlSchemaController,
-      walletKitController: walletKitController
+      walletKitController: walletKitController,
+      openURL: { opened.open($0) }
     )
   }
   
@@ -45,6 +55,7 @@ final class TestDeepLinkController: EudiTest {
     self.urlSchemaController = nil
     self.routerHost = nil
     self.walletKitController = nil
+    self.opened = nil
   }
   
   func testHasDeepLink_WhenUrlIsAValidOpenId4VPDeepLink_ThenReturnDeepLinkActionWithOpenId4VPType() {
@@ -82,12 +93,6 @@ final class TestDeepLinkController: EudiTest {
   
   func testHandleDeepLinkAction_WhenRouterReturnsPreAuthorizationFlow_ThenValidateCachingOfDeepLink() async {
     // Given
-    stub(prefsController) { mock in
-      when(mock.setValue(any(), forKey: Prefs.Key.cachedDeepLink)).thenDoNothing()
-    }
-    stub(prefsController) { mock in
-      when(mock.remove(forKey: Prefs.Key.cachedDeepLink)).thenDoNothing()
-    }
     stub(routerHost) { mock in
       when(mock.userIsLoggedInWithDocuments()).thenReturn(false)
     }
@@ -97,8 +102,7 @@ final class TestDeepLinkController: EudiTest {
       deepLinkExecutable: Self.mockedOpenId4VPDeepLinkAction
     )
     // Then
-    verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
-    verify(prefsController, times(0)).remove(forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNotNil(controller.getPendingDeepLinkAction())
     verify(walletKitController, never()).startSameDevicePresentation(deepLink: any())
   }
 
@@ -118,7 +122,7 @@ final class TestDeepLinkController: EudiTest {
       deepLinkExecutable: Self.mockedOpenId4VPDeepLinkAction
     )
 
-    verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNotNil(controller.getPendingDeepLinkAction())
     verify(routerHost).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)), inclusive: equal(to: false))
     verify(routerHost, never()).push(with: any())
     verify(walletKitController, never()).startSameDevicePresentation(deepLink: any())
@@ -126,7 +130,7 @@ final class TestDeepLinkController: EudiTest {
 
   func testHandleDeepLinkAction_WhenLoggedInAndActionIsOpenId4VPOnTheDashboard_ThenStartsTheSessionAndPushesItsRequest() async {
     let sessionCoordinator = RemoteSessionCoordinatorImpl(
-      session: Self.mockPresentationSession
+      session: PresentationSession.fixture
     )
     let expectedRoute = AppRoute.featurePresentationModule(
       .presentationRequest(
@@ -154,8 +158,7 @@ final class TestDeepLinkController: EudiTest {
     )
     await fulfillment(of: [pushed], timeout: 2)
 
-    verify(prefsController, never()).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
-    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNil(controller.getPendingDeepLinkAction())
     verify(walletKitController).startSameDevicePresentation(deepLink: equal(to: Self.mockedOpenId4VPDeepLinkAction.link))
     verify(routerHost).push(with: equal(to: expectedRoute))
   }
@@ -177,73 +180,60 @@ final class TestDeepLinkController: EudiTest {
       deepLinkExecutable: pendingAction
     )
     // Then
-    verify(prefsController, times(0)).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
-    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNil(controller.getPendingDeepLinkAction())
     verify(routerHost, times(0)).push(with: any())
   }
   
-  func testGetPendingDeepLinkAction_WhenCachedDeepLinkIsAPresentationLink_ThenReturnDeepListAction() {
-    // Given
-    let expected = Self.mockedOpenId4VPDeepLinkAction
-    stub(prefsController) { mock in
-      when(mock.getString(forKey: Prefs.Key.cachedDeepLink)).thenReturn(Self.mockedOpenId4VPUrl.absoluteString)
-    }
+  func testGetPendingDeepLinkAction_WhenAPresentationLinkIsKept_ThenReturnsIt() {
     stub(urlSchemaController) { mock in
       when(mock.retrieveSchemas(with: any())).thenReturn(["eudi-openid4vp", "mdoc-openid4vp"])
     }
-    // When
-    let action = controller.getPendingDeepLinkAction()
-    // Then
-    XCTAssertEqual(action, expected)
+
+    controller.cacheDeepLinkURL(url: Self.mockedOpenId4VPUrl)
+
+    XCTAssertEqual(controller.getPendingDeepLinkAction(), Self.mockedOpenId4VPDeepLinkAction)
   }
-  
-  func testGetPendingDeepLinkAction_WhenCachedDeepLinkIsAnExternalLink_ThenReturnDeepListAction() {
-    // Given
-    let expected = Self.mockedExternalDeepLinkAction
-    stub(prefsController) { mock in
-      when(mock.getString(forKey: Prefs.Key.cachedDeepLink)).thenReturn(Self.mockedExternalUrl.absoluteString)
-    }
-    stub(urlSchemaController) { mock in
-      when(mock.retrieveSchemas(with: any())).thenReturn(["eudi-openid4vp", "mdoc-openid4vp"])
-    }
-    // When
-    let action = controller.getPendingDeepLinkAction()
-    // Then
-    XCTAssertEqual(action, expected)
+
+  func testGetPendingDeepLinkAction_WhenAnExternalLinkIsKept_ThenReturnsIt() {
+    controller.cacheDeepLinkURL(url: Self.mockedExternalUrl)
+
+    XCTAssertEqual(controller.getPendingDeepLinkAction(), Self.mockedExternalDeepLinkAction)
   }
-  
-  func testGetPendingDeepLinkAction_WhenCachedDeepLinkIsInvalid_ThenReturnDeepListActionNil() {
-    // Given
-    stub(prefsController) { mock in
-      when(mock.getString(forKey: Prefs.Key.cachedDeepLink)).thenReturn(Self.mockedMalformedUrl.absoluteString)
-    }
-    // When
-    let action = controller.getPendingDeepLinkAction()
-    // Then
-    XCTAssertNil(action)
+
+  func testGetPendingDeepLinkAction_WhenTheKeptLinkIsMalformed_ThenIsNil() {
+    controller.cacheDeepLinkURL(url: Self.mockedMalformedUrl)
+
+    XCTAssertNil(controller.getPendingDeepLinkAction())
   }
-  
-  func testGetPendingDeepLinkAction_WhenPrefsControllerReturnsNil_ThenReturnDeepListActionNil() {
-    // Given
-    stub(prefsController) { mock in
-      when(mock.getString(forKey: Prefs.Key.cachedDeepLink)).thenReturn(nil)
-    }
-    // When
-    let action = controller.getPendingDeepLinkAction()
-    // Then
-    XCTAssertNil(action)
+
+  func testGetPendingDeepLinkAction_WhenNothingIsKept_ThenIsNil() {
+    XCTAssertNil(controller.getPendingDeepLinkAction())
   }
-  
-  func testCacheDeepLinkURL_WhenUrlIsProvided_ThenVerifyMethodInvocation() {
-    // Given
-    let url = Self.mockedOpenId4VPUrl
-    stub(prefsController) { mock in
-      when(mock.setValue(any(), forKey: Prefs.Key.cachedDeepLink)).thenDoNothing()
+
+  func testCacheDeepLinkURL_WhenALinkIsKept_ThenItStaysInMemoryAndIsNotPersisted() {
+    controller.cacheDeepLinkURL(url: Self.mockedOpenId4VPUrl)
+
+    XCTAssertEqual(controller.getPendingDeepLinkAction()?.plainUrl, Self.mockedOpenId4VPUrl)
+    verify(prefsController, never()).setValue(any(), forKey: any())
+  }
+
+  func testInit_WhenCreated_ThenRemovesALinkAnEarlierBuildKeptInUserDefaults() {
+    verify(prefsController).remove(forKey: equal(to: Prefs.Key.cachedDeepLink))
+  }
+
+  func testHandleDeepLinkAction_WhenLockedAndTheLinkStartsNoWalletFlow_ThenItIsDroppedNotKept() async {
+    stub(routerHost) { mock in
+      when(mock.userIsLoggedInWithDocuments()).thenReturn(false)
+      when(mock.userIsLoggedInWithNoDocuments()).thenReturn(false)
     }
-    // When
-    controller.cacheDeepLinkURL(url: url)
-    // Then
-    verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
+
+    await controller.handleDeepLinkAction(
+      routerHost: routerHost,
+      deepLinkExecutable: Self.mockedExternalDeepLinkAction
+    )
+
+    XCTAssertNil(controller.getPendingDeepLinkAction())
+    XCTAssertTrue(opened.urls.isEmpty)
   }
 
   func testHandleDeepLinkAction_WhenLoggedInAndActionIsCredentialOfferOnTheDashboard_ThenPushesTheOfferScreen() async {
@@ -262,8 +252,7 @@ final class TestDeepLinkController: EudiTest {
       deepLinkExecutable: Self.mockedCredentialOfferDeepLinkAction
     )
 
-    verify(prefsController, never()).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
-    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNil(controller.getPendingDeepLinkAction())
     verify(routerHost).push(with: any())
   }
 
@@ -283,7 +272,7 @@ final class TestDeepLinkController: EudiTest {
       deepLinkExecutable: Self.mockedCredentialOfferDeepLinkAction
     )
 
-    verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNotNil(controller.getPendingDeepLinkAction())
     verify(routerHost).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)), inclusive: equal(to: false))
     verify(routerHost, never()).push(with: any())
   }
@@ -305,7 +294,7 @@ final class TestDeepLinkController: EudiTest {
       deepLinkExecutable: Self.mockedCredentialOfferDeepLinkAction
     )
 
-    verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNotNil(controller.getPendingDeepLinkAction())
     verify(routerHost).popTo(
       with: equal(to: AppRoute.featureIssuanceModule(.issuanceAddDocument(config: NoConfig()))),
       inclusive: equal(to: false)
@@ -330,13 +319,13 @@ final class TestDeepLinkController: EudiTest {
       deepLinkExecutable: Self.mockedCredentialOfferDeepLinkAction
     )
 
-    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNil(controller.getPendingDeepLinkAction())
     verify(routerHost).push(with: any())
   }
 
   func testHandleDeepLinkAction_WhenActionIsHaipVpOnTheDashboard_ThenStartsTheSessionAndPushesItsRequest() async {
     let sessionCoordinator = RemoteSessionCoordinatorImpl(
-      session: Self.mockPresentationSession
+      session: PresentationSession.fixture
     )
     stubHandleDeepLink(
       action: Self.mockedHaipVpDeepLinkAction,
@@ -358,7 +347,7 @@ final class TestDeepLinkController: EudiTest {
     )
     await fulfillment(of: [pushed], timeout: 2)
 
-    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNil(controller.getPendingDeepLinkAction())
     verify(walletKitController).startSameDevicePresentation(deepLink: any())
     verify(routerHost).push(with: any())
   }
@@ -379,7 +368,7 @@ final class TestDeepLinkController: EudiTest {
       deepLinkExecutable: Self.mockedHaipVpDeepLinkAction
     )
 
-    verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNotNil(controller.getPendingDeepLinkAction())
     verify(routerHost).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)), inclusive: equal(to: false))
     verify(walletKitController, never()).startSameDevicePresentation(deepLink: any())
   }
@@ -400,18 +389,14 @@ final class TestDeepLinkController: EudiTest {
       deepLinkExecutable: Self.mockedHaipVciDeepLinkAction
     )
 
-    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNil(controller.getPendingDeepLinkAction())
     verify(routerHost).push(with: any())
   }
 
   func testHandleDeepLinkAction_WhenRqesPendingAndUserLoggedInWithDocuments_ThenPopsToDashboard() async {
     // Given: action == .rqes AND user logged in AND not on dashboard already
-    // → shouldPopToDashboardFirst guard fires, popTo(dashboard) is invoked
+    // → the link is kept and popTo(dashboard) is invoked
     let pendingAction = Self.mockedRqesDeepLinkAction
-    stub(prefsController) { mock in
-      when(mock.setValue(any(), forKey: Prefs.Key.cachedDeepLink)).thenDoNothing()
-      when(mock.remove(forKey: Prefs.Key.cachedDeepLink)).thenDoNothing()
-    }
     stub(routerHost) { mock in
       when(mock.userIsLoggedInWithDocuments()).thenReturn(true)
       when(mock.userIsLoggedInWithNoDocuments()).thenReturn(false)
@@ -426,21 +411,18 @@ final class TestDeepLinkController: EudiTest {
     )
 
     // Then
-    verify(prefsController).setValue(any(), forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNotNil(controller.getPendingDeepLinkAction())
     verify(routerHost).popTo(with: any(), inclusive: equal(to: false))
   }
 
   func testHandleDeepLinkAction_WhenRqesWithoutAuthorizationCode_ThenEarlyReturn() async {
-    // Given: .rqes action with no `code` query item — guard at line 152 returns early
+    // Given: .rqes action with no `code` query item — the `code` guard returns early
     let url = URL(string: "rqes://callback?other=value")!
     let executable = DeepLink.Executable(
       link: URLComponents(url: url, resolvingAgainstBaseURL: true)!,
       plainUrl: url,
       action: .rqes
     )
-    stub(prefsController) { mock in
-      when(mock.remove(forKey: Prefs.Key.cachedDeepLink)).thenDoNothing()
-    }
     stub(routerHost) { mock in
       when(mock.userIsLoggedInWithDocuments()).thenReturn(true)
       when(mock.userIsLoggedInWithNoDocuments()).thenReturn(false)
@@ -454,13 +436,13 @@ final class TestDeepLinkController: EudiTest {
     )
 
     // Then
-    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNil(controller.getPendingDeepLinkAction())
     verify(routerHost, times(0)).push(with: any())
   }
 
   func testHandleDeepLinkAction_WhenRqesWithAuthorizationCode_ThenSchedulesResumeTask() async {
     // Given: .rqes action WITH a `code` query item.
-    // Hits the Task { @MainActor in ... } block (lines 156-170). The Task itself
+    // Hits the Task { @MainActor in ... } block of the .rqes case. The Task itself
     // polls for topViewController which never resolves in unit tests, so we
     // simply verify the function returns and reaches the spawn point.
     let url = URL(string: "rqes://callback?code=abc123")!
@@ -469,9 +451,6 @@ final class TestDeepLinkController: EudiTest {
       plainUrl: url,
       action: .rqes
     )
-    stub(prefsController) { mock in
-      when(mock.remove(forKey: Prefs.Key.cachedDeepLink)).thenDoNothing()
-    }
     stub(routerHost) { mock in
       when(mock.userIsLoggedInWithDocuments()).thenReturn(true)
       when(mock.userIsLoggedInWithNoDocuments()).thenReturn(false)
@@ -485,20 +464,90 @@ final class TestDeepLinkController: EudiTest {
     )
 
     // Then: the function reached the .rqes case and dispatched the resume Task
-    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNil(controller.getPendingDeepLinkAction())
   }
 
-  func testRemoveCachedDeepLinkURL_WhenCalled_ThenDelegatesToPrefsController() {
-    // Given
-    stub(prefsController) { mock in
-      when(mock.remove(forKey: Prefs.Key.cachedDeepLink)).thenDoNothing()
-    }
+  func testRemoveCachedDeepLinkURL_WhenALinkIsKept_ThenForgetsIt() {
+    controller.cacheDeepLinkURL(url: Self.mockedOpenId4VPUrl)
 
-    // When
     controller.removeCachedDeepLinkURL()
 
-    // Then
-    verify(prefsController).remove(forKey: Prefs.Key.cachedDeepLink)
+    XCTAssertNil(controller.getPendingDeepLinkAction())
+  }
+
+  func testHandleDeepLinkAction_WhenLockedAndACredentialOfferArrives_ThenKeepsItAndOpensNothing() async {
+    for isScreenForeground in [false, true] {
+      controller.removeCachedDeepLinkURL()
+      stub(routerHost) { mock in
+        when(mock.userIsLoggedInWithDocuments()).thenReturn(false)
+        when(mock.userIsLoggedInWithNoDocuments()).thenReturn(false)
+        when(mock.isScreenForeground(with: any())).thenReturn(isScreenForeground)
+      }
+
+      await controller.handleDeepLinkAction(
+        routerHost: routerHost,
+        deepLinkExecutable: Self.mockedCredentialOfferDeepLinkAction
+      )
+
+      XCTAssertNotNil(controller.getPendingDeepLinkAction())
+    }
+    verify(routerHost, never()).push(with: any())
+    verify(routerHost, never()).popTo(with: any(), inclusive: any())
+  }
+
+  func testHandleDeepLinkAction_WhenAPresentationLinkOpensOnTheDashboard_ThenItsRequestCarriesTheSessionJustStarted() async throws {
+    let sessionCoordinator = RemoteSessionCoordinatorImpl(session: PresentationSession.fixture)
+    let pushed = expectation(description: "request pushed")
+    let captor = ArgumentCaptor<AppRoute>()
+    stubHandleDeepLink(action: Self.mockedOpenId4VPDeepLinkAction, route: nil, isAfterAuth: true, isScreenForeground: true)
+    stub(walletKitController) { mock in
+      when(mock.startSameDevicePresentation(deepLink: any())).thenReturn(sessionCoordinator)
+    }
+    stub(routerHost) { mock in
+      when(mock.push(with: captor.capture())).then { _ in pushed.fulfill() }
+    }
+    controller.cacheDeepLinkURL(url: Self.mockedOpenId4VPUrl)
+
+    await controller.handleDeepLinkAction(routerHost: routerHost, deepLinkExecutable: Self.mockedOpenId4VPDeepLinkAction)
+    await fulfillment(of: [pushed], timeout: 2)
+
+    guard case .featurePresentationModule(.presentationRequest(let coordinator, _)) = try XCTUnwrap(captor.value) else {
+      return XCTFail("Expected the presentation request")
+    }
+    XCTAssertTrue(coordinator as AnyObject === sessionCoordinator)
+    XCTAssertNil(controller.getPendingDeepLinkAction())
+  }
+
+  @MainActor
+  func testHandleDeepLinkAction_WhenAnOfferOpensOnTheDashboard_ThenItsScreenCarriesTheOfferAndReturnsToTheDashboard() throws {
+    try assertOfferRoute(hasDocuments: true, expectedSuccess: .popTo(.featureDashboardModule(.dashboard)))
+  }
+
+  @MainActor
+  func testHandleDeepLinkAction_WhenAnOfferOpensWithoutDocuments_ThenItsScreenCarriesTheOfferAndOpensTheDashboard() throws {
+    try assertOfferRoute(hasDocuments: false, expectedSuccess: .push(.featureDashboardModule(.dashboard)))
+  }
+
+  func testHandleDeepLinkAction_WhenALinkOfNoWalletTypeIsHttps_ThenOpensItInTheBrowser() async {
+    stubHandleDeepLink(action: Self.mockedExternalDeepLinkAction, route: nil, isAfterAuth: true, isScreenForeground: true)
+
+    await controller.handleDeepLinkAction(routerHost: routerHost, deepLinkExecutable: Self.mockedExternalDeepLinkAction)
+
+    XCTAssertEqual(opened.urls, [Self.mockedExternalUrl])
+  }
+
+  func testHandleDeepLinkAction_WhenALinkOfNoWalletTypeIsNotHttps_ThenOpensNothing() async throws {
+    let url = try XCTUnwrap(URL(string: "eu.europa.ec.euidi://authorization?code=abc"))
+    let executable = DeepLink.Executable(
+      link: try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: true)),
+      plainUrl: url,
+      action: .external
+    )
+    stubHandleDeepLink(action: executable, route: nil, isAfterAuth: true, isScreenForeground: true)
+
+    await controller.handleDeepLinkAction(routerHost: routerHost, deepLinkExecutable: executable)
+
+    XCTAssertTrue(opened.urls.isEmpty)
   }
 
   func testHasDeepLink_WhenSchemaControllerMatchesRqes_ThenActionIsRqes() {
@@ -520,6 +569,31 @@ final class TestDeepLinkController: EudiTest {
 }
 
 private extension TestDeepLinkController {
+
+  @MainActor
+  func assertOfferRoute(
+    hasDocuments: Bool,
+    expectedSuccess: UIConfig.TwoWayNavigationType
+  ) throws {
+    let captor = ArgumentCaptor<AppRoute>()
+    stub(routerHost) { mock in
+      when(mock.userIsLoggedInWithDocuments()).thenReturn(hasDocuments)
+      when(mock.userIsLoggedInWithNoDocuments()).thenReturn(!hasDocuments)
+      when(mock.isScreenForeground(with: any())).thenReturn(true)
+      when(mock.push(with: captor.capture())).thenDoNothing()
+    }
+
+    controller.handleDeepLinkAction(routerHost: routerHost, deepLinkExecutable: Self.mockedCredentialOfferDeepLinkAction)
+
+    guard
+      case .featureIssuanceModule(.credentialOfferRequest(let config)) = try XCTUnwrap(captor.value),
+      let generic = config as? UIConfig.Generic
+    else {
+      return XCTFail("Expected the offer screen")
+    }
+    XCTAssertEqual(generic.arguments["uri"], Self.mockedCredentialOfferDeepLinkAction.plainUrl.absoluteString)
+    XCTAssertEqual(generic.navigationSuccessType, expectedSuccess)
+  }
   
   func stubHandleDeepLink(
     action: DeepLink.Executable,
@@ -527,12 +601,6 @@ private extension TestDeepLinkController {
     isAfterAuth: Bool,
     isScreenForeground: Bool
   ) {
-    stub(prefsController) { mock in
-      when(mock.setValue(any(), forKey: Prefs.Key.cachedDeepLink)).thenDoNothing()
-    }
-    stub(prefsController) { mock in
-      when(mock.remove(forKey: Prefs.Key.cachedDeepLink)).thenDoNothing()
-    }
     stub(routerHost) { mock in
       when(mock.userIsLoggedInWithDocuments()).thenReturn(isAfterAuth)
     }
@@ -590,59 +658,4 @@ private extension TestDeepLinkController {
 
   static let mockedMalformedUrl: URL = URL(string: "not_a_valid_url")!
 
-}
-
-private extension TestDeepLinkController {
-  struct MockPresentationService: PresentationService {
-    var zkpDocumentIds: [WalletStorage.Document.ID]?
-
-    var wrpVerifierPolicy: WrpRegistrationPolicy?
-
-    var wrpVerifierWarnings: [String: [PresentationPolicyViolation]]?
-
-    func waitForDisconnect() async throws {}
-    
-    var transactionLog: TransactionEntry
-    var transactionLogger: (any TransactionLogger)?
-    
-    func startQrEngagement(secureAreaName: String?, keyOptions: MdocDataModel18013.KeyOptions) async throws -> String {
-      ""
-    }
-    
-    func receiveRequest() async throws -> [MdocDataTransfer18013.UserRequestInfo] {
-      [.init(docDataFormats: [DocumentTypeIdentifier.mDocPid.rawValue : .cbor], itemsRequested: RequestItems())]
-    }
-    
-    var flow: EudiWalletKit.FlowType
-
-    func sendResponse(userAccepted: Bool, itemsToSend: EudiWalletKit.RequestItems, deviceNameSpacesToSend: MdocDataTransfer18013.RequestDeviceNameSpaces?, authenticationContext: ThreadSafeAuthContext, onSuccess: (@Sendable (URL?) -> Void)?) async throws {}
-  }
-  
-  static let mockTransactionLog: TransactionEntry = .presentation(
-    .init(
-      transactionIdentifier: "transactionId0",
-      time: Date(timeIntervalSince1970: 0),
-      transactionResult: .completed,
-      listOfClaimsRequested: [],
-      listOfClaimsPresented: []
-    )
-  )
-  
-  static let mockStorageService: DataStorageService = KeyChainStorageService(
-    serviceName: "",
-    accessGroup: ""
-  )
-  
-  static let mockPresentationSession = PresentationSession(
-    presentationService: MockPresentationService(
-      zkpDocumentIds: nil,
-      transactionLog: mockTransactionLog,
-      flow: .other
-    ),
-    storageManager: .init(storageService: mockStorageService),
-    docIdToPresentInfo: [:],
-    documentKeyIndexes: [:],
-    userAuthenticationRequired: false,
-    localAuthenticationContext: ThreadSafeAuthContext()
-  )
 }

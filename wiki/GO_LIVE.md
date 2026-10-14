@@ -155,13 +155,13 @@ The application is a modular iOS project. Important modules and targets for prod
 | `EudiReferenceWalletIDProvider` | Identity Document Provider extension for Digital Credentials API presentment on supported iOS versions. |
 | `logic-core` | WalletKit integration, issuer configuration, presentation, document issuance, document registration, revocation, transaction logging. |
 | `logic-business` | Global app config, build variant parsing, RQES config, Keychain controller, preferences, Bluetooth and shared helpers. |
-| `logic-authentication` | PIN storage provider, PIN controller, biometric controller, PIN throttle/lockout, authentication configuration. |
+| `logic-authentication` | PIN storage provider, PIN controller, biometric controller, PIN throttle/lockout, session lock (`SessionController`), authentication configuration. |
 | `logic-storage` | SwiftData storage for bookmarks, transactions, revoked and suspended documents, and failed reissuance data. |
 | `logic-api` | `URLSession` provider and network request helpers. |
 | `logic-analytics` | Optional analytics provider integration. |
 | `logic-resources` | Strings, images, theme, localized resources. |
-| `logic-ui` | Shared SwiftUI components, deep-link parsing, scanner, request UI. |
-| `logic-assembly` | Dependency injection graph and app routing assembly. |
+| `logic-ui` | Shared SwiftUI components, deep-link parsing, scanner, request UI, interaction tracking for the idle lock. |
+| `logic-assembly` | Dependency injection graph, app routing assembly, and the session lock's scene driver (`SessionLockController`). |
 | `feature-*` | User-facing flows for startup, dashboard, issuance, presentation, proximity, and common features. |
 | `logic-test` / `feature-test` | Shared test utilities, mock generation helpers, and test fixtures; not included in production targets. |
 | `fastlane` | Test, versioning, archive, TestFlight/App Store upload, tagging, and GitHub release automation. |
@@ -217,7 +217,10 @@ Keep these files under strict review:
 | `Modules/feature-startup/Sources/Interactor/StartupInteractor.swift` | The start-up gate: login, PIN creation only for a wallet without documents, or an error. |
 | `Modules/logic-core/Sources/Controller/StoredDocumentPresence.swift` | Start-up's document check: queries wallet-storage's `pdoc` Keychain items; must change with the storage service. |
 | `EudiReferenceWalletIDProvider/UI/Authorization/RequestAuthorizationViewModel.swift` | The extension's PIN or biometric check before a request is shown and again on Accept. |
-| `Modules/logic-authentication/Sources/Config/AuthenticationConfig.swift` | PIN lockout policy (max failed attempts, escalating lockout durations). |
+| `Modules/logic-authentication/Sources/Config/AuthenticationConfig.swift` | PIN lockout policy (max failed attempts, escalating lockout durations) and the session lock's timeouts. |
+| `Modules/logic-authentication/Sources/Controller/SessionController.swift` | The session lock: unlocked by login or PIN creation, locked again after time in the background or idle. |
+| `Modules/logic-assembly/Sources/Controller/SessionLockController.swift` | Drives the lock from the scene: background, return, links, the idle check, and login after a lock. |
+| `Modules/logic-ui/Sources/Controller/UserInteractionController.swift` | What counts as interaction for the idle lock: touches in the app's windows, text input, VoiceOver focus. |
 | `Modules/logic-authentication/Sources/Storage/KeychainPinThrottleProvider.swift` | Keychain-persisted PIN failure counter, lockout level, lockout window timestamps; clock-rollback detection. |
 | `Modules/logic-business/Sources/Controller/KeyChainController.swift` | Defines Keychain service, access group, accessibility class, and biometric Keychain validation. |
 | `Modules/logic-storage/Sources/Config/StorageConfig.swift` | Defines SwiftData store location, App Group container selection, and local storage schema. |
@@ -1416,8 +1419,11 @@ Production guidance:
 
 How the reference app handles a wallet link (`DeepLinkController.handleDeepLinkAction`):
 
-* Before login the link is kept for after login and starts nothing. A presentation link starts its
-  session only when its request screen opens.
+* Before login, and while the wallet is locked, the link is kept for after login and starts nothing. A
+  presentation link starts its session only when it is opened after login, just before its request
+  screen is shown. The kept link lives in memory, for the current process only: a link received before
+  the app was killed does not open at the next launch. When the app returns, the session lock's timeout
+  is applied before the link is looked at.
 * While the wallet is logged in, a presentation, signing or credential-offer link that arrives away from
   the dashboard ends the flow on screen: the wallet returns to the dashboard, which opens the link. A
   wallet without documents returns to the add-document screen for an offer. A presentation or an offer in
@@ -1438,14 +1444,16 @@ How the reference app handles a wallet link (`DeepLinkController.handleDeepLinkA
   (`storeDynamicIssuancePendingUrl`), nothing opens, and the success screen returns to the issuance
   screen.
 * A link of no wallet type (`DeepLink.Action.external`) opens the same way, in the browser and only if it
-  is `https`. The app registers custom schemes only and no associated domains, so iOS delivers none
-  today. A build that adds associated domains must keep them out of the links it opens in the browser,
-  because iOS would hand such a link back to the wallet.
+  is `https`, and is dropped, not kept, while the wallet is locked. The app registers custom schemes only
+  and no associated domains, so iOS delivers none today. A build that adds associated domains must keep
+  them out of the links it opens in the browser, because iOS would hand such a link back to the wallet.
 
 Files to review:
 
 * `Wallet/Wallet.plist`
-* `Modules/logic-ui/Sources/Controller/DeepLinkController.swift` (the `DeepLink.Action` enum and `parseType(with:and:)` scheme parsing)
+* `Modules/logic-ui/Sources/Controller/DeepLinkController.swift` (the `DeepLink.Action` enum, `parseType(with:and:)` scheme parsing, and what each link does before and after login)
+* `Modules/logic-ui/Sources/Extension/URL+Extensions.swift` (`isHttpsWebLink`, `openInBrowser`)
+* `Modules/logic-assembly/Sources/Controller/SessionLockController.swift` (the timeout applied before a link is handled)
 * Issuance and presentation interactors that consume parsed deep links.
 
 ## Entitlements, Plist Values, And Permissions
@@ -1662,14 +1670,17 @@ Production tasks:
 Current preferences include:
 
 * `biometryEnabled`
-* `cachedDeepLink`
 * `runAtLeastOnce`
 * `language`
+* `batchCounter`
+* `validateIssuerRegistrationCertificate`
+* `trustMarkIntroductionCompleted`
 
 Production rules:
 
 * Do not store tokens, credential payloads, PID attributes, private keys, or secrets in UserDefaults.
-* Treat cached deep links as sensitive if they may contain request details.
+* A link kept for after login lives in memory only. Earlier builds kept it under `cachedDeepLink`;
+  `DeepLinkControllerImpl` removes that value at start.
 * Clear transient values after use.
 
 ## Logging And Audit
@@ -1742,6 +1753,7 @@ Production decisions:
 | --- | --- |
 | PIN length | Define minimum length and whether numeric-only is acceptable. |
 | PIN lockout policy | Defaults to 3 attempts then escalating lockouts of 30s, 90s, 5m (then 5m repeats). Tune via `AuthenticationConfig.maxFailedPinAttempts` and `pinLockoutDurations`. Decide whether the final tier should escalate further (wipe, support flow, device-credential step-up). See [PIN Throttle And Lockout](#pin-throttle-and-lockout). |
+| Session lock | The wallet locks after 60 seconds in the background or 5 minutes without interaction, on every screen; during an issuance, presentation or signing the background limit is 10 minutes, and while another screen (the RQES SDK's, the issuer's sign-in) covers the wallet the idle timeout pauses and 10 minutes covered requires login when the wallet's screen returns. An issuer's sign-in still open after 10 minutes locks the wallet. A lock dismisses what is presented, ends every cover and returns to login; after login the user starts again from the dashboard. Tune the timeouts in `AuthenticationConfig` and the screens in `ConfigUiLogic.protectedFlowRouteKeys`; see CONFIGURATION [Session lock configuration](CONFIGURATION.md#session-lock-configuration). The rules are the Android wallet's, except that on iOS the issuer's sign-in pauses the idle timeout: it shows inside the wallet's own scene. |
 | Biometric opt-in | Decide whether biometrics are optional or required for specific operations. |
 | Device credential fallback | Decide whether passcode fallback is allowed. |
 | Biometric enrollment change | Test and define whether access is invalidated when biometrics change. |
@@ -2350,6 +2362,14 @@ Before release candidate approval, test:
 * Revoked credential; suspended credential, and its return to Valid; a credential suspended before
   the update (stays blocked).
 * Malformed deep links.
+* Session lock: 65 seconds in the background requires login, 10 seconds does not; 5 minutes without
+  touching any screen, a sheet included, requires login, while touches keep the session; an issuance
+  through the issuer's sign-in completes within 10 minutes without login, and a sign-in that lasts 10
+  minutes locks; 6 minutes on the RQES screens do not lock, and closing them after 10 minutes locks the
+  wallet, with login in front; work that finishes after a lock (an issuance, a presentation) does not
+  reopen the wallet.
+* A link that arrives after the lock expired opens only after login; a link received before the app was
+  killed does not open at the next launch.
 * A second presentation link while a remote request or a proximity presentation is on screen: the
   wallet returns to the dashboard and opens the new request.
 * A verifier redirect after a presentation: an `https` redirect opens in the browser; a credential-offer,

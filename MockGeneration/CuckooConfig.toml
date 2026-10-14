@@ -271,3 +271,29 @@ keepDocumentation = false
 enableInheritance = true
 protocolsOnly = true
 omitHeaders = false
+
+[modules.LogicAssembly]
+output = "../Modules/logic-assembly/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_core",
+	"logic_business",
+	"logic_analytics",
+	"logic_ui",
+	"logic_authentication",
+	"logic_assembly"
+]
+sources = [
+	"../Modules/logic-core/Sources/**/*.swift",
+	"../Modules/logic-business/Sources/**/*.swift",
+	"../Modules/logic-analytics/Sources/**/*.swift",
+	"../Modules/logic-ui/Sources/**/*.swift",
+	"../Modules/logic-authentication/Sources/**/*.swift",
+	"../Modules/logic-assembly/Sources/**/*.swift"
+]
+
+[modules.LogicAssembly.options]
+glob = true
+keepDocumentation = false
+enableInheritance = true
+protocolsOnly = true
+omitHeaders = false

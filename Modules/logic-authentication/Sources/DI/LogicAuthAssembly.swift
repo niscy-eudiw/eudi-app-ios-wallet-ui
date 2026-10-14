@@ -50,6 +50,11 @@ public final class LogicAuthAssembly: Assembly {
     }
     .inObjectScope(ObjectScope.graph)
 
+    container.register(SessionController.self) { r in
+      SessionControllerImpl(authenticationConfig: r.force(AuthenticationConfig.self))
+    }
+    .inObjectScope(ObjectScope.container)
+
     container.register(SystemBiometryController.self) { r in
       SystemBiometryControllerImpl(
         keyChainController: r.force(KeyChainController.self)

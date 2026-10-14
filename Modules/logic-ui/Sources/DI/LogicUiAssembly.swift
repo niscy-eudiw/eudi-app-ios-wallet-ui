@@ -39,6 +39,11 @@ public final class LogicUiAssembly: Assembly {
         walletKitController: r.force(WalletKitController.self)
       )
     }
-    .inObjectScope(ObjectScope.transient)
+    .inObjectScope(ObjectScope.container)
+
+    container.register(UserInteractionController.self) { _ in
+      UserInteractionControllerImpl()
+    }
+    .inObjectScope(ObjectScope.container)
   }
 }

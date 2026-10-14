@@ -14,6 +14,7 @@ excluded:
     - "Modules/logic-assembly/.build/*"
     - "Modules/logic-core/.build/*"
     - "Modules/logic-core/Tests/*"
+    - "Modules/logic-assembly/Tests/*"
     - "Modules/logic-storage/.build/*"
     - "Modules/logic-authentication/Tests/*"
     - "Modules/logic-authentication/.build/*"

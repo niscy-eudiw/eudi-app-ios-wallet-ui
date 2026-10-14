@@ -60,6 +60,16 @@ final class TestBiometryInteractor: EudiTest {
     self.authenticationConfig = nil
     super.tearDown()
   }
+
+  func testUnlockSession_WhenLoginSucceeded_ThenUnlocksThroughThePinInteractor() async {
+    stub(quickPinInteractor) { mock in
+      when(mock.unlockSession()).thenDoNothing()
+    }
+
+    await interactor.unlockSession()
+
+    verify(quickPinInteractor).unlockSession()
+  }
   
   // MARK: - isBiometryEnabled
   

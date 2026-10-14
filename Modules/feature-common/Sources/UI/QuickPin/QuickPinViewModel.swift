@@ -306,6 +306,10 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
       return
     }
 
+    if viewState.config.isSetFlow {
+      await interactor.unlockSession()
+    }
+
     let visualKind: UIConfig.Success.VisualKind = viewState.config.isSetFlow ?
       .customIcon(
         Theme.shared.image.successSecuredWallet,

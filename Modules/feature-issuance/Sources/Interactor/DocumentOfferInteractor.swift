@@ -17,6 +17,7 @@ import logic_resources
 import feature_common
 import logic_business
 import logic_core
+import logic_authentication
 
 public protocol DocumentOfferInteractor: Sendable {
   func processOfferRequest(with uri: String) async -> OfferRequestPartialState
@@ -38,13 +39,16 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
 
   private let walletController: WalletKitController
   private let configLogic: ConfigLogic
+  private let sessionController: SessionController
 
   init(
     walletController: WalletKitController,
-    configLogic: ConfigLogic
+    configLogic: ConfigLogic,
+    sessionController: SessionController
   ) {
     self.walletController = walletController
     self.configLogic = configLogic
+    self.sessionController = sessionController
   }
 
   func processOfferRequest(with uri: String) async -> OfferRequestPartialState {
@@ -98,11 +102,13 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
   ) async -> OfferResultPartialState {
     do {
 
-      let issuance = try await walletController.issueDocumentsByOfferUrl(
-        offerUri: uri,
-        docTypes: docOffers,
-        txCodeValue: txCodeValue
-      )
+      let issuance = try await sessionController.duringExternalFlow {
+        try await walletController.issueDocumentsByOfferUrl(
+          offerUri: uri,
+          docTypes: docOffers,
+          txCodeValue: txCodeValue
+        )
+      }
       let issuedDocuments = issuance.documents
 
       if !issuance.issuerRegistration.vouchesForIssuer {

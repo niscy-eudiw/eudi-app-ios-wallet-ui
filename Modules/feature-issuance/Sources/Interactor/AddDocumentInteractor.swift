@@ -16,6 +16,7 @@
 import logic_resources
 import feature_common
 import logic_core
+import logic_authentication
 import OrderedCollections
 
 public protocol AddDocumentInteractor: Sendable {
@@ -32,11 +33,14 @@ public protocol AddDocumentInteractor: Sendable {
 final actor AddDocumentInteractorImpl: AddDocumentInteractor {
 
   private let walletController: WalletKitController
+  private let sessionController: SessionController
 
   init(
-    walletController: WalletKitController
+    walletController: WalletKitController,
+    sessionController: SessionController
   ) {
     self.walletController = walletController
+    self.sessionController = sessionController
   }
 
   public func fetchScopedDocuments(
@@ -154,11 +158,13 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
 
     do {
 
-      let issuance = try await walletController.issueDocuments(
-        issuerId: issuerId,
-        identifiers: configIds,
-        docTypeIdentifier: docTypeIdentifier
-      )
+      let issuance = try await sessionController.duringExternalFlow {
+        try await walletController.issueDocuments(
+          issuerId: issuerId,
+          identifiers: configIds,
+          docTypeIdentifier: docTypeIdentifier
+        )
+      }
       let docs = issuance.documents
 
       if !issuance.issuerRegistration.vouchesForIssuer {

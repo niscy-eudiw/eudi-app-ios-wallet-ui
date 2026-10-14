@@ -7949,6 +7949,26 @@ public class MockConfigUiLogic: ConfigUiLogic, Cuckoo.ProtocolMock, @unchecked S
         }
     }
 
+    public var protectedFlowRouteKeys: [AppRouteKey] {
+        get {
+            return cuckoo_manager.getter(
+                "protectedFlowRouteKeys",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.protectedFlowRouteKeys
+            )
+        }
+    }
+
+    public var loginRouteKeys: [AppRouteKey] {
+        get {
+            return cuckoo_manager.getter(
+                "loginRouteKeys",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.loginRouteKeys
+            )
+        }
+    }
+
     public required init(themeConfiguration p0: ThemeConfiguration) {}
 
     public struct __StubbingProxy_ConfigUiLogic: Cuckoo.StubbingProxy {
@@ -7968,6 +7988,14 @@ public class MockConfigUiLogic: ConfigUiLogic, Cuckoo.ProtocolMock, @unchecked S
         
         var backgroundColorForScreenDictionary: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockConfigUiLogic,[AppRouteKey: UIConfig.ToolBar]> {
             return .init(manager: cuckoo_manager, name: "backgroundColorForScreenDictionary")
+        }
+        
+        var protectedFlowRouteKeys: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockConfigUiLogic,[AppRouteKey]> {
+            return .init(manager: cuckoo_manager, name: "protectedFlowRouteKeys")
+        }
+        
+        var loginRouteKeys: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockConfigUiLogic,[AppRouteKey]> {
+            return .init(manager: cuckoo_manager, name: "loginRouteKeys")
         }
     }
 
@@ -7993,6 +8021,14 @@ public class MockConfigUiLogic: ConfigUiLogic, Cuckoo.ProtocolMock, @unchecked S
         var backgroundColorForScreenDictionary: Cuckoo.VerifyReadOnlyProperty<[AppRouteKey: UIConfig.ToolBar]> {
             return .init(manager: cuckoo_manager, name: "backgroundColorForScreenDictionary", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
+        
+        var protectedFlowRouteKeys: Cuckoo.VerifyReadOnlyProperty<[AppRouteKey]> {
+            return .init(manager: cuckoo_manager, name: "protectedFlowRouteKeys", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        var loginRouteKeys: Cuckoo.VerifyReadOnlyProperty<[AppRouteKey]> {
+            return .init(manager: cuckoo_manager, name: "loginRouteKeys", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
     }
 }
 
@@ -8013,6 +8049,18 @@ public class ConfigUiLogicStub:ConfigUiLogic, @unchecked Sendable {
     public var backgroundColorForScreenDictionary: [AppRouteKey: UIConfig.ToolBar] {
         get {
             return DefaultValueRegistry.defaultValue(for: ([AppRouteKey: UIConfig.ToolBar]).self)
+        }
+    }
+    
+    public var protectedFlowRouteKeys: [AppRouteKey] {
+        get {
+            return DefaultValueRegistry.defaultValue(for: ([AppRouteKey]).self)
+        }
+    }
+    
+    public var loginRouteKeys: [AppRouteKey] {
+        get {
+            return DefaultValueRegistry.defaultValue(for: ([AppRouteKey]).self)
         }
     }
 
@@ -8108,6 +8156,7 @@ public class UIConfigTypeStub:UIConfigType, @unchecked Sendable {
 
 import Cuckoo
 import Foundation
+import os
 import EudiRQESUi
 @testable import logic_core
 @testable import logic_business
@@ -8413,6 +8462,95 @@ class UrlSchemaControllerStub:UrlSchemaController, @unchecked Sendable {
     
     func retrieveSchemas(with p0: String) -> [String] {
         return DefaultValueRegistry.defaultValue(for: ([String]).self)
+    }
+}
+
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/Controller/UserInteractionController.swift'
+
+import Cuckoo
+import UIKit
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+public class MockUserInteractionController: UserInteractionController, Cuckoo.ProtocolMock, @unchecked Sendable {
+    public typealias MocksType = any UserInteractionController
+    public typealias Stubbing = __StubbingProxy_UserInteractionController
+    public typealias Verification = __VerificationProxy_UserInteractionController
+
+    // Original typealiases
+
+    public let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+
+    private var __defaultImplStub: (any UserInteractionController)?
+
+    public func enableDefaultImplementation(_ stub: any UserInteractionController) {
+        __defaultImplStub = stub
+        cuckoo_manager.enableDefaultStubImplementation()
+    }
+
+
+    public func start(onInteraction p0: @escaping @MainActor () -> Void) {
+        return cuckoo_manager.call(
+            "start(onInteraction p0: @escaping @MainActor () -> Void)",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.start(onInteraction: p0)
+        )
+    }
+
+    public struct __StubbingProxy_UserInteractionController: Cuckoo.StubbingProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+    
+        public init(manager: Cuckoo.MockManager) {
+            self.cuckoo_manager = manager
+        }
+        
+        func start<M1: Cuckoo.Matchable>(onInteraction p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(@MainActor () -> Void)> where M1.MatchedType == @MainActor () -> Void {
+            let matchers: [Cuckoo.ParameterMatcher<(@MainActor () -> Void)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockUserInteractionController.self,
+                method: "start(onInteraction p0: @escaping @MainActor () -> Void)",
+                parameterMatchers: matchers
+            ))
+        }
+    }
+
+    public struct __VerificationProxy_UserInteractionController: Cuckoo.VerificationProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+        private let callMatcher: Cuckoo.CallMatcher
+        private let sourceLocation: Cuckoo.SourceLocation
+    
+        public init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+            self.cuckoo_manager = manager
+            self.callMatcher = callMatcher
+            self.sourceLocation = sourceLocation
+        }
+        
+        
+        @discardableResult
+        func start<M1: Cuckoo.Matchable>(onInteraction p0: M1) -> Cuckoo.__DoNotUse<(@MainActor () -> Void), Void> where M1.MatchedType == @MainActor () -> Void {
+            let matchers: [Cuckoo.ParameterMatcher<(@MainActor () -> Void)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "start(onInteraction p0: @escaping @MainActor () -> Void)",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+    }
+}
+
+public class UserInteractionControllerStub:UserInteractionController, @unchecked Sendable {
+
+
+    
+    public func start(onInteraction p0: @escaping @MainActor () -> Void) {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
 }
 
@@ -9177,6 +9315,17 @@ import UIKit
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/Extension/URL+Extensions.swift'
+
+import Cuckoo
+import UIKit
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/Extension/View+Extensions.swift'
 
 import Cuckoo
@@ -9517,6 +9666,26 @@ public class MockRouterHost: RouterHost, Cuckoo.ProtocolMock, @unchecked Sendabl
         )
     }
 
+    public func isInProtectedFlow() -> Bool {
+        return cuckoo_manager.call(
+            "isInProtectedFlow() -> Bool",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.isInProtectedFlow()
+        )
+    }
+
+    public func requireLoginIfLocked() {
+        return cuckoo_manager.call(
+            "requireLoginIfLocked()",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.requireLoginIfLocked()
+        )
+    }
+
     public struct __StubbingProxy_RouterHost: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
@@ -9608,6 +9777,22 @@ public class MockRouterHost: RouterHost, Cuckoo.ProtocolMock, @unchecked Sendabl
             let matchers: [Cuckoo.ParameterMatcher<(AppRoute)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockRouterHost.self,
                 method: "isScreenOnBackStack(with p0: AppRoute) -> Bool",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func isInProtectedFlow() -> Cuckoo.ProtocolStubFunction<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockRouterHost.self,
+                method: "isInProtectedFlow() -> Bool",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func requireLoginIfLocked() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockRouterHost.self,
+                method: "requireLoginIfLocked()",
                 parameterMatchers: matchers
             ))
         }
@@ -9755,6 +9940,30 @@ public class MockRouterHost: RouterHost, Cuckoo.ProtocolMock, @unchecked Sendabl
                 sourceLocation: sourceLocation
             )
         }
+        
+        
+        @discardableResult
+        func isInProtectedFlow() -> Cuckoo.__DoNotUse<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "isInProtectedFlow() -> Bool",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func requireLoginIfLocked() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "requireLoginIfLocked()",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
     }
 }
 
@@ -9804,6 +10013,14 @@ public class RouterHostStub:RouterHost, @unchecked Sendable {
     
     public func isScreenOnBackStack(with p0: AppRoute) -> Bool {
         return DefaultValueRegistry.defaultValue(for: (Bool).self)
+    }
+    
+    public func isInProtectedFlow() -> Bool {
+        return DefaultValueRegistry.defaultValue(for: (Bool).self)
+    }
+    
+    public func requireLoginIfLocked() {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
 }
 

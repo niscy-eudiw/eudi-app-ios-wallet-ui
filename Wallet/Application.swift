@@ -27,6 +27,7 @@ struct Application: App {
 
   private let routerHost: RouterHost
   private let deepLinkController: DeepLinkController
+  private let sessionLockController: SessionLockController
 
   init() {
 
@@ -35,6 +36,7 @@ struct Application: App {
 
     self.routerHost = DIGraph.shared.resolver.force(RouterHost.self)
     self.deepLinkController = DIGraph.shared.resolver.force(DeepLinkController.self)
+    self.sessionLockController = DIGraph.shared.resolver.force(SessionLockController.self)
     self.toolbarConfig = routerHost.getToolbarConfig()
   }
 
@@ -60,7 +62,11 @@ struct Application: App {
             .ignoresSafeArea(.all)
         }
       }
+      .onAppear {
+        sessionLockController.start()
+      }
       .onOpenURL { url in
+        sessionLockController.willHandleLink()
         if let deepLink = deepLinkController.hasDeepLink(url: url) {
           deepLinkController.handleDeepLinkAction(
             routerHost: routerHost,
@@ -71,10 +77,12 @@ struct Application: App {
       .onChange(of: scenePhase) {
         switch scenePhase {
         case .background:
+          sessionLockController.sceneDidEnterBackground()
           self.blurType = .background
         case .inactive:
           self.blurType = .inactive
         case .active:
+          sessionLockController.sceneDidBecomeActive()
           self.blurType = .none
         default: break
         }

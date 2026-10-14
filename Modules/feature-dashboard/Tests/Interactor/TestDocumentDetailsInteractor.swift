@@ -27,21 +27,29 @@ final class TestDocumentDetailsInteractor: EudiTest {
   var walletKitController: MockWalletKitController!
   var prefsController: MockPrefsController!
   var configLogic: MockConfigLogic!
+  var sessionController: MockSessionController!
 
   override func setUp() {
     self.walletKitController = MockWalletKitController()
     self.prefsController = MockPrefsController()
     self.configLogic = MockConfigLogic()
+    self.sessionController = MockSessionController()
+    stub(sessionController) { mock in
+      when(mock.beginExternalFlow()).thenDoNothing()
+      when(mock.endExternalFlow()).thenDoNothing()
+    }
     self.interactor = DocumentDetailsInteractorImpl(
       walletController: walletKitController,
       prefsController: prefsController,
-      configLogic: configLogic
+      configLogic: configLogic,
+      sessionController: sessionController
     )
     
     stubConfigLogic()
   }
   
   override func tearDown() {
+    self.sessionController = nil
     self.interactor = nil
     self.walletKitController = nil
     self.prefsController = nil
@@ -454,6 +462,9 @@ final class TestDocumentDetailsInteractor: EudiTest {
     case .failure:
       XCTFail("Expected success, got failure")
     }
+
+    verify(sessionController).beginExternalFlow()
+    verify(sessionController).endExternalFlow()
   }
 
   func testReIssueDocument_WhenWalletKitControllerThrows_ThenReturnsFailure() async {
@@ -479,6 +490,9 @@ final class TestDocumentDetailsInteractor: EudiTest {
         WalletCoreError.unableFetchDocument.localizedDescription
       )
     }
+
+    verify(sessionController).beginExternalFlow()
+    verify(sessionController).endExternalFlow()
   }
 
   func testDeleteDocument_WhenForcePidActivationDisabled_ThenSkipsClearAllAndPerformsDelete() async {

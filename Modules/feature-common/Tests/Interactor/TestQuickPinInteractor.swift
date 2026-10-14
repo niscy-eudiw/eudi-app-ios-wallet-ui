@@ -26,11 +26,13 @@ final class TestQuickPinInteractor: EudiTest {
   var pinStorageController: MockPinStorageController!
   var pinThrottleController: MockPinThrottleController!
   var authenticationConfig: MockAuthenticationConfig!
+  var sessionController: MockSessionController!
 
   override func setUp() {
     self.pinStorageController = MockPinStorageController()
     self.pinThrottleController = MockPinThrottleController()
     self.authenticationConfig = MockAuthenticationConfig()
+    self.sessionController = MockSessionController()
     
     stub(authenticationConfig) { mock in
       when(mock.maxFailedPinAttempts.get).thenReturn(3)
@@ -40,7 +42,8 @@ final class TestQuickPinInteractor: EudiTest {
     self.interactor = QuickPinInteractorImpl(
       pinStorageController: pinStorageController,
       pinThrottleController: pinThrottleController,
-      authenticationConfig: authenticationConfig
+      authenticationConfig: authenticationConfig,
+      sessionController: sessionController
     )
   }
 
@@ -49,6 +52,17 @@ final class TestQuickPinInteractor: EudiTest {
     self.pinStorageController = nil
     self.pinThrottleController = nil
     self.authenticationConfig = nil
+    self.sessionController = nil
+  }
+
+  func testUnlockSession_WhenCalled_ThenUnlocksTheSession() async {
+    stub(sessionController) { mock in
+      when(mock.unlock()).thenDoNothing()
+    }
+
+    await interactor.unlockSession()
+
+    verify(sessionController).unlock()
   }
   
   func testSetPin_WhenNewPinIsSet_ThenVerifyAtLeastOnce() async {

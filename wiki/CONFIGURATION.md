@@ -433,6 +433,7 @@ production values for every config surface listed below.
 | OpenID4VP | `WalletKitConfig.swift` | Approved client ID schemes, preregistered verifier entries where needed, and partial claim disclosure policy. |
 | WalletKit storage/auth | `WalletKitConfig.swift`, `ConfigLogic.swift` | Production Keychain service/access group and `userAuthenticationRequired` decision. For LoA High PID and other high-assurance EAA/QEAA credentials, require strong local authentication and Keychain/Secure Enclave-backed protection unless an approved remote high-assurance key protection design replaces local key use. |
 | WalletKit attestation key options | `WalletKitConfig.swift` (`keyOptions`) | Curve, secure area, access protection, access control, and key purposes used when creating attestation/proof keys during issuance, reissuance, deferred issuance, and resume. For LoA High PID and other high-assurance EAA/QEAA credentials, require Secure Enclave (with `.P256`) plus appropriate `accessProtection`/`accessControl`, or an approved remote high-assurance key protection design. |
+| Session lock | `AuthenticationConfig.swift` in `logic-authentication`, `ConfigUiLogic.swift` in `logic-ui` | Confirm `backgroundLockTimeout`, `idleLockTimeout`, `protectedFlowLockTimeout` and the `protectedFlowRouteKeys` meet policy; see [Session lock configuration](#session-lock-configuration). |
 | PIN throttle policy | `AuthenticationConfig.swift` in `logic-authentication` | Confirm `maxFailedPinAttempts` and `pinLockoutDurations` meet policy. Decide what happens once the final lockout tier is reached (e.g. wipe, support flow, device-credential step-up). |
 | Document / WalletKit key storage | `EudiWalletConfiguration`, `ConfigLogic.keyChainConfig`, WalletKit-supported storage APIs | Default app configuration uses WalletKit storage with the configured Keychain service and access group. If production requires alternative local secure storage, a remote-backed key service, or an external protection SDK, use WalletKit-supported extension points and document the exact SDK/API. Start-up reads wallet-storage's `KeyChainStorageService` items to decide whether PIN creation is safe (`WalletKitController.hasStoredDocuments()`); another `DataStorageService` needs its own implementation of that check, see GO_LIVE [PIN Storage](GO_LIVE.md#pin-storage). |
 | Wallet attestation key storage | `WalletKitAttestationProviderImpl`, `WalletProviderAttestationConfig.swift`, Wallet Provider policy | Use when wallet attestation keys must be generated, stored, attested, or unlocked by a custom provider, platform-backed key policy, or remote high-assurance key service. |
@@ -640,7 +641,7 @@ public final class LogicAuthAssembly: Assembly {
     }
     .inObjectScope(ObjectScope.graph)
 
-    // PinStorageController, PinThrottleProvider, PinThrottleController, and
+    // PinStorageController, PinThrottleProvider, PinThrottleController, SessionController and
     // SystemBiometryController are also registered here.
   }
 }
@@ -710,6 +711,18 @@ public protocol AuthenticationConfig: Sendable {
   /// The list indexes by lockout level (0 = first lockout). Once the user exceeds the
   /// size of the list, the last entry is reused for every subsequent lockout.
   var pinLockoutDurations: [TimeInterval] { get }
+
+  /// Seconds in the background after which the wallet locks: returning to it then requires login.
+  var backgroundLockTimeout: TimeInterval { get }
+
+  /// Seconds without interaction after which the wallet locks, on every screen.
+  var idleLockTimeout: TimeInterval { get }
+
+  /// Replaces `backgroundLockTimeout` while an issuance, presentation or signing is in progress, since
+  /// these can send the user to a website and back. It also caps how long another screen, such as the
+  /// RQES SDK's or the issuer's sign-in, may cover the wallet's own: the idle timeout pauses meanwhile, and
+  /// the wallet locks when a cover this long ends, or once the issuer's sign-in has lasted this long.
+  var protectedFlowLockTimeout: TimeInterval { get }
 }
 ```
 
@@ -720,6 +733,9 @@ struct AuthenticationConfigImpl: AuthenticationConfig {
 
   public let maxFailedPinAttempts: Int = 3
   public let pinLockoutDurations: [TimeInterval] = [30, 90, 300]
+  public let backgroundLockTimeout: TimeInterval = 60
+  public let idleLockTimeout: TimeInterval = 300
+  public let protectedFlowLockTimeout: TimeInterval = 600
 }
 ```
 
@@ -750,6 +766,51 @@ The lockout is enforced by `PinThrottleController` and applied wherever `Biometr
 * The proceed button is disabled.
 * The existing inline error slot of the PIN view shows a countdown message formatted from the `quick_pin_locked_out` string resource. The message takes two format arguments — the configured `maxFailedPinAttempts` and the remaining time as `mm:ss` — so changing the config values updates the user-facing message automatically.
 * On screens that offer biometrics, the biometric icon stays interactive. A successful biometric authentication clears the throttle.
+
+## Session lock configuration
+
+The wallet starts locked. Login (the PIN or biometric screen at start-up) and PIN creation unlock it, and
+`SessionController` locks it again, with the same rules as the Android wallet:
+
+| Situation | Locks after | Setting |
+| --- | --- | --- |
+| In the background | 60 seconds | `AuthenticationConfig.backgroundLockTimeout` |
+| In the background from an issuance, presentation or signing screen, or while another screen covers the wallet's own on return | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout`, screens in `ConfigUiLogic.protectedFlowRouteKeys` |
+| No interaction, on any screen | 5 minutes | `AuthenticationConfig.idleLockTimeout` |
+| Covered by another screen (the RQES SDK's, the issuer's sign-in) for this long, when the wallet's screen returns | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout` |
+| The issuer's sign-in lasting this long, while it is still open | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout` |
+
+While another screen covers the wallet's own, the idle timeout pauses, since the wallet cannot see
+interaction there; when the cover goes after less than 10 minutes, the idle timeout restarts. The RQES
+SDK's screens are recognised by their controllers (`UIApplication.isWalletCoveredByAnotherScreen`); the
+issuance interactors mark the calls that can show the issuer's sign-in
+(`SessionController.duringExternalFlow`). The background limit is chosen when the app returns, from the
+screen it left and what covers the wallet then, as on Android. A lock ends every cover.
+
+On Android only the RQES screens pause the idle timeout, because the issuer's sign-in opens in the
+browser and the wallet goes to the background. On iOS wallet-kit shows the sign-in in a sheet inside the
+wallet's own scene, which stays active, so without the pause the idle timeout would end the session while
+the user fills in the issuer's form. The pause is therefore bounded: a sign-in that is still open after
+`protectedFlowLockTimeout` locks the wallet, so an issuance that never returns cannot keep it open.
+Wallet-kit's client attestation also has a lifetime of its own, and the dev issuer refuses a sign-in that
+outlasts it ("Client Attestation has expired"); that limit is wallet-kit's, not the session lock's.
+
+* Interaction is any touch in the app's windows (sheets and the RQES SDK's screens included), text input,
+  and a VoiceOver focus change (`UserInteractionController`).
+* Time comes from a monotonic clock that keeps running while the device sleeps, so changing the clock
+  does not extend a session.
+* A lock dismisses whatever is presented over the wallet, the RQES screens included, and returns to the
+  start-up screen, which asks for login (`RouterHost.requireLoginIfLocked`). After login the user starts
+  again from the dashboard; the flow that was on screen does not resume. While locked, the navigation
+  opens only the screens in `ConfigUiLogic.loginRouteKeys` (start-up, login, PIN creation, the Trust Mark
+  introduction), so work that finishes after a lock cannot reopen the wallet.
+* `SessionLockController` applies the timeout when the app returns, before an incoming link is handled,
+  and every second while the app is in front. A wallet link that arrives while the wallet is locked is
+  kept, in memory for this process only, and opens after login; it starts no presentation session before
+  then. A link of no wallet type is dropped.
+* `ConfigUiLogic.protectedFlowRouteKeys` and `loginRouteKeys` list the screens by `AppRoute.info.key`, as
+  the Android wallet's `protectedFlowScreens` and `loginScreens` do. A custom flow screen that sends the
+  user to a website and back belongs in the first; a custom screen shown before login, in the second.
 
 ## Analytics configuration
 

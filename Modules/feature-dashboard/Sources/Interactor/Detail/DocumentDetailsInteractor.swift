@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import logic_core
+import logic_authentication
 import feature_common
 
 public protocol DocumentDetailsInteractor: Sendable {
@@ -29,15 +30,18 @@ final actor DocumentDetailsInteractorImpl: DocumentDetailsInteractor {
   private let walletController: WalletKitController
   private let prefsController: PrefsController
   private let configLogic: ConfigLogic
+  private let sessionController: SessionController
 
   init(
     walletController: WalletKitController,
     prefsController: PrefsController,
-    configLogic: ConfigLogic
+    configLogic: ConfigLogic,
+    sessionController: SessionController
   ) {
     self.walletController = walletController
     self.prefsController = prefsController
     self.configLogic = configLogic
+    self.sessionController = sessionController
   }
 
   func fetchStoredDocument(documentId: String) async -> DocumentDetailsPartialState {
@@ -59,12 +63,16 @@ final actor DocumentDetailsInteractorImpl: DocumentDetailsInteractor {
     return .success(documentDetails, issuerDetailsCard, nil, isBookmarked, isRevoked)
   }
 
+  /// Re-issuance can go through the issuer's sign-in from this screen, which is not a protected-flow
+  /// screen, so the session lock treats it as an external flow, as on Android.
   func reIssueDocument(identifier: String) async -> DocumentDetailsReIssuancePartialState {
     do {
-      _ = try await walletController.reIssueDocument(
-        identifier: identifier,
-        isBackgroundOperation: false
-      )
+      _ = try await sessionController.duringExternalFlow {
+        try await walletController.reIssueDocument(
+          identifier: identifier,
+          isBackgroundOperation: false
+        )
+      }
       return .success
     } catch {
       return error.isTrustBlocked ? .issuerNotTrusted : .failure(error)

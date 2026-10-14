@@ -433,6 +433,36 @@ public class MockAuthenticationConfig: AuthenticationConfig, Cuckoo.ProtocolMock
         }
     }
 
+    public var backgroundLockTimeout: TimeInterval {
+        get {
+            return cuckoo_manager.getter(
+                "backgroundLockTimeout",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.backgroundLockTimeout
+            )
+        }
+    }
+
+    public var idleLockTimeout: TimeInterval {
+        get {
+            return cuckoo_manager.getter(
+                "idleLockTimeout",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.idleLockTimeout
+            )
+        }
+    }
+
+    public var protectedFlowLockTimeout: TimeInterval {
+        get {
+            return cuckoo_manager.getter(
+                "protectedFlowLockTimeout",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.protectedFlowLockTimeout
+            )
+        }
+    }
+
 
     public struct __StubbingProxy_AuthenticationConfig: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
@@ -447,6 +477,18 @@ public class MockAuthenticationConfig: AuthenticationConfig, Cuckoo.ProtocolMock
         
         var pinLockoutDurations: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockAuthenticationConfig,[TimeInterval]> {
             return .init(manager: cuckoo_manager, name: "pinLockoutDurations")
+        }
+        
+        var backgroundLockTimeout: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockAuthenticationConfig,TimeInterval> {
+            return .init(manager: cuckoo_manager, name: "backgroundLockTimeout")
+        }
+        
+        var idleLockTimeout: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockAuthenticationConfig,TimeInterval> {
+            return .init(manager: cuckoo_manager, name: "idleLockTimeout")
+        }
+        
+        var protectedFlowLockTimeout: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockAuthenticationConfig,TimeInterval> {
+            return .init(manager: cuckoo_manager, name: "protectedFlowLockTimeout")
         }
     }
 
@@ -468,6 +510,18 @@ public class MockAuthenticationConfig: AuthenticationConfig, Cuckoo.ProtocolMock
         var pinLockoutDurations: Cuckoo.VerifyReadOnlyProperty<[TimeInterval]> {
             return .init(manager: cuckoo_manager, name: "pinLockoutDurations", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
+        
+        var backgroundLockTimeout: Cuckoo.VerifyReadOnlyProperty<TimeInterval> {
+            return .init(manager: cuckoo_manager, name: "backgroundLockTimeout", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        var idleLockTimeout: Cuckoo.VerifyReadOnlyProperty<TimeInterval> {
+            return .init(manager: cuckoo_manager, name: "idleLockTimeout", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        var protectedFlowLockTimeout: Cuckoo.VerifyReadOnlyProperty<TimeInterval> {
+            return .init(manager: cuckoo_manager, name: "protectedFlowLockTimeout", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
     }
 }
 
@@ -482,6 +536,24 @@ public class AuthenticationConfigStub:AuthenticationConfig, @unchecked Sendable 
     public var pinLockoutDurations: [TimeInterval] {
         get {
             return DefaultValueRegistry.defaultValue(for: ([TimeInterval]).self)
+        }
+    }
+    
+    public var backgroundLockTimeout: TimeInterval {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (TimeInterval).self)
+        }
+    }
+    
+    public var idleLockTimeout: TimeInterval {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (TimeInterval).self)
+        }
+    }
+    
+    public var protectedFlowLockTimeout: TimeInterval {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (TimeInterval).self)
         }
     }
 
@@ -798,6 +870,357 @@ public class PinThrottleControllerStub:PinThrottleController, @unchecked Sendabl
     }
     
     public func recordSuccess() {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+}
+
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-authentication/Sources/Controller/SessionController.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_authentication
+
+public class MockSessionController: SessionController, Cuckoo.ProtocolMock, @unchecked Sendable {
+    public typealias MocksType = any SessionController
+    public typealias Stubbing = __StubbingProxy_SessionController
+    public typealias Verification = __VerificationProxy_SessionController
+
+    // Original typealiases
+
+    public let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+
+    private var __defaultImplStub: (any SessionController)?
+
+    public func enableDefaultImplementation(_ stub: any SessionController) {
+        __defaultImplStub = stub
+        cuckoo_manager.enableDefaultStubImplementation()
+    }
+
+    public var isUnlocked: Bool {
+        get {
+            return cuckoo_manager.getter(
+                "isUnlocked",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.isUnlocked
+            )
+        }
+    }
+
+
+    public func unlock() {
+        return cuckoo_manager.call(
+            "unlock()",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.unlock()
+        )
+    }
+
+    public func lock() {
+        return cuckoo_manager.call(
+            "lock()",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.lock()
+        )
+    }
+
+    public func recordInteraction() {
+        return cuckoo_manager.call(
+            "recordInteraction()",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.recordInteraction()
+        )
+    }
+
+    public func recordBackground(isProtectedFlow p0: Bool) {
+        return cuckoo_manager.call(
+            "recordBackground(isProtectedFlow p0: Bool)",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.recordBackground(isProtectedFlow: p0)
+        )
+    }
+
+    public func lockIfExpired() -> Bool {
+        return cuckoo_manager.call(
+            "lockIfExpired() -> Bool",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.lockIfExpired()
+        )
+    }
+
+    public func setCovered(_ p0: Bool) {
+        return cuckoo_manager.call(
+            "setCovered(_ p0: Bool)",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.setCovered(p0)
+        )
+    }
+
+    public func beginExternalFlow() {
+        return cuckoo_manager.call(
+            "beginExternalFlow()",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.beginExternalFlow()
+        )
+    }
+
+    public func endExternalFlow() {
+        return cuckoo_manager.call(
+            "endExternalFlow()",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.endExternalFlow()
+        )
+    }
+
+    public struct __StubbingProxy_SessionController: Cuckoo.StubbingProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+    
+        public init(manager: Cuckoo.MockManager) {
+            self.cuckoo_manager = manager
+        }
+        
+        var isUnlocked: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockSessionController,Bool> {
+            return .init(manager: cuckoo_manager, name: "isUnlocked")
+        }
+        
+        func unlock() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockSessionController.self,
+                method: "unlock()",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func lock() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockSessionController.self,
+                method: "lock()",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func recordInteraction() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockSessionController.self,
+                method: "recordInteraction()",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func recordBackground<M1: Cuckoo.Matchable>(isProtectedFlow p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(Bool)> where M1.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockSessionController.self,
+                method: "recordBackground(isProtectedFlow p0: Bool)",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func lockIfExpired() -> Cuckoo.ProtocolStubFunction<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockSessionController.self,
+                method: "lockIfExpired() -> Bool",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func setCovered<M1: Cuckoo.Matchable>(_ p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(Bool)> where M1.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockSessionController.self,
+                method: "setCovered(_ p0: Bool)",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func beginExternalFlow() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockSessionController.self,
+                method: "beginExternalFlow()",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func endExternalFlow() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockSessionController.self,
+                method: "endExternalFlow()",
+                parameterMatchers: matchers
+            ))
+        }
+    }
+
+    public struct __VerificationProxy_SessionController: Cuckoo.VerificationProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+        private let callMatcher: Cuckoo.CallMatcher
+        private let sourceLocation: Cuckoo.SourceLocation
+    
+        public init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+            self.cuckoo_manager = manager
+            self.callMatcher = callMatcher
+            self.sourceLocation = sourceLocation
+        }
+        
+        var isUnlocked: Cuckoo.VerifyReadOnlyProperty<Bool> {
+            return .init(manager: cuckoo_manager, name: "isUnlocked", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        
+        @discardableResult
+        func unlock() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "unlock()",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func lock() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "lock()",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func recordInteraction() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "recordInteraction()",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func recordBackground<M1: Cuckoo.Matchable>(isProtectedFlow p0: M1) -> Cuckoo.__DoNotUse<(Bool), Void> where M1.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "recordBackground(isProtectedFlow p0: Bool)",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func lockIfExpired() -> Cuckoo.__DoNotUse<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "lockIfExpired() -> Bool",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func setCovered<M1: Cuckoo.Matchable>(_ p0: M1) -> Cuckoo.__DoNotUse<(Bool), Void> where M1.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "setCovered(_ p0: Bool)",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func beginExternalFlow() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "beginExternalFlow()",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func endExternalFlow() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "endExternalFlow()",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+    }
+}
+
+public class SessionControllerStub:SessionController, @unchecked Sendable {
+    
+    public var isUnlocked: Bool {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (Bool).self)
+        }
+    }
+
+
+    
+    public func unlock() {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func lock() {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func recordInteraction() {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func recordBackground(isProtectedFlow p0: Bool) {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func lockIfExpired() -> Bool {
+        return DefaultValueRegistry.defaultValue(for: (Bool).self)
+    }
+    
+    public func setCovered(_ p0: Bool) {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func beginExternalFlow() {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func endExternalFlow() {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
 }

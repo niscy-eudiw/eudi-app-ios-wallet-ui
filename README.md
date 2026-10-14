@@ -121,7 +121,8 @@ You will also need to download the EUDI Verifier app. More information can be fo
 
 1. Launch the application
 2. You will be presented with a welcome screen where you will be asked to create a PIN for future logins.
-   Later launches ask for that PIN, or for Face ID or Touch ID if you turned it on in Settings. If the
+   Later launches ask for that PIN, or for Face ID or Touch ID if you turned it on in Settings, and so
+   does the wallet after a minute in the background or five minutes without use. If the
    wallet cannot read its PIN record (for example while the device is locked), or holds documents but
    has no PIN, start-up stops on an error with "Try again"; it never offers to create a new PIN over
    existing documents.

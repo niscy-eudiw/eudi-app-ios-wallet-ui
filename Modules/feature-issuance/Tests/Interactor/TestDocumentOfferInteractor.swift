@@ -28,6 +28,7 @@ final class TestDocumentOfferInteractor: EudiTest {
   var interactor: DocumentOfferInteractor!
   var walletKitController: MockWalletKitController!
   var configLogic: MockConfigLogic!
+  var sessionController: MockSessionController!
   
   override func setUp() {
     super.setUp()
@@ -50,14 +51,21 @@ final class TestDocumentOfferInteractor: EudiTest {
       )
     }
 
+    self.sessionController = MockSessionController()
+    stub(sessionController) { mock in
+      when(mock.beginExternalFlow()).thenDoNothing()
+      when(mock.endExternalFlow()).thenDoNothing()
+    }
     self.interactor = DocumentOfferInteractorImpl(
       walletController: walletKitController,
-      configLogic: configLogic
+      configLogic: configLogic,
+      sessionController: sessionController
     )
     stubConfigLogic()
   }
   
   override func tearDown() {
+    self.sessionController = nil
     self.interactor = nil
     self.walletKitController = nil
     self.configLogic = nil
@@ -384,6 +392,9 @@ final class TestDocumentOfferInteractor: EudiTest {
     default:
       XCTFail("Expected .issuerNotTrusted but got \(result)")
     }
+
+    verify(sessionController).beginExternalFlow()
+    verify(sessionController).endExternalFlow()
   }
 
   func testResumeDynamicIssuance_WhenWalletThrowsTrustError_ThenReturnsIssuerNotTrusted() async {
@@ -889,6 +900,47 @@ final class TestDocumentOfferInteractor: EudiTest {
 
     guard case .failure(let error) = result, case .transactionCodeFormat = error as? WalletCoreError else {
       return XCTFail("Expected .transactionCodeFormat, got \(result)")
+    }
+  }
+
+  func testProcessOfferRequest_WhenTxCodeIsLongerThanSix_ThenReturnsTransactionCodeFormatFailure() async {
+    let uri = "uri"
+    let offer = OfferedIssuanceModel(
+      issuerName: "issuerName",
+      issuerLogoUrl: "https://logo",
+      docModels: [],
+      txCodeSpec: TxCode(inputMode: .numeric, length: 7, description: "")
+    )
+    stub(walletKitController) { mock in
+      mock.resolveOfferUrlDocTypes(offerUri: uri).thenReturn(offer)
+      mock.fetchIssuedDocuments(with: any()).thenReturn([Constants.createEuPidModel()])
+    }
+
+    let result = await interactor.processOfferRequest(with: uri)
+
+    guard case .failure(let error) = result, case .transactionCodeFormat = error as? WalletCoreError else {
+      return XCTFail("Expected .transactionCodeFormat, got \(result)")
+    }
+  }
+
+  func testProcessOfferRequest_WhenTxCodeHasSixDigits_ThenIsNotRefusedForTheCode() async {
+    let uri = "uri"
+    let offer = OfferedIssuanceModel(
+      issuerName: "issuerName",
+      issuerLogoUrl: "https://logo",
+      docModels: [],
+      txCodeSpec: TxCode(inputMode: .numeric, length: 6, description: "")
+    )
+    stub(walletKitController) { mock in
+      mock.resolveOfferUrlDocTypes(offerUri: uri).thenReturn(offer)
+      mock.fetchIssuedDocuments(with: any()).thenReturn([Constants.createEuPidModel()])
+      mock.getIssuerRegistration(for: any()).thenReturn(nil)
+    }
+
+    let result = await interactor.processOfferRequest(with: uri)
+
+    if case .failure(let error) = result, case .transactionCodeFormat = error as? WalletCoreError {
+      XCTFail("A six-digit numeric code must be accepted")
     }
   }
 

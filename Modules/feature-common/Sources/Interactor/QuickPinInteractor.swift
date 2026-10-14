@@ -31,6 +31,9 @@ public protocol QuickPinInteractor: Sendable {
   func getPinLockoutState() async -> PinLockoutState
   func recordPinFailure() async -> PinLockoutState
   func resetPinThrottle() async
+
+  /// Unlocks the wallet's session, after login or PIN creation.
+  func unlockSession() async
 }
 
 final actor QuickPinInteractorImpl: QuickPinInteractor {
@@ -38,18 +41,25 @@ final actor QuickPinInteractorImpl: QuickPinInteractor {
   private let pinStorageController: PinStorageController
   private let pinThrottleController: PinThrottleController
   private let authenticationConfig: AuthenticationConfig
+  private let sessionController: SessionController
 
   public let maxFailedPinAttempts: Int
 
   init(
     pinStorageController: PinStorageController,
     pinThrottleController: PinThrottleController,
-    authenticationConfig: AuthenticationConfig
+    authenticationConfig: AuthenticationConfig,
+    sessionController: SessionController
   ) {
     self.pinStorageController = pinStorageController
     self.pinThrottleController = pinThrottleController
     self.authenticationConfig = authenticationConfig
+    self.sessionController = sessionController
     self.maxFailedPinAttempts = authenticationConfig.maxFailedPinAttempts
+  }
+
+  public func unlockSession() async {
+    await sessionController.unlock()
   }
 
   public func setPin(newPin: String) -> QuickPinPartialState {
