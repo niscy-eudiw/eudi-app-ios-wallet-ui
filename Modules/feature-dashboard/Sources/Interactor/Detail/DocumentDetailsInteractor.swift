@@ -46,9 +46,10 @@ final actor DocumentDetailsInteractorImpl: DocumentDetailsInteractor {
       return .failure(WalletCoreError.unableFetchDocument)
     }
     let isBookmarked = await walletController.isDocumentBookmarked(with: documentId)
-    let isRevoked = await walletController.isDocumentRevoked(with: documentId)
+    let revocationStatus = await walletController.getDocumentRevocationStatus(with: documentId)
+    let isRevoked = revocationStatus != nil
 
-    let issuerDetailsCard = document?.transformToIssuerDetailsCardDataUi(isRevoked: isRevoked)
+    let issuerDetailsCard = document?.transformToIssuerDetailsCardDataUi(revocationStatus: revocationStatus)
 
     if isBatchCounterEnabled() {
       let info = documentCredentialsInfoUi(usageCounts: document?.credentialsUsageCounts)

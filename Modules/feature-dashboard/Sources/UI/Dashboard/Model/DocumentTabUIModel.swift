@@ -59,6 +59,7 @@ public extension DocumentTabUIModel.Value {
     case pending
     case failed
     case revoked
+    case suspended
   }
 }
 
@@ -66,7 +67,7 @@ extension DocClaimsDecodable {
   func transformToDocumentTabUi(
     with failedDocuments: [String] = [],
     categories: DocumentCategories,
-    isRevoked: Bool,
+    revocationStatus: DocumentRevocationStatus?,
     documentIsLowOnCredentials: Bool = false,
     usageCount: (remaining: Int?, total: Int?)? = nil
   ) -> DocumentTabUIModel {
@@ -74,8 +75,10 @@ extension DocClaimsDecodable {
     ? .failed
     : (self is DeferrredDocument)
     ? .pending
-    : isRevoked
+    : revocationStatus == .revoked
     ? .revoked
+    : revocationStatus == .suspended
+    ? .suspended
     : .issued
 
     let expiresAt = self.getExpiryDate(
@@ -138,6 +141,8 @@ extension DocClaimsDecodable {
         return .issuanceFailed
       case .revoked:
         return .revoked
+      case .suspended:
+        return .suspended
       }
     }
   }
@@ -161,7 +166,7 @@ extension DocClaimsDecodable {
       return Theme.shared.color.secondaryLabel
     case .pending:
       return Theme.shared.color.warning
-    case .failed, .revoked:
+    case .failed, .revoked, .suspended:
       return Theme.shared.color.red
     }
   }
@@ -183,7 +188,7 @@ extension DocClaimsDecodable {
       return Theme.shared.color.accent
     case .pending:
       return Theme.shared.color.warning
-    case .failed, .revoked:
+    case .failed, .revoked, .suspended:
       return Theme.shared.color.red
     }
   }
@@ -205,7 +210,7 @@ extension DocClaimsDecodable {
       return Theme.shared.image.chevronRight
     case .pending:
       return Theme.shared.image.clockIndicator
-    case .failed, .revoked:
+    case .failed, .revoked, .suspended:
       return Theme.shared.image.errorIndicator
     }
   }

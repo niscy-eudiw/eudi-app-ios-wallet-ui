@@ -269,6 +269,9 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case revoked
   case revokedModalTitle
   case revokedModalDescription
+  case suspended
+  case suspendedModalTitle
+  case suspendedModalDescription
   case issuanceBlockedTitle
   case issuanceBlockedMessage
   case presentationBlockedTitle
@@ -295,8 +298,10 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case documentDetailsExpiredOn([String])
   case documentDetailsIssuedOn([String])
   case documentDetailsRevokedDocument
+  case documentDetailsSuspendedDocument
   case documentDetailsIssuerCardIssuedMessageText
   case documentDetailsIssuerCardRevokedMessageText
+  case documentDetailsIssuerCardSuspendedMessageText
   case documentDetailsIssuerCardExpiredMessageText
   case documentDetailsIssuerCardIssuedActionButtonText
   case batchIssuanceCounter

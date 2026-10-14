@@ -60,51 +60,70 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
     revocationTask = nil
   }
 
-  private func checkRevocation() async throws {
+  /// One sweep over the issued documents that carry a status list. A revocation is permanent; a
+  /// suspension is cleared when the list reports the document valid again. A document whose status
+  /// cannot be fetched keeps its record and the sweep goes on. A failed read of the stored records
+  /// ends the sweep before anything is changed.
+  func checkRevocation() async throws {
 
     let issuedDocuments = await walletKitController.fetchIssuedDocuments()
-    let revokedStoredDocuments = (try? await walletKitController.fetchRevokedDocuments()) ?? []
+    let storedStatuses = try await walletKitController.fetchRevokedDocumentStatuses()
 
+    var newStatuses: [String: DocumentRevocationStatus] = [:]
     var revokedDocuments: [String: String] = [:]
-    var fromRevokedToValid: [String] = []
+    var suspendedDocuments: [String: String] = [:]
+    var fromSuspendedToValid: [String] = []
 
     for document in issuedDocuments {
 
       guard let statusList = document.statusList else { continue }
 
-      let status = try await walletKitController.getDocumentStatus(for: statusList)
-      let isInRevokedStorage = revokedStoredDocuments.first(where: { $0 == document.id }) != nil
+      let status: CredentialStatus
+      do {
+        status = try await walletKitController.getDocumentStatus(for: statusList)
+      } catch {
+        continue
+      }
+
+      let storedStatus = storedStatuses[document.id]
 
       switch status {
-      case .invalid, .suspended:
-        if !isInRevokedStorage {
+      case .invalid:
+        if storedStatus != .revoked {
+          newStatuses[document.id] = .revoked
           revokedDocuments[document.displayName.orEmpty] = document.id
         }
+      case .suspended:
+        if storedStatus == nil {
+          newStatuses[document.id] = .suspended
+          suspendedDocuments[document.displayName.orEmpty] = document.id
+        }
       case .valid:
-        if isInRevokedStorage {
-          fromRevokedToValid.append(document.id)
+        if storedStatus == .suspended {
+          fromSuspendedToValid.append(document.id)
         }
       default:
         continue
       }
     }
 
-    if !fromRevokedToValid.isEmpty {
-      try await removeRevokedDocuments(with: fromRevokedToValid)
+    if !newStatuses.isEmpty {
+      try await storeRevokedDocuments(with: newStatuses)
+      await notifyListeners(revoked: revokedDocuments, suspended: suspendedDocuments)
     }
 
-    if !revokedDocuments.isEmpty {
-      try await storeRevokedDocuments(with: Array(revokedDocuments.values))
-      await notifyListeners(with: revokedDocuments)
+    if !fromSuspendedToValid.isEmpty {
+      try await removeRevokedDocuments(with: fromSuspendedToValid)
+      await notifyDocumentDetails(with: fromSuspendedToValid)
     }
 
-    if !fromRevokedToValid.isEmpty || !revokedDocuments.isEmpty {
+    if !fromSuspendedToValid.isEmpty || !newStatuses.isEmpty {
       await notifyDocumentTabListener()
     }
   }
 
-  private func storeRevokedDocuments(with ids: [String]) async throws {
-    try await walletKitController.storeRevokedDocuments(with: ids)
+  private func storeRevokedDocuments(with statuses: [String: DocumentRevocationStatus]) async throws {
+    try await walletKitController.storeRevokedDocuments(with: statuses)
   }
 
   private func removeRevokedDocuments(with ids: [String]) async throws {
@@ -113,17 +132,24 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
     }
   }
 
+  /// Tells the dashboard which documents were newly revoked and which newly suspended, and refreshes
+  /// their details.
   @MainActor
-  private func notifyListeners(with revoked: [String: String]) async {
+  private func notifyListeners(revoked: [String: String], suspended: [String: String]) async {
     NotificationCenter.default.post(
       name: NSNotification.RevocationDashboard,
       object: nil,
-      userInfo: revoked
+      userInfo: RevocationDashboardPayload(revoked: revoked, suspended: suspended).userInfo
     )
+    await notifyDocumentDetails(with: Array(revoked.values) + Array(suspended.values))
+  }
+
+  @MainActor
+  private func notifyDocumentDetails(with ids: [String]) async {
     NotificationCenter.default.post(
       name: NSNotification.DocumentDetailsRefresh,
       object: nil,
-      userInfo: ["ids": Array(revoked.values)]
+      userInfo: ["ids": ids]
     )
   }
 

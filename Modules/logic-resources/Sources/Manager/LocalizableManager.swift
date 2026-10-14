@@ -534,6 +534,12 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "revoked_modal_title")
     case .revokedModalDescription:
       bundle.localizedString(forKey: "revoked_modal_description")
+    case .suspended:
+      bundle.localizedString(forKey: "suspended")
+    case .suspendedModalTitle:
+      bundle.localizedString(forKey: "suspended_modal_title")
+    case .suspendedModalDescription:
+      bundle.localizedString(forKey: "suspended_modal_description")
     case .issuanceBlockedTitle:
       bundle.localizedString(forKey: "issuance_blocked_bottom_sheet_title")
     case .issuanceBlockedMessage:
@@ -590,10 +596,14 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedStringWithArguments(forKey: "document_details_issued_on", arguments: args)
     case .documentDetailsRevokedDocument:
       bundle.localizedString(forKey: "document_details_revoked_document")
+    case .documentDetailsSuspendedDocument:
+      bundle.localizedString(forKey: "document_details_suspended_document")
     case .documentDetailsIssuerCardIssuedMessageText:
       bundle.localizedString(forKey: "document_details_issuer_card_issued_message_text")
     case .documentDetailsIssuerCardRevokedMessageText:
       bundle.localizedString(forKey: "document_details_issuer_card_revoked_message_text")
+    case .documentDetailsIssuerCardSuspendedMessageText:
+      bundle.localizedString(forKey: "document_details_issuer_card_suspended_message_text")
     case .documentDetailsIssuerCardExpiredMessageText:
       bundle.localizedString(forKey: "document_details_issuer_card_expired_message_text")
     case .documentDetailsIssuerCardIssuedActionButtonText:

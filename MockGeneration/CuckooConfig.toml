@@ -12,6 +12,24 @@ enableInheritance = true
 protocolsOnly = true
 omitHeaders = false
 
+[modules.LogicCore]
+output = "../Modules/logic-core/Tests/Mock/GeneratedMocks.swift"
+testableImports = [
+	"logic_business",
+	"logic_core"
+]
+sources = [
+	"../Modules/logic-business/Sources/**/*.swift",
+	"../Modules/logic-core/Sources/**/*.swift"
+]
+
+[modules.LogicCore.options]
+glob = true
+keepDocumentation = false
+enableInheritance = true
+protocolsOnly = true
+omitHeaders = false
+
 [modules.LogicApi]
 output = "../Modules/logic-api/Tests/Mock/GeneratedMocks.swift"
 testableImports = [

@@ -207,7 +207,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     var failed: [String] = []
 
     let categories = await self.walletKitController.getDocumentCategories()
-    let revokedDocuments = try? await self.walletKitController.fetchRevokedDocuments()
+    let revocationStatuses = (try? await self.walletKitController.fetchRevokedDocumentStatuses()) ?? [:]
 
     for deferred in await walletKitController.fetchDeferredDocuments() {
 
@@ -216,11 +216,10 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
       do {
         let document = try await walletKitController.requestDeferredIssuance(with: deferred)
         if (document is DeferrredDocument) == false {
-          let isRevoked = revokedDocuments?.first { $0 == deferred.id } != nil
           issued.append(
             document.transformToDocumentTabUi(
               categories: categories,
-              isRevoked: isRevoked,
+              revocationStatus: revocationStatuses[deferred.id],
               usageCount: isBatchCounterEnabled()
               ? getCredentialsUsageCount(
                 credentialsUsageCounts: document.credentialsUsageCounts,
@@ -415,7 +414,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     }
 
     let documents = await self.walletKitController.fetchAllDocuments()
-    let revokedDocuments = try? await self.walletKitController.fetchRevokedDocuments()
+    let revocationStatuses = (try? await self.walletKitController.fetchRevokedDocumentStatuses()) ?? [:]
 
     guard !documents.isEmpty else {
       return nil
@@ -423,12 +422,12 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
 
     var filterableItems: [FilterableItem] = []
     for document in documents {
-      let isRevoked = revokedDocuments?.first { $0 == document.id } != nil
+      let revocationStatus = revocationStatuses[document.id]
 
       let documentIsLowOnCredentials = await walletKitController.isDocumentLowOnCredentials(document: document)
       let documentPayload = await document.transformToDocumentTabUi(
         categories: self.walletKitController.getDocumentCategories(),
-        isRevoked: isRevoked,
+        revocationStatus: revocationStatus,
         documentIsLowOnCredentials: documentIsLowOnCredentials,
         usageCount: isBatchCounterEnabled()
         ? getCredentialsUsageCount(
@@ -457,7 +456,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
           issuer: document.issuerName,
           name: document.displayName,
           category: documentPayload.value.documentCategory.filterAttribute.capitalizedFirst(),
-          isRevoked: isRevoked
+          isRevoked: revocationStatus != nil
         )
       )
       filterableItems.append(item)

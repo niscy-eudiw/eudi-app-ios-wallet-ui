@@ -89,8 +89,14 @@ public protocol WalletKitController: Sendable {
 
   func isDocumentRevoked(with id: String) async -> Bool
   func fetchRevokedDocuments() async throws -> [String]
-  func storeRevokedDocuments(with ids: [String]) async throws
+  /// The revocation record of every document that has one. A record without a status counts as revoked.
+  /// An empty store gives an empty result; a failed read throws.
+  func fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus]
+  /// Stores or replaces the revocation record of each document.
+  func storeRevokedDocuments(with statuses: [String: DocumentRevocationStatus]) async throws
   func removeRevokedDocument(with id: String) async throws
+  /// The revocation record of one document, or `nil` if it has none.
+  func getDocumentRevocationStatus(with id: String) async -> DocumentRevocationStatus?
 
   func getDocumentStatus(for statusList: MdocDataModel18013.StatusList) async throws -> CredentialStatus
   func isDocumentLowOnCredentials(document: (any DocClaimsDecodable)?) async -> Bool
@@ -747,8 +753,14 @@ final actor WalletKitControllerImpl: WalletKitController {
     }
   }
 
-  func storeRevokedDocuments(with ids: [String]) async throws {
-    try await revokedDocumentStorageController.store(ids.map { .init(identifier: $0) })
+  func fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus] {
+    try await revokedDocumentStorageController.retrieveRevocationStatuses()
+  }
+
+  func storeRevokedDocuments(with statuses: [String: DocumentRevocationStatus]) async throws {
+    try await revokedDocumentStorageController.store(
+      statuses.map { .init(identifier: $0.key, status: $0.value.rawValue) }
+    )
   }
 
   func removeRevokedDocument(with id: String) async throws {
@@ -757,6 +769,11 @@ final actor WalletKitControllerImpl: WalletKitController {
 
   func isDocumentRevoked(with id: String) async -> Bool {
     return (try? await revokedDocumentStorageController.retrieve(id)) != nil
+  }
+
+  func getDocumentRevocationStatus(with id: String) async -> DocumentRevocationStatus? {
+    guard let record = try? await revokedDocumentStorageController.retrieve(id) else { return nil }
+    return record.revocationStatus
   }
 
   func getDocumentStatus(for statusList: MdocDataModel18013.StatusList) async throws -> CredentialStatus {

@@ -1,0 +1,263 @@
+/*
+ * Copyright (c) 2026 European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
+ * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
+ * except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/software/page/eupl
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the Licence is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the Licence for the specific language
+ * governing permissions and limitations under the Licence.
+ */
+import XCTest
+import MdocDataModel18013
+@testable import logic_business
+@testable import logic_core
+@testable import logic_test
+
+final class TestRevocationWorkManager: EudiTest {
+
+  var walletKitController: MockWalletKitController!
+  var walletKitConfig: MockWalletKitConfig!
+  var workManager: RevocationWorkManagerImpl!
+
+  override func setUp() {
+    walletKitController = MockWalletKitController()
+    walletKitConfig = MockWalletKitConfig()
+    workManager = RevocationWorkManagerImpl(
+      configLogic: walletKitConfig,
+      walletKitController: walletKitController
+    )
+    stub(walletKitController) { mock in
+      when(mock.storeRevokedDocuments(with: any())).thenDoNothing()
+      when(mock.removeRevokedDocument(with: any())).thenDoNothing()
+    }
+  }
+
+  override func tearDown() {
+    walletKitController = nil
+    walletKitConfig = nil
+    workManager = nil
+  }
+
+  func testCheckRevocation_WhenInvalid_ThenStoresRevoked() async throws {
+    stubSweep(stored: [:], statuses: ["a": .invalid])
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController).storeRevokedDocuments(with: equal(to: ["a": .revoked]))
+    verify(walletKitController, never()).removeRevokedDocument(with: any())
+  }
+
+  func testCheckRevocation_WhenRevokedDocumentIsReportedValid_ThenStaysRevoked() async throws {
+    stubSweep(stored: ["a": .revoked], statuses: ["a": .valid])
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController, never()).removeRevokedDocument(with: any())
+    verify(walletKitController, never()).storeRevokedDocuments(with: any())
+  }
+
+  func testCheckRevocation_WhenRevokedDocumentIsReportedSuspended_ThenStaysRevoked() async throws {
+    stubSweep(stored: ["a": .revoked], statuses: ["a": .suspended])
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController, never()).storeRevokedDocuments(with: any())
+    verify(walletKitController, never()).removeRevokedDocument(with: any())
+  }
+
+  func testCheckRevocation_WhenSuspended_ThenStoresSuspended() async throws {
+    stubSweep(stored: [:], statuses: ["a": .suspended])
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController).storeRevokedDocuments(with: equal(to: ["a": .suspended]))
+  }
+
+  func testCheckRevocation_WhenSuspendedDocumentIsReportedValid_ThenClearsTheRecord() async throws {
+    stubSweep(stored: ["a": .suspended], statuses: ["a": .valid])
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController).removeRevokedDocument(with: equal(to: "a"))
+    verify(walletKitController, never()).storeRevokedDocuments(with: any())
+  }
+
+  func testCheckRevocation_WhenSuspendedDocumentIsReportedInvalid_ThenBecomesRevoked() async throws {
+    stubSweep(stored: ["a": .suspended], statuses: ["a": .invalid])
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController).storeRevokedDocuments(with: equal(to: ["a": .revoked]))
+    verify(walletKitController, never()).removeRevokedDocument(with: any())
+  }
+
+  func testCheckRevocation_WhenAnotherStatusIsReported_ThenLeavesTheRecord() async throws {
+    stubSweep(stored: ["a": .suspended], statuses: ["a": .applicationSpecific(3)])
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController, never()).removeRevokedDocument(with: any())
+    verify(walletKitController, never()).storeRevokedDocuments(with: any())
+  }
+
+  func testCheckRevocation_WhenOneStatusFetchFails_ThenTheOthersAreStillStored() async throws {
+    stubSweep(stored: ["b": .suspended], statuses: ["a": .invalid, "c": .suspended], failing: ["b"])
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController).storeRevokedDocuments(with: equal(to: ["a": .revoked, "c": .suspended]))
+    verify(walletKitController, never()).removeRevokedDocument(with: any())
+  }
+
+  func testCheckRevocation_WhenStoredRecordsCannotBeRead_ThenChangesNothing() async {
+    stub(walletKitController) { mock in
+      when(mock.fetchIssuedDocuments()).thenReturn([Self.document(id: "a")])
+      when(mock.fetchRevokedDocumentStatuses()).thenThrow(RuntimeError.genericError)
+      when(mock.getDocumentStatus(for: any())).thenReturn(.suspended)
+    }
+
+    do {
+      try await workManager.checkRevocation()
+      XCTFail("Expected the sweep to stop")
+    } catch {
+      verify(walletKitController, never()).storeRevokedDocuments(with: any())
+      verify(walletKitController, never()).removeRevokedDocument(with: any())
+    }
+  }
+
+  func testCheckRevocation_WhenDocumentsAreRevokedAndSuspended_ThenTheDashboardGetsBothGroups() async throws {
+    stubSweep(stored: [:], statuses: ["a": .invalid, "c": .suspended])
+    let notified = expectation(forNotification: NSNotification.RevocationDashboard, object: nil) { notification in
+      RevocationDashboardPayload(userInfo: notification.userInfo)
+        == RevocationDashboardPayload(revoked: ["Document a": "a"], suspended: ["Document c": "c"])
+    }
+
+    try await workManager.checkRevocation()
+
+    await fulfillment(of: [notified], timeout: 2)
+  }
+
+  func testCheckRevocation_WhenClearingASuspensionFails_ThenTheRevocationIsStillStored() async {
+    stubSweep(stored: ["b": .suspended], statuses: ["a": .invalid, "b": .valid])
+    stub(walletKitController) { mock in
+      when(mock.removeRevokedDocument(with: equal(to: "b"))).thenThrow(RuntimeError.genericError)
+    }
+
+    try? await workManager.checkRevocation()
+
+    verify(walletKitController).storeRevokedDocuments(with: equal(to: ["a": .revoked]))
+  }
+
+  func testCheckRevocation_WhenDocumentHasNoStatusList_ThenItsRecordIsLeft() async throws {
+    stub(walletKitController) { mock in
+      when(mock.fetchIssuedDocuments()).thenReturn([Self.document(id: "a", hasStatusList: false)])
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn(["a": .suspended])
+    }
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController, never()).getDocumentStatus(for: any())
+    verify(walletKitController, never()).removeRevokedDocument(with: any())
+    verify(walletKitController, never()).storeRevokedDocuments(with: any())
+  }
+
+  func testCheckRevocation_WhenRevokedDocumentGetsAReservedStatus_ThenStaysRevoked() async throws {
+    stubSweep(stored: ["a": .revoked], statuses: ["a": .reserved(3)])
+
+    try await workManager.checkRevocation()
+
+    verify(walletKitController, never()).removeRevokedDocument(with: any())
+    verify(walletKitController, never()).storeRevokedDocuments(with: any())
+  }
+
+  func testCheckRevocation_WhenValidWithoutARecord_ThenChangesNothing() async throws {
+    stubSweep(stored: [:], statuses: ["a": .valid])
+    let notified = expectation(forNotification: NSNotification.DocumentTabRefresh, object: nil)
+    notified.isInverted = true
+
+    try await workManager.checkRevocation()
+
+    await fulfillment(of: [notified], timeout: 0.5)
+    verify(walletKitController, never()).removeRevokedDocument(with: any())
+    verify(walletKitController, never()).storeRevokedDocuments(with: any())
+  }
+
+  func testCheckRevocation_WhenOnlyASuspensionIsCleared_ThenTheListAndTheDetailsRefresh() async throws {
+    stubSweep(stored: ["a": .suspended], statuses: ["a": .valid])
+    let listRefreshed = expectation(forNotification: NSNotification.DocumentTabRefresh, object: nil)
+    let detailsRefreshed = expectation(forNotification: NSNotification.DocumentDetailsRefresh, object: nil) { notification in
+      notification.userInfo?["ids"] as? [String] == ["a"]
+    }
+    let dashboardNotified = expectation(forNotification: NSNotification.RevocationDashboard, object: nil)
+    dashboardNotified.isInverted = true
+
+    try await workManager.checkRevocation()
+
+    await fulfillment(of: [listRefreshed, detailsRefreshed, dashboardNotified], timeout: 2)
+  }
+}
+
+private extension TestRevocationWorkManager {
+
+  struct TestMdocModel: DocClaimsDecodable {
+    var id: String
+    var createdAt: Date
+    var modifiedAt: Date?
+    var displayName: String?
+    var display: [MdocDataModel18013.DisplayMetadata]?
+    var issuerDisplay: [MdocDataModel18013.DisplayMetadata]?
+    var credentialIssuerIdentifier: String?
+    var configurationIdentifier: String?
+    var docType: String
+    var docClaims: [MdocDataModel18013.DocClaim]
+    var docDataFormat: MdocDataModel18013.DocDataFormat
+    var validFrom: Date?
+    var validUntil: Date?
+    var statusList: MdocDataModel18013.StatusList?
+    var secureAreaName: String?
+    var credentialsUsageCounts: MdocDataModel18013.CredentialsUsageCounts?
+    var credentialPolicy: MdocDataModel18013.CredentialPolicy
+    var ageOverXX: [Int: Bool]
+  }
+
+  static func document(id: String, hasStatusList: Bool = true) -> any DocClaimsDecodable {
+    TestMdocModel(
+      id: id,
+      createdAt: Date(),
+      displayName: "Document \(id)",
+      docType: "eu.europa.ec.eudi.pid.1",
+      docClaims: [],
+      docDataFormat: .cbor,
+      statusList: hasStatusList ? MdocDataModel18013.StatusList(idx: 0, uri: "https://status.example/\(id)") : nil,
+      credentialPolicy: .rotateUse,
+      ageOverXX: [:]
+    )
+  }
+
+  /// Stubs one sweep: a document for every id in `statuses` and `failing`, the stored records, and the
+  /// status each document's list reports. A document in `failing` cannot have its status fetched.
+  func stubSweep(
+    stored: [String: DocumentRevocationStatus],
+    statuses: [String: CredentialStatus],
+    failing: Set<String> = []
+  ) {
+    let ids = Set(statuses.keys).union(failing).sorted()
+    stub(walletKitController) { mock in
+      when(mock.fetchIssuedDocuments()).thenReturn(ids.map { Self.document(id: $0) })
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn(stored)
+      when(mock.getDocumentStatus(for: any())).then { statusList in
+        let id = String(statusList.uri.split(separator: "/").last ?? "")
+        guard let status = statuses[id], !failing.contains(id) else {
+          throw RuntimeError.genericError
+        }
+        return status
+      }
+    }
+  }
+}

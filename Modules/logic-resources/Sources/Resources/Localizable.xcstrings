@@ -683,6 +683,17 @@
         }
       }
     },
+    "document_details_issuer_card_suspended_message_text" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This document cannot be used for verification while it is suspended."
+          }
+        }
+      }
+    },
     "document_details_re_issue_button" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -723,6 +734,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show"
+          }
+        }
+      }
+    },
+    "document_details_suspended_document" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document suspended"
           }
         }
       }
@@ -2984,6 +3006,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You successfully shared the following information with"
+          }
+        }
+      }
+    },
+    "suspended" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suspended"
+          }
+        }
+      }
+    },
+    "suspended_modal_description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The following documents have been suspended."
+          }
+        }
+      }
+    },
+    "suspended_modal_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suspended documents"
           }
         }
       }

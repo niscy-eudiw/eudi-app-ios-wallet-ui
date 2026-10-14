@@ -55,7 +55,7 @@ final class TestDocumentDetailsInteractor: EudiTest {
     
     stubFetchDocument(for: documentId, document: expectedDocument)
     stubIsBookmarked(for: documentId, isBookmarked: false)
-    stubIsRevoked(for: documentId, isRevoked: false)
+    stubRevocationStatus(for: documentId, status: nil)
     stubIsDocumentLowOnCredentials()
     stubIsBatchCounterEnabled()
 
@@ -76,6 +76,27 @@ final class TestDocumentDetailsInteractor: EudiTest {
     }
   }
 
+  func testFetchStoredDocument_WhenDocumentIsSuspended_ThenFlagsItAndShowsTheSuspendedCard() async throws {
+    let expectedDocument = Constants.createEuPidModel(credentialsUsageCounts: try .init(total: 10, remaining: 10))
+    let documentId = expectedDocument.id
+    stubFetchDocument(for: documentId, document: expectedDocument)
+    stubIsBookmarked(for: documentId, isBookmarked: false)
+    stubRevocationStatus(for: documentId, status: .suspended)
+    stubIsDocumentLowOnCredentials()
+    stubIsBatchCounterEnabled()
+
+    let result = await interactor.fetchStoredDocument(documentId: documentId)
+
+    switch result {
+    case .success(_, let issuerDocumentDetailsCard, _, _, let isRevoked):
+      XCTAssertTrue(isRevoked)
+      XCTAssertEqual(issuerDocumentDetailsCard?.documentState, .suspended)
+      XCTAssertEqual(issuerDocumentDetailsCard?.dateText, .documentDetailsSuspendedDocument)
+    case .failure:
+      XCTFail("Expected success, but got failure.")
+    }
+  }
+
   func testFetchStoredDocument_WhenWalletKitControllerReturnsValidDocumentWithBatchDisabled_ThenReturnsExpectedValues() async throws {
     // Given
     let expectedDocument = Constants.createEuPidModel(credentialsUsageCounts: try .init(total: 5, remaining: 2))
@@ -83,7 +104,7 @@ final class TestDocumentDetailsInteractor: EudiTest {
     
     stubFetchDocument(for: documentId, document: expectedDocument)
     stubIsBookmarked(for: documentId, isBookmarked: false)
-    stubIsRevoked(for: documentId, isRevoked: false)
+    stubRevocationStatus(for: documentId, status: nil)
     stubIsDocumentLowOnCredentials()
     stubIsBatchCounterEnabled()
 
@@ -108,7 +129,7 @@ final class TestDocumentDetailsInteractor: EudiTest {
     
     stubFetchDocument(for: documentId, document: expectedDocument)
     stubIsBookmarked(for: documentId, isBookmarked: false)
-    stubIsRevoked(for: documentId, isRevoked: false)
+    stubRevocationStatus(for: documentId, status: nil)
     stubIsDocumentLowOnCredentials()
     stubIsBatchCounterEnabled()
 
@@ -136,7 +157,7 @@ final class TestDocumentDetailsInteractor: EudiTest {
     
     stubFetchDocument(for: documentId, document: expectedDocument)
     stubIsBookmarked(for: documentId, isBookmarked: false)
-    stubIsRevoked(for: documentId, isRevoked: false)
+    stubRevocationStatus(for: documentId, status: nil)
     stubIsDocumentLowOnCredentials()
     stubIsBatchCounterEnabled()
 
@@ -178,7 +199,7 @@ final class TestDocumentDetailsInteractor: EudiTest {
     
     stubFetchDocument(for: documentId, document: expectedDocument)
     stubIsBookmarked(for: documentId, isBookmarked: false)
-    stubIsRevoked(for: documentId, isRevoked: true)
+    stubRevocationStatus(for: documentId, status: .revoked)
     stubIsDocumentLowOnCredentials()
     stubIsBatchCounterEnabled()
 
@@ -516,10 +537,10 @@ extension TestDocumentDetailsInteractor {
     }
   }
 
-  func stubIsRevoked(for id: String, isRevoked: Bool) {
+  func stubRevocationStatus(for id: String, status: DocumentRevocationStatus?) {
     stub(walletKitController) { stub in
-      when(stub.isDocumentRevoked(with: equal(to: id)))
-        .thenReturn(isRevoked)
+      when(stub.getDocumentRevocationStatus(with: equal(to: id)))
+        .thenReturn(status)
     }
   }
   

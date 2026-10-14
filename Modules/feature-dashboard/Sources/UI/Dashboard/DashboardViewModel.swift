@@ -15,6 +15,7 @@
  */
 import Foundation
 import logic_ui
+import logic_core
 import feature_common
 import Observation
 
@@ -26,6 +27,7 @@ struct DashboardState<Router: RouterHost>: ViewState {
   let toolBarContent: ToolBarContent
   let navigationTitle: LocalizableStringKey
   let revokedDocuments: [String: String]
+  let suspendedDocuments: [String: String]
   let isPaused: Bool
 }
 
@@ -76,6 +78,7 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
         ),
         navigationTitle: .custom(""),
         revokedDocuments: [:],
+        suspendedDocuments: [:],
         isPaused: false
       )
     )
@@ -89,16 +92,20 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
     listenForRevokedModalChanges()
   }
 
+  /// Shows the documents a revocation check newly revoked or suspended (`RevocationDashboardPayload`).
   func handleRevocationNotification(for payload: [AnyHashable: Any]?) {
     guard
-      let payload,
-      let revokedDocuments = payload as? [String: String],
+      let documents = RevocationDashboardPayload(userInfo: payload),
       !isRevokedModalShowing,
       !viewState.isPaused
     else {
       return
     }
-    setState { $0.copy(revokedDocuments: revokedDocuments) }
+    setState {
+      $0
+        .copy(revokedDocuments: documents.revoked)
+        .copy(suspendedDocuments: documents.suspended)
+    }
     isRevokedModalShowing = true
   }
 
@@ -154,7 +161,11 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
       .sink { [weak self] value in
         guard let self = self else { return }
         if !value {
-          self.setState { $0.copy(revokedDocuments: [:]) }
+          self.setState {
+            $0
+              .copy(revokedDocuments: [:])
+              .copy(suspendedDocuments: [:])
+          }
         }
       }.store(in: &cancellables)
   }

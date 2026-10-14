@@ -40,6 +40,8 @@ public struct IssuerDocumentDetailsCardUIModel: Equatable, Sendable {
       return .documentDetailsIssuerCardIssuedMessageText
     case .revoked:
       return .documentDetailsIssuerCardRevokedMessageText
+    case .suspended:
+      return .documentDetailsIssuerCardSuspendedMessageText
     case .expired:
       return .documentDetailsIssuerCardExpiredMessageText
     }
@@ -49,7 +51,7 @@ public struct IssuerDocumentDetailsCardUIModel: Equatable, Sendable {
     switch documentState {
     case .issued, .expired:
       return .documentDetailsIssuerCardIssuedActionButtonText
-    case .revoked:
+    case .revoked, .suspended:
       return nil
     }
   }
@@ -61,6 +63,8 @@ public struct IssuerDocumentDetailsCardUIModel: Equatable, Sendable {
       return .documentDetailsExpiresOn([date])
     case .revoked:
       return .documentDetailsRevokedDocument
+    case .suspended:
+      return .documentDetailsSuspendedDocument
     case .expired(_, let expirationDate):
       guard let date = expirationDate else { return nil }
       return .documentDetailsExpiredOn([date])
@@ -71,7 +75,7 @@ public struct IssuerDocumentDetailsCardUIModel: Equatable, Sendable {
     switch documentState {
     case .issued:
       return Theme.shared.color.secondaryLabel
-    case .revoked, .expired:
+    case .revoked, .suspended, .expired:
       return Theme.shared.color.red
     }
   }
@@ -81,7 +85,7 @@ public struct IssuerDocumentDetailsCardUIModel: Equatable, Sendable {
     case .issued(let issuanceDate, _), .expired(let issuanceDate, _):
       guard let date = issuanceDate else { return nil }
       return .documentDetailsIssuedOn([date])
-    case .revoked:
+    case .revoked, .suspended:
       return nil
     }
   }
@@ -89,21 +93,24 @@ public struct IssuerDocumentDetailsCardUIModel: Equatable, Sendable {
   public enum DocumentState: Equatable, Sendable {
     case issued(issuanceDate: String?, expirationDate: String?)
     case revoked
+    case suspended
     case expired(issuanceDate: String?, expirationDate: String?)
   }
 }
 
 public extension DocClaimsDecodable {
   func transformToIssuerDetailsCardDataUi(
-    isRevoked: Bool
+    revocationStatus: DocumentRevocationStatus?
   ) -> IssuerDocumentDetailsCardUIModel {
     let documentState: IssuerDocumentDetailsCardUIModel.DocumentState
     let issuanceDate = self.createdAt.formattedForDocumentDetails()
     let expirationDate = self.getExpiryDate(parser: {
       Locale.current.localizedDateTime(date: $0, uiFormatter: "dd MMM yyyy")
     }) ?? ""
-    if isRevoked {
+    if revocationStatus == .revoked {
       documentState = .revoked
+    } else if revocationStatus == .suspended {
+      documentState = .suspended
     } else if self.hasExpired {
       documentState = .expired(
         issuanceDate: issuanceDate,

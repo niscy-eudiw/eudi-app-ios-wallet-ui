@@ -88,7 +88,7 @@ final class TestDocumentTabInteractor: EudiTest {
   
   func testFetchDocuments_WhenWalletKitControllerReturnsEmptyDocuments_ThenReturnsError() async {
     // Given
-    stubFetchRevokedDocuments(with: [])
+    stubFetchRevokedDocumentStatuses(with: [:])
     stubFetchDocuments(with: [])
     stubFetchIssuedDocuments(with: [])
     stubFetchDocumentsWithExclusion(with: [])
@@ -128,9 +128,7 @@ final class TestDocumentTabInteractor: EudiTest {
     let expectedPid = Constants.createEuPidModel(credentialsUsageCounts: try .init(total: 10, remaining: 10))
     let expectedMdl = Constants.createIsoMdlModel()
     
-    stubFetchRevokedDocuments(
-      with: []
-    )
+    stubFetchRevokedDocumentStatuses(with: [:])
     stubFetchDocuments(
       with: [
         expectedPid,
@@ -164,6 +162,31 @@ final class TestDocumentTabInteractor: EudiTest {
     verify(walletKitController).refreshUsageCounters()
   }
   
+  func testFetchDocuments_WhenOneIsRevokedAndOneSuspended_ThenEachShowsItsState() async {
+    let pid = Constants.createEuPidModel()
+    let mdl = Constants.createIsoMdlModel()
+    stubFetchRevokedDocumentStatuses(with: [pid.id: .suspended, mdl.id: .revoked])
+    stubFetchDocuments(with: [pid, mdl])
+    stubFetchIssuedDocuments(with: [pid, mdl])
+    stubFetchDocumentCategories(with: [:])
+    stubFetchDocumentsWithExclusion(with: [mdl])
+    stubFetchMainPidDocument(with: pid)
+    stubIsDocumentLowOnCredentials()
+    stubRefreshCounters()
+    stubIsBatchCounterEnabled()
+
+    let state = await interactor.fetchDocuments(failedDocuments: [], shouldRefreshCounters: false)
+
+    guard case .success(let list) = state else {
+      return XCTFail("Wrong state \(state)")
+    }
+    let states = Dictionary(uniqueKeysWithValues: list.items.compactMap { item in
+      (item.payload as? DocumentTabUIModel).map { ($0.id, $0.value.state) }
+    })
+    XCTAssertEqual(states, [pid.id: .suspended, mdl.id: .revoked])
+    XCTAssertTrue(list.items.allSatisfy { ($0.attributes as? DocumentFilterableAttributes)?.isRevoked == true })
+  }
+
   func testFetchDocuments_WhenWalletKitControllerReturnsDataWithNilUsageCount_ThenReturnsUiModels() async {
     // Given
     var documentsCategories: DocumentCategories {
@@ -181,9 +204,7 @@ final class TestDocumentTabInteractor: EudiTest {
     let expectedPid = Constants.createEuPidModel()
     let expectedMdl = Constants.createIsoMdlModel()
     
-    stubFetchRevokedDocuments(
-      with: []
-    )
+    stubFetchRevokedDocumentStatuses(with: [:])
     stubFetchDocuments(
       with: [
         expectedPid,
@@ -410,7 +431,7 @@ final class TestDocumentTabInteractor: EudiTest {
         )
       ]
     )
-    stubFetchRevokedDocuments(with: [])
+    stubFetchRevokedDocumentStatuses(with: [:])
     stubFetchDocumentCategories(with: [:])
     stub(walletKitController) { stub in
       when(stub.requestDeferredIssuance(with: any())).thenReturn(issuedDoc)
@@ -448,7 +469,7 @@ final class TestDocumentTabInteractor: EudiTest {
         )
       ]
     )
-    stubFetchRevokedDocuments(with: [])
+    stubFetchRevokedDocumentStatuses(with: [:])
     stubFetchDocumentCategories(with: [:])
     stub(walletKitController) { stub in
       when(stub.requestDeferredIssuance(with: any())).thenThrow(WalletCoreError.unableFetchDocument)
@@ -471,7 +492,7 @@ final class TestDocumentTabInteractor: EudiTest {
     // Given
     let issuedDoc = Constants.createEuPidModel()
     stubFetchDeferredDocuments(with: [])
-    stubFetchRevokedDocuments(with: [])
+    stubFetchRevokedDocumentStatuses(with: [:])
     stubFetchDocumentCategories(with: [:])
     stub(walletKitController) { stub in
       when(stub.requestDeferredIssuance(with: any())).thenReturn(issuedDoc)
@@ -685,9 +706,9 @@ private extension TestDocumentTabInteractor {
     }
   }
   
-  func stubFetchRevokedDocuments(with revokedDocuments: [String]) {
+  func stubFetchRevokedDocumentStatuses(with statuses: [String: DocumentRevocationStatus]) {
     stub(walletKitController) { mock in
-      when(mock.fetchRevokedDocuments()).thenReturn(revokedDocuments)
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn(statuses)
     }
   }
   

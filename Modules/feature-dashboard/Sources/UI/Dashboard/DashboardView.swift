@@ -58,6 +58,7 @@ struct DashboardView<Router: RouterHost>: View {
           }
         },
         revokedDocuments: viewModel.viewState.revokedDocuments,
+        suspendedDocuments: viewModel.viewState.suspendedDocuments,
         onDocumentDetails: { viewModel.onDocumentDetails(documentId: $0) }
       )
     }
@@ -79,6 +80,7 @@ private struct DashboardViewContainer: View {
   @Binding var isRevokedModalShowing: Bool
   let tabView: (SelectedTab) -> AnyView
   let revokedDocuments: [String: String]
+  let suspendedDocuments: [String: String]
   let onDocumentDetails: (String) -> Void
 
   var body: some View {
@@ -86,12 +88,23 @@ private struct DashboardViewContainer: View {
       .sheetDialog(isPresented: $isRevokedModalShowing) {
         VStack(spacing: .zero) {
 
-          ContentTitleView(
-            title: .revokedModalTitle,
-            caption: .revokedModalDescription
-          )
+          if !revokedDocuments.isEmpty {
+            ContentTitleView(
+              title: .revokedModalTitle,
+              caption: .revokedModalDescription
+            )
 
-          revokedNotificationList()
+            notificationList(for: revokedDocuments)
+          }
+
+          if !suspendedDocuments.isEmpty {
+            ContentTitleView(
+              title: .suspendedModalTitle,
+              caption: .suspendedModalDescription
+            )
+
+            notificationList(for: suspendedDocuments)
+          }
         }
       }
   }
@@ -142,11 +155,12 @@ private struct DashboardViewContainer: View {
     }
   }
 
+  /// One row per document, keyed by display name; a tap opens its details.
   @MainActor
   @ViewBuilder
-  private func revokedNotificationList() -> some View {
+  private func notificationList(for documents: [String: String]) -> some View {
     VStack(spacing: SPACING_SMALL) {
-      ForEach(revokedDocuments.sorted(by: >), id: \.key) { key, value in
+      ForEach(documents.sorted(by: >), id: \.key) { key, value in
 
         HStack {
           Text(.custom(key))
@@ -182,6 +196,7 @@ private struct DashboardViewContainer: View {
       isRevokedModalShowing: .constant(false),
       tabView: { _ in EmptyView().eraseToAnyView() },
       revokedDocuments: [:],
+      suspendedDocuments: [:],
       onDocumentDetails: { _ in }
     )
   }

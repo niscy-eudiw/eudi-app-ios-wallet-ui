@@ -10577,9 +10577,20 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func storeRevokedDocuments(with p0: [String]) async throws {
+    public func fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus] {
         return try await cuckoo_manager.callThrows(
-            "storeRevokedDocuments(with p0: [String]) async throws",
+            "fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus]",
+            parameters: (),
+            escapingParameters: (),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.fetchRevokedDocumentStatuses()
+        )
+    }
+
+    public func storeRevokedDocuments(with p0: [String: DocumentRevocationStatus]) async throws {
+        return try await cuckoo_manager.callThrows(
+            "storeRevokedDocuments(with p0: [String: DocumentRevocationStatus]) async throws",
             parameters: (p0),
             escapingParameters: (p0),
             errorType: Swift.Error.self,
@@ -10596,6 +10607,16 @@ return await cuckoo_manager.call(
             errorType: Swift.Error.self,
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
             defaultCall: await __defaultImplStub!.removeRevokedDocument(with: p0)
+        )
+    }
+
+    public func getDocumentRevocationStatus(with p0: String) async -> DocumentRevocationStatus? {
+        return await cuckoo_manager.call(
+            "getDocumentRevocationStatus(with p0: String) async -> DocumentRevocationStatus?",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.getDocumentRevocationStatus(with: p0)
         )
     }
 
@@ -11016,10 +11037,18 @@ return await cuckoo_manager.call(
             ))
         }
         
-        func storeRevokedDocuments<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubNoReturnThrowingFunction<([String]),Swift.Error> where M1.MatchedType == [String] {
-            let matchers: [Cuckoo.ParameterMatcher<([String])>] = [wrap(matchable: p0) { $0 }]
+        func fetchRevokedDocumentStatuses() -> Cuckoo.ProtocolStubThrowingFunction<(), [String: DocumentRevocationStatus],Swift.Error> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "storeRevokedDocuments(with p0: [String]) async throws",
+                method: "fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus]",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func storeRevokedDocuments<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubNoReturnThrowingFunction<([String: DocumentRevocationStatus]),Swift.Error> where M1.MatchedType == [String: DocumentRevocationStatus] {
+            let matchers: [Cuckoo.ParameterMatcher<([String: DocumentRevocationStatus])>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "storeRevokedDocuments(with p0: [String: DocumentRevocationStatus]) async throws",
                 parameterMatchers: matchers
             ))
         }
@@ -11028,6 +11057,14 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
                 method: "removeRevokedDocument(with p0: String) async throws",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func getDocumentRevocationStatus<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubFunction<(String), DocumentRevocationStatus?> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "getDocumentRevocationStatus(with p0: String) async -> DocumentRevocationStatus?",
                 parameterMatchers: matchers
             ))
         }
@@ -11590,10 +11627,22 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func storeRevokedDocuments<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<([String]), Void> where M1.MatchedType == [String] {
-            let matchers: [Cuckoo.ParameterMatcher<([String])>] = [wrap(matchable: p0) { $0 }]
+        func fetchRevokedDocumentStatuses() -> Cuckoo.__DoNotUse<(), [String: DocumentRevocationStatus]> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "storeRevokedDocuments(with p0: [String]) async throws",
+                "fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus]",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func storeRevokedDocuments<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<([String: DocumentRevocationStatus]), Void> where M1.MatchedType == [String: DocumentRevocationStatus] {
+            let matchers: [Cuckoo.ParameterMatcher<([String: DocumentRevocationStatus])>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "storeRevokedDocuments(with p0: [String: DocumentRevocationStatus]) async throws",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -11606,6 +11655,18 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
                 "removeRevokedDocument(with p0: String) async throws",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func getDocumentRevocationStatus<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(String), DocumentRevocationStatus?> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "getDocumentRevocationStatus(with p0: String) async -> DocumentRevocationStatus?",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -11888,12 +11949,20 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: ([String]).self)
     }
     
-    public func storeRevokedDocuments(with p0: [String]) async throws {
+    public func fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus] {
+        return DefaultValueRegistry.defaultValue(for: ([String: DocumentRevocationStatus]).self)
+    }
+    
+    public func storeRevokedDocuments(with p0: [String: DocumentRevocationStatus]) async throws {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
     public func removeRevokedDocument(with p0: String) async throws {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func getDocumentRevocationStatus(with p0: String) async -> DocumentRevocationStatus? {
+        return DefaultValueRegistry.defaultValue(for: (DocumentRevocationStatus?).self)
     }
     
     public func getDocumentStatus(for p0: MdocDataModel18013.StatusList) async throws -> CredentialStatus {
@@ -13610,6 +13679,22 @@ import Cuckoo
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/DocumentJsonKeys.swift'
 
 import Cuckoo
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/DocumentRevocationStatus.swift'
+
+import Cuckoo
+import Foundation
+import logic_storage
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
