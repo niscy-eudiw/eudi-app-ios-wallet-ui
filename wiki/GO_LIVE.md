@@ -1460,10 +1460,9 @@ How the reference app handles a wallet link (`DeepLinkController.handleDeepLinkA
   an issuance is the exception: its redirect is kept to resume the issuance
   (`storeDynamicIssuancePendingUrl`), nothing opens, and the success screen returns to the issuance
   screen.
-* A link of no wallet type (`DeepLink.Action.external`) opens the same way, in the browser and only if it
-  is `https`, and is dropped, not kept, while the wallet is locked. The app registers custom schemes only
-  and no associated domains, so iOS delivers none today. A build that adds associated domains must keep
-  them out of the links it opens in the browser, because iOS would hand such a link back to the wallet.
+* A link of no wallet type (`DeepLink.Action.external`) is dropped, locked or not, as on Android: the
+  wallet neither opens it nor keeps it. The app registers custom schemes only and no associated domains,
+  so iOS delivers none today.
 
 Files to review:
 

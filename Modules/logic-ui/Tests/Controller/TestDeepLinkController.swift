@@ -26,7 +26,6 @@ final class TestDeepLinkController: EudiTest {
   var urlSchemaController: MockUrlSchemaController!
   var routerHost: MockRouterHost!
   var walletKitController: MockWalletKitController!
-  var opened: RecordingLinkOpener!
 
   override func setUp() {
     self.prefsController = MockPrefsController()
@@ -39,13 +38,13 @@ final class TestDeepLinkController: EudiTest {
     stub(urlSchemaController) { mock in
       when(mock.retrieveSchemas(with: any())).thenReturn([])
     }
-    let opened = RecordingLinkOpener()
-    self.opened = opened
+    stub(walletKitController) { mock in
+      when(mock.stopPresentation()).thenDoNothing()
+    }
     self.controller = DeepLinkControllerImpl(
       prefsController: prefsController,
       urlSchemaController: urlSchemaController,
-      walletKitController: walletKitController,
-      openURL: { opened.open($0) }
+      walletKitController: walletKitController
     )
   }
   
@@ -55,7 +54,6 @@ final class TestDeepLinkController: EudiTest {
     self.urlSchemaController = nil
     self.routerHost = nil
     self.walletKitController = nil
-    self.opened = nil
   }
   
   func testHasDeepLink_WhenUrlIsAValidOpenId4VPDeepLink_ThenReturnDeepLinkActionWithOpenId4VPType() {
@@ -233,7 +231,7 @@ final class TestDeepLinkController: EudiTest {
     )
 
     XCTAssertNil(controller.getPendingDeepLinkAction())
-    XCTAssertTrue(opened.urls.isEmpty)
+    verify(routerHost, never()).push(with: any())
   }
 
   func testHandleDeepLinkAction_WhenLoggedInAndActionIsCredentialOfferOnTheDashboard_ThenPushesTheOfferScreen() async {
@@ -528,26 +526,51 @@ final class TestDeepLinkController: EudiTest {
     try assertOfferRoute(hasDocuments: false, expectedSuccess: .push(.featureDashboardModule(.dashboard)))
   }
 
-  func testHandleDeepLinkAction_WhenALinkOfNoWalletTypeIsHttps_ThenOpensItInTheBrowser() async {
+  func testHandleDeepLinkAction_WhenALinkOfNoWalletTypeArrivesLoggedIn_ThenItIsDroppedAsOnAndroid() async {
     stubHandleDeepLink(action: Self.mockedExternalDeepLinkAction, route: nil, isAfterAuth: true, isScreenForeground: true)
 
     await controller.handleDeepLinkAction(routerHost: routerHost, deepLinkExecutable: Self.mockedExternalDeepLinkAction)
 
-    XCTAssertEqual(opened.urls, [Self.mockedExternalUrl])
+    XCTAssertNil(controller.getPendingDeepLinkAction())
+    verify(routerHost, never()).push(with: any())
+    verify(routerHost, never()).popTo(with: any(), inclusive: any())
+    verify(walletKitController, never()).stopPresentation()
   }
 
-  func testHandleDeepLinkAction_WhenALinkOfNoWalletTypeIsNotHttps_ThenOpensNothing() async throws {
-    let url = try XCTUnwrap(URL(string: "eu.europa.ec.euidi://authorization?code=abc"))
-    let executable = DeepLink.Executable(
-      link: try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: true)),
-      plainUrl: url,
-      action: .external
+  func testHandleDeepLinkAction_WhenALinkOfNoWalletTypeArrives_ThenALinkKeptForLaterStaysKept() async {
+    stub(urlSchemaController) { mock in
+      when(mock.retrieveSchemas(with: any())).thenReturn(["eudi-openid4vp", "mdoc-openid4vp"])
+    }
+    controller.cacheDeepLinkURL(url: Self.mockedOpenId4VPUrl)
+    stubHandleDeepLink(action: Self.mockedExternalDeepLinkAction, route: nil, isAfterAuth: true, isScreenForeground: true)
+
+    await controller.handleDeepLinkAction(routerHost: routerHost, deepLinkExecutable: Self.mockedExternalDeepLinkAction)
+
+    XCTAssertEqual(controller.getPendingDeepLinkAction(), Self.mockedOpenId4VPDeepLinkAction)
+  }
+
+  func testHandleDeepLinkAction_WhenALinkReturnsToTheDashboard_ThenTheRunningPresentationIsStopped() async {
+    let stopped = expectation(description: "presentation stopped")
+    stub(walletKitController) { mock in
+      when(mock.stopPresentation()).then { stopped.fulfill() }
+    }
+    stubHandleDeepLink(
+      action: Self.mockedCredentialOfferDeepLinkAction,
+      route: nil,
+      isAfterAuth: true,
+      isScreenForeground: false
     )
-    stubHandleDeepLink(action: executable, route: nil, isAfterAuth: true, isScreenForeground: true)
+    stub(routerHost) { mock in
+      when(mock.popTo(with: any(), inclusive: any())).thenDoNothing()
+    }
 
-    await controller.handleDeepLinkAction(routerHost: routerHost, deepLinkExecutable: executable)
+    await controller.handleDeepLinkAction(
+      routerHost: routerHost,
+      deepLinkExecutable: Self.mockedCredentialOfferDeepLinkAction
+    )
 
-    XCTAssertTrue(opened.urls.isEmpty)
+    await fulfillment(of: [stopped], timeout: 5)
+    verify(routerHost).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)), inclusive: equal(to: false))
   }
 
   func testHasDeepLink_WhenSchemaControllerMatchesRqes_ThenActionIsRqes() {

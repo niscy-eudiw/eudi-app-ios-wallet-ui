@@ -42,21 +42,16 @@ final class DeepLinkControllerImpl: DeepLinkController {
 
   private let urlSchemaController: UrlSchemaController
   private let walletKitController: WalletKitController
-  private let openURL: @Sendable @MainActor (URL) -> Void
   private let pendingLink = OSAllocatedUnfairLock<URL?>(initialState: nil)
 
   /// Removes a link an earlier build kept in `UserDefaults`, so that it does not outlive its process.
-  /// `openURL` opens a link of no wallet type once `URL.openInBrowser(using:)` has accepted it as an `https`
-  /// link; the default is the system's opener.
   init(
     prefsController: PrefsController,
     urlSchemaController: UrlSchemaController,
-    walletKitController: WalletKitController,
-    openURL: @escaping @Sendable @MainActor (URL) -> Void = { UIApplication.shared.open($0) }
+    walletKitController: WalletKitController
   ) {
     self.urlSchemaController = urlSchemaController
     self.walletKitController = walletKitController
-    self.openURL = openURL
     prefsController.remove(forKey: .cachedDeepLink)
   }
 
@@ -73,10 +68,14 @@ final class DeepLinkControllerImpl: DeepLinkController {
     return nil
   }
 
+  /// A link of no wallet type is dropped first, as on Android, so that it cannot replace a link kept for
+  /// after login.
   public func handleDeepLinkAction(
     routerHost: RouterHost,
     deepLinkExecutable: DeepLink.Executable
   ) {
+
+    guard deepLinkExecutable.action != .external else { return }
 
     var isVciExecutable: Bool {
       deepLinkExecutable.action == .credential_offer && routerHost.userIsLoggedInWithNoDocuments()
@@ -86,8 +85,7 @@ final class DeepLinkControllerImpl: DeepLinkController {
       let dashboard = AppRoute.featureDashboardModule(.dashboard)
       let addDocument = AppRoute.featureIssuanceModule(.issuanceAddDocument(config: NoConfig()))
       if routerHost.userIsLoggedInWithDocuments() {
-        let opensAWalletFlow = deepLinkExecutable.action != .external
-        return opensAWalletFlow && !routerHost.isScreenForeground(with: dashboard) ? dashboard : nil
+        return !routerHost.isScreenForeground(with: dashboard) ? dashboard : nil
       }
       return isVciExecutable && !routerHost.isScreenForeground(with: addDocument) ? addDocument : nil
     }
@@ -97,10 +95,11 @@ final class DeepLinkControllerImpl: DeepLinkController {
     guard
       returnScreen == nil && (routerHost.userIsLoggedInWithDocuments() || isVciExecutable)
     else {
-      if deepLinkExecutable.action != .external, let url = deepLinkExecutable.link.url {
+      if let url = deepLinkExecutable.link.url {
         cacheDeepLinkURL(url: url)
       }
       if let returnScreen {
+        Task { [walletKitController] in await walletKitController.stopPresentation() }
         routerHost.popTo(
           with: returnScreen,
           inclusive: false
@@ -127,7 +126,7 @@ final class DeepLinkControllerImpl: DeepLinkController {
         )
       }
     case .external:
-      deepLinkExecutable.plainUrl.openInBrowser(using: openURL)
+      break
     case .credential_offer, .haip_vci:
       let config = UIConfig.Generic(
         arguments: ["uri": deepLinkExecutable.plainUrl.absoluteString],

@@ -805,7 +805,9 @@ outlasts it ("Client Attestation has expired"); that limit is wallet-kit's, not 
   does not extend a session.
 * A lock dismisses whatever is presented over the wallet, the RQES screens included, and returns to the
   start-up screen, which asks for login (`RouterHost.requireLoginIfLocked`). After login the user starts
-  again from the dashboard; the flow that was on screen does not resume. While locked, the navigation
+  again from the dashboard; the flow that was on screen does not resume. A lock, and a wallet link that
+  returns to the dashboard, also end a running presentation, so a proximity session stops with its
+  screens, as on Android (`SessionCoordinatorHolder.clear`). While locked, the navigation
   opens only the screens in `ConfigUiLogic.loginRouteKeys` (start-up, login, PIN creation, the Trust Mark
   introduction), so work that finishes after a lock cannot reopen the wallet.
 * `SessionLockController` applies the timeout when the app returns, before an incoming link is handled,

@@ -38,20 +38,24 @@ final class SessionLockControllerImpl: SessionLockController {
   private let sessionController: SessionController
   private let routerHost: RouterHost
   private let userInteractionController: UserInteractionController
+  private let walletKitController: WalletKitController
   private let isCovered: @MainActor () -> Bool
   private let idleCheckInterval: TimeInterval
   @MainActor private var idleCheck: Task<Void, Never>?
+  @MainActor private var wasUnlocked = false
 
   init(
     sessionController: SessionController,
     routerHost: RouterHost,
     userInteractionController: UserInteractionController,
+    walletKitController: WalletKitController,
     isCovered: @escaping @MainActor () -> Bool = { UIApplication.shared.isWalletCoveredByAnotherScreen },
     idleCheckInterval: TimeInterval = Constants.idleCheckInterval
   ) {
     self.sessionController = sessionController
     self.routerHost = routerHost
     self.userInteractionController = userInteractionController
+    self.walletKitController = walletKitController
     self.isCovered = isCovered
     self.idleCheckInterval = idleCheckInterval
   }
@@ -89,9 +93,17 @@ final class SessionLockControllerImpl: SessionLockController {
     applyTimeout()
   }
 
+  /// A lock, whatever caused it (a timeout here, or the end of a cover or an external flow), also ends a
+  /// running presentation, once, so that a proximity session does not outlive its screens, as on Android,
+  /// where the cleared screens stop it.
   @MainActor
   private func applyTimeout() {
     sessionController.lockIfExpired()
+    let isUnlocked = sessionController.isUnlocked
+    if wasUnlocked && !isUnlocked {
+      Task { [walletKitController] in await walletKitController.stopPresentation() }
+    }
+    wasUnlocked = isUnlocked
     routerHost.requireLoginIfLocked()
   }
 

@@ -121,7 +121,10 @@ final class ProximitySessionCoordinatorImpl: ProximitySessionCoordinator {
     self.sendableCurrentValueSubject.getAsyncStream()
   }
 
+  /// Stops the Bluetooth transfer as well as the state stream, so that a session the user, a lock or a new
+  /// link ends stops advertising, as the Android wallet's proximity screen does when it closes.
   public func stopPresentation() {
+    (session.presentationService as? BlePresentationService)?.stop()
     self.sendableCurrentValueSubject.complete()
     self.sendableAnyCancellable.cancel()
   }

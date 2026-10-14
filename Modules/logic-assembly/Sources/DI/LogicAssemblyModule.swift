@@ -33,7 +33,8 @@ public final class LogicAssemblyModule: Assembly {
       SessionLockControllerImpl(
         sessionController: r.force(SessionController.self),
         routerHost: r.force(RouterHost.self),
-        userInteractionController: r.force(UserInteractionController.self)
+        userInteractionController: r.force(UserInteractionController.self),
+        walletKitController: r.force(WalletKitController.self)
       )
     }
     .inObjectScope(ObjectScope.container)

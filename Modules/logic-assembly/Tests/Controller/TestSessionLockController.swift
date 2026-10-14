@@ -25,6 +25,7 @@ final class TestSessionLockController: EudiTest {
   private var sessionController: MockSessionController!
   private var routerHost: MockRouterHost!
   private var userInteractionController: MockUserInteractionController!
+  private var walletKitController: MockWalletKitController!
   private var calls: RecordingCallLog!
 
   override func setUp() {
@@ -32,6 +33,7 @@ final class TestSessionLockController: EudiTest {
     sessionController = MockSessionController()
     routerHost = MockRouterHost()
     userInteractionController = MockUserInteractionController()
+    walletKitController = MockWalletKitController()
     calls = RecordingCallLog()
     let calls = calls!
     stub(sessionController) { mock in
@@ -39,6 +41,7 @@ final class TestSessionLockController: EudiTest {
       when(mock.recordBackground(isProtectedFlow: any())).then { calls.record("recordBackground(\($0))") }
       when(mock.lockIfExpired()).then { calls.record("lockIfExpired"); return false }
       when(mock.recordInteraction()).then { calls.record("recordInteraction") }
+      when(mock.isUnlocked.get).thenReturn(false)
     }
     stub(routerHost) { mock in
       when(mock.isInProtectedFlow()).thenReturn(true)
@@ -47,12 +50,16 @@ final class TestSessionLockController: EudiTest {
     stub(userInteractionController) { mock in
       when(mock.start(onInteraction: any())).thenDoNothing()
     }
+    stub(walletKitController) { mock in
+      when(mock.stopPresentation()).thenDoNothing()
+    }
   }
 
   override func tearDown() {
     sessionController = nil
     routerHost = nil
     userInteractionController = nil
+    walletKitController = nil
     calls = nil
     super.tearDown()
   }
@@ -166,6 +173,49 @@ final class TestSessionLockController: EudiTest {
   }
 
   @MainActor
+  func testCheckIdle_WhenTheWalletWasUnlockedAndIsNowLocked_ThenTheRunningPresentationIsStopped() async {
+    let stopped = expectation(description: "presentation stopped")
+    stub(walletKitController) { mock in
+      when(mock.stopPresentation()).then { stopped.fulfill() }
+    }
+    stub(sessionController) { mock in
+      when(mock.isUnlocked.get).thenReturn(true)
+    }
+    let controller = makeController()
+    controller.checkIdle()
+    stub(sessionController) { mock in
+      when(mock.isUnlocked.get).thenReturn(false)
+    }
+
+    controller.checkIdle()
+
+    await fulfillment(of: [stopped], timeout: 5)
+  }
+
+  @MainActor
+  func testCheckIdle_WhenTheWalletStaysUnlocked_ThenNoPresentationIsStopped() {
+    stub(sessionController) { mock in
+      when(mock.isUnlocked.get).thenReturn(true)
+    }
+    let controller = makeController()
+
+    controller.checkIdle()
+    controller.checkIdle()
+
+    verify(walletKitController, never()).stopPresentation()
+  }
+
+  @MainActor
+  func testCheckIdle_WhenTheWalletWasNeverUnlocked_ThenNoPresentationIsStopped() {
+    let controller = makeController()
+
+    controller.checkIdle()
+    controller.checkIdle()
+
+    verify(walletKitController, never()).stopPresentation()
+  }
+
+  @MainActor
   private func makeController(
     isCovered: Bool = false,
     idleCheckInterval: TimeInterval = 1_000
@@ -174,6 +224,7 @@ final class TestSessionLockController: EudiTest {
       sessionController: sessionController,
       routerHost: routerHost,
       userInteractionController: userInteractionController,
+      walletKitController: walletKitController,
       isCovered: { isCovered },
       idleCheckInterval: idleCheckInterval
     )

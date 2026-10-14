@@ -29,7 +29,10 @@ final actor SessionCoordinatorHolderImpl: SessionCoordinatorHolder {
 
   init() {}
 
+  /// Stops a running proximity session before letting it go, rather than leaving that to the coordinator's
+  /// `deinit`, which runs only once every screen that holds the coordinator is gone.
   public func clear() {
+    activeProximityCoordinator?.stopPresentation()
     activeRemoteCoordinator = nil
     activeProximityCoordinator = nil
   }
