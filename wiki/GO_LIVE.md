@@ -937,6 +937,11 @@ Current request handling:
   asks for the wallet PIN or biometrics first, with the same screen as the app's login, and reads the
   request's documents only after that. No requested value is shown before the user has authenticated.
 * Accept asks for the PIN or biometrics again before the response is sent.
+* The requester is shown without the verified badge. `DcApiHandler` validates no reader certificate
+  chain and returns no trust verdict, so the extension has nothing to badge. The interactor keeps the
+  authority key identifier of the first certificate in the request's reader-authentication chain on
+  `AuthorizationUIModel` (empty when the request carries none) for a trust-list lookup the reference
+  app does not perform; only a real verdict from such a lookup may set `isRelyingPartyVerified`.
 
 Production validation:
 

@@ -100,7 +100,7 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
             description: .dataSharingTitle,
             mainText: .dataSharingRequest,
             relyingPartyData: RelyingPartyData(
-              isVerified: true,
+              isVerified: uiModel.isRelyingPartyVerified,
               name: .custom(uiModel.issuerName),
               description: .requestsTheFollowing
             )

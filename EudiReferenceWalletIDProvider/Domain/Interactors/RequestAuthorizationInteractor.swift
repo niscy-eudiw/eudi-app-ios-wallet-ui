@@ -44,10 +44,12 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
     self.dcApiHandler = dcApiHandler
   }
 
+  /// `DcApiHandler` validates no reader certificate chain and returns no trust verdict, so the relying
+  /// party is never reported as verified. The authority key identifier is kept for a later lookup.
   func loadRequestData(
     context: ISO18013MobileDocumentRequestContext
   ) async throws -> AuthorizationUIModel {
-    let (docClaimsModels, _, _, rn) = try await dcApiHandler.validateRequest(context.request)
+    let (docClaimsModels, _, authorityKeyIdentifier, rn) = try await dcApiHandler.validateRequest(context.request)
     let websiteName = context.requestingWebsiteOrigin?.absoluteString ?? rn ?? "Website name not available"
     let documents = docClaimsModels.compactMap {
       $0.transformToDocumentUi(isSensitive: false)
@@ -61,7 +63,9 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
           name: document.documentName,
           requestedElements: document.documentFields
         )
-      }
+      },
+      isRelyingPartyVerified: false,
+      authorityKeyIdentifier: authorityKeyIdentifier
     )
   }
 

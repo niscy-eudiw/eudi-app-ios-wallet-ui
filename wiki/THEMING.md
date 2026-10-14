@@ -537,7 +537,7 @@ Android's `ThemeManager.Builder`, and is intentionally left at `.default` in the
   display name is shared by default).
 * **Screenshot the key surfaces:** splash, dashboard/home, a presentation request, the PIN screen,
   document details, the RQES signing flow, and a request in the ID Provider extension, which opens with
-  the PIN or biometric login. The start-up error alert is a system alert, which the theme does not
+  the PIN or biometric login and shows the requester without a verified badge. The start-up error alert is a system alert, which the theme does not
   style.
 
 ## Production and accessibility checklist
