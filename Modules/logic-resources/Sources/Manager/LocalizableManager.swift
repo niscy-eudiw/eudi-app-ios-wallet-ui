@@ -443,7 +443,7 @@ final class LocalizableManager: LocalizableManagerType {
     case .issuanceRequestTitle:
       bundle.localizedString(forKey: "issuance_request_title")
     case .myEuWallet:
-      bundle.localizedString(forKey: "My EU Wallet")
+      bundle.localizedString(forKey: "my_eu_wallet")
     case .categoryGovernment:
       bundle.localizedString(forKey: "category_government")
     case .categoryHealth:

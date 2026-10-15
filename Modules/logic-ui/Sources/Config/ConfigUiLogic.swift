@@ -53,10 +53,14 @@ public extension ConfigUiLogic {
 
 struct ConfigUiLogicImpl: ConfigUiLogic {
 
-  public var backgroundColorForScreenDictionary: [AppRouteKey: UIConfig.ToolBar] = [
-    AppRoute.featureDashboardModule(.dashboard).info.key: .init(Theme.shared.color.background),
-    AppRoute.featureDashboardModule(.documentDetails(id: "")).info.key: .init(Theme.shared.color.background)
-  ]
+  /// Read on each use, so the toolbars follow the theme `Theme.config` sets, also when an integrator applies one
+  /// after this configuration is created.
+  public var backgroundColorForScreenDictionary: [AppRouteKey: UIConfig.ToolBar] {
+    [
+      AppRoute.featureDashboardModule(.dashboard).info.key: .init(Theme.shared.color.background),
+      AppRoute.featureDashboardModule(.documentDetails(id: "")).info.key: .init(Theme.shared.color.background)
+    ]
+  }
 
   public var loginRouteKeys: [AppRouteKey] = [
     AppRoute.featureStartupModule(.startup).info.key,

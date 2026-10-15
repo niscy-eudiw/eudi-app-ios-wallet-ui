@@ -231,7 +231,7 @@ Keep these files under strict review:
 | `fastlane/Fastfile` | Defines iOS test, versioning, archive, upload, tag, and release lanes. |
 | `Modules/logic-resources/Sources/Resources/Color.xcassets` | Brand color palette (light and dark appearances) and system/semantic color overrides. See [THEMING.md](THEMING.md). |
 | `Modules/logic-resources/Sources/Resources/Images.xcassets` | In-app brand logos and illustrations used on the splash and headers. |
-| `Wallet/Assets.xcassets` | Per-variant app icons (`AppIcon`, `AppIconDev`) and an `AccentColor` set. No build setting names it (`ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME` is not set), so it has no effect. |
+| `Wallet/Assets.xcassets` | Per-variant app icons (`AppIcon`, `AppIconDev`) and an `AccentColor` set. The app target names it as the global accent (`ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME`); it is empty, so the system default applies until it is filled in. |
 
 ## Create A Production Scheme And Configuration
 
@@ -378,7 +378,7 @@ Production identity values must be final before external testing.
 | Extension bundle identifier | Extension target `PRODUCT_BUNDLE_IDENTIFIER` | Use a child identifier of the main app, for example `eu.example.wallet.EudiReferenceWalletIDProvider`. |
 | App display name | `INFOPLIST_KEY_CFBundleDisplayName` | Use the official wallet name approved for the Member State or wallet provider. |
 | App icon | Asset catalogs and target settings | Replace reference assets with production brand assets. |
-| Apple team | `DEVELOPMENT_TEAM`, App Store Connect | Use the production Apple Developer Program team. The `Team ID` keys in `Wallet.plist` and `WalletIdProvider.plist` refer to `$(APP_TEAM_ID)`, which no build setting defines and no code reads; define it or remove the keys. |
+| Apple team | `DEVELOPMENT_TEAM`, App Store Connect | Use the production Apple Developer Program team. The `Team ID` keys in `Wallet.plist` and `WalletIdProvider.plist` take `$(DEVELOPMENT_TEAM)`; no code reads them. |
 | Version | `MARKETING_VERSION`, Fastlane lane mutation | Use the approved public versioning scheme. |
 | Build number | `CURRENT_PROJECT_VERSION`, `CFBundleVersion`, Fastlane lane mutation | Must monotonically increase for App Store Connect. |
 | Minimum iOS | Swift packages and project deployment target | Current packages target iOS 17. Confirm this with the device support policy. |

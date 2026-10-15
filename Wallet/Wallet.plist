@@ -34,6 +34,6 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>Team ID</key>
-	<string>$(APP_TEAM_ID)</string>
+	<string>$(DEVELOPMENT_TEAM)</string>
 </dict>
 </plist>

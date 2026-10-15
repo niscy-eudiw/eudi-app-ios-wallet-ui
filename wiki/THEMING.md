@@ -218,11 +218,10 @@ colorset by default**, so it currently falls back to the system blue. **Add an `
 to `Color.xcassets` to brand it.
 
 The dashboard tab bar does not read `accent`: it takes the app's default tint, which is also system
-blue. The app target has an empty `AccentColor` colorset in
-[`Wallet/Assets.xcassets`](../Wallet/Assets.xcassets), but the project does not set
-`ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME`, so the colorset has no effect. To brand the tab bar
-and other system controls, fill in `AccentColor` and set that build setting to `AccentColor` on the
-`EudiWallet` target in every configuration.
+blue. The `EudiWallet` target names the `AccentColor` colorset in
+[`Wallet/Assets.xcassets`](../Wallet/Assets.xcassets) as its global accent
+(`ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME`, every configuration). The colorset is empty, so the
+system default applies; to brand the tab bar and other system controls, fill it in.
 
 > **Gotcha — the `Base/` palette overrides system colors.** The `Base/` folder inside `Color.xcassets`
 > is **not** namespaced, so its `blue`, `black`, `white`, and `red` colorsets override the SwiftUI
@@ -414,12 +413,7 @@ in the theme. If you rename the product, search the catalog for `EUDI`/`Wallet` 
 
 * `quick_pin_set_title` ("Welcome to your wallet"), `quick_pin_set_success` and
   `quick_pin_set_step_one_caption` — onboarding / PIN-setup copy.
-* "My EU Wallet" — side-menu navigation title. `LocalizableManager` looks this title up under the
-  literal key `"My EU Wallet"`, not under the catalog's `my_eu_wallet` entry, so editing
-  `my_eu_wallet` has no effect. Either add a catalog entry whose key is `My EU Wallet`, or change the
-  `.myEuWallet` lookup in
-  [`LocalizableManager.swift`](../Modules/logic-resources/Sources/Manager/LocalizableManager.swift)
-  to `my_eu_wallet` and edit that entry.
+* `my_eu_wallet` ("My EU Wallet") — side-menu navigation title.
 * `wallet_is_secured` ("Your wallet is secured!") — success copy.
 * `login_caption` / `login_caption_quick_pin_only` ("…access the EUDI Wallet…") — login auth prompts,
   shown at app unlock and before a request in the ID Provider extension. The system biometric prompt
@@ -546,11 +540,8 @@ call `Theme.config(themeConfiguration:)` in the extension, for example in `Docum
 > `ThemeConfiguration`/DI path above is preferable: it runs during `Application.init()` (resolving
 > `RouterHost` forces `ConfigUiLogic`), so every view body reads the swapped theme.
 >
-> One exception: `ConfigUiLogicImpl.backgroundColorForScreenDictionary` is a stored property whose
-> initializer reads `Theme.shared.color.background` before `init(themeConfiguration:)` calls
-> `Theme.config`. Its entries, the dashboard and document-details toolbar backgrounds, therefore keep
-> the reference theme's `background`. If your theme changes `background`, build that dictionary after
-> the `Theme.config` call, or give those entries your color directly.
+> `ConfigUiLogicImpl.backgroundColorForScreenDictionary`, the dashboard and document-details toolbar
+> backgrounds, is computed on each use, so it follows the swapped theme's `background` as well.
 
 ## Verifying your rebrand
 
@@ -573,8 +564,7 @@ call `Theme.config(themeConfiguration:)` in the extension, for example in `Docum
 ## Production and accessibility checklist
 
 * [ ] Light **and** dark appearances set for every brand colorset and every system/semantic override.
-* [ ] `accent` colorset added (and, to brand the tab bar, the app-target `AccentColor` filled in and
-      `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME` set to it).
+* [ ] `accent` colorset added (and, to brand the tab bar, the app-target `AccentColor` filled in).
 * [ ] Text/background color pairs meet contrast guidance (WCAG AA: 4.5:1 for body text).
 * [ ] All brand imagesets replaced (`logo`, `logo-eu-digital-indentity-wallet`, illustrations); no leftover EUDI artwork.
 * [ ] App icon replaced for **every** variant (`AppIcon` and `AppIconDev`); legible at small sizes.
