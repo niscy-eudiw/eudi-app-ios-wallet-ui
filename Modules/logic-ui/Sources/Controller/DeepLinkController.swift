@@ -68,14 +68,10 @@ final class DeepLinkControllerImpl: DeepLinkController {
     return nil
   }
 
-  /// A link of no wallet type is dropped first, as on Android, so that it cannot replace a link kept for
-  /// after login.
   public func handleDeepLinkAction(
     routerHost: RouterHost,
     deepLinkExecutable: DeepLink.Executable
   ) {
-
-    guard deepLinkExecutable.action != .external else { return }
 
     var isVciExecutable: Bool {
       deepLinkExecutable.action == .credential_offer && routerHost.userIsLoggedInWithNoDocuments()
@@ -125,8 +121,6 @@ final class DeepLinkControllerImpl: DeepLinkController {
           )
         )
       }
-    case .external:
-      break
     case .credential_offer, .haip_vci:
       let config = UIConfig.Generic(
         arguments: ["uri": deepLinkExecutable.plainUrl.absoluteString],
@@ -186,7 +180,6 @@ public extension DeepLink {
     case haip_vci
     case haip_vp
     case rqes
-    case external
 
     private var name: String {
       return rawValue.replacingOccurrences(of: "_", with: "-")
@@ -198,6 +191,8 @@ public extension DeepLink {
       return urlSchemaController.retrieveSchemas(with: name)
     }
 
+    /// The wallet flow a link of `scheme` starts, or nil when it starts none. Such a link is not handled at
+    /// all, as on Android, so it can neither be opened nor replace a link kept for after login.
     static func parseType(
       with scheme: String,
       and urlSchemaController: UrlSchemaController
@@ -212,7 +207,7 @@ public extension DeepLink {
       case _ where rqes.getSchemas(with: urlSchemaController).contains(scheme):
         return .rqes
       default:
-        return .external
+        return nil
       }
     }
   }

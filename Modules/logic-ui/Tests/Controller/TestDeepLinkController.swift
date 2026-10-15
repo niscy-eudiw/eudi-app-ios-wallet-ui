@@ -36,7 +36,7 @@ final class TestDeepLinkController: EudiTest {
       when(mock.remove(forKey: any())).thenDoNothing()
     }
     stub(urlSchemaController) { mock in
-      when(mock.retrieveSchemas(with: any())).thenReturn([])
+      when(mock.retrieveSchemas(with: any())).then { type in Self.mockedSchemas[type] ?? [] }
     }
     stub(walletKitController) { mock in
       when(mock.stopPresentation()).thenDoNothing()
@@ -68,16 +68,12 @@ final class TestDeepLinkController: EudiTest {
     XCTAssertEqual(action, expected)
   }
   
-  func testHasDeepLink_WhenUrlIsNotKnownType_ThenReturnDeepLinkActionWithExternalType() {
-    // Given
-    let expected = Self.mockedExternalDeepLinkAction
+  func testHasDeepLink_WhenTheLinkStartsNoWalletFlow_ThenReturnsNothing() {
     stub(urlSchemaController) { mock in
       when(mock.retrieveSchemas(with: any())).thenReturn([])
     }
-    // When
-    let action = controller.hasDeepLink(url: Self.mockedExternalUrl)
-    // Then
-    XCTAssertEqual(action, expected)
+
+    XCTAssertNil(controller.hasDeepLink(url: Self.mockedExternalUrl))
   }
   
   func testHasDeepLink_WhenUrlIsMalformed_ThenReturnDeepLinkActionNil() {
@@ -161,26 +157,6 @@ final class TestDeepLinkController: EudiTest {
     verify(routerHost).push(with: equal(to: expectedRoute))
   }
 
-  func testHandleDeepLinkAction_WhenRouterReturnsAfterAuthorizationFlowAndActionIsExternal_ThenValidateCachingRemovalAndNoInvocationOfRouter() async {
-    // Given
-    let pendingAction = Self.mockedExternalDeepLinkAction
-    
-    stubHandleDeepLink(
-      action: pendingAction,
-      route: nil,
-      isAfterAuth: true,
-      isScreenForeground: false
-    )
-    
-    // When
-    await controller.handleDeepLinkAction(
-      routerHost: routerHost,
-      deepLinkExecutable: pendingAction
-    )
-    // Then
-    XCTAssertNil(controller.getPendingDeepLinkAction())
-    verify(routerHost, times(0)).push(with: any())
-  }
   
   func testGetPendingDeepLinkAction_WhenAPresentationLinkIsKept_ThenReturnsIt() {
     stub(urlSchemaController) { mock in
@@ -192,10 +168,10 @@ final class TestDeepLinkController: EudiTest {
     XCTAssertEqual(controller.getPendingDeepLinkAction(), Self.mockedOpenId4VPDeepLinkAction)
   }
 
-  func testGetPendingDeepLinkAction_WhenAnExternalLinkIsKept_ThenReturnsIt() {
+  func testGetPendingDeepLinkAction_WhenTheKeptLinkStartsNoWalletFlow_ThenIsNil() {
     controller.cacheDeepLinkURL(url: Self.mockedExternalUrl)
 
-    XCTAssertEqual(controller.getPendingDeepLinkAction(), Self.mockedExternalDeepLinkAction)
+    XCTAssertNil(controller.getPendingDeepLinkAction())
   }
 
   func testGetPendingDeepLinkAction_WhenTheKeptLinkIsMalformed_ThenIsNil() {
@@ -217,21 +193,6 @@ final class TestDeepLinkController: EudiTest {
 
   func testInit_WhenCreated_ThenRemovesALinkAnEarlierBuildKeptInUserDefaults() {
     verify(prefsController).remove(forKey: equal(to: Prefs.Key.cachedDeepLink))
-  }
-
-  func testHandleDeepLinkAction_WhenLockedAndTheLinkStartsNoWalletFlow_ThenItIsDroppedNotKept() async {
-    stub(routerHost) { mock in
-      when(mock.userIsLoggedInWithDocuments()).thenReturn(false)
-      when(mock.userIsLoggedInWithNoDocuments()).thenReturn(false)
-    }
-
-    await controller.handleDeepLinkAction(
-      routerHost: routerHost,
-      deepLinkExecutable: Self.mockedExternalDeepLinkAction
-    )
-
-    XCTAssertNil(controller.getPendingDeepLinkAction())
-    verify(routerHost, never()).push(with: any())
   }
 
   func testHandleDeepLinkAction_WhenLoggedInAndActionIsCredentialOfferOnTheDashboard_ThenPushesTheOfferScreen() async {
@@ -526,31 +487,13 @@ final class TestDeepLinkController: EudiTest {
     try assertOfferRoute(hasDocuments: false, expectedSuccess: .push(.featureDashboardModule(.dashboard)))
   }
 
-  func testHandleDeepLinkAction_WhenALinkOfNoWalletTypeArrivesLoggedIn_ThenItIsDroppedAsOnAndroid() async {
-    stubHandleDeepLink(action: Self.mockedExternalDeepLinkAction, route: nil, isAfterAuth: true, isScreenForeground: true)
-    let stopped = expectation(description: "presentation stopped")
-    stopped.isInverted = true
-    stub(walletKitController) { mock in
-      when(mock.stopPresentation()).then { stopped.fulfill() }
-    }
-
-    await controller.handleDeepLinkAction(routerHost: routerHost, deepLinkExecutable: Self.mockedExternalDeepLinkAction)
-
-    XCTAssertNil(controller.getPendingDeepLinkAction())
-    verify(routerHost, never()).push(with: any())
-    verify(routerHost, never()).popTo(with: any(), inclusive: any())
-    await fulfillment(of: [stopped], timeout: 0.5)
-  }
-
-  func testHandleDeepLinkAction_WhenALinkOfNoWalletTypeArrives_ThenALinkKeptForLaterStaysKept() async {
+  func testHasDeepLink_WhenALinkOfNoWalletTypeArrives_ThenALinkKeptForLaterStaysKept() {
     stub(urlSchemaController) { mock in
       when(mock.retrieveSchemas(with: any())).thenReturn(["eudi-openid4vp", "mdoc-openid4vp"])
     }
     controller.cacheDeepLinkURL(url: Self.mockedOpenId4VPUrl)
-    stubHandleDeepLink(action: Self.mockedExternalDeepLinkAction, route: nil, isAfterAuth: true, isScreenForeground: true)
 
-    await controller.handleDeepLinkAction(routerHost: routerHost, deepLinkExecutable: Self.mockedExternalDeepLinkAction)
-
+    XCTAssertNil(controller.hasDeepLink(url: Self.mockedExternalUrl))
     XCTAssertEqual(controller.getPendingDeepLinkAction(), Self.mockedOpenId4VPDeepLinkAction)
   }
 
@@ -651,16 +594,23 @@ private extension TestDeepLinkController {
   )
   
   static let mockedExternalUrl: URL = URL(string: "https://commission.europa.eu")!
-  
-  static let mockedExternalDeepLinkAction = DeepLink.Executable(
-    link: URLComponents(url: mockedExternalUrl, resolvingAgainstBaseURL: true)!,
-    plainUrl: mockedExternalUrl,
-    action: .external
-  )
+
+  /// The schemes the app registers for each link type, as `Wallet.plist` lists them.
+  static let mockedSchemas: [String: [String]] = [
+    "openid4vp": ["eudi-openid4vp", "mdoc-openid4vp", "openid4vp"],
+    "haip-vp": ["haip-vp"],
+    "credential-offer": ["openid-credential-offer"],
+    "haip-vci": ["haip-vci"],
+    "rqes": ["rqes"]
+  ]
+
+  static let mockedCredentialOfferUrl: URL = URL(string: "openid-credential-offer://?credential_offer_uri=https://issuer.example/offer")!
+
+  static let mockedHaipVciUrl: URL = URL(string: "haip-vci://?credential_offer_uri=https://issuer.example/offer")!
 
   static let mockedCredentialOfferDeepLinkAction = DeepLink.Executable(
-    link: URLComponents(url: mockedExternalUrl, resolvingAgainstBaseURL: true)!,
-    plainUrl: mockedExternalUrl,
+    link: URLComponents(url: mockedCredentialOfferUrl, resolvingAgainstBaseURL: true)!,
+    plainUrl: mockedCredentialOfferUrl,
     action: .credential_offer
   )
 
@@ -671,8 +621,8 @@ private extension TestDeepLinkController {
   )
 
   static let mockedHaipVciDeepLinkAction = DeepLink.Executable(
-    link: URLComponents(url: mockedExternalUrl, resolvingAgainstBaseURL: true)!,
-    plainUrl: mockedExternalUrl,
+    link: URLComponents(url: mockedHaipVciUrl, resolvingAgainstBaseURL: true)!,
+    plainUrl: mockedHaipVciUrl,
     action: .haip_vci
   )
 

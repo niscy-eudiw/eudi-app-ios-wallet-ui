@@ -520,7 +520,6 @@ public extension DeepLink {
     case haip_vci
     case haip_vp
     case rqes
-    case external
 
     static func parseType(
       with scheme: String,
@@ -536,7 +535,7 @@ public extension DeepLink {
       case _ where rqes.getSchemas(with: urlSchemaController).contains(scheme):
         return .rqes
       default:
-        return .external
+        return nil
       }
     }
   }
@@ -555,7 +554,6 @@ public extension DeepLink {
     case haip_vp
     case rqes
     case custom_my_offer
-    case external
 
     static func parseType(
       with scheme: String,
@@ -572,7 +570,7 @@ public extension DeepLink {
       case _ where rqes.getSchemas(with: urlSchemaController).contains(scheme):
         return .rqes
       default:
-        return .external
+        return nil
       }
     }
   }
