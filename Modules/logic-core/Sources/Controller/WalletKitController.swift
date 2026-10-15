@@ -395,9 +395,7 @@ final actor WalletKitControllerImpl: WalletKitController {
   /// A renewed document keeps the original's bookmark, as on Android. A bookmark that cannot be copied
   /// does not fail the renewal.
   func reIssueDocument(identifier: String, isBackgroundOperation: Bool) async throws -> WalletStorage.Document {
-    guard try await fetchRevokedDocumentStatuses()[identifier] == nil else {
-      throw WalletCoreError.documentBlocked
-    }
+    try await refuseReIssueIfBlocked(identifier)
     let document = fetchDocument(with: identifier)
     let isBookmarked = await isDocumentBookmarked(with: identifier)
 

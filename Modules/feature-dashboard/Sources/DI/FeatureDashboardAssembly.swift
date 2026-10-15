@@ -58,7 +58,8 @@ public final class FeatureDashboardAssembly: Assembly {
         walletKitController: r.force(WalletKitController.self),
         prefsController: r.force(PrefsController.self),
         filterValidator: r.force(FilterValidator.self),
-        configLogic: r.force(ConfigLogic.self)
+        configLogic: r.force(ConfigLogic.self),
+        revocationWorkManager: r.force(RevocationWorkManager.self)
       )
     }
 

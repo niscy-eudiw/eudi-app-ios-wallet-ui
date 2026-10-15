@@ -75,6 +75,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
   private let prefsController: PrefsController
   private let filterValidator: FilterValidator
   private let configLogic: ConfigLogic
+  private let revocationWorkManager: RevocationWorkManager
 
   private var filtersStateAsync: AsyncStream<DocumentFiltersPartialState>.Continuation?
 
@@ -82,12 +83,14 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     walletKitController: WalletKitController,
     prefsController: PrefsController,
     filterValidator: FilterValidator,
-    configLogic: ConfigLogic
+    configLogic: ConfigLogic,
+    revocationWorkManager: RevocationWorkManager
   ) {
     self.walletKitController = walletKitController
     self.prefsController = prefsController
     self.filterValidator = filterValidator
     self.configLogic = configLogic
+    self.revocationWorkManager = revocationWorkManager
   }
 
   deinit {
@@ -234,7 +237,22 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
       }
     }
 
+    if !issued.isEmpty {
+      await checkRevocationAfterDeferredReIssue(revocationStatuses: revocationStatuses)
+    }
+
     return .completion(issued: issued, failed: failed)
+  }
+
+  /// Wallet-kit deletes the original of a deferred re-issue when its credential arrives. If a document that had
+  /// a revocation record is gone, the revocation check runs at once, as the Android wallet does, so the new copy's
+  /// status is read without waiting for the interval.
+  private func checkRevocationAfterDeferredReIssue(
+    revocationStatuses: [String: DocumentRevocationStatus]
+  ) async {
+    let remainingIds = Set(await walletKitController.fetchAllDocuments().map(\.id))
+    guard let goneId = revocationStatuses.keys.first(where: { !remainingIds.contains($0) }) else { return }
+    await revocationWorkManager.checkAfterReIssue(of: goneId)
   }
 
   private func createFiltersGroup() -> Filters {

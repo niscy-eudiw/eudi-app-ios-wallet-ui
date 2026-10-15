@@ -80,10 +80,7 @@ final actor DocumentDetailsInteractorImpl: DocumentDetailsInteractor {
   /// screen is open.
   func reIssueDocument(identifier: String) async -> DocumentDetailsReIssuancePartialState {
     do {
-      let blockedDocuments = try await walletController.fetchRevokedDocumentStatuses()
-      guard blockedDocuments[identifier] == nil else {
-        return .failure(WalletCoreError.documentBlocked)
-      }
+      try await walletController.refuseReIssueIfBlocked(identifier)
       _ = try await sessionController.duringExternalFlow {
         try await walletController.reIssueDocument(
           identifier: identifier,

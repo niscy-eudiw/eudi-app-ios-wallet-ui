@@ -9261,6 +9261,18 @@ import Cuckoo
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/WalletKitController+Extensions.swift'
+
+import Cuckoo
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_authentication
+@testable import logic_assembly
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/WalletStorage.Document+Extensions.swift'
 
 import Cuckoo
