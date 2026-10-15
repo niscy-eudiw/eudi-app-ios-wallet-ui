@@ -44,15 +44,18 @@ struct WalletKitConfigImpl: WalletKitConfig {
   let configLogic: ConfigLogic
   let transactionLoggerImpl: TransactionLogger
   let walletKitAttestationProvider: WalletKitAttestationProvider
+  let prefsController: PrefsController
 
   init(
     configLogic: ConfigLogic,
     transactionLogger: TransactionLogger,
-    walletKitAttestationProvider: WalletKitAttestationProvider
+    walletKitAttestationProvider: WalletKitAttestationProvider,
+    prefsController: PrefsController
   ) {
     self.configLogic = configLogic
     self.transactionLoggerImpl = transactionLogger
     self.walletKitAttestationProvider = walletKitAttestationProvider
+    self.prefsController = prefsController
   }
 
   var issuersConfig: [String: VciConfig] {
@@ -64,12 +67,20 @@ struct WalletKitConfigImpl: WalletKitConfig {
             config: .init(
                 credentialIssuerURL: "your_demo_issuer_url",
                 clientId: "your_demo_client_id_or_nil",
-                keyAttestationsConfig: .init(walletAttestationsProvider: walletKitAttestationProvider),
+                keyAttestationsConfig: .init(
+                  walletAttestationsProvider: walletKitAttestationProvider,
+                  popKeyOptions: KeyOptions(
+                    secureAreaName: SecureEnclaveSecureArea.name,
+                    accessControl: .empty
+                  )
+                ),
                 authFlowRedirectionURI: URL(string: "your_demo_redirect")!,
                 parUsage: .required(authorizationCodeDPoPBinding: should_bind_par_dpop_bool),
                 allowPlainJwtProof: should_allow_plain_jwt_proof_bool,
                 requireDpop: should_use_dpop_bool,
-                cacheIssuerMetadata: should_cache_metadata_bool
+                issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
+                validateRegistrationCertificate: validateIssuerRegistrationCertificate,
+                cacheIssuerMetadata: false
             ),
             order: issuer_order_int
           )
@@ -81,12 +92,20 @@ struct WalletKitConfigImpl: WalletKitConfig {
               config: .init(
                   credentialIssuerURL: "your_dev_issuer_url",
                   clientId: "your_dev_client_id_or_nil",
-                  keyAttestationsConfig: .init(walletAttestationsProvider: walletKitAttestationProvider),
+                  keyAttestationsConfig: .init(
+                    walletAttestationsProvider: walletKitAttestationProvider,
+                    popKeyOptions: KeyOptions(
+                      secureAreaName: SecureEnclaveSecureArea.name,
+                      accessControl: .empty
+                    )
+                  ),
                   authFlowRedirectionURI: URL(string: "your_dev_redirect")!,
                   parUsage: .required(authorizationCodeDPoPBinding: should_bind_par_dpop_bool),
                   allowPlainJwtProof: should_allow_plain_jwt_proof_bool,
                   requireDpop: should_use_dpop_bool,
-                  cacheIssuerMetadata: should_cache_metadata_bool
+                  issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
+                  validateRegistrationCertificate: validateIssuerRegistrationCertificate,
+                  cacheIssuerMetadata: false
               ),
               order: issuer_order_int
             )
@@ -98,6 +117,16 @@ struct WalletKitConfigImpl: WalletKitConfig {
 	}
 }
 ```
+
+Keep the three parameters the reference app sets on every issuer, or a copied entry falls back to
+WalletKit's defaults. `issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy` requires
+signed issuer metadata whose signer chains to the trusted lists, since `requireSignedMetadata` is
+`true`; the default, `.ignoreSigned`, accepts unsigned metadata. `validateRegistrationCertificate`
+passes the "Check Registration Certificates" setting through (see
+`validateIssuerRegistrationCertificate` below); the default is `false`. `popKeyOptions` keeps the
+client-attestation proof-of-possession key in the Secure Enclave; without it WalletKit creates a
+software key in the Keychain. `cacheIssuerMetadata` is accepted and ignored by WalletKit 0.54.8; the
+app passes `false`.
 
 `allowPlainJwtProof` selects the credential proof policy for that issuer. Leave it `false` (the default) to stay HAIP-compliant: the wallet sends only attested proofs, either the `attestation` proof type or a `jwt` proof carrying a key attestation from the Wallet Provider. Set it to `true` only for an issuer that does not support key attestation and requires a plain JWT proof; the wallet then also accepts plain `jwt` proofs signed with ES256, ES384 or ES512, and the proof key is no longer attested. The reference issuers require attested proofs, so every issuer in this repo sets it to `false`.
 
@@ -229,11 +258,13 @@ The app treats the two directions differently, and the asymmetry is deliberate:
 
 * **Issuance refuses.** A document is stored only when the issuer's registration is verified and
   covers what is being issued. A registration that fails validation, or that does not list the
-  offered attestation, stops the flow on the "Issuance blocked" alert. A credential offer is
-  resolved before anything is issued, so that refusal happens up front; the issuer-list flow only
-  learns the outcome after the kit has issued, so any document it already wrote to storage is
-  deleted behind the scenes. The same applies to a registration that was never established at all —
-  but only while `wrprcVciTrustPolicy` is `.enforce`; see below.
+  offered attestation, stops the flow on the "Issuance blocked" alert. Both flows resolve the
+  registration before anything is issued, so that refusal happens up front: a credential offer is
+  resolved first, and the issuer-list flow asks for the issuer's registration before it starts
+  (`AddDocumentInteractorImpl.issueDocument`). The outcome is checked again after the kit has
+  issued, as a fallback, and a refusal there deletes any document already written to storage. A
+  registration that was never established is refused as well; see below for the one case that
+  depends on `wrprcVciTrustPolicy`.
 * **Presentation warns.** A request whose registration could not be validated, or that reaches
   beyond the registered scope, still reaches the consent screen. It is shown without the verified
   badge, the claims outside the registered scope are marked, and Share stays disabled until the user
@@ -258,21 +289,23 @@ as well (`PresentationRequest.isTrusted`), as the Android wallet does. With the 
 identifier schemes, WalletKit refuses a verifier that does not authenticate before the consent screen,
 so the warning does not arise there in practice.
 
-Two settings govern the issuance side, and both must be on for it to refuse anything. The first of
-them governs presentation as well:
+Two settings govern the issuance side. Nothing is refused on this basis while the first is off, and
+the first governs presentation as well:
 
 | Setting | Where | Effect |
 |---|---|---|
-| `validateIssuerRegistrationCertificate` | `WalletKitConfig` | Turns WRPRC validation on, for OpenID4VCI and for presentation alike. It is exposed as **Check Registration Certificates** in Settings and **defaults to off**. Off means no registration is ever evaluated: issuance never refuses on this basis, and no verifier registration is resolved or shown. An issuer that publishes no `issuer_info` never reaches the validation hook at all, so no registration is established and the app refuses on that basis; enabling this against such an issuer fails every issuance. |
-| `wrprcVciTrustPolicy` | `TrustConfiguration` | Decides what a failed WRPRC check does to an **issuance**. `.enforce` refuses: an expired, revoked or suspended certificate, a missing status list, a broken trust chain, or an offer reaching past the registered scope all stop the flow. `.warning` records the problem and lets the issuance through. |
+| `validateIssuerRegistrationCertificate` | `WalletKitConfig` | Turns WRPRC validation on, for OpenID4VCI and for presentation alike. It is exposed as **Check Registration Certificates** in Settings and **defaults to off**; a change takes effect after the app restarts. Off means no registration is ever evaluated: issuance never refuses on this basis, and no verifier registration is resolved or shown. An issuer that publishes no `issuer_info` never reaches the validation hook at all, so no registration is established and the app refuses on that basis; enabling this against such an issuer fails every issuance. |
+| `wrprcVciTrustPolicy` | `TrustConfiguration` | Decides what a failed WRPRC check does to an **issuance** inside WalletKit. `.enforce` refuses: an expired, revoked or suspended certificate, a missing status list, a broken trust chain, or an offer reaching past the registered scope all stop the flow. `.warning` lets WalletKit go on, but the app refuses an issuance on any registration warning, whatever the policy (`WalletKitController.makeIssuerRegistration`), so the same cases are still refused. The one difference is a registration certificate that cannot be decoded at all: no registration is then established, and only `.enforce` refuses the issuance. |
 
 `wrprcVpTrustPolicy` is the same decision for **presentations**, and the app deliberately sets it to
 `.warning` so a failed check reaches the consent screen behind an acknowledgement rather than ending
 the flow. A single policy governed both directions until wallet-kit 0.40.2, which could not express
 that asymmetry.
 
-Note what neither policy covers: a status list that cannot be retrieved is always a warning, never a
-refusal, so a transient network failure does not block on its own.
+Note what neither policy changes: WalletKit reports a WRPRC status list that cannot be retrieved only
+as a warning. The app refuses an issuance on any registration warning, so an unreachable status list
+blocks the issuance, a transient network failure included; a presentation reaches the consent screen
+behind the warning.
 
 4. VP API
 
@@ -297,15 +330,18 @@ struct WalletKitConfigImpl: WalletKitConfig {
   let configLogic: ConfigLogic
   let transactionLoggerImpl: TransactionLogger
   let walletKitAttestationProvider: WalletKitAttestationProvider
+  let prefsController: PrefsController
 
   init(
     configLogic: ConfigLogic,
     transactionLogger: TransactionLogger,
-    walletKitAttestationProvider: WalletKitAttestationProvider
+    walletKitAttestationProvider: WalletKitAttestationProvider,
+    prefsController: PrefsController
   ) {
     self.configLogic = configLogic
     self.transactionLoggerImpl = transactionLogger
     self.walletKitAttestationProvider = walletKitAttestationProvider
+    self.prefsController = prefsController
   }
 
   var vpConfig: OpenId4VpConfiguration {
@@ -318,15 +354,26 @@ struct WalletKitConfigImpl: WalletKitConfig {
             PreregisteredClient(
               clientId: "your_verifier_id",
               verifierApiUri: "your_verifier_url",
-              verifierLegalName: "your_verifier_legal_name"
+              verifierLegalName: "your_verifier_legal_name",
+              webKeys: WebKeySet(keys: your_verifier_web_keys)
             )
           ]
         )
-      ]
+      ],
+      supportedTransactionDataTypes: supportedTransactionDataTypes,
+      validateRegistrationCertificate: validateIssuerRegistrationCertificate
     )
   }
 }
 ```
+
+`webKeys` is the verifier's public key set. The first key verifies the verifier's signed request,
+which this WalletKit initialiser expects to be signed with RS256; `WebKeySet(_:)` also parses a JWKS
+JSON string. Keep the last two arguments, as the reference app passes them. The initialiser's
+defaults are an empty `supportedTransactionDataTypes`, which rejects every request that carries
+transaction data, RQES requests included, and `validateRegistrationCertificate: true`, which turns
+WRPRC checks on whatever the "Check Registration Certificates" setting says. `verifierApiUri` is a
+required argument that WalletKit 0.54.8 accepts and ignores.
 
 5. RQES
 
@@ -432,10 +479,10 @@ production values for every config surface listed below.
 | Configuration area | Source file | Production value to provide |
 | --- | --- | --- |
 | Build variant/type | `Wallet/Config/*.xcconfig`, `ConfigLogic.swift` | `BUILD_VARIANT = PROD`, `BUILD_TYPE = RELEASE` for production archives. |
-| Issuers | `WalletKitConfig.swift` | Production OpenID4VCI issuer URLs, client IDs, redirect URIs, PAR/DPoP policy, proof-type policy (`allowPlainJwtProof`), metadata caching policy, and display order. |
+| Issuers | `WalletKitConfig.swift` | Production OpenID4VCI issuer URLs, client IDs, redirect URIs, PAR/DPoP policy, proof-type policy (`allowPlainJwtProof`), signed-metadata policy (`issuerMetadataPolicy`), registration check (`validateRegistrationCertificate`), PoP key options (`popKeyOptions`), and display order. `cacheIssuerMetadata` has no effect in WalletKit 0.54.8. |
 | Wallet provider attestation | `WalletProviderAttestationConfig.swift` | Production Wallet Provider host used for wallet/key attestation. |
 | Reader trust anchors | `WalletKitConfig.swift`, certificate resources | Production IACA/reader/verifier trust anchors only. |
-| OpenID4VP | `WalletKitConfig.swift` | Approved client ID schemes, preregistered verifier entries where needed, and partial claim disclosure policy. |
+| OpenID4VP | `WalletKitConfig.swift` | Approved client ID schemes, preregistered verifier entries where needed, the accepted transaction data types (`supportedTransactionDataTypes`), and the registration check (`validateRegistrationCertificate`). |
 | WalletKit storage/auth | `WalletKitConfig.swift`, `ConfigLogic.swift` | Production Keychain service/access group and `userAuthenticationRequired` decision. For LoA High PID and other high-assurance EAA/QEAA credentials, require strong local authentication and Keychain/Secure Enclave-backed protection unless an approved remote high-assurance key protection design replaces local key use. |
 | WalletKit attestation key options | `WalletKitConfig.swift` (`keyOptions`) | Curve, secure area, access protection, access control, and key purposes used when creating attestation/proof keys during issuance, reissuance, deferred issuance, and resume. For LoA High PID and other high-assurance EAA/QEAA credentials, require Secure Enclave (with `.P256`) plus appropriate `accessProtection`/`accessControl`, or an approved remote high-assurance key protection design. |
 | Session lock | `AuthenticationConfig.swift` in `logic-authentication`, `ConfigUiLogic.swift` in `logic-ui` | Confirm `backgroundLockTimeout`, `idleLockTimeout`, `protectedFlowLockTimeout` and the `protectedFlowRouteKeys` meet policy; see [Session lock configuration](#session-lock-configuration). |
@@ -443,7 +490,7 @@ production values for every config surface listed below.
 | Document / WalletKit key storage | `EudiWalletConfiguration`, `ConfigLogic.keyChainConfig`, WalletKit-supported storage APIs | Default app configuration uses WalletKit storage with the configured Keychain service and access group. If production requires alternative local secure storage, a remote-backed key service, or an external protection SDK, use WalletKit-supported extension points and document the exact SDK/API. Start-up reads wallet-storage's `KeyChainStorageService` items to decide whether PIN creation is safe (`WalletKitController.hasStoredDocuments()`); another `DataStorageService` needs its own implementation of that check, see GO_LIVE [PIN Storage](GO_LIVE.md#pin-storage). |
 | Wallet attestation key storage | `WalletKitAttestationProviderImpl`, `WalletProviderAttestationConfig.swift`, Wallet Provider policy | Use when wallet attestation keys must be generated, stored, attested, or unlocked by a custom provider, platform-backed key policy, or remote high-assurance key service. |
 | Issuance proof / DPoP key handling | `WalletKitConfig.swift` issuer configuration and WalletKit OpenID4VCI integration | Prefer DPoP where supported. Use WalletKit-supported custom key handling when proof-of-possession keys require specific authentication, Secure Enclave/Keychain policy, remote high-assurance protection, or issuer-specific key policy. |
-| Remote presentation ephemeral key handling | `WalletKitConfig.swift`, `WalletKitController.startRemotePresentation(...)`, WalletKit OpenID4VP integration | Ephemeral protocol key material must be generated per transaction, not reused across verifiers, and not persisted beyond the protocol flow. If WalletKit exposes a dedicated ephemeral key-storage option, configure it in the production integration and document the exact SDK API. |
+| Remote presentation ephemeral key handling | `WalletKitConfig.swift`, `WalletKitController.startSameDevicePresentation(deepLink:)` and `startCrossDevicePresentation(urlString:)`, WalletKit OpenID4VP integration | Ephemeral protocol key material must be generated per transaction, not reused across verifiers, and not persisted beyond the protocol flow. If WalletKit exposes a dedicated ephemeral key-storage option, configure it in the production integration and document the exact SDK API. |
 | Document issuance | `WalletKitConfig.swift` | Production credential policy, batch size, and reissuance thresholds. |
 | Revocation/status | `WalletKitConfig.swift` | Production status-check interval and failure behavior. |
 | Trust Mark | `WalletKitConfig.swift` (`trustMarkSource`) | Production Trust Mark resource URL, list of certified wallets URL, and the wallet's certification page URL. See [Trust Mark configuration](#trust-mark-configuration). |
@@ -459,7 +506,7 @@ requirements are documented in the [production go-live guide](GO_LIVE.md).
 
 According to the specifications, issuance, presentation, and RQES require deep-linking for the same device flows.
 
-If you want to change or add your own, you can do it by adjusting the *Wallet.plist* file. The URL schemes live under the `CFBundleURLTypes` key:
+If you want to change or add your own, you can do it by adjusting the *Wallet.plist* file. The URL schemes live under the `CFBundleURLTypes` key. The app reads only the first entry of that array (`UrlSchemaControllerImpl.retrieveSchemas(with:)`), so add a scheme to that entry's `CFBundleURLSchemes`, not as a new entry:
 
 ```xml
 <key>CFBundleURLTypes</key>
@@ -578,9 +625,23 @@ public extension DeepLink {
 }
 ```
 
+A scheme belongs to an action when it contains the action's name with `_` written as `-`, so
+`custom_my_offer` finds `custom-my-offer`. `DeepLinkControllerImpl.handleDeepLinkAction` in
+`Modules/logic-ui/Sources/Controller/DeepLinkController.swift` switches over every `Action` case, so
+add the new case to the branch that handles its flow, as `haip_vci` is, or the module does not
+compile:
+
+```swift
+    switch deepLinkExecutable.action {
+    // ...
+    case .credential_offer, .haip_vci, .custom_my_offer:
+      // ...
+    }
+```
+
 ## Scoped Issuance Document Configuration
 
-The credential configuration is derived directly from the issuer's metadata. The issuer URL is configured via the *VciConfig* property inside the logic-core module in *WalletKitConfigImpl*.
+The credential configuration is derived directly from the issuer's metadata. The issuer URL is configured via the `issuersConfig` property (its `VciConfig` entries) inside the logic-core module in *WalletKitConfigImpl*.
 If you want to add or adjust the displayed scoped documents, you must modify the issuer's metadata, and the wallet will automatically resolve your changes.
 
 ## How to work with self-signed certificates
@@ -595,9 +656,9 @@ Branding and theming are split across three layers:
    and in-app images, all reachable through `Theme.shared` (a `ThemeProtocol`) and its five managers
    (`color`, `image`, `shape`, `font`, `dimension`).
 2. **Branding assets** — app icon, app display name, bundle id, splash/launch screen, deep-link
-   schemes, and brand strings, defined in the `Wallet/` app target (`project.pbxproj`,
-   `Assets.xcassets`, `Wallet.plist`, `Config/*.xcconfig`) plus the `logic-resources` images and
-   strings.
+   schemes, and brand strings, defined in the `Wallet/` app target (`Assets.xcassets`,
+   `Wallet.plist`, `Config/*.xcconfig`), its build settings in
+   `EudiReferenceWallet.xcodeproj/project.pbxproj`, plus the `logic-resources` images and strings.
 3. **Sub-SDK theming** — the RQES signing UI carries its own theme and translations (see the RQES
    subsection under [General configuration](#general-configuration)).
 
@@ -650,12 +711,12 @@ public final class LogicAuthAssembly: Assembly {
 }
 ```
 
-To use your own storage, implement the *PinStorageProvider* protocol and **replace** the `KeychainPinStorageProvider` registration above inside *LogicAuthAssembly*
+To use your own storage, implement the *PinStorageProvider* protocol and **replace** the `KeychainPinStorageProvider` registration above inside *LogicAuthAssembly*. The protocol is internal to the logic-authentication module, so the implementation must live in that module too, under a name of its own.
 
 Implementation Example:
 
 ```swift
-final class KeychainPinStorageProvider: PinStorageProvider {
+final class CustomPinStorageProvider: PinStorageProvider {
 
   private let keyChainController: KeyChainController
 
@@ -681,7 +742,7 @@ Config Example:
 
 ```swift
 container.register(PinStorageProvider.self) { r in
-  KeychainPinStorageProvider(keyChainController: r.force(KeyChainController.self))
+  CustomPinStorageProvider(keyChainController: r.force(KeyChainController.self))
 }
 .inObjectScope(ObjectScope.graph)
 ```
@@ -700,7 +761,7 @@ The PIN storage layer handles hashing, persistence, and validation. Brute-force 
 
 ## PIN throttle configuration
 
-The application protects against brute-force PIN attempts via an escalating lockout mechanism. After a configurable number of consecutive failed attempts the PIN input is disabled for an increasing duration. Lockout state is persisted in the iOS Keychain via `KeyChainController` (using the shared App-Group access group, so the main app and the document-provider extension share state), so it survives process death, device reboot, and app updates. State is reset on any successful PIN or biometric authentication.
+The application protects against brute-force PIN attempts via an escalating lockout mechanism. After a configurable number of consecutive failed attempts the PIN input is disabled for an increasing duration. Lockout state is persisted in the iOS Keychain via `KeyChainController` (using the shared keychain access group, so the main app and the document-provider extension share state), so it survives process death, device reboot, and app updates. State is reset on any successful PIN or biometric authentication.
 
 The policy is configurable via the `AuthenticationConfig` protocol inside the `logic-authentication` module:
 
@@ -766,7 +827,7 @@ container.register(AuthenticationConfig.self) { _ in
 The lockout is enforced by `PinThrottleController` and applied wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, and the Document Provider extension before it shows a request and again on Accept) and in the change-PIN validation step (`QuickPinViewModel`). While locked:
 
 * The PIN input field is disabled (no keyboard, no edits).
-* The proceed button is disabled.
+* No PIN is submitted. The PIN screens have no proceed button: they submit on the sixth digit, which is ignored while locked.
 * The existing inline error slot of the PIN view shows a countdown message formatted from the `quick_pin_locked_out` string resource. The message takes two format arguments — the configured `maxFailedPinAttempts` and the remaining time as `mm:ss` — so changing the config values updates the user-facing message automatically.
 * On screens that offer biometrics, the biometric icon stays interactive. A successful biometric authentication clears the throttle.
 
@@ -836,7 +897,7 @@ protocol AnalyticsConfig: Sendable {
 }
 ```
 
-You can implement the *AnalyticsProvider* protocol and add it to your *AnalyticsConfigImpl* `analyticsProviders` variable (the value typically carries the provider's token/key). You do **not** register `AnalyticsConfigImpl` in the DI graph yourself: `LogicAnalyticsAssembly` discovers it at runtime by name via the Objective-C runtime (`NSClassFromString("AnalyticsConfigImpl")`) and registers it automatically. For this to work, `AnalyticsConfigImpl` **must be an `NSObject` subclass named exactly `AnalyticsConfigImpl`** — a `struct` fails the runtime cast and analytics is silently skipped.
+You can implement the *AnalyticsProvider* protocol and add it to your *AnalyticsConfigImpl* `analyticsProviders` variable (the value typically carries the provider's token/key). You do **not** register `AnalyticsConfigImpl` in the DI graph yourself: `LogicAnalyticsAssembly` discovers it at runtime by name via the Objective-C runtime (`NSClassFromString("AnalyticsConfigImpl")`) and registers it automatically. For this to work, `AnalyticsConfigImpl` **must be an `NSObject` subclass that the Objective-C runtime knows as `AnalyticsConfigImpl`**: declare it `@objc(AnalyticsConfigImpl)`, since `NSClassFromString` does not find a Swift class by its unqualified name. Without the attribute, or as a `struct`, the lookup or the runtime cast fails and analytics is silently skipped. `AnalyticsConfig` and `AnalyticsProvider` are internal to the logic-analytics module, so `AnalyticsConfigImpl` and your provider must live in that module.
 
 Implementation Example:
 
@@ -867,6 +928,7 @@ struct AppCenterProvider: AnalyticsProvider {
 Config Example:
 
 ```swift
+@objc(AnalyticsConfigImpl)
 final class AnalyticsConfigImpl: NSObject, AnalyticsConfig {
   var analyticsProviders: [String: AnalyticsProvider] {
     return ["YOUR_OWN_KEY": AppCenterProvider()]
@@ -970,7 +1032,7 @@ Registrations are reconciled against wallet storage after every operation that a
 - Extension target has `EudiReferenceWalletIDProvider.entitlements` assigned.
 - `SHARED_APP_GROUP_IDENTIFIER` is present for all extension configurations.
 - Main app and extension resolve to the same runtime keychain access group.
-- On iOS 26+, registered CBOR documents appear in the extension request flow.
+- On iOS 26.2 and later, registered CBOR documents appear in the extension request flow.
 - The extension asks for the PIN or biometrics before it shows a request, and again on Accept.
 - The requester is shown without the verified badge and with the warning that its identity could not be
   verified; Accept waits for its acknowledgement. `DcApiHandler` returns no reader trust verdict (see GO_LIVE).

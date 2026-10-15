@@ -160,9 +160,9 @@ The application is a modular iOS project. Important modules and targets for prod
 | `logic-api` | `URLSession` provider and network request helpers. |
 | `logic-analytics` | Optional analytics provider integration. |
 | `logic-resources` | Strings, images, theme, localized resources. |
-| `logic-ui` | Shared SwiftUI components, deep-link parsing, scanner, request UI, interaction tracking for the idle lock. |
+| `logic-ui` | Shared SwiftUI components, navigation, deep-link parsing and handling, interaction tracking for the idle lock. |
 | `logic-assembly` | Dependency injection graph, app routing assembly, and the session lock's scene driver (`SessionLockController`). |
-| `feature-*` | User-facing flows for startup, dashboard, issuance, presentation, proximity, and common features. |
+| `feature-*` | User-facing flows for startup, dashboard, issuance, presentation, proximity, and common features; `feature-common` holds the QR scanner and the request screens. |
 | `logic-test` / `feature-test` | Shared test utilities, mock generation helpers, and test fixtures; not included in production targets. |
 | `fastlane` | Test, versioning, archive, TestFlight/App Store upload, tagging, and GitHub release automation. |
 
@@ -231,7 +231,7 @@ Keep these files under strict review:
 | `fastlane/Fastfile` | Defines iOS test, versioning, archive, upload, tag, and release lanes. |
 | `Modules/logic-resources/Sources/Resources/Color.xcassets` | Brand color palette (light and dark appearances) and system/semantic color overrides. See [THEMING.md](THEMING.md). |
 | `Modules/logic-resources/Sources/Resources/Images.xcassets` | In-app brand logos and illustrations used on the splash and headers. |
-| `Wallet/Assets.xcassets` | Per-variant app icons (`AppIcon`, `AppIconDev`) and the global `AccentColor`. |
+| `Wallet/Assets.xcassets` | Per-variant app icons (`AppIcon`, `AppIconDev`) and an `AccentColor` set. No build setting names it (`ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME` is not set), so it has no effect. |
 
 ## Create A Production Scheme And Configuration
 
@@ -378,7 +378,7 @@ Production identity values must be final before external testing.
 | Extension bundle identifier | Extension target `PRODUCT_BUNDLE_IDENTIFIER` | Use a child identifier of the main app, for example `eu.example.wallet.EudiReferenceWalletIDProvider`. |
 | App display name | `INFOPLIST_KEY_CFBundleDisplayName` | Use the official wallet name approved for the Member State or wallet provider. |
 | App icon | Asset catalogs and target settings | Replace reference assets with production brand assets. |
-| Apple team | `DEVELOPMENT_TEAM`, `APP_TEAM_ID`, App Store Connect | Use the production Apple Developer Program team. |
+| Apple team | `DEVELOPMENT_TEAM`, App Store Connect | Use the production Apple Developer Program team. The `Team ID` keys in `Wallet.plist` and `WalletIdProvider.plist` refer to `$(APP_TEAM_ID)`, which no build setting defines and no code reads; define it or remove the keys. |
 | Version | `MARKETING_VERSION`, Fastlane lane mutation | Use the approved public versioning scheme. |
 | Build number | `CURRENT_PROJECT_VERSION`, `CFBundleVersion`, Fastlane lane mutation | Must monotonically increase for App Store Connect. |
 | Minimum iOS | Swift packages and project deployment target | Current packages target iOS 17. Confirm this with the device support policy. |
@@ -405,7 +405,7 @@ Surfaces to review before release:
 | Color palette (light and dark) | `Modules/logic-resources/Sources/Resources/Color.xcassets` | Brand colorsets plus system/semantic overrides; add an `accent` colorset. Set both appearances and verify contrast. |
 | Typography and fonts | `Modules/logic-resources/Sources/Resources/` (+ a `WalletFontConfig.plist` you add) | Default is the system font (San Francisco). No font files or `WalletFontConfig.plist` ship by default; add them only if your brand requires a custom face. |
 | Shapes | `Modules/logic-resources/Sources/Manager/ShapeManager.swift` | Corner radii. |
-| In-app logos | `Modules/logic-resources/Sources/Resources/Images.xcassets` (`logo`, `EUDI-text`, illustrations) | Used on the splash and content headers; keep the imageset names. |
+| In-app logos | `Modules/logic-resources/Sources/Resources/Images.xcassets` (`logo`, `logo-eu-digital-indentity-wallet`, illustrations) | Used on the splash and content headers; keep the imageset names. |
 | App icon | `Wallet/Assets.xcassets` — `AppIcon` and `AppIconDev` | One per build variant. |
 | Splash / launch screen | in-app `StartupView` (`logo` on `background`) and the OS launch screen (`INFOPLIST_KEY_UILaunchScreen_Generation`) | The generated launch screen is blank by default. |
 | Status bar and toolbars | `Modules/logic-ui/Sources/Config/ConfigUiLogic.swift` | Per-screen toolbar background map. |
@@ -452,8 +452,11 @@ Signing checks:
 
 ```bash
 codesign -d --entitlements :- build/EudiWalletProd.xcarchive/Products/Applications/EudiWallet.app
-codesign -d --entitlements :- build/EudiWalletProd.xcarchive/Products/Applications/EudiWallet.app/PlugIns/EudiReferenceWalletIDProvider.appex
+codesign -d --entitlements :- build/EudiWalletProd.xcarchive/Products/Applications/EudiWallet.app/Extensions/EudiReferenceWalletIDProvider.appex
 ```
+
+The Identity Document Provider is an ExtensionKit extension, so it is embedded under `Extensions/`,
+not `PlugIns/`.
 
 Archive the output as release evidence.
 
@@ -498,6 +501,7 @@ Example production environment variables:
 | `APP_TAG` | Tag namespace or brand segment. |
 | `APP_BUNDLE_ID` | Production main app bundle identifier. |
 | `APP_PROVISION_PROFILE` | Main app distribution provisioning profile name. |
+| `APP_IPA_PATH` | IPA that the `upload_appstore` lane passes to `pilot`. |
 | `APP_EXTENSION_BUNDLE_ID` | Identity Document Provider extension bundle identifier. |
 | `APP_EXTENSION_PROVISION_PROFILE` | Extension distribution provisioning profile name. |
 | `CONNECT_KEY_ID` | App Store Connect API key ID. |
@@ -507,8 +511,9 @@ Example production environment variables:
 | `CONNECT_ITC_TEAM_ID` | App Store Connect team ID. |
 | `CONNECT_TEAM_NAME` | Developer team name. |
 | `CONNECT_TEAM_ID` | Developer team ID. |
-| `TESTFLIGHT_GROUPS` | Comma-separated TestFlight groups. |
+| `TESTFLIGHT_GROUPS` | Comma-separated TestFlight groups. Passed to `pilot`, which ignores them because the upload lane does not wait for build processing (see `fastlane/USAGE.md`). |
 | `PROD_REMOTE_REPO` | Optional remote used to push production tags. |
+| `DEV_REMOTE_REPO` | Optional second remote that receives the same tag. The `upload_tag` lane sets `origin` to each of these URLs in turn and does not restore it. |
 | `GITHUB_RELEASE_REPO` | Optional GitHub release repository. |
 | `GITHUB_RELEASE_TOKEN` | Optional token used to create GitHub releases. |
 
@@ -772,7 +777,7 @@ Production meaning:
 | --- | --- | --- |
 | `.x509SanDns` | Verifier client identity is bound to a DNS name in an X.509 certificate. | Use when verifier certificates and trust anchors are managed and audited. |
 | `.x509Hash` | Verifier identity is bound to a certificate hash. | Use when the verifier ecosystem requires hash-based certificate binding. |
-| `.preregistered` | Verifiers are explicitly configured in the wallet. | Use for closed pilots or controlled ecosystems. Add production verifier API URL, legal name, and client ID. |
+| `.preregistered` | Verifiers are explicitly configured in the wallet. | Use for closed pilots or controlled ecosystems. Add the legal name, client ID and request-signing keys. The API URL is a required argument but has no effect. |
 | `supportedTransactionDataTypes` | OpenID4VP `transaction_data` types the wallet accepts. The OpenID4VP library rejects any request whose transaction data type is not listed; an empty list rejects every request that carries transaction data. The app accepts `.default()` (the library's placeholder type `transaction_data`) and the CSC `https://cloudsignatureconsortium.org/2025/qes-approval` and `https://cloudsignatureconsortium.org/2025/qes` types. | List only the types your wallet can display to the user. Drop `.default()` unless a production verifier uses it. |
 | `validateRegistrationCertificate` | Whether the verifier's WRP registration certificate is validated during OpenID4VP. Set from `validateIssuerRegistrationCertificate`. | See [Registration Certificates: The Second Trust Layer](#registration-certificates-the-second-trust-layer). |
 
@@ -791,7 +796,8 @@ var vpConfig: OpenId4VpConfiguration {
           PreregisteredClient(
             clientId: "my-production-verifier-client-id",
             verifierApiUri: "https://verifier.example.eu",
-            verifierLegalName: "Example Member State Verifier"
+            verifierLegalName: "Example Member State Verifier",
+            webKeys: WebKeySet(keys: productionVerifierSigningKeys)
           )
         ]
       )
@@ -802,9 +808,15 @@ var vpConfig: OpenId4VpConfiguration {
 }
 ```
 
+`productionVerifierSigningKeys` stands for the verifier's public request-signing keys, an array of
+`WebKeySet.Key` that you define.
+
 Rules:
 
-* `verifierApiUri` must be HTTPS.
+* `webKeys` is required. This initializer, from WalletKit, checks the request signature with the
+  first key of the set and RS256. For another algorithm use
+  `PreregisteredClient(clientId:legalName:jarSigningAlg:jwkSetSource:)`.
+* WalletKit 0.54.8 accepts `verifierApiUri` and does not keep it, so the value has no effect.
 * `verifierLegalName` must be the official entity name shown to users.
 * `clientId` must match verifier registration and protocol profile.
 * Do not include development verifier URLs in production.
@@ -985,10 +997,41 @@ var staticRootCertificates: [Data] {
 }
 ```
 
+`trustConfiguration` also decides how each check applies:
+
+* `defaultPolicy` governs the certificate that signs each issued document, validated against the
+  issuer trusted lists. `.enforce` refuses a document whose signer chain is not trusted: it is not
+  stored and the issuance fails. `.warning` stores the document anyway, and WalletKit does not report
+  the failure to the app. `docTypePolicies` sets the policy per doc type. The reference app enforces
+  for the PID only (`mDocPid` and `sdJwtPid`) and warns for every other attestation, because only the
+  PID doc types are classified (`contextTypeMappings`): a doc type with no verification context
+  cannot be validated, so enforcing it would refuse every issuance of it.
+* An SD-JWT whose header carries no `x5c` chain is not checked against the trusted lists, even under
+  `.enforce`. WalletKit takes the signing key from the issuer's published metadata by `kid` instead.
+  This holds for the SD-JWT PID as well.
+* `requireSignedMetadata: true` requires signed issuer metadata and validates its signing
+  certificate against the access-certificate list (`wrpacProviders`). It authenticates the metadata
+  document, not the certificate that signs the issued documents, which is the `defaultPolicy` check.
+  The app passes it to each issuer as `issuerMetadataPolicy`; see
+  [Issuer Configuration: `issuersConfig`](#issuer-configuration-issuersconfig).
+* `statusTrustPolicy` governs the signer of each status list, validated against the
+  access-certificate list. `.enforce` fails the status check when the signer is not trusted; the app
+  then records a refresh failure and the document keeps its last known state. `.warning`, the
+  reference value, accepts the list whatever its signer.
+* `isRevocationEnabled` on `EtsiTrustSource` decides whether PKIX chain validation checks certificate
+  revocation. The reference app passes `false` for every build variant.
+
 Production guidance:
 
 * Replace the demo LoTE endpoints in `trustConfiguration` with your production trusted-list locations.
-* Review `defaultPolicy`, `requireSignedMetadata`, and `statusTrustPolicy` for production assurance.
+* Set `isRevocationEnabled` to `true` in the production `EtsiTrustSource`. `false` suits only the
+  development trust lists.
+* Keep the PID at `.enforce`. Classify every other doc type your trust framework covers and enforce
+  it too, or record why it stays at `.warning`.
+* Confirm that every SD-JWT PID issuer sends an `x5c` chain, since only then is the signer checked
+  against the trusted lists.
+* Keep `requireSignedMetadata` at `true`. Set `statusTrustPolicy` to `.enforce` once the status-list
+  signers of your issuers validate against the access-certificate list.
 * Configure `wrprcProviders` as well; without it the registration certificates covered in the next
   section have no trust source, and no registration can be validated in either direction.
 * Remove demo and staging fallback trust anchors that are not part of the production trust framework.
@@ -1025,11 +1068,12 @@ The app treats the two directions differently, and the asymmetry is intentional:
   covers the credential being issued. A registration that fails validation, or that does not list
   the offered attestation, stops the flow on the "Issuance blocked" alert and reports it the same
   way an authentication failure does, because the distinction does not change what the user can do
-  about it. *When* it is caught depends on the flow. A credential offer is resolved before anything
-  is issued, so the offer screen already knows the issuer's registration and refuses up front. The
-  issuer-list flow has no such step — WalletKit validates that issuance's certificate as part of
-  issuing and only reports the outcome afterwards, and because it writes the documents to storage
-  before the app sees that outcome, the app deletes them itself when it refuses.
+  about it. Both flows refuse up front. A credential offer is resolved before anything is issued,
+  so the offer screen already knows the issuer's registration. The issuer-list flow asks for the
+  issuer's registration before it starts the issuance (`AddDocumentInteractorImpl.issueDocument`).
+  WalletKit validates the certificate again as part of issuing and reports that outcome only after
+  it has written the documents to storage; the app checks it as a fallback and deletes the
+  documents itself when it refuses.
 * **Presentation warns rather than blocks.** A request whose registration could not be validated
   still reaches the consent screen, shown without the verified badge and behind a warning the user
   must acknowledge before sharing. A request whose registration *is* verified but that reaches
@@ -1049,20 +1093,30 @@ Production requirements:
 
 * Set `wrprcProviders` to the production registration trusted list. It is the only trust source for
   this layer.
-* Keep `validateIssuerRegistrationCertificate` enabled, and confirm every production issuer
-  publishes `issuer_info`. An issuer that publishes none never reaches the validation hook, so no
+* Turn `validateIssuerRegistrationCertificate` on, and confirm every production issuer publishes
+  `issuer_info`. An issuer that publishes none never reaches the validation hook, so no
   registration is established and the app refuses; enabling this against such an issuer fails every
-  issuance. The setting defaults to off and governs presentation too, so leaving it off ships a
-  wallet that neither refuses an unregistered issuer nor shows a verifier's registration.
-* Keep `wrprcVciTrustPolicy` at `.enforce`. It decides whether a failed WRPRC check refuses the
-  issuance — under `.warning` such an issuance proceeds and the app stores the document. Leave
-  `wrprcVpTrustPolicy` at `.warning`: presentations are required to reach the consent screen behind
-  an acknowledgement rather than terminate.
+  issuance. The value is the user switch "Check Registration Certificates" in Settings, kept in
+  UserDefaults and off by default (`WalletKitConfigImpl` reads it from `PrefsController`). It
+  governs presentation too, so leaving it off ships a wallet that neither refuses an unregistered
+  issuer nor shows a verifier's registration. Decide whether the switch stays reachable: any user
+  can turn the check off. Returning `true` from
+  `WalletKitConfigImpl.validateIssuerRegistrationCertificate` and removing the switch is the
+  stricter choice.
+* Keep `wrprcVciTrustPolicy` at `.enforce`. The app refuses an issuance on any warning raised
+  against a registration WalletKit could decode, whatever the policy
+  (`WalletKitController.makeIssuerRegistration`), so `.warning` does not let such a failure through.
+  The policy decides one case: a registration certificate that cannot be decoded is refused under
+  `.enforce` and let through under `.warning`. Leave `wrprcVpTrustPolicy` at `.warning`:
+  presentations are required to reach the consent screen behind an acknowledgement rather than
+  terminate.
 * Confirm each issuer's registered scope actually covers what it offers, before release. An issuer
   authenticated but not registered for a credential it issues is refused at runtime.
-* Note what neither policy covers: a status list that cannot be retrieved is always a warning and
-  never a refusal on its own. Still confirm the status endpoints of your issuers are as available as
-  the issuers themselves, since an unreachable list means revocation goes unnoticed.
+* WalletKit reports a registration certificate's status list that cannot be retrieved only as a
+  warning, under either policy. The app refuses an issuance on any such warning, so an unreachable
+  status list stops the issuance on the "Issuance blocked" alert; on presentation it is a warning
+  the user acknowledges. Confirm the status endpoints of the registration certificates are as
+  available as the issuers themselves.
 * Test both directions: a party on the registration list succeeds; one that is absent, expired, or
   out of scope is refused on issuance and warned about on presentation.
 
@@ -1102,12 +1156,20 @@ case .PROD:
       config: .init(
         credentialIssuerURL: "https://issuer.pid.example.eu",
         clientId: "wallet-prod",
-        keyAttestationsConfig: .init(walletAttestationsProvider: walletKitAttestationProvider),
+        keyAttestationsConfig: .init(
+          walletAttestationsProvider: walletKitAttestationProvider,
+          popKeyOptions: KeyOptions(
+            secureAreaName: SecureEnclaveSecureArea.name,
+            accessControl: .empty
+          )
+        ),
         authFlowRedirectionURI: URL(string: "eu.example.wallet://authorization")!,
         parUsage: .required(authorizationCodeDPoPBinding: true),
         allowPlainJwtProof: false,
         requireDpop: true,
-        cacheIssuerMetadata: true
+        issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
+        validateRegistrationCertificate: validateIssuerRegistrationCertificate,
+        cacheIssuerMetadata: false
       ),
       order: 0
     )
@@ -1118,12 +1180,14 @@ case .PROD:
 | --- | --- | --- |
 | `credentialIssuerURL` | Base URL of an OpenID4VCI credential issuer. | Your production issuer base URL. It must expose valid issuer and authorization metadata. |
 | `clientId` | Wallet client identifier known to the issuer or authorization server. | Use the registered production wallet client ID. |
-| `keyAttestationsConfig` | Wallet/key attestation provider used during issuance. | Use the production wallet attestation provider. |
+| `keyAttestationsConfig` | Wallet/key attestation provider used during issuance. `popKeyOptions` keeps the client-attestation proof-of-possession key in the Secure Enclave; without it WalletKit creates a software key. | Use the production wallet attestation provider, and keep `popKeyOptions`. |
 | `authFlowRedirectionURI` | Redirect URI used after authorization. | Must match production URL scheme registration and issuer client registration. |
 | `parUsage` | Pushed authorization request (PAR) usage policy. Use `.required(authorizationCodeDPoPBinding:)` to require PAR, optionally binding the authorization code to DPoP. | Prefer `.required(authorizationCodeDPoPBinding: true)` where the production profile requires PAR with sender-constrained authorization codes. |
 | `allowPlainJwtProof` | Credential proof policy. `false` (default) is HAIP-compliant: only attested proofs are sent (`attestation`, or `jwt` with a Wallet Provider key attestation). `true` additionally accepts plain `jwt` proofs (ES256/ES384/ES512) without key attestation, so the proof key is no longer attested. | Keep `false`. Set `true` only for a specific issuer that does not support key attestation, after a documented risk decision. |
 | `requireDpop` | Whether DPoP is required. | Prefer `true` where the production profile requires sender-constrained tokens. |
-| `cacheIssuerMetadata` | Whether issuer metadata is cached. | Enable only with a metadata refresh and incident strategy. |
+| `issuerMetadataPolicy` | Signed-metadata policy. `trustConfiguration.issuerMetadataPolicy` requires signed issuer metadata whose signer validates against the access-certificate list (`wrpacProviders`), since `requireSignedMetadata` is `true`. WalletKit's default, `.ignoreSigned`, accepts unsigned metadata. | Keep `trustConfiguration.issuerMetadataPolicy`. |
+| `validateRegistrationCertificate` | Whether the issuer's registration certificate is validated during issuance. WalletKit's default is `false`. | Pass `validateIssuerRegistrationCertificate`; see [Registration Certificates: The Second Trust Layer](#registration-certificates-the-second-trust-layer). |
+| `cacheIssuerMetadata` | Accepted and ignored by WalletKit 0.54.8. The app passes `false`. | No effect today. |
 | `order` | Display/order preference for scoped issuance. | Use deterministic ordering approved by product owners. |
 
 Rules:
@@ -1590,10 +1654,15 @@ empty): the wallet PIN is the fallback. The item is written again at every unloc
 a change in biometric enrolment is not detected; that needs `.biometryCurrentSet` or a stored
 `evaluatedPolicyDomainState`.
 
+`.whenUnlocked` is not a `ThisDeviceOnly` class. Every item `KeyChainController` writes with it, the
+PIN salt, hash and iteration count and the PIN lockout state included, goes into encrypted and iCloud
+backups and can be restored to another device. The salt and hash then leave the device, and a
+6-digit PIN can be searched offline, outside the lockout.
+
 Production decisions:
 
-* Confirm the default Keychain accessibility class.
-* Consider `ThisDeviceOnly` classes where migration/backup is not allowed.
+* Confirm the default Keychain accessibility class. Use `.whenUnlockedThisDeviceOnly` (or another
+  `ThisDeviceOnly` class) for the PIN record and the lockout state, so they are never backed up.
 * Confirm whether Keychain items should survive device restore.
 * Confirm behavior when the device passcode is removed.
 * Confirm behavior when biometric enrollment changes.
@@ -1647,7 +1716,7 @@ Failure counting and lockout are handled separately by `PinThrottleController` �
 
 ### PIN Throttle And Lockout
 
-The reference implementation includes an escalating client-side lockout enforced by `PinThrottleController` and persisted in the iOS Keychain via `KeyChainController` (using the shared App-Group access group, so the main app and the document-provider extension share state). Policy is configured through `AuthenticationConfig` (see [CONFIGURATION.md#pin-throttle-configuration](CONFIGURATION.md#pin-throttle-configuration)).
+The reference implementation includes an escalating client-side lockout enforced by `PinThrottleController` and persisted in the iOS Keychain via `KeyChainController` (in the Keychain access group the main app and the document-provider extension share, `$(AppIdentifierPrefix)` followed by the main app's bundle identifier, so both see the same state). Policy is configured through `AuthenticationConfig` (see [CONFIGURATION.md#pin-throttle-configuration](CONFIGURATION.md#pin-throttle-configuration)).
 
 Persisted state keys (`KeychainPinThrottleProvider.KeyIdentifier`):
 
@@ -1656,7 +1725,7 @@ Persisted state keys (`KeychainPinThrottleProvider.KeyIdentifier`):
 * `pinLockoutStartedAt` — wall-clock timestamp (`Date().timeIntervalSince1970`) when the current lockout began. Used for clock-rollback detection.
 * `pinLockoutEndsAt` — wall-clock timestamp when the current lockout ends.
 
-The values are stored as Strings in the Keychain (e.g. `"3"`, `"1762345678.123"`). The Keychain item accessibility class follows `KeyChainController`'s default (`.whenUnlocked`), which means the values are readable only while the device is unlocked and are excluded from iCloud backup under the standard Keychain backup rules.
+The values are stored as Strings in the Keychain (e.g. `"3"`, `"1762345678.123"`). The Keychain item accessibility class follows `KeyChainController`'s default (`.whenUnlocked`), which means the values are readable only while the device is unlocked. It is not a `ThisDeviceOnly` class, so the values go into encrypted and iCloud backups and can be restored to another device; see [Keychain](#keychain).
 
 Default policy (`AuthenticationConfigImpl`):
 
@@ -1669,7 +1738,7 @@ Default policy (`AuthenticationConfigImpl`):
 | Successful PIN or biometric authentication | Counters and lockout level reset. |
 | App kill or device reboot | Lockout window persists (wall-clock based). |
 | Device clock rolled back | Detected via stored start timestamp; user remains locked for the full duration. |
-| App reinstall | State is wiped together with app data. Require re-enrollment unless secure backup/recovery is explicitly implemented. |
+| App reinstall | The state survives the uninstall, as the Keychain does; the first launch after a reinstall deletes it with the PIN and every document (`StartupInteractor.manageStorageForFirstRun()`). Require re-enrollment unless secure backup/recovery is explicitly implemented. |
 
 Lockout counters are persisted, not just held in UI state. The PIN input is disabled in both the login screen (`BiometryViewModel`) and the change-PIN validation step (`QuickPinViewModel`) while locked. The biometric icon on the login screen stays enabled during PIN lockout and acts as an escape hatch — a successful biometric authentication clears the throttle.
 
@@ -2488,6 +2557,10 @@ ec.dev.issuer.eudiw.dev
 dev.issuer-backend.eudiw.dev
 somesecret
 somesecret2
+eudiw-abca
+wallet-client
+gist.githubusercontent.com
+WALLET_SOLUTION_ID
 localhost
 127.0.0.1
 SelfSignedDelegate
@@ -2497,6 +2570,14 @@ rqes://oauth/callback
 eu.europa.ec.euidi.dev
 eu.europa.ec.euidi
 ```
+
+`eudiw-abca` and `wallet-client` are the demo issuer and RQES client IDs; the Gist URL and
+`WALLET_SOLUTION_ID` are the reference Trust Mark values (see
+[Trust Mark Deployment](#trust-mark-deployment)). `eu.europa.ec.euidi` also matches two internal
+identifiers that do not change with the bundle identifier: the biometric Keychain item
+(`eu.europa.ec.euidi.biometric.access`, `KeyChainController`) and the access-group probe
+(`eu.europa.ec.euidi.access.group.probe`, `Bundle+Extensions.swift`). Rename them or exclude them
+from this check.
 
 Also check:
 

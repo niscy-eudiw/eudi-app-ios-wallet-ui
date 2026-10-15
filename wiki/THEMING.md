@@ -35,7 +35,7 @@ links here for the full detail.
 | Layer | What it covers | Where it lives |
 | --- | --- | --- |
 | 1. SwiftUI theme | Colors, typography/fonts, shapes, dimensions, in-app images | `logic-resources` module (`Theme`/`ThemeManager`, `ThemeConfiguration`, the five managers) |
-| 2. Branding assets | App icon, app display name, bundle id, splash/launch screen, deep-link schemes, brand strings | `Wallet/` app target (`project.pbxproj`, `Assets.xcassets`, `Wallet.plist`, `Config/*.xcconfig`) + `logic-resources` images/strings |
+| 2. Branding assets | App icon, app display name, bundle id, splash/launch screen, deep-link schemes, brand strings | `Wallet/` app target (`Assets.xcassets`, `Wallet.plist`, `Config/*.xcconfig`) + `EudiReferenceWallet.xcodeproj/project.pbxproj` + `logic-resources` images/strings |
 | 3. Sub-SDK theming | The RQES signing UI carries its own theme and translations | `logic-business` (`RQESConfig`) |
 
 ### The SwiftUI theme: `ThemeManager`
@@ -99,7 +99,7 @@ The minimum set of changes for a full rebrand. Each row links to its detailed se
 
 | Brand element | Where to change it | Notes |
 | --- | --- | --- |
-| Brand accent color | Add an `accent` colorset to [`Color.xcassets`](../Modules/logic-resources/Sources/Resources/Color.xcassets) | Highest-impact color: tab tint + prominent buttons. Currently falls back to system blue. See [Colors](#colors). |
+| Brand accent color | Add an `accent` colorset to [`Color.xcassets`](../Modules/logic-resources/Sources/Resources/Color.xcassets) | Highest-impact color: prominent buttons and toolbar actions (the tab bar takes the app tint instead). Currently falls back to system blue. See [Colors](#colors). |
 | Brand colors | Edit colorsets in [`Color.xcassets`](../Modules/logic-resources/Sources/Resources/Color.xcassets) (`success`, `warning`, `pending`, `groupedBackground`, …) | Light **and** dark appearances. See [Colors](#colors). |
 | Override system/semantic colors | Add a colorset named exactly after the role (e.g. `background`, `primaryLabel`) | Catalog entry wins over the system color. See [Colors](#colors). |
 | Fonts | Drop font files into [`logic-resources/Sources/Resources/`](../Modules/logic-resources/Sources/Resources) + add `WalletFontConfig.plist` | Default is the **system font**. See [Typography and fonts](#typography-and-fonts). |
@@ -149,10 +149,11 @@ var navigationBarColorScheme: ColorScheme? { get }   // nil = system default
 ```
 
 It is set where the theme is configured, in
-[`ThemeConfiguration`](../Modules/logic-resources/Sources/Manager/ThemeConfiguration.swift):
+[`ThemeConfiguration`](../Modules/logic-resources/Sources/Manager/ThemeConfiguration.swift), and the
+reference app leaves it at `nil`:
 
 ```swift
-self.color = color ?? ColorManager(bundle: .assetsBundle, navigationBarColorScheme: .dark)
+self.color = color ?? ColorManager(bundle: .assetsBundle, navigationBarColorScheme: nil)
 ```
 
 | Value | Effect |
@@ -211,13 +212,17 @@ mode keeps using your light color.
 
 ### The accent color (do this first)
 
-`Theme.shared.color.accent` is the single highest-impact brand color — it tints the dashboard tab bar
-and prominent buttons. There is **no `accent` colorset by default**, so it currently falls back to the
-system blue. **Add an `accent` colorset** to `Color.xcassets` to brand it.
+`Theme.shared.color.accent` is the single highest-impact brand color — it fills prominent buttons
+and tints toolbar actions, links, chevrons and the loading indicator. There is **no `accent`
+colorset by default**, so it currently falls back to the system blue. **Add an `accent` colorset**
+to `Color.xcassets` to brand it.
 
-Separately, SwiftUI's app-wide `.tint`/`.accentColor` comes from the **app target's** empty
-`AccentColor` colorset in [`Wallet/Assets.xcassets`](../Wallet/Assets.xcassets)
-(`ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor`). Fill it in too for consistency.
+The dashboard tab bar does not read `accent`: it takes the app's default tint, which is also system
+blue. The app target has an empty `AccentColor` colorset in
+[`Wallet/Assets.xcassets`](../Wallet/Assets.xcassets), but the project does not set
+`ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME`, so the colorset has no effect. To brand the tab bar
+and other system controls, fill in `AccentColor` and set that build setting to `AccentColor` on the
+`EudiWallet` target in every configuration.
 
 > **Gotcha — the `Base/` palette overrides system colors.** The `Base/` folder inside `Color.xcassets`
 > is **not** namespaced, so its `blue`, `black`, `white`, and `red` colorsets override the SwiftUI
@@ -343,13 +348,15 @@ The brand logos and key illustrations (bundled imagesets):
 ### How to swap them
 
 Replace the asset contents in `Images.xcassets`, **keeping the imageset name** so the `ImageManager`
-mapping and all call sites keep working. The reference `logo` is a single-scale vector (SVG with
-"preserve vector data"). When you replace it, keep **Single Scale** + **Preserve Vector Data** enabled
-for a vector — or supply `@1x`/`@2x`/`@3x` rasters — so it stays crisp at the `screenWidth / 2.5`
-splash size.
+mapping and all call sites keep working. Three imagesets — `logo-eu-digital-indentity-wallet`,
+`face-id` and `touch-id` — carry a separate dark-appearance image; replace both appearances. The
+reference `logo` is a single-scale SVG without "Preserve Vector Data", so Xcode rasterizes it at
+build time. When you replace it, use a single-scale vector with **Preserve Vector Data** enabled, or
+supply `@1x`/`@2x`/`@3x` rasters, so it stays crisp at the `screenWidth / 2.5` splash size.
 
 To change the **functional** iconography (the SF Symbols), edit the `ImageEnum` raw values in
-`ImageManager.swift` (e.g. point `menuIcon` at a different symbol or a bundled imageset).
+`ImageManager.swift` (e.g. point `menuIcon` at a different symbol). To use a bundled imageset for such
+a role instead, also change its getter from `Image(systemName:)` to `Image(_:bundle:)`.
 
 ## App icon
 
@@ -407,7 +414,12 @@ in the theme. If you rename the product, search the catalog for `EUDI`/`Wallet` 
 
 * `quick_pin_set_title` ("Welcome to your wallet"), `quick_pin_set_success` and
   `quick_pin_set_step_one_caption` — onboarding / PIN-setup copy.
-* `my_eu_wallet` ("My EU Wallet") — side-menu / navigation title.
+* "My EU Wallet" — side-menu navigation title. `LocalizableManager` looks this title up under the
+  literal key `"My EU Wallet"`, not under the catalog's `my_eu_wallet` entry, so editing
+  `my_eu_wallet` has no effect. Either add a catalog entry whose key is `My EU Wallet`, or change the
+  `.myEuWallet` lookup in
+  [`LocalizableManager.swift`](../Modules/logic-resources/Sources/Manager/LocalizableManager.swift)
+  to `my_eu_wallet` and edit that entry.
 * `wallet_is_secured` ("Your wallet is secured!") — success copy.
 * `login_caption` / `login_caption_quick_pin_only` ("…access the EUDI Wallet…") — login auth prompts,
   shown at app unlock and before a request in the ID Provider extension. The system biometric prompt
@@ -474,17 +486,19 @@ The wallet's `RQESConfig` declares neither, so it inherits both SDK defaults.
 The reference app leaves both `theme` and `translations` at their SDK defaults — the RQES flow is
 **not** rethemed by the wallet. Consequences:
 
-* As of RQES UI SDK **0.4.2**, the SDK's default theme follows the **same model as the wallet's
-  SwiftUI theme** (Layer 1): iOS **system colors** (`primaryLabel`, `secondaryLabel`, `background`,
-  `accent`) with only a few brand colors baked into its asset catalog (`success`, `successBackground`,
-  `groupedBackground`, `black`), the **system font**, and native prominent buttons tinted with
-  `accent` (system blue by default). Out of the box the signing screens match the unmodified wallet's
-  system-based look and adapt to light/dark automatically.
+* The app pins RQES UI SDK **0.4.7** (`exact:` in
+  [`logic-business/Package.swift`](../Modules/logic-business/Package.swift)). Its default theme
+  follows the **same model as the wallet's SwiftUI theme** (Layer 1): iOS **system colors**
+  (`primaryLabel`, `secondaryLabel`, `background`, `accent`) with only a few brand colors baked into
+  its asset catalog (`success`, `successBackground`, `groupedBackground`, `black`), the **system
+  font**, and native prominent buttons tinted with `accent` (system blue by default). Out of the box
+  the signing screens match the unmodified wallet's system-based look and adapt to light/dark
+  automatically.
 * Because the two themes are independent, **rebranding the wallet does not restyle the RQES screens** —
   they keep the SDK default look (notably the system-blue `accent`) until you set `RQESConfig.theme`.
 
 If you want the signing flow to match your brand, set `theme` in `RQESConfig` with a custom
-`ThemeProtocol`. Since 0.4.2 its `ColorManagerProtocol` mirrors a subset of the wallet's color
+`ThemeProtocol`. In 0.4.7 its `ColorManagerProtocol` mirrors a subset of the wallet's color
 roles — `black`, `white`, `success`, `successBackground`, `groupedBackground`, `primaryLabel`,
 `secondaryLabel`, `background`, `accent` — and its `TypographyManagerProtocol` exposes the same type
 scale (`displayLarge` … `labelSmall`); point these at the same values your wallet theme uses. If you
@@ -519,14 +533,24 @@ container.register(ConfigUiLogic.self) { _ in
 first frame. `ThemeConfiguration.init` is `public` for exactly this purpose. This is the iOS analog of
 Android's `ThemeManager.Builder`, and is intentionally left at `.default` in the reference app.
 
+The ID Provider extension never resolves `ConfigUiLogic`, so it never runs `Theme.config` and keeps
+the reference managers. Asset-catalog edits reach it; a programmatic theme does not, unless you also
+call `Theme.config(themeConfiguration:)` in the extension, for example in `DocumentProviderExtension`'s
+`init()`.
+
 > For a fully dynamic swap you can also assign `Theme.shared` directly — it is a `public` settable var
 > of the public `ThemeProtocol`. Note that `Application`'s `toolbarConfig` **stored-property
 > initializer** ([`Wallet/Application.swift`](../Wallet/Application.swift)) reads `Theme.shared`
 > *before* any statement in `Application.init()` runs, so a direct assignment in `init()` cannot beat
 > that first read — it's harmless (the initial value is overwritten after the swap), but it means the
 > `ThemeConfiguration`/DI path above is preferable: it runs during `Application.init()` (resolving
-> `RouterHost` forces `ConfigUiLogic`), so the final `toolbarConfig` and every view body read the
-> swapped theme.
+> `RouterHost` forces `ConfigUiLogic`), so every view body reads the swapped theme.
+>
+> One exception: `ConfigUiLogicImpl.backgroundColorForScreenDictionary` is a stored property whose
+> initializer reads `Theme.shared.color.background` before `init(themeConfiguration:)` calls
+> `Theme.config`. Its entries, the dashboard and document-details toolbar backgrounds, therefore keep
+> the reference theme's `background`. If your theme changes `background`, build that dictionary after
+> the `Theme.config` call, or give those entries your color directly.
 
 ## Verifying your rebrand
 
@@ -549,7 +573,8 @@ Android's `ThemeManager.Builder`, and is intentionally left at `.default` in the
 ## Production and accessibility checklist
 
 * [ ] Light **and** dark appearances set for every brand colorset and every system/semantic override.
-* [ ] `accent` colorset added (and the app-target `AccentColor` filled in).
+* [ ] `accent` colorset added (and, to brand the tab bar, the app-target `AccentColor` filled in and
+      `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME` set to it).
 * [ ] Text/background color pairs meet contrast guidance (WCAG AA: 4.5:1 for body text).
 * [ ] All brand imagesets replaced (`logo`, `logo-eu-digital-indentity-wallet`, illustrations); no leftover EUDI artwork.
 * [ ] App icon replaced for **every** variant (`AppIcon` and `AppIconDev`); legible at small sizes.

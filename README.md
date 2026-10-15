@@ -1,7 +1,7 @@
 # EUDI iOS Wallet reference application
 
 [![License: EUPL 1.2](https://img.shields.io/badge/License-EUPL%201.2-blue.svg)](https://joinup.ec.europa.eu/software/page/eupl)
-[![Swift](https://img.shields.io/badge/Swift-6.0-F05138.svg?logo=swift)](https://swift.org)
+[![Swift](https://img.shields.io/badge/Swift-6.2-F05138.svg?logo=swift)](https://swift.org)
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-enabled-007AFF.svg?logo=swift)](https://developer.apple.com/xcode/swiftui/)
 [![iOS](https://img.shields.io/badge/iOS-17%2B-000000.svg?logo=apple)](https://developer.apple.com/ios/)
 [![SonarCloud](https://img.shields.io/badge/SonarCloud-enabled-F3702A.svg?logo=sonarcloud)](https://sonarcloud.io)
@@ -37,7 +37,7 @@ The EUDI Wallet Reference Implementation is based on a modular architecture comp
 The EUDI Wallet Reference Implementation is the application that allows users to:
 
 1. To obtain, store, and present PID and mDL.
-2. Verify presentations.
+2. Authenticate the verifiers and readers that request their data.
 3. Share data on proximity scenarios.
 4. Support remote QES and more use cases with the modules included.
 
@@ -50,6 +50,9 @@ The app consumes the SDK called EUDIW Wallet core [Wallet kit](https://github.co
 - OpenID4VP v1 (remote presentation), DCQL
  
 - ISO18013-5 (proximity presentation)
+ 
+- ISO/IEC 18013-7 Annex C over the Digital Credentials API (presentation to websites), through the
+  Identity Document Provider extension, on iOS 26.2 and later
  
 - OpenID4VCI v1 (issuing)
  
@@ -77,7 +80,10 @@ To support development and testing, one can access a test/demo service for remot
  
 To support proximity, the EUDI Verifier App is available [here](https://github.com/eu-digital-identity-wallet/eudi-app-multiplatform-verifier-ui) and can request PID and mDL, with reader authentication enabled.
 
-The issuer, verifier service, and verifier app authentication are based on the EUDIW development [IACA](https://github.com/niscy-eudiw/eudi-app-ios-wallet-ui/tree/main/Wallet/Sample)
+The issuer, verifier service, and verifier app are authenticated against the EUDIW development
+trusted lists (LoTE) named in `WalletKitConfig`. The certificates in
+[`Wallet/Certificate`](Wallet/Certificate) are a fallback for issuer trust only (see
+[wiki/CONFIGURATION.md](wiki/CONFIGURATION.md)).
 
 ## Important things to know
 
@@ -88,13 +94,18 @@ If you're planning to use this application in production, we recommend reviewing
 - Follow the production go-live guide [here](wiki/GO_LIVE.md) before creating a release candidate.
 - Review the go-live guide's out-of-scope section [here](wiki/GO_LIVE.md#out-of-scope) and design the required Member State onboarding, enrollment, and operational processes around the app.
 - The Pin storage configuration matches your security requirements, or provide your own by following this guide [Pin Storage Configuration](wiki/CONFIGURATION.md#pin-storage-configuration)
-- The application meets the OWASP MASVS industry standard. Please refer to the following links for further information on the controls you must implement to ensure maximum compliance:
+- Assess the application against OWASP MASVS before release; the reference implementation does not
+  claim compliance. The go-live guide's
+  [MASVS section](wiki/GO_LIVE.md#owasp-masvs-production-alignment) lists the controls to evidence
+  and the work they leave to you:
     - [OWASP MASVS](https://mas.owasp.org/MASVS/)
 - Issuers and verifiers are trusted on two independent layers: an access certificate proves who
   they are, and a registration certificate establishes what they are registered to do. Issuance
-  requires both — a provider that cannot be authenticated, or that is not registered for the
-  document it offers, is refused and nothing is stored. On presentation, while registration checking
-  is enabled, the registration is shown to the user and a request beyond its scope requires explicit
+  always requires the first: an issuer whose signed metadata cannot be authenticated is refused and
+  nothing is stored. The second is governed by "Check Registration Certificates" in the app's
+  Settings, which is off by default; while it is off, no registration is checked. With it on, an
+  issuer that is not registered for the document it offers is refused as well, and on presentation
+  the registration is shown to the user and a request beyond its scope requires explicit
   acknowledgement before sharing. Whatever that setting, a proximity reader that does not
   authenticate with a trusted reader certificate is shown with a warning, and sharing waits for the
   same acknowledgement; a remote verifier that does not authenticate is refused. See
@@ -110,6 +121,7 @@ replace before launch.
 ### Minimum device requirements
 
 - Any device that supports iOS 17.0
+- Presentation to websites through the Digital Credentials API needs iOS 26.2 or later
 
 ### Prerequisites
 
@@ -130,28 +142,30 @@ You will also need to download the EUDI Verifier app. More information can be fo
 
 ### Issuance flow (Scoped - Wallet initiated)
 
-1. Navigate to the "Dashboard" screen, go to the "Documents" tab, and tap on the "+" icon (top-right of the screen). Select "From list". If it's your first time opening the app, you will be redirected here automatically after entering or setting up your PIN.
+1. Navigate to the "Dashboard" screen, go to the "Documents" tab, and tap on the "+" icon (top-right of the screen). Select "Choose from list". A new wallet opens the Dashboard after you set up your PIN. With `forcePidActivation` returning `true` in `ConfigLogicImpl` (off by default), a wallet without documents opens this screen instead, after you set up or enter your PIN.
 2. Select "PID".
 3. In the web view that appears, choose "Country Selection", then "FormEU", and tap "Submit".
 4. Fill in the form. Any data will suffice, but selecting a birth date older than 18 years is recommended, as it is required for certain app functionalities (e.g., RQES).
-5. After submission, a success screen will appear. Tap "Close".
-6. You will be redirected to the "Dashboard" screen. If this was your first document added to the Wallet, you will land on the "Home" tab; otherwise, you will be on the "Documents" tab. The flow is now complete.
+5. After submission, a success screen will appear. Tap "Done".
+6. You will be returned to the "Documents" tab of the "Dashboard" screen. If the document list opened by itself after your PIN (see step 1), you will land on the "Home" tab instead. The flow is now complete.
 
 ### Issuance flow (Credential Offer - Issuer-initiated)
 
-1. Go to the "Dashboard" screen, navigate to the "Documents" tab, and tap the "+" icon (top-right of the screen). Select "Scan a QR".
+1. Go to the "Dashboard" screen, navigate to the "Documents" tab, and tap the "+" icon (top-right of the screen). Select "Scan QR".
 2. Scan the QR code from the issuer's website [EUDI Issuer](https://issuer.eudiw.dev/credential_offer)
-3. Review the documents included in the credential offer and tap "Add".
+3. Review the documents included in the credential offer and tap "Issue".
 4. In the web view that appears, select "Country Selection", then "FormEU", and tap "Submit".
 5. Fill in the form. Any data will suffice, but selecting a birth date over 18 is recommended, as it is required for certain app functionalities (e.g., RQES).
-6. After submission, a success screen will appear. Tap "Close".
+6. After submission, a success screen will appear. Tap "Done".
 7. You will be redirected back to the "Documents" tab within the "Dashboard" screen. The flow is now complete.
 
-Both issuance flows require the provider to be registered for what it offers. If its registration
-certificate cannot be validated, or does not cover the offered document, the flow stops on an
-"Issuance blocked" alert and nothing is added to the Wallet.
+With "Check Registration Certificates" enabled in Settings, both issuance flows require the provider
+to be registered for what it offers. If its registration certificate is missing, cannot be
+validated, or does not cover the offered document, the flow stops on an "Issuance blocked" alert
+and nothing is added to the Wallet. With the setting off, its default, no registration is checked.
+A change to the setting applies after the app restarts.
 
-To delete a document, navigate to the 'Documents' tab within the 'Dashboard' screen, tap on the document you wish to remove, and then tap the 'Delete Document' button in the 'Document Details' screen.
+To delete a document, navigate to the 'Documents' tab within the 'Dashboard' screen, tap on the document you wish to remove, then tap 'Remove from wallet' on its 'Details' screen and confirm with 'Remove'.
 
 ### Presentation (Online authentication/Same device) flow.
 
@@ -176,7 +190,7 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
 8. Tap "Share".
 9. Enter the PIN you set up during the initial steps, or use Face ID or Touch ID if you turned it on
    in Settings. If the biometric check fails, enter the PIN.
-10. Upon successful submission, tap "Close".
+10. Upon successful submission, tap "Done".
 11. A browser will open, confirming that the Verifier has accepted your request.
 12. Return to the app. The flow is now complete.
 
@@ -199,7 +213,7 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
 8. Tap "Share".
 9. Enter the PIN you set up during the initial steps, or use Face ID or Touch ID if you turned it on
    in Settings. If the biometric check fails, enter the PIN.
-10. Upon successful authentication, tap "Close".
+10. Upon successful authentication, tap "Done".
 11. The Verifier will receive the data you chose to share.
 12. You will return to the "Home" tab of the "Dashboard" screen. The flow is now complete.
 
@@ -226,46 +240,35 @@ usage notes, required environment variables, and release-lane cautions are docum
 
 ## Package structure
 
+Each arrow points from a module to a module that depends on it. Dotted arrows are test-only
+dependencies.
+
 ```mermaid
 graph TD;
 
-  logic-test --> logic-business
-  logic-test --> logic-core
-  logic-test --> logic-analytics
-  logic-test --> logic-resources
-  logic-test --> logic-storage
-  logic-test --> logic-ui
-  logic-test --> logic-api
-  logic-test --> logic-authentication
-
-  logic-test --> feature-test
-  
-  feature-test --> feature-common
-
-  logic-business --> logic-authentication
-  logic-core --> logic-authentication
-  logic-analytics --> logic-authentication
+  logic-resources --> logic-business
+  logic-resources --> logic-storage
+  logic-resources --> logic-core
+  logic-resources --> logic-ui
   logic-resources --> logic-authentication
 
-  feature-common --> logic-assembly
-  feature-startup --> logic-assembly
-  feature-dashboard --> logic-assembly
-  feature-presentation --> logic-assembly
-  feature-issuance --> logic-assembly
-  feature-proximity --> logic-assembly
-
-  logic-business --> logic-core
-  logic-resources --> logic-core
-  logic-resources --> logic-storage
-
   logic-business --> logic-analytics
+  logic-business --> logic-api
+  logic-business --> logic-storage
+  logic-business --> logic-core
+  logic-business --> logic-ui
+  logic-business --> logic-authentication
 
-  feature-common --> feature-issuance
-  feature-common --> feature-proximity
-  feature-common --> feature-presentation
-  feature-common --> feature-dashboard
+  logic-analytics --> logic-api
+  logic-analytics --> logic-ui
+  logic-analytics --> logic-authentication
 
-  logic-storage --> feature-common
+  logic-api --> logic-core
+  logic-storage --> logic-core
+
+  logic-core --> logic-ui
+  logic-core --> logic-authentication
+
   logic-core --> feature-common
   logic-business --> feature-common
   logic-analytics --> feature-common
@@ -274,22 +277,47 @@ graph TD;
   logic-authentication --> feature-common
 
   feature-common --> feature-startup
+  feature-common --> feature-dashboard
+  feature-common --> feature-presentation
+  feature-common --> feature-issuance
+  feature-common --> feature-proximity
 
-  logic-business --> logic-storage
-
-  logic-core --> logic-api
-  logic-business --> logic-api
-  logic-analytics --> logic-api
-
-  logic-resources --> logic-business
-
-  logic-business --> logic-ui
-  logic-analytics --> logic-ui
-  logic-resources --> logic-ui
-
-  logic-core --> logic-ui
+  feature-common --> logic-assembly
+  feature-startup --> logic-assembly
+  feature-dashboard --> logic-assembly
+  feature-presentation --> logic-assembly
+  feature-issuance --> logic-assembly
+  feature-proximity --> logic-assembly
 
   logic-assembly --> app
+
+  logic-assembly --> EudiReferenceWalletIDProvider
+  feature-common --> EudiReferenceWalletIDProvider
+  logic-core --> EudiReferenceWalletIDProvider
+  logic-business --> EudiReferenceWalletIDProvider
+  logic-ui --> EudiReferenceWalletIDProvider
+
+  logic-test --> feature-test
+  logic-core --> feature-test
+  logic-business --> feature-test
+  logic-ui --> feature-test
+  logic-api --> feature-test
+  logic-analytics --> feature-test
+  logic-authentication --> feature-test
+
+  logic-test -.-> logic-business
+  logic-test -.-> logic-api
+  logic-test -.-> logic-core
+  logic-test -.-> logic-ui
+  logic-test -.-> logic-authentication
+
+  feature-test -.-> feature-common
+  feature-test -.-> feature-startup
+  feature-test -.-> feature-dashboard
+  feature-test -.-> feature-presentation
+  feature-test -.-> feature-issuance
+  feature-test -.-> feature-proximity
+  feature-test -.-> logic-assembly
 
 ```
 
