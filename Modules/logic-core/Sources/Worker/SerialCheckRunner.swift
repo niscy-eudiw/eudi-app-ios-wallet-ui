@@ -18,7 +18,7 @@ import Foundation
 
 /// Runs a check so that two never overlap: a request that arrives while one runs makes it run once more when it
 /// ends, instead of starting a second one beside it.
-actor SerialCheckRunner {
+final actor SerialCheckRunner {
 
   private var isRunning = false
   private var runAgain = false

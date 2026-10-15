@@ -15,6 +15,7 @@
  */
 
 import XCTest
+import os
 @testable import logic_test
 @testable import logic_authentication
 @testable import logic_business
@@ -58,22 +59,39 @@ final class TestSystemBiometryController: EudiTest {
     }
   }
 
-  final class RecordingLAContextProvider: @unchecked Sendable {
+  final class RecordingLAContextProvider: Sendable {
 
-    var evaluatePolicyResult: (success: Bool, error: Error?) = (true, nil)
-    private(set) var contexts: [StubLAContext] = []
+    private struct State {
+      var evaluatePolicyResult: (success: Bool, error: Error?) = (true, nil)
+      var contexts: [StubLAContext] = []
+      var wasInvalidatedWhenRecorded: [Bool] = []
+    }
 
-    private(set) var wasInvalidatedWhenRecorded: [Bool] = []
+    /// Holds the contexts it hands out. `LAContext` is not `Sendable`, so the state is unchecked, as with the
+    /// controller's own provider; the lock serialises every access.
+    private let state = OSAllocatedUnfairLock(uncheckedState: State())
+
+    var evaluatePolicyResult: (success: Bool, error: Error?) {
+      get { state.withLockUnchecked { $0.evaluatePolicyResult } }
+      set { state.withLockUnchecked { $0.evaluatePolicyResult = newValue } }
+    }
+
+    var contexts: [StubLAContext] { state.withLockUnchecked { $0.contexts } }
+
+    var wasInvalidatedWhenRecorded: [Bool] { state.withLockUnchecked { $0.wasInvalidatedWhenRecorded } }
 
     func makeContext() -> LAContext {
-      let context = StubLAContext()
-      context.evaluatePolicyResult = evaluatePolicyResult
-      contexts.append(context)
-      return context
+      state.withLockUnchecked { state in
+        let context = StubLAContext()
+        context.evaluatePolicyResult = state.evaluatePolicyResult
+        state.contexts.append(context)
+        return context
+      }
     }
 
     func record(_ context: LAContext) {
-      wasInvalidatedWhenRecorded.append((context as? StubLAContext)?.isInvalidated ?? true)
+      let wasInvalidated = (context as? StubLAContext)?.isInvalidated ?? true
+      state.withLockUnchecked { $0.wasInvalidatedWhenRecorded.append(wasInvalidated) }
     }
   }
   

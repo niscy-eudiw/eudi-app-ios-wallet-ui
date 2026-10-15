@@ -34,6 +34,11 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
     super.init(router: router, originator: originator)
   }
 
+  deinit {
+    disconnectTask?.cancel()
+    publisherTask?.cancel()
+  }
+
   override func doWork() async {
 
     self.onStartLoading()

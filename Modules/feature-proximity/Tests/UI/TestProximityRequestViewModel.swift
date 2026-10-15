@@ -118,6 +118,41 @@ final class TestProximityRequestViewModel: EudiTest {
 
     verify(interactor, times(2)).waitForReaderDisconnect()
   }
+
+  @MainActor
+  func testOnReappear_WhenTheReaderHasLeft_ThenTheReaderIsNotWatchedAgain() async throws {
+    let router = MockRouterHost()
+    let wentBack = expectation(description: "went back")
+    stub(router) { mock in
+      when(mock.popTo(with: any())).then { _ in wentBack.fulfill() }
+    }
+    let interactor = MockProximityInteractor()
+    let viewModel = makeViewModel(isTrusted: true, router: router, readerLeaves: true, interactor: interactor)
+
+    await viewModel.doWork()
+    await fulfillment(of: [wentBack], timeout: 5)
+    await viewModel.onReappear()
+    try await Task.sleep(seconds: 0.3)
+
+    verify(interactor, times(1)).waitForReaderDisconnect()
+  }
+
+  @MainActor
+  func testOnReappear_WhenTheRequestShowsAnError_ThenTheReaderIsNotWatchedAgain() async throws {
+    let interactor = MockProximityInteractor()
+    let (sessionStates, continuation) = AsyncStream.makeStream(of: PresentationState.self)
+    let viewModel = makeViewModel(isTrusted: true, interactor: interactor, sessionStates: sessionStates)
+
+    await viewModel.doWork()
+    continuation.yield(.error(RuntimeError.genericError))
+    try await Task.sleep(seconds: 0.3)
+    await viewModel.onReappear()
+    try await Task.sleep(seconds: 0.3)
+    continuation.finish()
+
+    XCTAssertNotNil(viewModel.viewState.error)
+    verify(interactor, times(1)).waitForReaderDisconnect()
+  }
 }
 
 private extension TestProximityRequestViewModel {
@@ -128,13 +163,14 @@ private extension TestProximityRequestViewModel {
     router: MockRouterHost = MockRouterHost(),
     readerLeaves: Bool = false,
     interactor: MockProximityInteractor = MockProximityInteractor(),
+    sessionStates: AsyncStream<PresentationState> = AsyncStream { $0.finish() },
     onStop: @escaping @Sendable () -> Void = {}
   ) -> ProximityRequestViewModel<MockRouterHost> {
     stub(interactor) { mock in
       when(mock.waitForReaderDisconnect()).thenReturn(readerLeaves)
       when(mock.stopPresentation()).then { onStop() }
       when(mock.onResponsePrepare(requestItems: any())).thenReturn(.success(RequestItems()))
-      when(mock.getSessionStatePublisher()).thenReturn(.success(AsyncStream { $0.finish() }))
+      when(mock.getSessionStatePublisher()).thenReturn(.success(sessionStates))
       when(mock.getCoordinator()).thenReturn(.failure(RuntimeError.genericError))
       when(mock.onRequestReceived()).thenReturn(
         .success(

@@ -61,14 +61,46 @@ final class TestWalletWorkScheduler: EudiTest {
     verify(reIssuanceWorkManager).stop()
   }
 
-  func testScheduleRevocationCheck_WhenCalled_ThenTheCheckRunsWithoutBeingAwaited() async {
-    let checked = expectation(description: "revocation check")
-    stub(revocationWorkManager) { mock in
-      when(mock.checkAfterReIssue(of: equal(to: "original"))).then { _ in checked.fulfill() }
+  func testScheduleRevocationCheck_WhenTheCheckIsStillRunning_ThenReturnsAndTheCheckFinishesLater() async {
+    let gate = AsyncGate()
+    let finished = expectation(description: "revocation check finished")
+    let revocationWorkManager = RecordingRevocationWorkManager(gate: gate, finished: finished)
+    let gatedScheduler = WalletWorkSchedulerImpl(
+      revocationWorkManager: revocationWorkManager,
+      reIssuanceWorkManager: reIssuanceWorkManager
+    )
+    let returned = expectation(description: "scheduling returned")
+
+    Task {
+      await gatedScheduler.scheduleRevocationCheck(afterReIssueOf: "original")
+      returned.fulfill()
     }
+    await fulfillment(of: [returned], timeout: 2)
+    await gate.open()
 
-    await scheduler.scheduleRevocationCheck(afterReIssueOf: "original")
+    await fulfillment(of: [finished], timeout: 5)
+    let checkedIds = await revocationWorkManager.checkedIds
+    XCTAssertEqual(checkedIds, ["original"])
+  }
+}
 
-    await fulfillment(of: [checked], timeout: 5)
+private actor RecordingRevocationWorkManager: RevocationWorkManager {
+  private let gate: AsyncGate
+  private let finished: XCTestExpectation
+  private(set) var checkedIds: [String] = []
+
+  init(gate: AsyncGate, finished: XCTestExpectation) {
+    self.gate = gate
+    self.finished = finished
+  }
+
+  func start() async {}
+
+  func stop() async {}
+
+  func checkAfterReIssue(of originalId: String) async {
+    checkedIds.append(originalId)
+    await gate.wait()
+    finished.fulfill()
   }
 }

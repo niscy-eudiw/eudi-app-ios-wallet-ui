@@ -19,8 +19,7 @@ import logic_business
 @testable import logic_core
 
 extension PresentationSession {
-  fileprivate final class StubPresentationService: PresentationService, ProximityTransferService,
-    @unchecked Sendable {
+  fileprivate struct StubPresentationService: PresentationService, ProximityTransferService {
     var zkpDocumentIds: [WalletStorage.Document.ID]?
 
     var wrpVerifierPolicy: WrpRegistrationPolicy?

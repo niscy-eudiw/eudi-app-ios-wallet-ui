@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import XCTest
+import os
 import logic_business
 @testable import logic_assembly
 @testable import logic_authentication
@@ -244,10 +245,12 @@ private extension TestSessionLockController {
   }
 }
 
-private final class RecordingCallLog: @unchecked Sendable {
-  private(set) var entries: [String] = []
+private final class RecordingCallLog: Sendable {
+  private let log = OSAllocatedUnfairLock<[String]>(initialState: [])
+
+  var entries: [String] { log.withLock { $0 } }
 
   func record(_ entry: String) {
-    entries.append(entry)
+    log.withLock { $0.append(entry) }
   }
 }
