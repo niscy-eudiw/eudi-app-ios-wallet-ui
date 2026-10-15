@@ -362,6 +362,8 @@ final class TestDocumentTabInteractor: EudiTest {
     verify(filterValidator).applySearch(query: equal(to: "search"))
   }
   
+  /// The interactor's stream keeps only the newest state, so the first result may be replaced by the second
+  /// before the test reads it; the last one always arrives.
   func testOnFilterChangeState_WhenStreamEmitsResults_ThenProcessesResultsCorrectly() async {
     // Given
     let filterApplyResult: FilterResult = .filterApplyResult(
@@ -389,26 +391,33 @@ final class TestDocumentTabInteractor: EudiTest {
     
     // When
     let resultStream = await interactor.onFilterChangeState()
-    var results = [DocumentFiltersPartialState]()
-    
-    // Then
-    Task {
+    let received = expectation(description: "the last result")
+    let collector = Task {
+      var results = [DocumentFiltersPartialState]()
       for await result in resultStream {
         results.append(result)
+        if case .filterUpdateResult = result {
+          received.fulfill()
+          break
+        }
       }
-      
-      XCTAssertEqual(results.count, 2)
+      return results
+    }
+
+    // Then
+    await fulfillment(of: [received], timeout: 5)
+    collector.cancel()
+    let results = await collector.value
+    guard let last = results.last, case let .filterUpdateResult(sections) = last else {
+      return XCTFail("Expected .filterUpdateResult last, but got \(results)")
+    }
+    XCTAssertEqual(sections.count, 0)
+    if results.count == 2 {
       if case let .filterApplyResult(transactions, sections, _) = results[0] {
         XCTAssertTrue(transactions.isEmpty)
         XCTAssertEqual(sections.count, 0)
       } else {
-        XCTFail("Expected .filterApplyResult, but got \(results[0])")
-      }
-      
-      if case let .filterUpdateResult(sections) = results[1] {
-        XCTAssertEqual(sections.count, 0)
-      } else {
-        XCTFail("Expected .filterUpdateResult, but got \(results[1])")
+        XCTFail("Expected .filterApplyResult first, but got \(results[0])")
       }
     }
   }
