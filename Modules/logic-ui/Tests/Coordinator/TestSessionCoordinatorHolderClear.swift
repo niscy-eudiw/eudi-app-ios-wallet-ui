@@ -51,4 +51,20 @@ final class TestSessionCoordinatorHolderClear: EudiTest {
 
     XCTAssertNil(stopped)
   }
+
+  func testClear_WhenCalledAgainAfterAStop_ThenTheStoppedSessionIsStillKept() async {
+    let holder = SessionCoordinatorHolderImpl()
+    var coordinator: MockProximitySessionCoordinator? = MockProximitySessionCoordinator(session: PresentationSession.fixture)
+    weak var stopped = coordinator
+    stub(coordinator!) { mock in
+      when(mock.stopPresentation()).thenDoNothing()
+    }
+    await holder.setActiveProximityCoordinator(coordinator!)
+    await holder.clear()
+    coordinator = nil
+
+    await holder.clear()
+
+    XCTAssertNotNil(stopped)
+  }
 }

@@ -193,7 +193,12 @@ final class TestSessionLockController: EudiTest {
   }
 
   @MainActor
-  func testCheckIdle_WhenTheWalletStaysUnlocked_ThenNoPresentationIsStopped() {
+  func testCheckIdle_WhenTheWalletStaysUnlocked_ThenNoPresentationIsStopped() async {
+    let stopped = expectation(description: "presentation stopped")
+    stopped.isInverted = true
+    stub(walletKitController) { mock in
+      when(mock.stopPresentation()).then { stopped.fulfill() }
+    }
     stub(sessionController) { mock in
       when(mock.isUnlocked.get).thenReturn(true)
     }
@@ -202,17 +207,22 @@ final class TestSessionLockController: EudiTest {
     controller.checkIdle()
     controller.checkIdle()
 
-    verify(walletKitController, never()).stopPresentation()
+    await fulfillment(of: [stopped], timeout: 0.5)
   }
 
   @MainActor
-  func testCheckIdle_WhenTheWalletWasNeverUnlocked_ThenNoPresentationIsStopped() {
+  func testCheckIdle_WhenTheWalletWasNeverUnlocked_ThenNoPresentationIsStopped() async {
+    let stopped = expectation(description: "presentation stopped")
+    stopped.isInverted = true
+    stub(walletKitController) { mock in
+      when(mock.stopPresentation()).then { stopped.fulfill() }
+    }
     let controller = makeController()
 
     controller.checkIdle()
     controller.checkIdle()
 
-    verify(walletKitController, never()).stopPresentation()
+    await fulfillment(of: [stopped], timeout: 0.5)
   }
 
   @MainActor

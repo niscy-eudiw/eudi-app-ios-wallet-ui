@@ -76,8 +76,11 @@ final class ProximitySessionCoordinatorImpl: ProximitySessionCoordinator {
       .store(in: &sendableAnyCancellable.cancellables)
   }
 
+  /// Ends only the state stream. Stopping the Bluetooth transfer here would start the transfer library's
+  /// key-deletion task just as the session is released, the crash `SessionCoordinatorHolderImpl` avoids by
+  /// keeping a stopped coordinator until the next one starts.
   deinit {
-    stopPresentation()
+    endStateStream()
   }
 
   public func initialize() async throws {
@@ -125,6 +128,10 @@ final class ProximitySessionCoordinatorImpl: ProximitySessionCoordinator {
   /// link ends stops advertising, as the Android wallet's proximity screen does when it closes.
   public func stopPresentation() {
     (session.presentationService as? BlePresentationService)?.stop()
+    endStateStream()
+  }
+
+  private func endStateStream() {
     self.sendableCurrentValueSubject.complete()
     self.sendableAnyCancellable.cancel()
   }
