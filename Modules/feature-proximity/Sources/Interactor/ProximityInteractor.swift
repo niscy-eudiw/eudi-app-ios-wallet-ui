@@ -71,6 +71,8 @@ public protocol ProximityInteractor: Sendable {
   func onSendResponse() async -> ProximityResponsePartialState
   func stopPresentation() async
   func registrationForFailedRequest() async -> RelyingPartyRegistration?
+  /// Returns true once the reader ends the Bluetooth session, false if the wait is cancelled first.
+  func waitForReaderDisconnect() async -> Bool
 
 }
 
@@ -180,5 +182,9 @@ final actor ProximityInteractorImpl: ProximityInteractor {
   public func stopPresentation() async {
     await walletKitController.stopPresentation()
     proximitySessionCoordinator.stopPresentation()
+  }
+
+  public func waitForReaderDisconnect() async -> Bool {
+    await proximitySessionCoordinator.waitForReaderDisconnect()
   }
 }

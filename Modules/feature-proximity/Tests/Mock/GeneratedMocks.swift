@@ -1763,6 +1763,16 @@ public class MockProximityInteractor: ProximityInteractor, Cuckoo.ProtocolMock, 
         )
     }
 
+    public func waitForReaderDisconnect() async -> Bool {
+        return await cuckoo_manager.call(
+            "waitForReaderDisconnect() async -> Bool",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.waitForReaderDisconnect()
+        )
+    }
+
     public struct __StubbingProxy_ProximityInteractor: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
@@ -1838,6 +1848,14 @@ public class MockProximityInteractor: ProximityInteractor, Cuckoo.ProtocolMock, 
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockProximityInteractor.self,
                 method: "registrationForFailedRequest() async -> RelyingPartyRegistration?",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func waitForReaderDisconnect() -> Cuckoo.ProtocolStubFunction<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockProximityInteractor.self,
+                method: "waitForReaderDisconnect() async -> Bool",
                 parameterMatchers: matchers
             ))
         }
@@ -1961,6 +1979,18 @@ public class MockProximityInteractor: ProximityInteractor, Cuckoo.ProtocolMock, 
                 sourceLocation: sourceLocation
             )
         }
+        
+        
+        @discardableResult
+        func waitForReaderDisconnect() -> Cuckoo.__DoNotUse<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "waitForReaderDisconnect() async -> Bool",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
     }
 }
 
@@ -2002,6 +2032,10 @@ public class ProximityInteractorStub:ProximityInteractor, @unchecked Sendable {
     
     public func registrationForFailedRequest() async -> RelyingPartyRegistration? {
         return DefaultValueRegistry.defaultValue(for: (RelyingPartyRegistration?).self)
+    }
+    
+    public func waitForReaderDisconnect() async -> Bool {
+        return DefaultValueRegistry.defaultValue(for: (Bool).self)
     }
 }
 
@@ -10313,6 +10347,108 @@ import UIKit
 @testable import feature_common
 @testable import feature_proximity
 
+class MockProximityTransferService: ProximityTransferService, Cuckoo.ProtocolMock, @unchecked Sendable {
+    typealias MocksType = any ProximityTransferService
+    typealias Stubbing = __StubbingProxy_ProximityTransferService
+    typealias Verification = __VerificationProxy_ProximityTransferService
+
+    // Original typealiases
+
+    let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+
+    private var __defaultImplStub: (any ProximityTransferService)?
+
+    func enableDefaultImplementation(_ stub: any ProximityTransferService) {
+        __defaultImplStub = stub
+        cuckoo_manager.enableDefaultStubImplementation()
+    }
+
+    var isReaderDisconnected: Bool {
+        get {
+            return cuckoo_manager.getter(
+                "isReaderDisconnected",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.isReaderDisconnected
+            )
+        }
+    }
+
+
+    func stop() {
+        return cuckoo_manager.call(
+            "stop()",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.stop()
+        )
+    }
+
+    struct __StubbingProxy_ProximityTransferService: Cuckoo.StubbingProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+    
+        init(manager: Cuckoo.MockManager) {
+            self.cuckoo_manager = manager
+        }
+        
+        var isReaderDisconnected: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockProximityTransferService,Bool> {
+            return .init(manager: cuckoo_manager, name: "isReaderDisconnected")
+        }
+        
+        func stop() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockProximityTransferService.self,
+                method: "stop()",
+                parameterMatchers: matchers
+            ))
+        }
+    }
+
+    struct __VerificationProxy_ProximityTransferService: Cuckoo.VerificationProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+        private let callMatcher: Cuckoo.CallMatcher
+        private let sourceLocation: Cuckoo.SourceLocation
+    
+        init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+            self.cuckoo_manager = manager
+            self.callMatcher = callMatcher
+            self.sourceLocation = sourceLocation
+        }
+        
+        var isReaderDisconnected: Cuckoo.VerifyReadOnlyProperty<Bool> {
+            return .init(manager: cuckoo_manager, name: "isReaderDisconnected", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        
+        @discardableResult
+        func stop() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "stop()",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+    }
+}
+
+class ProximityTransferServiceStub:ProximityTransferService, @unchecked Sendable {
+    
+    var isReaderDisconnected: Bool {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (Bool).self)
+        }
+    }
+
+
+    
+    func stop() {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+}
+
+
 public class MockProximitySessionCoordinator: ProximitySessionCoordinator, Cuckoo.ProtocolMock, @unchecked Sendable {
     public typealias MocksType = any ProximitySessionCoordinator
     public typealias Stubbing = __StubbingProxy_ProximitySessionCoordinator
@@ -10445,6 +10581,16 @@ public class MockProximitySessionCoordinator: ProximitySessionCoordinator, Cucko
         )
     }
 
+    public func waitForReaderDisconnect() async -> Bool {
+        return await cuckoo_manager.call(
+            "waitForReaderDisconnect() async -> Bool",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.waitForReaderDisconnect()
+        )
+    }
+
     public struct __StubbingProxy_ProximitySessionCoordinator: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
@@ -10524,6 +10670,14 @@ public class MockProximitySessionCoordinator: ProximitySessionCoordinator, Cucko
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockProximitySessionCoordinator.self,
                 method: "stopPresentation()",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func waitForReaderDisconnect() -> Cuckoo.ProtocolStubFunction<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockProximitySessionCoordinator.self,
+                method: "waitForReaderDisconnect() async -> Bool",
                 parameterMatchers: matchers
             ))
         }
@@ -10647,6 +10801,18 @@ public class MockProximitySessionCoordinator: ProximitySessionCoordinator, Cucko
                 sourceLocation: sourceLocation
             )
         }
+        
+        
+        @discardableResult
+        func waitForReaderDisconnect() -> Cuckoo.__DoNotUse<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "waitForReaderDisconnect() async -> Bool",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
     }
 }
 
@@ -10704,6 +10870,10 @@ public class ProximitySessionCoordinatorStub:ProximitySessionCoordinator, @unche
     
     public func stopPresentation() {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func waitForReaderDisconnect() async -> Bool {
+        return DefaultValueRegistry.defaultValue(for: (Bool).self)
     }
 }
 
@@ -11464,6 +11634,21 @@ import Foundation
 import Cuckoo
 import Foundation
 import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_proximity
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/BookmarkStorageController+Extensions.swift'
+
+import Cuckoo
+import logic_storage
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics

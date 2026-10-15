@@ -46,4 +46,24 @@ final class TestProximitySessionCoordinatorStop: EudiTest {
 
     await fulfillment(of: [stopped], timeout: 0.5)
   }
+
+  func testWaitForReaderDisconnect_WhenTheReaderHasLeft_ThenReturnsTrue() async {
+    let coordinator = ProximitySessionCoordinatorImpl(
+      session: .stoppableFixture(onStop: nil, isReaderDisconnected: true)
+    )
+
+    let hasLeft = await coordinator.waitForReaderDisconnect()
+
+    XCTAssertTrue(hasLeft)
+  }
+
+  func testWaitForReaderDisconnect_WhenTheWaitIsCancelled_ThenReturnsFalse() async {
+    let coordinator = ProximitySessionCoordinatorImpl(session: .stoppableFixture(onStop: nil))
+    let wait = Task { await coordinator.waitForReaderDisconnect() }
+
+    wait.cancel()
+
+    let hasLeft = await wait.value
+    XCTAssertFalse(hasLeft)
+  }
 }

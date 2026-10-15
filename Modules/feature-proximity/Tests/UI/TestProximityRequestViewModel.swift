@@ -42,9 +42,49 @@ final class TestProximityRequestViewModel: EudiTest {
   }
 
   @MainActor
-  private func makeViewModel(isTrusted: Bool) -> ProximityRequestViewModel<MockRouterHost> {
+  func testDoWork_WhenTheReaderLeavesBeforeTheUserAnswers_ThenThePresentationEndsAndTheScreenGoesBack() async {
+    let router = MockRouterHost()
+    let wentBack = expectation(description: "went back")
+    let stopped = expectation(description: "presentation stopped")
+    stub(router) { mock in
+      when(mock.popTo(with: any())).then { _ in wentBack.fulfill() }
+    }
+    let viewModel = makeViewModel(isTrusted: true, router: router, readerLeaves: true) { stopped.fulfill() }
+
+    await viewModel.doWork()
+
+    await fulfillment(of: [stopped, wentBack], timeout: 5, enforceOrder: true)
+  }
+
+  @MainActor
+  func testOnShare_WhenTheReaderLeavesAfterTheShare_ThenTheScreenDoesNotGoBack() async {
+    let router = MockRouterHost()
+    let wentBack = expectation(description: "went back")
+    wentBack.isInverted = true
+    stub(router) { mock in
+      when(mock.popTo(with: any())).then { _ in wentBack.fulfill() }
+      when(mock.pop()).thenDoNothing()
+    }
+    let viewModel = makeViewModel(isTrusted: true, router: router, readerLeaves: true)
+
+    await viewModel.doWork()
+    viewModel.onShare()
+
+    await fulfillment(of: [wentBack], timeout: 0.5)
+  }
+
+  @MainActor
+  private func makeViewModel(
+    isTrusted: Bool,
+    router: MockRouterHost = MockRouterHost(),
+    readerLeaves: Bool = false,
+    onStop: @escaping @Sendable () -> Void = {}
+  ) -> ProximityRequestViewModel<MockRouterHost> {
     let interactor = MockProximityInteractor()
     stub(interactor) { mock in
+      when(mock.waitForReaderDisconnect()).thenReturn(readerLeaves)
+      when(mock.stopPresentation()).then { onStop() }
+      when(mock.onResponsePrepare(requestItems: any())).thenReturn(.success(RequestItems()))
       when(mock.getSessionStatePublisher()).thenReturn(.success(AsyncStream { $0.finish() }))
       when(mock.getCoordinator()).thenReturn(.failure(RuntimeError.genericError))
       when(mock.onRequestReceived()).thenReturn(
@@ -64,7 +104,7 @@ final class TestProximityRequestViewModel: EudiTest {
       )
     }
     return ProximityRequestViewModel(
-      router: MockRouterHost(),
+      router: router,
       interactor: interactor,
       originator: .featureDashboardModule(.dashboard)
     )

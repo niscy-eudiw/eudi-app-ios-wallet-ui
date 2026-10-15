@@ -20,6 +20,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
 
   private let interactor: ProximityInteractor
   private var publisherTask: Task<Void, Error>?
+  private var disconnectTask: Task<Void, Never>?
   private var coordinator: ProximitySessionCoordinator?
 
   init(
@@ -49,6 +50,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
         isTrusted: isTrusted
       )
       self.onReceivedRegistration(registration, isRelyingPartyTrusted: isTrusted)
+      self.watchReaderDisconnect()
     case .notSecuredRequest:
       self.onTrustBlocked()
     case .failure(let error):
@@ -60,6 +62,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
   }
 
   override func onShare() {
+    disconnectTask?.cancel()
     Task {
 
       let items = self.viewState.items
@@ -110,6 +113,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
 
   override func getPopRoute() -> AppRoute? {
     publisherTask?.cancel()
+    disconnectTask?.cancel()
     return getOriginator()
   }
 
@@ -119,6 +123,22 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
 
   override func getRelyingParty() -> LocalizableStringKey {
     viewState.relyingParty
+  }
+
+  /// Ends the presentation and goes back, as the back arrow does, once the reader ends the Bluetooth session
+  /// before the user answers, as the Android wallet's request screen does. A share or leaving the screen
+  /// cancels the watch first, so the reader's disconnect after a response does not send the user back.
+  private func watchReaderDisconnect() {
+    disconnectTask?.cancel()
+    disconnectTask = Task { [weak self, interactor] in
+      guard await interactor.waitForReaderDisconnect(), !Task.isCancelled, let self else { return }
+      await self.stopPresentation()
+      if let route = self.getPopRoute() {
+        self.router.popTo(with: route)
+      } else {
+        self.router.pop()
+      }
+    }
   }
 
   private func startPublisherTask() {

@@ -17,13 +17,18 @@ import logic_resources
 import UIKit
 import logic_business
 
-/// A presentation service whose transfer can be stopped. Wallet-kit's `BlePresentationService` is one; the
-/// protocol lets tests see the stop without a Bluetooth session.
-protocol StoppablePresentationService: Sendable {
+/// A presentation service whose Bluetooth transfer the app can stop and watch. Wallet-kit's
+/// `BlePresentationService` is one; the protocol lets tests do both without a Bluetooth session.
+protocol ProximityTransferService: Sendable {
   func stop()
+  /// True once the reader has ended the Bluetooth session. Wallet-kit changes it on the main actor and
+  /// announces it to the session only after a response, so the app reads it there.
+  @MainActor var isReaderDisconnected: Bool { get }
 }
 
-extension BlePresentationService: StoppablePresentationService {}
+extension BlePresentationService: ProximityTransferService {
+  @MainActor var isReaderDisconnected: Bool { status == .disconnected }
+}
 
 public protocol ProximitySessionCoordinator: Sendable {
 
@@ -42,6 +47,9 @@ public protocol ProximitySessionCoordinator: Sendable {
   func setState(presentationState: PresentationState)
   func getStream() -> AsyncStream<PresentationState>
   func stopPresentation()
+  /// Returns true once the reader ends the Bluetooth session, checking every half second, and false when the
+  /// session has no Bluetooth transfer or the waiting task is cancelled.
+  func waitForReaderDisconnect() async -> Bool
 }
 
 final class ProximitySessionCoordinatorImpl: ProximitySessionCoordinator {
@@ -136,11 +144,23 @@ final class ProximitySessionCoordinatorImpl: ProximitySessionCoordinator {
   /// link ends stops advertising, as the Android wallet's proximity screen does when it closes. The transfer
   /// stops on the main actor, where wallet-kit's own status handler changes the same state.
   public func stopPresentation() {
-    if let transfer = session.presentationService as? StoppablePresentationService {
+    if let transfer = session.presentationService as? ProximityTransferService {
       Task { @MainActor in transfer.stop() }
     }
     endStateStream()
   }
+
+  public func waitForReaderDisconnect() async -> Bool {
+    guard let transfer = session.presentationService as? ProximityTransferService else { return false }
+    while !Task.isCancelled {
+      if await transfer.isReaderDisconnected { return true }
+      try? await Task.sleep(nanoseconds: Self.disconnectCheckInterval)
+    }
+    return false
+  }
+
+  /// How often `waitForReaderDisconnect()` reads the transfer's status, in nanoseconds.
+  private static let disconnectCheckInterval: UInt64 = 500_000_000
 
   private func endStateStream() {
     self.sendableCurrentValueSubject.complete()

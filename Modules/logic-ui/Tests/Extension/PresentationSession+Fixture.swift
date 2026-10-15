@@ -20,7 +20,7 @@ import logic_business
 @testable import logic_core
 
 extension PresentationSession {
-  fileprivate final class FixturePresentationService: PresentationService, StoppablePresentationService,
+  fileprivate final class FixturePresentationService: PresentationService, ProximityTransferService,
     @unchecked Sendable {
     var zkpDocumentIds: [WalletStorage.Document.ID]?
 
@@ -46,11 +46,18 @@ extension PresentationSession {
     func sendResponse(userAccepted: Bool, itemsToSend: EudiWalletKit.RequestItems, deviceNameSpacesToSend: MdocDataTransfer18013.RequestDeviceNameSpaces?, authenticationContext: ThreadSafeAuthContext, onSuccess: (@Sendable (URL?) -> Void)?) async throws {}
 
     private let onStop: (@Sendable (Bool) -> Void)?
+    let isReaderDisconnected: Bool
 
-    init(transactionLog: TransactionEntry, flow: EudiWalletKit.FlowType, onStop: (@Sendable (Bool) -> Void)?) {
+    init(
+      transactionLog: TransactionEntry,
+      flow: EudiWalletKit.FlowType,
+      onStop: (@Sendable (Bool) -> Void)?,
+      isReaderDisconnected: Bool
+    ) {
       self.transactionLog = transactionLog
       self.flow = flow
       self.onStop = onStop
+      self.isReaderDisconnected = isReaderDisconnected
     }
 
     func stop() {
@@ -77,13 +84,17 @@ extension PresentationSession {
   static let fixture = stoppableFixture(onStop: nil)
 
   /// A presentation session over a stub service that reports a stop of its transfer, and whether it ran on
-  /// the main thread.
-  static func stoppableFixture(onStop: (@Sendable (Bool) -> Void)?) -> PresentationSession {
+  /// the main thread, and whose reader has disconnected when `isReaderDisconnected` is true.
+  static func stoppableFixture(
+    onStop: (@Sendable (Bool) -> Void)?,
+    isReaderDisconnected: Bool = false
+  ) -> PresentationSession {
     PresentationSession(
       presentationService: FixturePresentationService(
         transactionLog: fixtureTransactionLog,
         flow: .other,
-        onStop: onStop
+        onStop: onStop,
+        isReaderDisconnected: isReaderDisconnected
       ),
       storageManager: .init(storageService: fixtureStorageService),
       docIdToPresentInfo: [:],
