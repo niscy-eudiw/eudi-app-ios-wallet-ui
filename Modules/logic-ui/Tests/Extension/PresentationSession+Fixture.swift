@@ -20,7 +20,8 @@ import logic_business
 @testable import logic_core
 
 extension PresentationSession {
-  fileprivate struct FixturePresentationService: PresentationService {
+  fileprivate final class FixturePresentationService: PresentationService, StoppablePresentationService,
+    @unchecked Sendable {
     var zkpDocumentIds: [WalletStorage.Document.ID]?
 
     var wrpVerifierPolicy: WrpRegistrationPolicy?
@@ -43,6 +44,18 @@ extension PresentationSession {
     var flow: EudiWalletKit.FlowType
 
     func sendResponse(userAccepted: Bool, itemsToSend: EudiWalletKit.RequestItems, deviceNameSpacesToSend: MdocDataTransfer18013.RequestDeviceNameSpaces?, authenticationContext: ThreadSafeAuthContext, onSuccess: (@Sendable (URL?) -> Void)?) async throws {}
+
+    private let onStop: (@Sendable (Bool) -> Void)?
+
+    init(transactionLog: TransactionEntry, flow: EudiWalletKit.FlowType, onStop: (@Sendable (Bool) -> Void)?) {
+      self.transactionLog = transactionLog
+      self.flow = flow
+      self.onStop = onStop
+    }
+
+    func stop() {
+      onStop?(Thread.isMainThread)
+    }
   }
 
   private static let fixtureTransactionLog: TransactionEntry = .presentation(
@@ -61,16 +74,22 @@ extension PresentationSession {
   )
 
   /// A presentation session over a stub service, for building session coordinators in tests.
-  static let fixture = PresentationSession(
-    presentationService: FixturePresentationService(
-      zkpDocumentIds: nil,
-      transactionLog: fixtureTransactionLog,
-      flow: .other
-    ),
-    storageManager: .init(storageService: fixtureStorageService),
-    docIdToPresentInfo: [:],
-    documentKeyIndexes: [:],
-    userAuthenticationRequired: false,
-    localAuthenticationContext: ThreadSafeAuthContext()
-  )
+  static let fixture = stoppableFixture(onStop: nil)
+
+  /// A presentation session over a stub service that reports a stop of its transfer, and whether it ran on
+  /// the main thread.
+  static func stoppableFixture(onStop: (@Sendable (Bool) -> Void)?) -> PresentationSession {
+    PresentationSession(
+      presentationService: FixturePresentationService(
+        transactionLog: fixtureTransactionLog,
+        flow: .other,
+        onStop: onStop
+      ),
+      storageManager: .init(storageService: fixtureStorageService),
+      docIdToPresentInfo: [:],
+      documentKeyIndexes: [:],
+      userAuthenticationRequired: false,
+      localAuthenticationContext: ThreadSafeAuthContext()
+    )
+  }
 }

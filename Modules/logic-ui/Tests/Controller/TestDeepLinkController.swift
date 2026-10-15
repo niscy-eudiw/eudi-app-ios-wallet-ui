@@ -528,13 +528,18 @@ final class TestDeepLinkController: EudiTest {
 
   func testHandleDeepLinkAction_WhenALinkOfNoWalletTypeArrivesLoggedIn_ThenItIsDroppedAsOnAndroid() async {
     stubHandleDeepLink(action: Self.mockedExternalDeepLinkAction, route: nil, isAfterAuth: true, isScreenForeground: true)
+    let stopped = expectation(description: "presentation stopped")
+    stopped.isInverted = true
+    stub(walletKitController) { mock in
+      when(mock.stopPresentation()).then { stopped.fulfill() }
+    }
 
     await controller.handleDeepLinkAction(routerHost: routerHost, deepLinkExecutable: Self.mockedExternalDeepLinkAction)
 
     XCTAssertNil(controller.getPendingDeepLinkAction())
     verify(routerHost, never()).push(with: any())
     verify(routerHost, never()).popTo(with: any(), inclusive: any())
-    verify(walletKitController, never()).stopPresentation()
+    await fulfillment(of: [stopped], timeout: 0.5)
   }
 
   func testHandleDeepLinkAction_WhenALinkOfNoWalletTypeArrives_ThenALinkKeptForLaterStaysKept() async {

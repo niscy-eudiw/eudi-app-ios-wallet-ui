@@ -17,6 +17,14 @@ import logic_resources
 import UIKit
 import logic_business
 
+/// A presentation service whose transfer can be stopped. Wallet-kit's `BlePresentationService` is one; the
+/// protocol lets tests see the stop without a Bluetooth session.
+protocol StoppablePresentationService: Sendable {
+  func stop()
+}
+
+extension BlePresentationService: StoppablePresentationService {}
+
 public protocol ProximitySessionCoordinator: Sendable {
 
   var sendableCurrentValueSubject: SendableCurrentValueSubject<PresentationState> { get }
@@ -125,9 +133,12 @@ final class ProximitySessionCoordinatorImpl: ProximitySessionCoordinator {
   }
 
   /// Stops the Bluetooth transfer as well as the state stream, so that a session the user, a lock or a new
-  /// link ends stops advertising, as the Android wallet's proximity screen does when it closes.
+  /// link ends stops advertising, as the Android wallet's proximity screen does when it closes. The transfer
+  /// stops on the main actor, where wallet-kit's own status handler changes the same state.
   public func stopPresentation() {
-    (session.presentationService as? BlePresentationService)?.stop()
+    if let transfer = session.presentationService as? StoppablePresentationService {
+      Task { @MainActor in transfer.stop() }
+    }
     endStateStream()
   }
 
