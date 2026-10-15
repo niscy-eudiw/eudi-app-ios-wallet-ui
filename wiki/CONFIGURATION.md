@@ -261,7 +261,9 @@ The app treats the two directions differently, and the asymmetry is deliberate:
   offered attestation, stops the flow on the "Issuance blocked" alert. Both flows resolve the
   registration before anything is issued, so that refusal happens up front: a credential offer is
   resolved first, and the issuer-list flow asks for the issuer's registration before it starts
-  (`AddDocumentInteractorImpl.issueDocument`). The outcome is checked again after the kit has
+  (`AddDocumentInteractorImpl.issueDocument`), as does a re-issue; a lookup that fails stops the flow,
+  a trust failure as "Issuance blocked" and any other error as a failure the user can retry. The
+  outcome is checked again after the kit has
   issued, as a fallback, and a refusal there deletes any document already written to storage. A
   registration that was never established, such as a certificate that cannot be decoded, is
   refused as well, whatever `wrprcVciTrustPolicy` says.

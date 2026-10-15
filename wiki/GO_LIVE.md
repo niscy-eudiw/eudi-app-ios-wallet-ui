@@ -1070,8 +1070,9 @@ The app treats the two directions differently, and the asymmetry is intentional:
   way an authentication failure does, because the distinction does not change what the user can do
   about it. Both flows refuse up front. A credential offer is resolved before anything is issued,
   so the offer screen already knows the issuer's registration. The issuer-list flow asks for the
-  issuer's registration before it starts the issuance (`AddDocumentInteractorImpl.issueDocument`).
-  WalletKit validates the certificate again as part of issuing and reports that outcome only after
+  issuer's registration before it starts the issuance (`AddDocumentInteractorImpl.issueDocument`),
+  and so does a re-issue. A lookup that fails stops the flow: a trust failure as "Issuance blocked",
+  any other error as a failure the user can retry; it never reads as "no registration". WalletKit validates the certificate again as part of issuing and reports that outcome only after
   it has written the documents to storage; the app checks it as a fallback and deletes the
   documents itself when it refuses.
 * **Presentation warns rather than blocks.** A request whose registration could not be validated

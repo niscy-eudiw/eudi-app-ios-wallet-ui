@@ -152,11 +152,13 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
     docTypeIdentifier: DocumentTypeIdentifier
   ) async -> IssueResultPartialState {
 
-    if case .blocked(let reason) = await walletController.getIssuerRegistration(issuerId: issuerId, configIds: configIds) {
-      return .registrationBlocked(reason)
-    }
-
     do {
+      if case .blocked(let reason) = try await walletController.getIssuerRegistration(
+        issuerId: issuerId,
+        configIds: configIds
+      ) {
+        return .registrationBlocked(reason)
+      }
 
       let issuance = try await sessionController.duringExternalFlow {
         try await walletController.issueDocuments(

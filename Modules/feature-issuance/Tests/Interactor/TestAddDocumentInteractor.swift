@@ -737,6 +737,27 @@ final class TestAddDocumentInteractor: EudiTest {
       XCTFail("Expected .registrationBlocked, got \(result)")
     }
   }
+
+  func testIssueDocument_WhenTheRegistrationLookupFails_ThenIssuanceNeverStartsAndFails() async {
+    stub(walletKitController) { stub in
+      when(stub.getIssuerRegistration(issuerId: any(), configIds: any())).thenThrow(WalletCoreError.unableFetchDocument)
+    }
+
+    let result = await interactor.issueDocument(
+      issuerId: "issuer.dev",
+      configIds: ["doc"],
+      docTypeIdentifier: DocumentTypeIdentifier(rawValue: "eu.europa.ec.eudi.pid.1")
+    )
+
+    guard case .failure = result else {
+      return XCTFail("Expected .failure, got \(result)")
+    }
+    verify(walletKitController, never()).issueDocuments(
+      issuerId: any(),
+      identifiers: any(),
+      docTypeIdentifier: any()
+    )
+  }
 }
 
 private extension TestAddDocumentInteractor {

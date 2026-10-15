@@ -40,6 +40,16 @@ final class TestWalletKitControllerIssuerRegistration: EudiTest {
     XCTAssertNil(registration)
   }
 
+  func testMakeIssuerRegistration_WhenTheCheckIsOffAndARegistrationWasEvaluated_ThenEvaluatesNothing() throws {
+    let registration = WalletKitControllerImpl.makeIssuerRegistration(
+      policy: try policy(),
+      warnings: ["issuer": [violation(.expired)]],
+      isRegistrationChecked: false
+    )
+
+    XCTAssertNil(registration)
+  }
+
   func testMakeIssuerRegistration_WhenTheRegistrationRaisesAWarning_ThenRefuses() throws {
     let registration = WalletKitControllerImpl.makeIssuerRegistration(
       policy: try policy(),

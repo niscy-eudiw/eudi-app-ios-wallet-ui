@@ -123,7 +123,10 @@ public protocol WalletKitController: Sendable {
 
   func refreshUsageCounters() async throws
   func getIssuerRegistration(for offer: OfferedIssuanceModel) async -> IssuerRegistration?
-  func getIssuerRegistration(issuerId: String, configIds: [String]) async -> IssuerRegistration?
+  /// The issuer's registration for the issuer-list flow and re-issuance, resolved before the issuer is contacted. A
+  /// lookup that fails refuses for a trust failure and throws any other error, so a failure never reads as "no
+  /// registration"; with the check off nothing is looked up.
+  func getIssuerRegistration(issuerId: String, configIds: [String]) async throws -> IssuerRegistration?
 
   func getVerifierRegistration(
     policy: WrpRegistrationPolicy?,
@@ -150,6 +153,9 @@ final actor WalletKitControllerImpl: WalletKitController {
   private let failedReIssuedDocStorageController: any FailedReIssuedDocStorageController
   private let statusRefreshFailureStorageController: any StatusRefreshFailureStorageController
   private let documentRegistrationManager: DocumentRegistrationManager
+  /// "Check Registration Certificates" as WalletKit was configured with it at launch; the setting applies after a
+  /// restart, so the app's own decisions follow the same value.
+  private let isRegistrationChecked: Bool
 
   init(
     walletKitConfig: WalletKitConfig,
@@ -174,6 +180,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     self.failedReIssuedDocStorageController = failedReIssuedDocStorageController
     self.statusRefreshFailureStorageController = statusRefreshFailureStorageController
     self.documentRegistrationManager = documentRegistrationManager
+    self.isRegistrationChecked = walletKitConfig.validateIssuerRegistrationCertificate
 
     guard let walletKit = try? EudiWallet(
       eudiWalletConfig: EudiWalletConfiguration(
@@ -239,10 +246,9 @@ final actor WalletKitControllerImpl: WalletKitController {
     await reconcileRegistrations()
     return IssuanceResult(
       documents: response.documents,
-      issuerRegistration: Self.makeIssuerRegistration(
+      issuerRegistration: makeIssuerRegistration(
         policy: response.wrpIssuerPolicy,
-        warnings: response.wrpIssuerWarnings,
-        isRegistrationChecked: walletKitConfig.validateIssuerRegistrationCertificate
+        warnings: response.wrpIssuerWarnings
       )
     )
   }
@@ -351,12 +357,18 @@ final actor WalletKitControllerImpl: WalletKitController {
     await reconcileRegistrations()
     return IssuanceResult(
       documents: response.documents,
-      issuerRegistration: Self.makeIssuerRegistration(
+      issuerRegistration: makeIssuerRegistration(
         policy: response.wrpIssuerPolicy,
-        warnings: response.wrpIssuerWarnings,
-        isRegistrationChecked: walletKitConfig.validateIssuerRegistrationCertificate
+        warnings: response.wrpIssuerWarnings
       )
     )
+  }
+
+  private func makeIssuerRegistration(
+    policy: WrpRegistrationPolicy?,
+    warnings: [String: [RegistrationPolicyViolation]]?
+  ) -> IssuerRegistration? {
+    Self.makeIssuerRegistration(policy: policy, warnings: warnings, isRegistrationChecked: isRegistrationChecked)
   }
 
   /// The one rule deciding whether an issuer's registration lets an issuance through, as the Android wallet's
@@ -369,9 +381,9 @@ final actor WalletKitControllerImpl: WalletKitController {
     isRegistrationChecked: Bool
   ) -> IssuerRegistration? {
 
-    guard let policy else {
-      return isRegistrationChecked ? .blocked(reason: .notRegisteredAsProvider) : nil
-    }
+    guard isRegistrationChecked else { return nil }
+
+    guard let policy else { return .blocked(reason: .notRegisteredAsProvider) }
 
     let raised = (warnings ?? [:]).values.flatMap { $0 }
 
@@ -402,7 +414,7 @@ final actor WalletKitControllerImpl: WalletKitController {
 
     if let issuerId = document?.credentialIssuerIdentifier,
        let configId = document?.configurationIdentifier,
-       case .blocked = await getIssuerRegistration(issuerId: issuerId, configIds: [configId]) {
+       case .blocked = try await getIssuerRegistration(issuerId: issuerId, configIds: [configId]) {
       throw RegistrationRefusedError()
     }
 
@@ -589,25 +601,27 @@ final actor WalletKitControllerImpl: WalletKitController {
     }
   }
   func getIssuerRegistration(for offer: OfferedIssuanceModel) async -> IssuerRegistration? {
-    Self.makeIssuerRegistration(
+    makeIssuerRegistration(
       policy: offer.wrpVciRegistrationPolicy,
-      warnings: offer.wrpVciWarnings,
-      isRegistrationChecked: walletKitConfig.validateIssuerRegistrationCertificate
+      warnings: offer.wrpVciWarnings
     )
   }
 
-  func getIssuerRegistration(issuerId: String, configIds: [String]) async -> IssuerRegistration? {
-    guard let response = try? await wallet.resolveIssuerRegistration(
-      issuerName: issuerId,
-      credentialConfigurationIds: configIds
-    ) else {
-      return nil
+  func getIssuerRegistration(issuerId: String, configIds: [String]) async throws -> IssuerRegistration? {
+    guard isRegistrationChecked else { return nil }
+    do {
+      let response = try await wallet.resolveIssuerRegistration(
+        issuerName: issuerId,
+        credentialConfigurationIds: configIds
+      )
+      return makeIssuerRegistration(
+        policy: response.wrpIssuerPolicy,
+        warnings: response.wrpIssuerWarnings
+      )
+    } catch {
+      if error.isTrustBlocked { return .blocked(reason: .notRegisteredAsProvider) }
+      throw error
     }
-    return Self.makeIssuerRegistration(
-      policy: response.wrpIssuerPolicy,
-      warnings: response.wrpIssuerWarnings,
-      isRegistrationChecked: walletKitConfig.validateIssuerRegistrationCertificate
-    )
   }
 
   func getVerifierRegistrationForFailedRequest() async -> RelyingPartyRegistration? {
