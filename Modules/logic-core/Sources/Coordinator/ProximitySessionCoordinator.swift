@@ -21,13 +21,10 @@ import logic_business
 /// `BlePresentationService` is one; the protocol lets tests do both without a Bluetooth session.
 protocol ProximityTransferService: Sendable {
   func stop()
-  /// True once the reader has ended the Bluetooth session. Wallet-kit changes it on the main actor and
-  /// announces it to the session only after a response, so the app reads it there.
+  /// True once the reader has ended the Bluetooth session. Wallet-kit announces a disconnect to the session only
+  /// after a response, so the app reads the status itself, on the main actor, where wallet-kit's status handler
+  /// records the disconnect.
   @MainActor var isReaderDisconnected: Bool { get }
-}
-
-extension BlePresentationService: ProximityTransferService {
-  @MainActor var isReaderDisconnected: Bool { status == .disconnected }
 }
 
 public protocol ProximitySessionCoordinator: Sendable {
@@ -154,13 +151,10 @@ final class ProximitySessionCoordinatorImpl: ProximitySessionCoordinator {
     guard let transfer = session.presentationService as? ProximityTransferService else { return false }
     while !Task.isCancelled {
       if await transfer.isReaderDisconnected { return true }
-      try? await Task.sleep(nanoseconds: Self.disconnectCheckInterval)
+      try? await Task.sleep(seconds: Constants.disconnectCheckInterval)
     }
     return false
   }
-
-  /// How often `waitForReaderDisconnect()` reads the transfer's status, in nanoseconds.
-  private static let disconnectCheckInterval: UInt64 = 500_000_000
 
   private func endStateStream() {
     self.sendableCurrentValueSubject.complete()
@@ -177,5 +171,12 @@ final class ProximitySessionCoordinatorImpl: ProximitySessionCoordinator {
       overaskedClaims: overaskedClaims,
       transactionDataSets: []
     )
+  }
+}
+
+private extension ProximitySessionCoordinatorImpl {
+  enum Constants {
+    /// How often `waitForReaderDisconnect()` reads the transfer's status, in seconds.
+    static let disconnectCheckInterval: TimeInterval = 0.5
   }
 }

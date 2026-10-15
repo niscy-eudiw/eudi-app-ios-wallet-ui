@@ -68,6 +68,10 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
 
   open func doWork() async {}
 
+  /// Called when the screen shows again after another screen covered it, for example when the user backs out of
+  /// biometry; a subclass resumes what it paused.
+  open func onReappear() async {}
+
   open func getRelyingParty() -> LocalizableStringKey {
     return .custom("")
   }
@@ -203,7 +207,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
     )
   }
 
-  func onPop() {
+  public func onPop() {
     if let route = getPopRoute() {
       router.popTo(with: route)
     } else {

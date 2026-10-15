@@ -21,6 +21,8 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
   private let interactor: ProximityInteractor
   private var publisherTask: Task<Void, Error>?
   private var disconnectTask: Task<Void, Never>?
+  private var watchesReader = false
+  private var readerLeft = false
   private var coordinator: ProximitySessionCoordinator?
 
   init(
@@ -50,6 +52,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
         isTrusted: isTrusted
       )
       self.onReceivedRegistration(registration, isRelyingPartyTrusted: isTrusted)
+      self.watchesReader = true
       self.watchReaderDisconnect()
     case .notSecuredRequest:
       self.onTrustBlocked()
@@ -62,6 +65,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
   }
 
   override func onShare() {
+    guard !readerLeft else { return }
     disconnectTask?.cancel()
     Task {
 
@@ -77,9 +81,15 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
           self.router.pop()
         }
       case .failure(let error):
-        self.onError(with: error)
+        self.showError(error)
       }
     }
+  }
+
+  /// Resumes the reader watch when the request shows again, for example after the user backed out of biometry.
+  override func onReappear() async {
+    guard watchesReader, !readerLeft, viewState.error == nil else { return }
+    watchReaderDisconnect()
   }
 
   override func getSuccessRoute() -> AppRoute? {
@@ -132,13 +142,16 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
     disconnectTask?.cancel()
     disconnectTask = Task { [weak self, interactor] in
       guard await interactor.waitForReaderDisconnect(), !Task.isCancelled, let self else { return }
+      self.readerLeft = true
       await self.stopPresentation()
-      if let route = self.getPopRoute() {
-        self.router.popTo(with: route)
-      } else {
-        self.router.pop()
-      }
+      self.onPop()
     }
+  }
+
+  /// Shows an error and stops the reader watch: the request is over, so a later disconnect must not act.
+  private func showError(_ error: Error) {
+    disconnectTask?.cancel()
+    onError(with: error)
   }
 
   private func startPublisherTask() {
@@ -156,13 +169,13 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
       for try await state in publisher {
         switch state {
         case .error(let error):
-          self.onError(with: error)
+          self.showError(error)
         default:
           ()
         }
       }
     case .failure(let error):
-      self.onError(with: error)
+      self.showError(error)
     }
   }
 

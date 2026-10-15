@@ -74,13 +74,59 @@ final class TestProximityRequestViewModel: EudiTest {
   }
 
   @MainActor
+  func testGetPopRoute_WhenTheScreenIsLeft_ThenALaterDisconnectDoesNotGoBack() async {
+    let router = MockRouterHost()
+    let wentBack = expectation(description: "went back")
+    wentBack.isInverted = true
+    stub(router) { mock in
+      when(mock.popTo(with: any())).then { _ in wentBack.fulfill() }
+    }
+    let viewModel = makeViewModel(isTrusted: true, router: router, readerLeaves: true)
+
+    await viewModel.doWork()
+    _ = viewModel.getPopRoute()
+
+    await fulfillment(of: [wentBack], timeout: 0.5)
+  }
+
+  @MainActor
+  func testOnShare_WhenTheReaderHasLeft_ThenNothingIsShared() async throws {
+    let router = MockRouterHost()
+    let wentBack = expectation(description: "went back")
+    stub(router) { mock in
+      when(mock.popTo(with: any())).then { _ in wentBack.fulfill() }
+    }
+    let interactor = MockProximityInteractor()
+    let viewModel = makeViewModel(isTrusted: true, router: router, readerLeaves: true, interactor: interactor)
+
+    await viewModel.doWork()
+    await fulfillment(of: [wentBack], timeout: 5)
+    viewModel.onShare()
+    try await Task.sleep(seconds: 0.3)
+
+    verify(interactor, never()).onResponsePrepare(requestItems: any())
+  }
+
+  @MainActor
+  func testOnReappear_WhenTheRequestShowsAgain_ThenTheReaderIsWatchedAgain() async throws {
+    let interactor = MockProximityInteractor()
+    let viewModel = makeViewModel(isTrusted: true, interactor: interactor)
+
+    await viewModel.doWork()
+    await viewModel.onReappear()
+    try await Task.sleep(seconds: 0.3)
+
+    verify(interactor, times(2)).waitForReaderDisconnect()
+  }
+
+  @MainActor
   private func makeViewModel(
     isTrusted: Bool,
     router: MockRouterHost = MockRouterHost(),
     readerLeaves: Bool = false,
+    interactor: MockProximityInteractor = MockProximityInteractor(),
     onStop: @escaping @Sendable () -> Void = {}
   ) -> ProximityRequestViewModel<MockRouterHost> {
-    let interactor = MockProximityInteractor()
     stub(interactor) { mock in
       when(mock.waitForReaderDisconnect()).thenReturn(readerLeaves)
       when(mock.stopPresentation()).then { onStop() }
