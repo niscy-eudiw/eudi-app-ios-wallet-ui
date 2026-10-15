@@ -122,7 +122,8 @@ You will also need to download the EUDI Verifier app. More information can be fo
 1. Launch the application
 2. You will be presented with a welcome screen where you will be asked to create a PIN for future logins.
    Later launches ask for that PIN, or for Face ID or Touch ID if you turned it on in Settings, and so
-   does the wallet after a minute in the background or five minutes without use. If the
+   does the wallet after a minute in the background (ten minutes during an issuance, a presentation or a
+   signing) or five minutes without use. If the
    wallet cannot read its PIN record (for example while the device is locked), or holds documents but
    has no PIN, start-up stops on an error with "Try again"; it never offers to create a new PIN over
    existing documents.
@@ -161,7 +162,9 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
 3. Tap "Next", then select "Select Attributes".
 4. Choose the fields you want to request from the Wallet (e.g., "Family Name" and "Given Name").
 5. Review your presentation request, tap "Next", and then select "Open with your Wallet".
-6. When prompted to open the wallet app, tap "Open".
+6. When prompted to open the wallet app, tap "Open". If the wallet is locked, for example after a minute in the
+   background while you were in the browser, it first asks for your PIN, or for Face ID or Touch ID if you
+   turned it on, and shows the request after that.
 7. You will be redirected to the app's "Request" screen, which shows the attributes the Verifier
    requested. These are disclosed as requested; this flow has no per-attribute selection. If the
    request can be satisfied in more than one way, choose the option you prefer.
@@ -191,7 +194,8 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
    warning that keeps "Share" disabled until you acknowledge it. A reader that does not authenticate
    with a trusted reader certificate is shown with a generic name (unless a verified registration
    certificate names it) and the warning that its identity could not be verified, which keeps "Share"
-   disabled the same way, whatever the setting.
+   disabled the same way, whatever the setting. If the reader ends the Bluetooth session before you
+   answer, the wallet stops the presentation and returns to the screen you started from.
 8. Tap "Share".
 9. Enter the PIN you set up during the initial steps, or use Face ID or Touch ID if you turned it on
    in Settings. If the biometric check fails, enter the PIN.

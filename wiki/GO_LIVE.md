@@ -219,7 +219,7 @@ Keep these files under strict review:
 | `EudiReferenceWalletIDProvider/UI/Authorization/RequestAuthorizationViewModel.swift` | The extension's PIN or biometric check before a request is shown and again on Accept. |
 | `Modules/logic-authentication/Sources/Config/AuthenticationConfig.swift` | PIN lockout policy (max failed attempts, escalating lockout durations) and the session lock's timeouts. |
 | `Modules/logic-authentication/Sources/Controller/SessionController.swift` | The session lock: unlocked by login or PIN creation, locked again after time in the background or idle. |
-| `Modules/logic-assembly/Sources/Controller/SessionLockController.swift` | Drives the lock from the scene: background, return, links, the idle check, and login after a lock. |
+| `Modules/logic-assembly/Sources/Controller/SessionLockController.swift` | Drives the lock from the scene: background, return, links, the idle check, and login after a lock. A lock, whatever caused it, also ends a running presentation, so a proximity session does not outlive its screens. |
 | `Modules/logic-ui/Sources/Controller/UserInteractionController.swift` | What counts as interaction for the idle lock: touches in the app's windows, text input, VoiceOver focus. |
 | `Modules/logic-authentication/Sources/Storage/KeychainPinThrottleProvider.swift` | Keychain-persisted PIN failure counter, lockout level, lockout window timestamps; clock-rollback detection. |
 | `Modules/logic-business/Sources/Controller/KeyChainController.swift` | Defines Keychain service, access group, accessibility class, and biometric Keychain validation. |
@@ -1260,8 +1260,10 @@ creation, and the documents are loaded at the same point. Start-up loads none, a
 opened before login is kept without starting its session (see
 [Deep Links And Redirect URIs](#deep-links-and-redirect-uris)). The first revocation check
 runs 30 seconds after the workers start, and later checks follow every `revocationIntervalSeconds`.
-Nothing in the app stops the workers; they run until the process ends. If an integrator stops and
-restarts them after the first revocation check, the next revocation check waits the full interval; the
+Nothing in the app calls `WalletWorkScheduler.stop()`, so the workers run until the process ends; the scheduler
+(`schedule()`, `stop()`) is the only way to reach them, as the work managers are internal to `logic-core`. If an
+integrator calls `stop()` and then `schedule()` after the first revocation check, the next revocation check waits the
+full interval; the
 re-issuance worker always waits 30 seconds after a start, then `backgroundIntervalSeconds`. The workers
 are tasks in the app's process; iOS background execution is not used.
 
@@ -1288,7 +1290,8 @@ The rules are the Android wallet's (`RevocationRecordUpdate`, Android's `revocat
 * **Re-issue** is disabled for a blocked document, and a manual re-issue that reaches
   `DocumentDetailsInteractor.reIssueDocument` for one, for example a document blocked while its details
   are open, is refused before the issuer is contacted ("The issuer has revoked or suspended this
-  document, so it cannot be reissued."), as is any document whose records cannot be read. The background
+  document, so it cannot be reissued."). A document whose records cannot be read is also stopped before the issuer
+  is contacted, with the read error and Try again. The background
   re-issuance worker skips blocked documents: a re-issued copy would get a new identifier and no record,
   which would undo the block. If the records cannot be read, that round re-issues nothing.
   `WalletKitController.reIssueDocument` checks again just before it asks the issuer, for a document
@@ -1296,7 +1299,9 @@ The rules are the Android wallet's (`RevocationRecordUpdate`, Android's `revocat
   block. If the original is blocked while a re-issue is already under way (the issuer's sign-in), the
   re-issue still completes, as the issuer chose to issue; the revocation check then runs at once
   (`WalletWorkScheduler.scheduleRevocationCheck(afterReIssueOf:)`), so the new copy's own status is read without waiting
-  for the interval. The Android wallet applies the same rules.
+  for the interval. The background worker does the same after each renewal, and so does the documents tab when a
+  deferred re-issuance delivers its credential. The check runs only if the original had a record, and not while the
+  checks are stopped. The Android wallet applies the same rules.
 * A renewed document, manual or background, keeps the original's bookmark, as on Android.
 * A background re-issuance that cannot renew a document leaves a failed re-issuance record
   (`FailedReIssuedDocument`): the document's issuer card opens by itself and says "The wallet could not
@@ -1552,7 +1557,8 @@ Production storage includes:
 * UserDefaults values.
 * App Group container data.
 * WalletKit log file.
-* Transaction records, revocation records (revoked, suspended, unrecognised) and status refresh failures.
+* Transaction records, bookmarks, revocation records (revoked, suspended, unrecognised), status refresh failures and
+  failed re-issuance records.
 
 ### Keychain
 
@@ -1784,7 +1790,7 @@ Production decisions:
 | --- | --- |
 | PIN length | Define minimum length and whether numeric-only is acceptable. |
 | PIN lockout policy | Defaults to 3 attempts then escalating lockouts of 30s, 90s, 5m (then 5m repeats). Tune via `AuthenticationConfig.maxFailedPinAttempts` and `pinLockoutDurations`. Decide whether the final tier should escalate further (wipe, support flow, device-credential step-up). See [PIN Throttle And Lockout](#pin-throttle-and-lockout). |
-| Session lock | The wallet locks after 60 seconds in the background or 5 minutes without interaction, on every screen; during an issuance, presentation or signing the background limit is 10 minutes, and while another screen (the RQES SDK's, the issuer's sign-in) covers the wallet the idle timeout pauses and 10 minutes covered requires login when the wallet's screen returns. An issuer's sign-in still open after 10 minutes locks the wallet. A lock dismisses what is presented, ends every cover and returns to login; after login the user starts again from the dashboard. Tune the timeouts in `AuthenticationConfig` and the screens in `ConfigUiLogic.protectedFlowRouteKeys`; see CONFIGURATION [Session lock configuration](CONFIGURATION.md#session-lock-configuration). The rules are the Android wallet's, except that on iOS the issuer's sign-in pauses the idle timeout: it shows inside the wallet's own scene. |
+| Session lock | The wallet locks after 60 seconds in the background or 5 minutes without interaction, on every screen; during an issuance, presentation or signing the background limit is 10 minutes, and while another screen (the RQES SDK's, the issuer's sign-in) covers the wallet the idle timeout pauses and 10 minutes covered requires login when the wallet's screen returns. An issuer's sign-in still open after 10 minutes locks the wallet. A lock dismisses what is presented, ends every cover and returns to login; after login the user starts again from the dashboard. A lock also ends a running presentation: a proximity session stops its Bluetooth transfer and advertising (`WalletKitController.stopPresentation()`), and so does a wallet link that returns the user to the dashboard. Tune the timeouts in `AuthenticationConfig` and the screens in `ConfigUiLogic.protectedFlowRouteKeys`; see CONFIGURATION [Session lock configuration](CONFIGURATION.md#session-lock-configuration). The rules are the Android wallet's, except that on iOS the issuer's sign-in pauses the idle timeout: it shows inside the wallet's own scene. |
 | Biometric opt-in | Decide whether biometrics are optional or required for specific operations. |
 | Device credential fallback | Decide whether passcode fallback is allowed. |
 | Biometric enrollment change | Test and define whether access is invalidated when biometrics change. |
@@ -2374,11 +2380,16 @@ Before release candidate approval, test:
 * Authorization-code issuance redirect.
 * Deferred issuance.
 * Reissuance.
+* Reissuance of a revoked or suspended document: refused before the issuer is contacted; closing the refusal
+  reloads the details.
 * Revocation/status checks.
 * Same-device OpenID4VP presentation.
 * Cross-device presentation.
 * Relayed OpenID4VP request and response handling.
 * Proximity QR/BLE.
+* Proximity: the reader ends the Bluetooth session before the user answers: the request screen goes back and the
+  presentation ends. A lock, or a wallet link that returns to the dashboard, ends the session and stops the
+  advertising.
 * Proximity reader without, or with a failing, reader certificate: the warning, no badge, Share
   disabled until acknowledged.
 * Relayed proximity engagement where feasible.
@@ -2394,7 +2405,8 @@ Before release candidate approval, test:
   the update (shown as revoked until the next check reads its status, which records it as suspended, or
   clears it if the list reports it valid); a status list that cannot be fetched (the issuer card opens
   with the refresh-failure notice).
-* Malformed deep links.
+* Malformed deep links, and a link of no wallet type (an `https` link, for example): dropped, and it does not
+  replace a link kept for after login.
 * Session lock: 65 seconds in the background requires login, 10 seconds does not; 5 minutes without
   touching any screen, a sheet included, requires login, while touches keep the session; an issuance
   through the issuer's sign-in completes within 10 minutes without login, and a sign-in that lasts 10

@@ -10,6 +10,7 @@
 * [Theme configuration](#theme-configuration)
 * [Pin Storage configuration](#pin-storage-configuration)
 * [PIN throttle configuration](#pin-throttle-configuration)
+* [Session lock configuration](#session-lock-configuration)
 * [Analytics configuration](#analytics-configuration)
 * [Document Provider extension configuration](#document-provider-extension-configuration)
 * [Trust Mark configuration](#trust-mark-configuration)
