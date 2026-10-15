@@ -263,8 +263,8 @@ The app treats the two directions differently, and the asymmetry is deliberate:
   resolved first, and the issuer-list flow asks for the issuer's registration before it starts
   (`AddDocumentInteractorImpl.issueDocument`). The outcome is checked again after the kit has
   issued, as a fallback, and a refusal there deletes any document already written to storage. A
-  registration that was never established is refused as well; see below for the one case that
-  depends on `wrprcVciTrustPolicy`.
+  registration that was never established, such as a certificate that cannot be decoded, is
+  refused as well, whatever `wrprcVciTrustPolicy` says.
 * **Presentation warns.** A request whose registration could not be validated, or that reaches
   beyond the registered scope, still reaches the consent screen. It is shown without the verified
   badge, the claims outside the registered scope are marked, and Share stays disabled until the user
@@ -295,7 +295,7 @@ the first governs presentation as well:
 | Setting | Where | Effect |
 |---|---|---|
 | `validateIssuerRegistrationCertificate` | `WalletKitConfig` | Turns WRPRC validation on, for OpenID4VCI and for presentation alike. It is exposed as **Check Registration Certificates** in Settings and **defaults to off**; a change takes effect after the app restarts. Off means no registration is ever evaluated: issuance never refuses on this basis, and no verifier registration is resolved or shown. An issuer that publishes no `issuer_info` never reaches the validation hook at all, so no registration is established and the app refuses on that basis; enabling this against such an issuer fails every issuance. |
-| `wrprcVciTrustPolicy` | `TrustConfiguration` | Decides what a failed WRPRC check does to an **issuance** inside WalletKit. `.enforce` refuses: an expired, revoked or suspended certificate, a missing status list, a broken trust chain, or an offer reaching past the registered scope all stop the flow. `.warning` lets WalletKit go on, but the app refuses an issuance on any registration warning, whatever the policy (`WalletKitController.makeIssuerRegistration`), so the same cases are still refused. The one difference is a registration certificate that cannot be decoded at all: no registration is then established, and only `.enforce` refuses the issuance. |
+| `wrprcVciTrustPolicy` | `TrustConfiguration` | Decides what a failed WRPRC check does to an **issuance** inside WalletKit. `.enforce` refuses: an expired, revoked or suspended certificate, a missing status list, a broken trust chain, or an offer reaching past the registered scope all stop the flow. `.warning` lets WalletKit go on, but the app refuses an issuance on any registration warning, whatever the policy (`WalletKitController.makeIssuerRegistration`), so the same cases are still refused. A registration certificate that cannot be decoded at all establishes no registration, and the app refuses that issuance under either policy, as the Android wallet does. |
 
 `wrprcVpTrustPolicy` is the same decision for **presentations**, and the app deliberately sets it to
 `.warning` so a failed check reaches the consent screen behind an acknowledgement rather than ending

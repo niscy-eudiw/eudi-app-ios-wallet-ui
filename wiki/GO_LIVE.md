@@ -1103,11 +1103,12 @@ Production requirements:
   can turn the check off. Returning `true` from
   `WalletKitConfigImpl.validateIssuerRegistrationCertificate` and removing the switch is the
   stricter choice.
-* Keep `wrprcVciTrustPolicy` at `.enforce`. The app refuses an issuance on any warning raised
-  against a registration WalletKit could decode, whatever the policy
-  (`WalletKitController.makeIssuerRegistration`), so `.warning` does not let such a failure through.
-  The policy decides one case: a registration certificate that cannot be decoded is refused under
-  `.enforce` and let through under `.warning`. Leave `wrprcVpTrustPolicy` at `.warning`:
+* Keep `wrprcVciTrustPolicy` at `.enforce`. With the registration check on, the app refuses an
+  issuance unless the registration is verified, whatever the policy
+  (`WalletKitController.makeIssuerRegistration`, the same rule as the Android wallet's
+  `isBlockedForIssuance`): any warning refuses, and so does a registration that was never
+  established, such as a certificate that cannot be decoded. `.warning` therefore lets no such
+  failure through. Leave `wrprcVpTrustPolicy` at `.warning`:
   presentations are required to reach the consent screen behind an acknowledgement rather than
   terminate.
 * Confirm each issuer's registered scope actually covers what it offers, before release. An issuer
