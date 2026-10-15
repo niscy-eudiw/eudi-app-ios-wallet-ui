@@ -209,7 +209,3 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
     )
   }
 }
-
-public extension NSNotification {
-  static let RevocationDashboard = Notification.Name("RevocationDashboard")
-}

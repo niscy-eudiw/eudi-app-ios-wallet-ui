@@ -37,7 +37,7 @@ extension PresentationSession {
     }
 
     func receiveRequest() async throws -> [MdocDataTransfer18013.UserRequestInfo] {
-      [.init(docDataFormats: [DocumentTypeIdentifier.mDocPid.rawValue : .cbor], itemsRequested: RequestItems())]
+      [.init(docDataFormats: [DocumentTypeIdentifier.mDocPid.rawValue: .cbor], itemsRequested: RequestItems())]
     }
 
     var flow: EudiWalletKit.FlowType

@@ -189,7 +189,3 @@ final actor ReIssuanceWorkManagerImpl: ReIssuanceWorkManager {
     )
   }
 }
-
-public extension NSNotification {
-  static let ReIssuanceDetailsRefresh = Notification.Name("ReIssuanceDetailsRefresh")
-}

@@ -507,7 +507,7 @@ Let's assume you want to add a new one for the credential offer (e.g., custom-my
 </array>
 ```
 
-After the *Wallet.plist* adjustment, you must also adjust the *DeepLinkController* inside the logic-ui module.
+After the *Wallet.plist* adjustment, you must also adjust the `DeepLink.Action` enum in `Modules/logic-ui/Sources/Model/DeepLink.swift`.
 
 Current Implementation (simplified — the real enum also defines the private `name` and `getSchemas(with:)` helpers that `parseType` relies on):
 

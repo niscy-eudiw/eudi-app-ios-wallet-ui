@@ -64,7 +64,7 @@ final class TestAddDocumentInteractor: EudiTest {
     self.walletKitController = nil
   }
   
-  func testFetchScopedDocuments_whenScopedDocuments_thenReturnsSuccess() async throws {
+  func testFetchScopedDocuments_WhenScopedDocuments_ThenReturnsSuccess() async throws {
     // Given
     stubGetScopedDocumentsSuccess(with: [
       Constants.scopedDocument
@@ -85,7 +85,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testFetchScopedDocuments_whenScopedDocumentsCompare_thenReturnsSuccess() async throws {
+  func testFetchScopedDocuments_WhenScopedDocumentsCompare_ThenReturnsSuccess() async throws {
     // Given
     stubGetScopedDocumentsSuccess(with: [
       Constants.scopedDocument,
@@ -105,7 +105,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testFetchScopedDocuments_whenGetScopedDocuments_thenReturnsSuccess() async {
+  func testFetchScopedDocuments_WhenGetScopedDocuments_ThenReturnsSuccess() async {
     // Given
     stubGetScopedDocumentsSuccess(with: [
       Constants.scopedDocumentNotPid
@@ -123,7 +123,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testFetchScopedDocuments_whenGetScopedDocuments_thenReturnsFailure() async {
+  func testFetchScopedDocuments_WhenGetScopedDocuments_ThenReturnsFailure() async {
     // Given
     stubGetScopedDocumentsFailure()
     
@@ -139,7 +139,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testFetchScopedDocuments_whenOneIssuerFailsAndAnotherSucceeds_thenReturnsSuccessSilently() async throws {
+  func testFetchScopedDocuments_WhenOneIssuerFailsAndAnotherSucceeds_ThenReturnsSuccessSilently() async throws {
     // Given
     stubGetScopedDocuments(
       documents: [Constants.scopedDocument],
@@ -159,7 +159,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
 
-  func testFetchScopedDocuments_whenAllIssuersFailAndOneIsUntrusted_thenReturnsIssuerNotTrusted() async {
+  func testFetchScopedDocuments_WhenAllIssuersFailAndOneIsUntrusted_ThenReturnsIssuerNotTrusted() async {
     // Given a mix of a generic and a trust failure, the trust failure wins.
     stubGetScopedDocuments(
       documents: [],
@@ -182,7 +182,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
 
-  func testIssueDocument_whenIssuerRegistrationDoesNotVouch_thenBlocksAndDiscardsTheDocuments() async {
+  func testIssueDocument_WhenIssuerRegistrationDoesNotVouch_ThenBlocksAndDiscardsTheDocuments() async {
     // Given
     let issuerId = "issuer.dev"
     let configIds = ["doc"]
@@ -216,7 +216,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
 
-  func testIssueDocument_whenDefferedPendingDocument_thenReturnSuccess() async {
+  func testIssueDocument_WhenDefferedPendingDocument_ThenReturnSuccess() async {
     // Given
     let configIds = ["deferred-doc"]
     let issuerId = "issuer.dev"
@@ -246,7 +246,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testIssueDocument_whenIssuedDocument_thenReturnSuccess() async {
+  func testIssueDocument_WhenIssuedDocument_ThenReturnSuccess() async {
     // Given
     let issuerId = "issuer.dev"
     let configIds = ["deferred-doc"]
@@ -274,7 +274,7 @@ final class TestAddDocumentInteractor: EudiTest {
     verify(sessionController).endExternalFlow()
   }
   
-  func testIssueDocument_whenDefferedPendingDocument_thenReturnsFailure() async {
+  func testIssueDocument_WhenDefferedPendingDocument_ThenReturnsFailure() async {
     // Given
     let configIds = ["fail-doc"]
     let issuerId = "issuer.dev"
@@ -302,7 +302,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testIssueDocument_whenWalletThrowsTrustError_thenReturnsIssuerNotTrusted() async {
+  func testIssueDocument_WhenWalletThrowsTrustError_ThenReturnsIssuerNotTrusted() async {
     // Given
     let configIds = ["untrusted-doc"]
     let issuerId = "issuer.dev"
@@ -337,7 +337,7 @@ final class TestAddDocumentInteractor: EudiTest {
     verify(sessionController).endExternalFlow()
   }
 
-  func testResumeDynamicIssuance_whenWalletThrowsTrustError_thenReturnsIssuerNotTrusted() async {
+  func testResumeDynamicIssuance_WhenWalletThrowsTrustError_ThenReturnsIssuerNotTrusted() async {
     // Given
     let pendingData = DynamicIssuancePendingData(
       pendingDoc: Constants.issuedPendingDocument,
@@ -365,7 +365,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
 
-  func testResumeDynamicIssuance_whenDefferedPending_thenReturnDefferedSuccess() async {
+  func testResumeDynamicIssuance_WhenDefferedPending_ThenReturnDefferedSuccess() async {
     // Given
     let pendingDoc = Constants.defferedPendingDocument
     
@@ -388,7 +388,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testResumeDynamicIssuance_whenIssuePending_thenReturnSuccess() async {
+  func testResumeDynamicIssuance_WhenIssuePending_ThenReturnSuccess() async {
     // Given
     let pendingDoc = Constants.issuedPendingDocument
     
@@ -412,7 +412,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testResumeDynamicIssuance_whenIssuePending_thenIssuanceFails() async {
+  func testResumeDynamicIssuance_WhenIssuePending_ThenIssuanceFails() async {
     // Given
     let pendingDoc = Constants.issuedPendingDocument
     
@@ -435,7 +435,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testResumeDynamicIssuance_whenPending_thenReturnSuccess() async {
+  func testResumeDynamicIssuance_WhenPending_ThenReturnSuccess() async {
     // Given
     let pendingDoc = Constants.pendingDocument
     
@@ -458,7 +458,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testResumeDynamicIssuance_whenReturnsNoPending_thenNoPendingDataExists() async {
+  func testResumeDynamicIssuance_WhenReturnsNoPending_ThenNoPendingDataExists() async {
     // Given
     stub(walletKitController) { stub in
       when(stub.getDynamicIssuancePendingData()
@@ -477,7 +477,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testFetchStoredDocuments_whenDocumentsExist_thenReturnsSuccess() async {
+  func testFetchStoredDocuments_WhenDocumentsExist_ThenReturnsSuccess() async {
     // Given
     let documentIds = [
       "doc-id-1",
@@ -508,7 +508,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testFetchStoredDocuments_whenDocumentsDoNotExist_thenReturnsFailure() async {
+  func testFetchStoredDocuments_WhenDocumentsDoNotExist_ThenReturnsFailure() async {
     // Given
     let documentIds = ["non-existent-doc"]
     
@@ -529,7 +529,7 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
-  func testFetchStoredDocuments_whenNoDocumentsReturned_thenReturnsFailure() async {
+  func testFetchStoredDocuments_WhenNoDocumentsReturned_ThenReturnsFailure() async {
     // Given
     let documentIds: [String] = []
     

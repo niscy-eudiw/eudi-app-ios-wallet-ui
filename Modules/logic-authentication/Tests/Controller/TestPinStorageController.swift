@@ -38,7 +38,7 @@ final class TestPinStorageController: EudiTest {
     self.provider = nil
   }
   
-  func testhasPin() throws {
+  func testHasPin_WhenAPinIsStored_ThenReturnsTrue() throws {
     //Given
     let expected = true
     stubHasPin(expected: expected)
@@ -50,7 +50,7 @@ final class TestPinStorageController: EudiTest {
     XCTAssertEqual(result, expected, "The hasPin result should match the expected value.")
   }
   
-  func testSetPin() throws {
+  func testSetPin_WhenCalled_ThenPassesThePinToTheProvider() throws {
     // Given
     let myPin = "1111"
     stubSetPin(expected: myPin)
@@ -62,7 +62,7 @@ final class TestPinStorageController: EudiTest {
     XCTAssertEqual(setPinCalledWith, myPin, "The provider should be called with the correct PIN.")
   }
   
-  func testIsPinValid() {
+  func testIsPinValid_WhenTheProviderAcceptsThePin_ThenReturnsTrue() {
     // Given
     let testPin = "1111"
     stubIsPinValid(result: true)

@@ -215,7 +215,7 @@ Keep these files under strict review:
 | `Modules/logic-authentication/Sources/Storage/KeychainPinStorageProvider.swift` | Defines PIN hashing, salt, PBKDF2 iteration count, and constant-time comparison. |
 | `Modules/logic-authentication/Sources/Controller/SystemBiometryController.swift` | Biometric unlock: the policy evaluated on a fresh `LAContext` and the Keychain probe read with it. |
 | `Modules/feature-startup/Sources/Interactor/StartupInteractor.swift` | The start-up gate: login, PIN creation only for a wallet without documents, or an error. |
-| `Modules/logic-core/Sources/Controller/StoredDocumentPresence.swift` | Start-up's document check: queries wallet-storage's `pdoc` Keychain items; must change with the storage service. |
+| `Modules/logic-core/Sources/Storage/StoredDocumentPresence.swift` | Start-up's document check: queries wallet-storage's `pdoc` Keychain items; must change with the storage service. |
 | `EudiReferenceWalletIDProvider/UI/Authorization/RequestAuthorizationViewModel.swift` | The extension's PIN or biometric check before a request is shown and again on Accept. |
 | `Modules/logic-authentication/Sources/Config/AuthenticationConfig.swift` | PIN lockout policy (max failed attempts, escalating lockout durations) and the session lock's timeouts. |
 | `Modules/logic-authentication/Sources/Controller/SessionController.swift` | The session lock: unlocked by login or PIN creation, locked again after time in the background or idle. |
@@ -1295,7 +1295,7 @@ The rules are the Android wallet's (`RevocationRecordUpdate`, Android's `revocat
   blocked after the worker chose it. Closing the refusal reloads the details, so the card shows the
   block. If the original is blocked while a re-issue is already under way (the issuer's sign-in), the
   re-issue still completes, as the issuer chose to issue; the revocation check then runs at once
-  (`RevocationWorkManager.checkAfterReIssue`), so the new copy's own status is read without waiting
+  (`WalletWorkScheduler.scheduleRevocationCheck(afterReIssueOf:)`), so the new copy's own status is read without waiting
   for the interval. The Android wallet applies the same rules.
 * A renewed document, manual or background, keeps the original's bookmark, as on Android.
 * A background re-issuance that cannot renew a document leaves a failed re-issuance record
@@ -1482,7 +1482,7 @@ How the reference app handles a wallet link (`DeepLinkController.handleDeepLinkA
 Files to review:
 
 * `Wallet/Wallet.plist`
-* `Modules/logic-ui/Sources/Controller/DeepLinkController.swift` (the `DeepLink.Action` enum, `parseType(with:and:)` scheme parsing, and what each link does before and after login)
+* `Modules/logic-ui/Sources/Model/DeepLink.swift` (the `DeepLink.Action` enum and its `parseType(with:and:)` scheme parsing) and `Modules/logic-ui/Sources/Controller/DeepLinkController.swift` (what each link does before and after login)
 * `Modules/logic-ui/Sources/Extension/URL+Extensions.swift` (`isHttpsWebLink`, `openInBrowser`)
 * `Modules/logic-assembly/Sources/Controller/SessionLockController.swift` (the timeout applied before a link is handled)
 * Issuance and presentation interactors that consume parsed deep links.

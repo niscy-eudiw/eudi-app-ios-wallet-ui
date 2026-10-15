@@ -89,18 +89,3 @@ private enum SharedPrefs {
     return sharedDefaults
   }
 }
-
-public struct Prefs {}
-
-public extension Prefs {
-  enum Key: String {
-    case biometryEnabled
-    /// Where builds before the session lock kept a link for after login; now only removed at start.
-    case cachedDeepLink
-    case runAtLeastOnce
-    case language
-    case batchCounter
-    case validateIssuerRegistrationCertificate
-    case trustMarkIntroductionCompleted
-  }
-}

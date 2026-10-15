@@ -857,12 +857,3 @@ final class LocalizableManager: LocalizableManagerType {
     }
   }
 }
-
-fileprivate extension Bundle {
-  func localizedString(forKey key: String) -> String {
-    self.localizedString(forKey: key, value: nil, table: nil)
-  }
-  func localizedStringWithArguments(forKey key: String, arguments: [CVarArg]) -> String {
-    String(format: self.localizedString(forKey: key), locale: nil, arguments: arguments)
-  }
-}

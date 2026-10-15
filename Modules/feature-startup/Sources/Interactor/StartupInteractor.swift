@@ -65,7 +65,7 @@ final actor StartupInteractorImpl: StartupInteractor {
       hasDocuments = false
       documentsCheckError = error
     }
-    try? await Task.sleep(nanoseconds: splashAnimationDuration.nanoseconds)
+    try? await Task.sleep(seconds: splashAnimationDuration)
     let continuationRoute: AppRoute
     do {
       continuationRoute = try await getContinuationRoute(
