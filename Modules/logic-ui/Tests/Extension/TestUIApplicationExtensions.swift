@@ -22,15 +22,15 @@ final class TestUIApplicationExtensions: EudiTest {
 
   @MainActor
   func testIsCovered_WhenAControllerOfACoveringModuleIsPresented_ThenIsTrue() {
-    let root = PresentingController(presenting: PresentingController(presenting: nil))
+    let root = StubPresentingController(presenting: StubPresentingController(presenting: nil))
 
     XCTAssertTrue(UIApplication.isCovered(presentedFrom: root, byModules: ["logic_ui_tests"]))
   }
 
   @MainActor
   func testIsCovered_WhenTheCoveringControllerIsPresentedOverAnother_ThenIsTrue() {
-    let covering = CoveringScreens.Controller(presenting: nil)
-    let root = PresentingController(presenting: PresentingController(presenting: covering))
+    let covering = CoveringScreens.StubController(presenting: nil)
+    let root = StubPresentingController(presenting: StubPresentingController(presenting: covering))
 
     XCTAssertTrue(UIApplication.isCovered(presentedFrom: root, byModules: ["logic_ui_tests.CoveringScreens"]))
     XCTAssertFalse(UIApplication.isCovered(presentedFrom: root, byModules: ["logic_ui_tests.OtherScreens"]))
@@ -38,20 +38,20 @@ final class TestUIApplicationExtensions: EudiTest {
 
   @MainActor
   func testIsCovered_WhenNothingIsPresentedOrOnlyOtherModules_ThenIsFalse() {
-    let root = PresentingController(presenting: UIViewController())
+    let root = StubPresentingController(presenting: UIViewController())
 
     XCTAssertFalse(UIApplication.isCovered(presentedFrom: root))
-    XCTAssertFalse(UIApplication.isCovered(presentedFrom: PresentingController(presenting: nil)))
+    XCTAssertFalse(UIApplication.isCovered(presentedFrom: StubPresentingController(presenting: nil)))
     XCTAssertFalse(UIApplication.isCovered(presentedFrom: nil))
   }
 }
 
 /// Stands for a covering SDK: its type names start with `logic_ui_tests.CoveringScreens.`.
 enum CoveringScreens {
-  final class Controller: PresentingController {}
+  final class StubController: StubPresentingController {}
 }
 
-class PresentingController: UIViewController {
+class StubPresentingController: UIViewController {
   private let presented: UIViewController?
 
   init(presenting presented: UIViewController?) {

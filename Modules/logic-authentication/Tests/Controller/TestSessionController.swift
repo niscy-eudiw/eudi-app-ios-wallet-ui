@@ -316,9 +316,12 @@ final class TestSessionController: EudiTest {
 
     XCTAssertEqual(SessionControllerImpl.monotonicNow(), reference, accuracy: 1)
   }
+}
+
+private extension TestSessionController {
 
   @MainActor
-  private func makeController() -> (SessionControllerImpl, StubClock) {
+  func makeController() -> (SessionControllerImpl, StubClock) {
     let clock = StubClock()
     return (SessionControllerImpl(authenticationConfig: config) { clock.now }, clock)
   }

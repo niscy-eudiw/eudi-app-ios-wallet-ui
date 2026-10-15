@@ -41,9 +41,12 @@ final class TestGenericSuccessViewModel: EudiTest {
     XCTAssertTrue(opened.urls.isEmpty)
     verify(router).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)))
   }
+}
+
+private extension TestGenericSuccessViewModel {
 
   @MainActor
-  private func makeViewModel(
+  func makeViewModel(
     redirect: URL
   ) -> (GenericSuccessViewModel<MockRouterHost>, UIConfig.Success.Button, MockRouterHost, RecordingLinkOpener) {
     let router = MockRouterHost()

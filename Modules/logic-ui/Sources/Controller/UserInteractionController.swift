@@ -13,6 +13,7 @@
  * ANY KIND, either express or implied. See the Licence for the specific language
  * governing permissions and limitations under the Licence.
  */
+import Combine
 import UIKit
 
 /// Counts the user's interaction for the session's idle lock: every touch in the app's windows (sheets
@@ -57,7 +58,7 @@ final class InteractionGestureRecognizer: UIGestureRecognizer, UIGestureRecogniz
 final class UserInteractionControllerImpl: UserInteractionController {
 
   private var onInteraction: (@MainActor () -> Void)?
-  private var observers: [NSObjectProtocol] = []
+  private var cancellables = Set<AnyCancellable>()
 
   nonisolated init() {}
 
@@ -66,26 +67,25 @@ final class UserInteractionControllerImpl: UserInteractionController {
     self.onInteraction = onInteraction
     attachToWindows()
 
-    let center = NotificationCenter.default
-    for name in [UIWindow.didBecomeVisibleNotification, UIWindow.didBecomeKeyNotification] {
-      observers.append(
-        center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-          MainActor.assumeIsolated { self?.attachToWindows() }
-        }
-      )
-    }
-    let interactions = [
-      UITextField.textDidChangeNotification,
-      UITextView.textDidChangeNotification,
-      UIAccessibility.elementFocusedNotification
-    ]
-    for name in interactions {
-      observers.append(
-        center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-          MainActor.assumeIsolated { self?.onInteraction?() }
-        }
-      )
-    }
+    Publishers.MergeMany(
+      [UIWindow.didBecomeVisibleNotification, UIWindow.didBecomeKeyNotification].map {
+        NotificationCenter.default.publisher(for: $0)
+      }
+    )
+    .receive(on: DispatchQueue.main)
+    .sink { [weak self] _ in self?.attachToWindows() }
+    .store(in: &cancellables)
+
+    Publishers.MergeMany(
+      [
+        UITextField.textDidChangeNotification,
+        UITextView.textDidChangeNotification,
+        UIAccessibility.elementFocusedNotification
+      ].map { NotificationCenter.default.publisher(for: $0) }
+    )
+    .receive(on: DispatchQueue.main)
+    .sink { [weak self] _ in self?.onInteraction?() }
+    .store(in: &cancellables)
   }
 
   private func attachToWindows() {

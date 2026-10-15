@@ -14,12 +14,15 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
+import os
 
 /// Records that something happened, such as a stubbed call, for a test to check the order of events.
-final class RecordingFlag: @unchecked Sendable {
-  private(set) var isSet = false
+final class RecordingFlag: Sendable {
+  private let flag = OSAllocatedUnfairLock(initialState: false)
+
+  var isSet: Bool { flag.withLock { $0 } }
 
   func set() {
-    isSet = true
+    flag.withLock { $0 = true }
   }
 }

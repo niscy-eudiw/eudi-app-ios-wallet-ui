@@ -58,9 +58,12 @@ final class TestDocumentSuccessViewModel: EudiTest {
     verify(router).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)))
     verify(router, never()).push(with: any())
   }
+}
+
+private extension TestDocumentSuccessViewModel {
 
   @MainActor
-  private func makeViewModel(redirect: URL) -> DocumentSuccessViewModel<MockRouterHost, String> {
+  func makeViewModel(redirect: URL) -> DocumentSuccessViewModel<MockRouterHost, String> {
     let opened = opened!
     return DocumentSuccessViewModel(
       router: router,

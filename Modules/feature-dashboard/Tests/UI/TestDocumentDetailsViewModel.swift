@@ -58,9 +58,12 @@ final class TestDocumentDetailsViewModel: EudiTest {
 
     XCTAssertNotNil(error?.action)
   }
+}
+
+private extension TestDocumentDetailsViewModel {
 
   @MainActor
-  private func waitForError(
+  func waitForError(
     in viewModel: DocumentDetailsViewModel<MockRouterHost>
   ) async -> ContentErrorView.Config? {
     for _ in 0..<100 where viewModel.viewState.error == nil {

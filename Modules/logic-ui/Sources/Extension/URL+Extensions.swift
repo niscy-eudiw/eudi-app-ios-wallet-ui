@@ -27,7 +27,13 @@ public extension URL {
   /// never passes the link to the wallet's own link handling. The reference app claims no associated
   /// domains; one that does must keep its domains out of the links it opens this way, because iOS would
   /// hand such a link back to the wallet.
-  @MainActor func openInBrowser(using open: @MainActor (URL) -> Void = { UIApplication.shared.open($0) }) {
+  /// Opens the link with the system, the default opener of `openInBrowser(using:)` and of the screens that open
+  /// a verifier's redirect.
+  @MainActor static func openWithSystem(_ url: URL) {
+    UIApplication.shared.open(url)
+  }
+
+  @MainActor func openInBrowser(using open: @MainActor (URL) -> Void = URL.openWithSystem) {
     guard isHttpsWebLink else { return }
     open(self)
   }

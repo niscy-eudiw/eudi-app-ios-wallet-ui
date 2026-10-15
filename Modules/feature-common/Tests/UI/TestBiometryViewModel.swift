@@ -78,8 +78,11 @@ final class TestBiometryViewModel: EudiTest {
     await fulfillment(of: [continued], timeout: 2)
     verify(interactor, never()).unlockSession()
   }
+}
 
-  private func expectUnlockBeforeNavigation() -> XCTestExpectation {
+private extension TestBiometryViewModel {
+
+  func expectUnlockBeforeNavigation() -> XCTestExpectation {
     let opened = expectation(description: "wallet opened after the unlock")
     let unlocked = RecordingFlag()
     stub(interactor) { mock in
@@ -94,7 +97,7 @@ final class TestBiometryViewModel: EudiTest {
   }
 
   @MainActor
-  private func makeViewModel(isPreAuthorization: Bool) -> BiometryViewModel<MockRouterHost> {
+  func makeViewModel(isPreAuthorization: Bool) -> BiometryViewModel<MockRouterHost> {
     BiometryViewModel(
       router: router,
       interactor: interactor,

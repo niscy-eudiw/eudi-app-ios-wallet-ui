@@ -64,7 +64,7 @@ final class TestReIssuanceWorkManager: EudiTest {
   func testCheckReIssuance_WhenDocumentsAreRevokedSuspendedOrUnrecognised_ThenOnlyTheOthersAreReIssued() async throws {
     stub(walletKitController) { mock in
       when(mock.fetchRevokedDocumentStatuses()).thenReturn(["a": .revoked, "b": .suspended, "c": .unrecognised])
-      when(mock.fetchIssuedDocuments()).thenReturn(["a", "b", "c", "d"].map { FixtureDocument.make(id: $0) })
+      when(mock.fetchIssuedDocuments()).thenReturn(["a", "b", "c", "d"].map { StubDocument.make(id: $0) })
     }
 
     try await workManager.checkReIssuance()
@@ -78,7 +78,7 @@ final class TestReIssuanceWorkManager: EudiTest {
   func testCheckReIssuance_WhenADocumentIsReIssued_ThenTheRevocationCheckIsAskedAboutItsOriginal() async throws {
     stub(walletKitController) { mock in
       when(mock.fetchRevokedDocumentStatuses()).thenReturn([:])
-      when(mock.fetchIssuedDocuments()).thenReturn([FixtureDocument.make(id: "d")])
+      when(mock.fetchIssuedDocuments()).thenReturn([StubDocument.make(id: "d")])
       when(mock.reIssueDocument(identifier: equal(to: "d"), isBackgroundOperation: any()))
         .thenReturn(
           WalletStorage.Document(
@@ -103,7 +103,7 @@ final class TestReIssuanceWorkManager: EudiTest {
   func testCheckReIssuance_WhenNothingIsDue_ThenTheOldFailureRecordsAreCleared() async throws {
     stub(walletKitController) { mock in
       when(mock.fetchRevokedDocumentStatuses()).thenReturn(["a": .revoked])
-      when(mock.fetchIssuedDocuments()).thenReturn([FixtureDocument.make(id: "a")])
+      when(mock.fetchIssuedDocuments()).thenReturn([StubDocument.make(id: "a")])
     }
 
     try await workManager.checkReIssuance()
@@ -115,7 +115,7 @@ final class TestReIssuanceWorkManager: EudiTest {
   func testCheckReIssuance_WhenTheRevocationRecordsCannotBeRead_ThenReIssuesNothing() async {
     stub(walletKitController) { mock in
       when(mock.fetchRevokedDocumentStatuses()).thenThrow(RuntimeError.genericError)
-      when(mock.fetchIssuedDocuments()).thenReturn([FixtureDocument.make(id: "d")])
+      when(mock.fetchIssuedDocuments()).thenReturn([StubDocument.make(id: "d")])
     }
 
     do {

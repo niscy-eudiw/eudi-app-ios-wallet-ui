@@ -14,12 +14,15 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
+import os
 
 /// Stands in for the system's URL opener and records what the code under test opens.
-final class RecordingLinkOpener: @unchecked Sendable {
-  private(set) var urls: [URL] = []
+final class RecordingLinkOpener: Sendable {
+  private let opened = OSAllocatedUnfairLock<[URL]>(initialState: [])
+
+  var urls: [URL] { opened.withLock { $0 } }
 
   func open(_ url: URL) {
-    urls.append(url)
+    opened.withLock { $0.append(url) }
   }
 }

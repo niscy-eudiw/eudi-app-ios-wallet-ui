@@ -29,7 +29,7 @@ final class GenericSuccessViewModel<Router: RouterHost>: ViewModel<Router, Gener
   init(
     config: any UIConfigType,
     router: Router,
-    openURL: @escaping @MainActor (URL) -> Void = { UIApplication.shared.open($0) }
+    openURL: @escaping @MainActor (URL) -> Void = URL.openWithSystem
   ) {
     guard let config = config as? UIConfig.Success else {
       fatalError("SuccessViewModel:: Invalid configuraton")

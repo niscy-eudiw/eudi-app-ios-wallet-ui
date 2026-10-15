@@ -211,7 +211,7 @@ final class TestRevocationWorkManager: EudiTest {
 
   func testCheckRevocation_WhenStoredRecordsCannotBeRead_ThenChangesNothing() async {
     stub(walletKitController) { mock in
-      when(mock.fetchIssuedDocuments()).thenReturn([FixtureDocument.make(id: "a")])
+      when(mock.fetchIssuedDocuments()).thenReturn([StubDocument.make(id: "a")])
       when(mock.fetchRevokedDocumentStatuses()).thenThrow(RuntimeError.genericError)
       when(mock.getDocumentStatus(for: any())).thenReturn(.suspended)
     }
@@ -268,7 +268,7 @@ final class TestRevocationWorkManager: EudiTest {
 
   func testCheckRevocation_WhenDocumentHasNoStatusList_ThenItsRecordIsLeft() async throws {
     stub(walletKitController) { mock in
-      when(mock.fetchIssuedDocuments()).thenReturn([FixtureDocument.make(id: "a", hasStatusList: false)])
+      when(mock.fetchIssuedDocuments()).thenReturn([StubDocument.make(id: "a", hasStatusList: false)])
       when(mock.fetchRevokedDocumentStatuses()).thenReturn(["a": .suspended])
       when(mock.fetchStatusRefreshFailures()).thenReturn([])
     }
@@ -363,7 +363,7 @@ private extension TestRevocationWorkManager {
   ) {
     let ids = Set(statuses.keys).union(failing).sorted()
     stub(walletKitController) { mock in
-      when(mock.fetchIssuedDocuments()).thenReturn(ids.map { FixtureDocument.make(id: $0) })
+      when(mock.fetchIssuedDocuments()).thenReturn(ids.map { StubDocument.make(id: $0) })
       when(mock.fetchRevokedDocumentStatuses()).thenReturn(stored)
       when(mock.fetchStatusRefreshFailures()).thenReturn(previousFailures)
       when(mock.getDocumentStatus(for: any())).then { statusList in

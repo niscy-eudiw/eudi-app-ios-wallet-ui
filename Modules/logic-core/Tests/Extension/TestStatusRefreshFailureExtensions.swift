@@ -21,7 +21,7 @@ import logic_storage
 final class TestStatusRefreshFailureExtensions: EudiTest {
 
   func testRetrieveIdentifiers_WhenStoreIsEmpty_ThenIsEmpty() async throws {
-    let storage = FakeStatusRefreshFailureStorageController(failure: logic_storage.StorageError.itemsNotFound)
+    let storage = StubStatusRefreshFailureStorageController(failure: logic_storage.StorageError.itemsNotFound)
 
     let identifiers = try await storage.retrieveIdentifiers()
 
@@ -29,7 +29,7 @@ final class TestStatusRefreshFailureExtensions: EudiTest {
   }
 
   func testRetrieveIdentifiers_WhenReadFails_ThenThrows() async {
-    let storage = FakeStatusRefreshFailureStorageController(failure: logic_storage.StorageError.itemNotFound)
+    let storage = StubStatusRefreshFailureStorageController(failure: logic_storage.StorageError.itemNotFound)
 
     do {
       _ = try await storage.retrieveIdentifiers()
@@ -40,7 +40,7 @@ final class TestStatusRefreshFailureExtensions: EudiTest {
   }
 
   func testRetrieveIdentifiers_WhenRecordsAreStored_ThenReturnsTheirDocuments() async throws {
-    let storage = FakeStatusRefreshFailureStorageController(records: [
+    let storage = StubStatusRefreshFailureStorageController(records: [
       StatusRefreshFailure(identifier: "a"),
       StatusRefreshFailure(identifier: "b")
     ])
@@ -54,7 +54,7 @@ final class TestStatusRefreshFailureExtensions: EudiTest {
 private extension TestStatusRefreshFailureExtensions {
 
   /// A store that returns fixed records or fails every read; it records nothing.
-  actor FakeStatusRefreshFailureStorageController: StatusRefreshFailureStorageController {
+  actor StubStatusRefreshFailureStorageController: StatusRefreshFailureStorageController {
 
     private let records: [StatusRefreshFailure]
     private let failure: (any Error)?

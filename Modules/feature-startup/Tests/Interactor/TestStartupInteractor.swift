@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import XCTest
+import os
 import logic_business
 import logic_core
 import logic_authentication
@@ -295,7 +296,7 @@ final class TestStartupInteractor: EudiTest {
   }
 
   func testInitialize_WhenFirstBootWipesTheDocuments_ThenChecksForDocumentsAfterTheWipe() async throws {
-    let storage = WipeRecorder()
+    let storage = RecordingWipe()
     stubHasPin(with: false)
     stubRunAtLeastOnce(false)
     stub(walletKitController) { mock in
@@ -327,17 +328,16 @@ final class TestStartupInteractor: EudiTest {
 private extension TestStartupInteractor {
 
   /// A document store that holds documents until the first-boot wipe clears it.
-  final class WipeRecorder: @unchecked Sendable {
+  final class RecordingWipe: Sendable {
 
-    private let lock = NSLock()
-    private var isWiped = false
+    private let isWiped = OSAllocatedUnfairLock(initialState: false)
 
     var hasDocuments: Bool {
-      lock.withLock { !isWiped }
+      isWiped.withLock { !$0 }
     }
 
     func wipe() {
-      lock.withLock { isWiped = true }
+      isWiped.withLock { $0 = true }
     }
   }
 

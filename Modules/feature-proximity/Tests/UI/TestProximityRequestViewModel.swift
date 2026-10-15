@@ -118,9 +118,12 @@ final class TestProximityRequestViewModel: EudiTest {
 
     verify(interactor, times(2)).waitForReaderDisconnect()
   }
+}
+
+private extension TestProximityRequestViewModel {
 
   @MainActor
-  private func makeViewModel(
+  func makeViewModel(
     isTrusted: Bool,
     router: MockRouterHost = MockRouterHost(),
     readerLeaves: Bool = false,

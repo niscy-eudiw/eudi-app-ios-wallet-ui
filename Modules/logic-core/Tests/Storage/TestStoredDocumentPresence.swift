@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import XCTest
+import os
 import Security
 @testable import logic_business
 @testable import logic_core
@@ -22,7 +23,7 @@ import Security
 final class TestStoredDocumentPresence: EudiTest {
 
   func testHasDocuments_WhenNoStatusHasAnItem_ThenIsFalseAfterAQueryPerStatus() throws {
-    let queries = QueryLog()
+    let queries = RecordingKeychainQueries()
     let presence = StoredDocumentPresence(serviceName: "svc", accessGroup: "") { query in
       queries.record(query)
       return errSecItemNotFound
@@ -72,17 +73,17 @@ final class TestStoredDocumentPresence: EudiTest {
 private extension TestStoredDocumentPresence {
 
   /// Records the service of every query the presence check makes.
-  final class QueryLog: @unchecked Sendable {
+  final class RecordingKeychainQueries: Sendable {
 
-    private let lock = NSLock()
-    private var recorded: [String] = []
+    private let recorded = OSAllocatedUnfairLock<[String]>(initialState: [])
 
     var services: [String] {
-      lock.withLock { recorded }
+      recorded.withLock { $0 }
     }
 
     func record(_ query: [String: Any]) {
-      lock.withLock { recorded.append(query[kSecAttrService as String] as? String ?? "") }
+      let service = query[kSecAttrService as String] as? String ?? ""
+      recorded.withLock { $0.append(service) }
     }
   }
 }

@@ -32,7 +32,7 @@ final class TestRevokedDocumentExtensions: EudiTest {
   }
 
   func testRetrieveRevocationStatuses_WhenStoreIsEmpty_ThenIsEmpty() async throws {
-    let storage = FakeRevokedDocumentStorageController(failure: logic_storage.StorageError.itemsNotFound)
+    let storage = StubRevokedDocumentStorageController(failure: logic_storage.StorageError.itemsNotFound)
 
     let statuses = try await storage.retrieveRevocationStatuses()
 
@@ -40,7 +40,7 @@ final class TestRevokedDocumentExtensions: EudiTest {
   }
 
   func testRetrieveRevocationStatuses_WhenReadFails_ThenThrows() async {
-    let storage = FakeRevokedDocumentStorageController(failure: logic_storage.StorageError.itemNotFound)
+    let storage = StubRevokedDocumentStorageController(failure: logic_storage.StorageError.itemNotFound)
 
     do {
       _ = try await storage.retrieveRevocationStatuses()
@@ -51,7 +51,7 @@ final class TestRevokedDocumentExtensions: EudiTest {
   }
 
   func testRetrieveRevocationStatuses_WhenRecordsMixStatuses_ThenMapsEachAndKeepsTheFirstDuplicate() async throws {
-    let storage = FakeRevokedDocumentStorageController(records: [
+    let storage = StubRevokedDocumentStorageController(records: [
       RevokedDocument(identifier: "a"),
       RevokedDocument(identifier: "b", status: "suspended"),
       RevokedDocument(identifier: "b", status: "revoked")
@@ -66,7 +66,7 @@ final class TestRevokedDocumentExtensions: EudiTest {
 private extension TestRevokedDocumentExtensions {
 
   /// A store that returns fixed records or fails every read; it records nothing.
-  actor FakeRevokedDocumentStorageController: RevokedDocumentStorageController {
+  actor StubRevokedDocumentStorageController: RevokedDocumentStorageController {
 
     private let records: [RevokedDocument]
     private let failure: (any Error)?

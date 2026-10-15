@@ -224,9 +224,12 @@ final class TestSessionLockController: EudiTest {
 
     await fulfillment(of: [stopped], timeout: 0.5)
   }
+}
+
+private extension TestSessionLockController {
 
   @MainActor
-  private func makeController(
+  func makeController(
     isCovered: Bool = false,
     idleCheckInterval: TimeInterval = 1_000
   ) -> SessionLockControllerImpl {

@@ -36,7 +36,7 @@ open class DocumentSuccessViewModel<Router: RouterHost, RequestItem: Sendable>: 
     router: Router,
     config: any UIConfigType,
     requestItems: [any Routable],
-    openURL: @escaping @MainActor (URL) -> Void = { UIApplication.shared.open($0) }
+    openURL: @escaping @MainActor (URL) -> Void = URL.openWithSystem
   ) {
 
     guard let config = config as? DocumentSuccessUIConfig else {

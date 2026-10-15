@@ -57,8 +57,7 @@ struct DashboardView<Router: RouterHost>: View {
             viewModel.viewState.historyTab.eraseToAnyView()
           }
         },
-        revokedDocuments: viewModel.viewState.revokedDocuments,
-        suspendedDocuments: viewModel.viewState.suspendedDocuments,
+        blockedDocuments: viewModel.viewState.blockedDocuments,
         onDocumentDetails: { viewModel.onDocumentDetails(documentId: $0) }
       )
     }
@@ -79,8 +78,7 @@ private struct DashboardViewContainer: View {
   @Binding var selectedTab: SelectedTab
   @Binding var isRevokedModalShowing: Bool
   let tabView: (SelectedTab) -> AnyView
-  let revokedDocuments: [String: String]
-  let suspendedDocuments: [String: String]
+  let blockedDocuments: [String: String]
   let onDocumentDetails: (String) -> Void
 
   var body: some View {
@@ -92,7 +90,7 @@ private struct DashboardViewContainer: View {
             caption: .revokedModalDescription
           )
 
-          notificationList(for: revokedDocuments.merging(suspendedDocuments) { revoked, _ in revoked })
+          notificationList(for: blockedDocuments)
         }
       }
   }
@@ -183,8 +181,7 @@ private struct DashboardViewContainer: View {
       selectedTab: .constant(.home),
       isRevokedModalShowing: .constant(false),
       tabView: { _ in EmptyView().eraseToAnyView() },
-      revokedDocuments: [:],
-      suspendedDocuments: [:],
+      blockedDocuments: [:],
       onDocumentDetails: { _ in }
     )
   }

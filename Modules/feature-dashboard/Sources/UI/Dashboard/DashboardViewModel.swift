@@ -28,6 +28,11 @@ struct DashboardState<Router: RouterHost>: ViewState {
   let navigationTitle: LocalizableStringKey
   let revokedDocuments: [String: String]
   let suspendedDocuments: [String: String]
+
+  /// Every document the last check blocked, for the notice; a revocation wins over a suspension.
+  var blockedDocuments: [String: String] {
+    revokedDocuments.merging(suspendedDocuments) { revoked, _ in revoked }
+  }
   let isPaused: Bool
 }
 

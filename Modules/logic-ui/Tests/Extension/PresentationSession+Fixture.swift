@@ -20,8 +20,7 @@ import logic_business
 @testable import logic_core
 
 extension PresentationSession {
-  fileprivate final class FixturePresentationService: PresentationService, ProximityTransferService,
-    @unchecked Sendable {
+  fileprivate struct StubPresentationService: PresentationService {
     var zkpDocumentIds: [WalletStorage.Document.ID]?
 
     var wrpVerifierPolicy: WrpRegistrationPolicy?
@@ -44,25 +43,6 @@ extension PresentationSession {
     var flow: EudiWalletKit.FlowType
 
     func sendResponse(userAccepted: Bool, itemsToSend: EudiWalletKit.RequestItems, deviceNameSpacesToSend: MdocDataTransfer18013.RequestDeviceNameSpaces?, authenticationContext: ThreadSafeAuthContext, onSuccess: (@Sendable (URL?) -> Void)?) async throws {}
-
-    private let onStop: (@Sendable (Bool) -> Void)?
-    let isReaderDisconnected: Bool
-
-    init(
-      transactionLog: TransactionEntry,
-      flow: EudiWalletKit.FlowType,
-      onStop: (@Sendable (Bool) -> Void)?,
-      isReaderDisconnected: Bool
-    ) {
-      self.transactionLog = transactionLog
-      self.flow = flow
-      self.onStop = onStop
-      self.isReaderDisconnected = isReaderDisconnected
-    }
-
-    func stop() {
-      onStop?(Thread.isMainThread)
-    }
   }
 
   private static let fixtureTransactionLog: TransactionEntry = .presentation(
@@ -81,20 +61,12 @@ extension PresentationSession {
   )
 
   /// A presentation session over a stub service, for building session coordinators in tests.
-  static let fixture = stoppableFixture(onStop: nil)
-
-  /// A presentation session over a stub service that reports a stop of its transfer, and whether it ran on
-  /// the main thread, and whose reader has disconnected when `isReaderDisconnected` is true.
-  static func stoppableFixture(
-    onStop: (@Sendable (Bool) -> Void)?,
-    isReaderDisconnected: Bool = false
-  ) -> PresentationSession {
+  static let fixture =
     PresentationSession(
-      presentationService: FixturePresentationService(
+      presentationService: StubPresentationService(
+        zkpDocumentIds: nil,
         transactionLog: fixtureTransactionLog,
-        flow: .other,
-        onStop: onStop,
-        isReaderDisconnected: isReaderDisconnected
+        flow: .other
       ),
       storageManager: .init(storageService: fixtureStorageService),
       docIdToPresentInfo: [:],
@@ -102,5 +74,4 @@ extension PresentationSession {
       userAuthenticationRequired: false,
       localAuthenticationContext: ThreadSafeAuthContext()
     )
-  }
 }

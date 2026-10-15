@@ -90,9 +90,12 @@ final class TestQuickPinViewModel: EudiTest {
     await fulfillment(of: [shown], timeout: 3)
     verify(interactor, never()).unlockSession()
   }
+}
+
+private extension TestQuickPinViewModel {
 
   @MainActor
-  private func enterTwice(_ pin: String, in viewModel: QuickPinViewModel<MockRouterHost>) async throws {
+  func enterTwice(_ pin: String, in viewModel: QuickPinViewModel<MockRouterHost>) async throws {
     try await enter(pin, in: viewModel)
     try await enter(pin, in: viewModel)
   }
@@ -100,13 +103,13 @@ final class TestQuickPinViewModel: EudiTest {
   /// Waits past two 250 ms debounce windows: the entry's, and the one for the empty field the view model
   /// sets after it, so that the same PIN entered again is not dropped as a duplicate.
   @MainActor
-  private func enter(_ pin: String, in viewModel: QuickPinViewModel<MockRouterHost>) async throws {
+  func enter(_ pin: String, in viewModel: QuickPinViewModel<MockRouterHost>) async throws {
     viewModel.uiPinInputField = pin
     try await Task.sleep(seconds: 0.8)
   }
 
   @MainActor
-  private func makeViewModel(flow: QuickPinUiConfig.Flow) -> QuickPinViewModel<MockRouterHost> {
+  func makeViewModel(flow: QuickPinUiConfig.Flow) -> QuickPinViewModel<MockRouterHost> {
     QuickPinViewModel(router: router, interactor: interactor, config: QuickPinUiConfig(flow: flow))
   }
 }

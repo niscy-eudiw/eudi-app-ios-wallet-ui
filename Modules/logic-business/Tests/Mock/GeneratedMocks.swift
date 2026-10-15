@@ -1,11 +1,11 @@
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Builder/ArrayBuilder.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Builder/ArrayBuilder.swift'
 
 import Cuckoo
 @testable import logic_business
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Config/ConfigLogic.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Config/ConfigLogic.swift'
 
 import Cuckoo
 import Foundation
@@ -227,14 +227,14 @@ public class ConfigLogicStub:ConfigLogic, @unchecked Sendable {
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Config/KeyChainConfig.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Config/KeyChainConfig.swift'
 
 import Cuckoo
 @testable import logic_business
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Controller/KeyChainController.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Controller/KeyChainController.swift'
 
 import Cuckoo
 import Foundation
@@ -770,7 +770,7 @@ public class KeyChainControllerStub:KeyChainController, @unchecked Sendable {
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Controller/PrefsController.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Controller/PrefsController.swift'
 
 import Cuckoo
 import Foundation
@@ -1128,7 +1128,7 @@ public class PrefsControllerStub:PrefsController, @unchecked Sendable {
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Controller/ReachabilityController.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Controller/ReachabilityController.swift'
 
 import Cuckoo
 import Foundation
@@ -1286,7 +1286,7 @@ public class ReachabilityControllerStub:ReachabilityController, @unchecked Senda
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/DI/DIGraph.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/DI/DIGraph.swift'
 
 import Cuckoo
 import Swinject
@@ -1420,7 +1420,7 @@ public class DIGraphTypeStub:DIGraphType, @unchecked Sendable {
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Error/KeyChainError.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Error/KeyChainError.swift'
 
 import Cuckoo
 import Foundation
@@ -1429,7 +1429,7 @@ import logic_resources
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Error/RuntimeError.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Error/RuntimeError.swift'
 
 import Cuckoo
 import Foundation
@@ -1438,14 +1438,14 @@ import logic_resources
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Array+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/Array+Extensions.swift'
 
 import Cuckoo
 @testable import logic_business
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Bundle+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/Bundle+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1454,7 +1454,7 @@ import Security
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/ConfigLogic+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/ConfigLogic+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1462,7 +1462,7 @@ import Foundation
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Data+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/Data+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1470,7 +1470,7 @@ import Foundation
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Date+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/Date+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1479,7 +1479,7 @@ import logic_resources
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Encodable+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/Encodable+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1487,7 +1487,7 @@ import Foundation
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Error+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/Error+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1495,7 +1495,7 @@ import Foundation
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Int+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/Int+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1503,7 +1503,7 @@ import Foundation
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Locale+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/Locale+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1511,7 +1511,7 @@ import Foundation
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/NSNotification+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/NSNotification+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1519,7 +1519,7 @@ import Foundation
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Publisher+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/Publisher+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1528,7 +1528,7 @@ import Combine
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Resolver+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/Resolver+Extensions.swift'
 
 import Cuckoo
 import Swinject
@@ -1536,7 +1536,7 @@ import Swinject
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/String+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/String+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1544,7 +1544,7 @@ import Foundation
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Task+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/Task+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1552,7 +1552,7 @@ import Foundation
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/TimeInterval+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/TimeInterval+Extensions.swift'
 
 import Cuckoo
 import Foundation
@@ -1560,7 +1560,7 @@ import Foundation
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/URL+Extensions.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Extension/URL+Extensions.swift'
 
 import Cuckoo
 import UIKit
@@ -1568,7 +1568,7 @@ import UIKit
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Validator/FilterValidator.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Validator/FilterValidator.swift'
 
 import Cuckoo
 import Foundation
@@ -1994,7 +1994,7 @@ public class FilterValidatorStub:FilterValidator, @unchecked Sendable {
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Validator/FormValidator.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Validator/FormValidator.swift'
 
 import Cuckoo
 import Foundation
@@ -2228,7 +2228,7 @@ public class FormValidatorInteractorStub:FormValidatorInteractor, @unchecked Sen
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Validator/Model/FilterAction.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Validator/Model/FilterAction.swift'
 
 import Cuckoo
 import Foundation
@@ -2460,14 +2460,14 @@ public class SortFilterActionStub:SortFilterAction, @unchecked Sendable {
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Validator/Model/FilterIds.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Validator/Model/FilterIds.swift'
 
 import Cuckoo
 @testable import logic_business
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Validator/Model/Filterable.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Validator/Model/Filterable.swift'
 
 import Cuckoo
 import Foundation
@@ -2636,7 +2636,7 @@ public class FilterableAttributesStub:FilterableAttributes, @unchecked Sendable 
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Validator/Model/Filters.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Validator/Model/Filters.swift'
 
 import Cuckoo
 import Foundation
@@ -2785,7 +2785,7 @@ public class FilterGroupStub:FilterGroup, @unchecked Sendable {
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Wrapper/EquatableNoop.swift'
+// MARK: - Mocks generated from file: 'Modules/logic-business/Sources/Wrapper/EquatableNoop.swift'
 
 import Cuckoo
 @testable import logic_business

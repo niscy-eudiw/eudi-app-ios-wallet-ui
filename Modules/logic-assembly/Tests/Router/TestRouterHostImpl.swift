@@ -133,9 +133,12 @@ final class TestRouterHostImpl: EudiTest {
 
     XCTAssertNil(host.getCurrentScreen())
   }
+}
+
+private extension TestRouterHostImpl {
 
   @MainActor
-  private func makeHost(isUnlocked: Bool) -> RouterHostImpl {
+  func makeHost(isUnlocked: Bool) -> RouterHostImpl {
     stubSession(isUnlocked: isUnlocked)
     return RouterHostImpl(
       uiConfigLogic: configUiLogic,
@@ -144,7 +147,7 @@ final class TestRouterHostImpl: EudiTest {
     )
   }
 
-  private func stubSession(isUnlocked: Bool) {
+  func stubSession(isUnlocked: Bool) {
     stub(sessionController) { mock in
       when(mock.isUnlocked.get).thenReturn(isUnlocked)
     }

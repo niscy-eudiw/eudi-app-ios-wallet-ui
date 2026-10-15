@@ -40,9 +40,12 @@ final class TestPresentationRequestViewModel: EudiTest {
 
     XCTAssertNil(viewModel.viewState.registrationWarning)
   }
+}
+
+private extension TestPresentationRequestViewModel {
 
   @MainActor
-  private func makeViewModel(isTrusted: Bool) -> PresentationRequestViewModel<MockRouterHost> {
+  func makeViewModel(isTrusted: Bool) -> PresentationRequestViewModel<MockRouterHost> {
     let interactor = MockPresentationInteractor()
     stub(interactor) { mock in
       when(mock.getCoordinator()).thenReturn(.failure(RuntimeError.genericError))

@@ -18,7 +18,7 @@ import MdocDataModel18013
 @testable import logic_core
 
 /// An issued document for the worker tests, with a status list unless told otherwise.
-struct FixtureDocument: DocClaimsDecodable {
+struct StubDocument: DocClaimsDecodable {
   var id: String
   var createdAt: Date
   var modifiedAt: Date?
@@ -40,7 +40,7 @@ struct FixtureDocument: DocClaimsDecodable {
 
   /// A PID named "Document `id`" whose status list URI ends with `id`.
   static func make(id: String, hasStatusList: Bool = true) -> any DocClaimsDecodable {
-    FixtureDocument(
+    StubDocument(
       id: id,
       createdAt: Date(),
       displayName: "Document \(id)",
