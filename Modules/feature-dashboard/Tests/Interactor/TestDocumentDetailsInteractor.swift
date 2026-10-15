@@ -28,12 +28,17 @@ final class TestDocumentDetailsInteractor: EudiTest {
   var prefsController: MockPrefsController!
   var configLogic: MockConfigLogic!
   var sessionController: MockSessionController!
+  var revocationWorkManager: MockRevocationWorkManager!
 
   override func setUp() {
     self.walletKitController = MockWalletKitController()
     self.prefsController = MockPrefsController()
     self.configLogic = MockConfigLogic()
     self.sessionController = MockSessionController()
+    self.revocationWorkManager = MockRevocationWorkManager()
+    stub(revocationWorkManager) { mock in
+      when(mock.checkAfterReIssue(of: any())).thenDoNothing()
+    }
     stub(sessionController) { mock in
       when(mock.beginExternalFlow()).thenDoNothing()
       when(mock.endExternalFlow()).thenDoNothing()
@@ -45,7 +50,8 @@ final class TestDocumentDetailsInteractor: EudiTest {
       walletController: walletKitController,
       prefsController: prefsController,
       configLogic: configLogic,
-      sessionController: sessionController
+      sessionController: sessionController,
+      revocationWorkManager: revocationWorkManager
     )
     
     stubConfigLogic()
@@ -509,6 +515,7 @@ final class TestDocumentDetailsInteractor: EudiTest {
 
     verify(sessionController).beginExternalFlow()
     verify(sessionController).endExternalFlow()
+    verify(revocationWorkManager).checkAfterReIssue(of: equal(to: identifier))
   }
 
   func testReIssueDocument_WhenTheDocumentIsRevoked_ThenItIsRefusedBeforeTheIssuerIsContacted() async {
@@ -663,6 +670,7 @@ extension TestDocumentDetailsInteractor {
     let result = await interactor.reIssueDocument(identifier: identifier)
     verify(walletKitController, never()).reIssueDocument(identifier: any(), isBackgroundOperation: any())
     verify(sessionController, never()).beginExternalFlow()
+    verify(revocationWorkManager, never()).checkAfterReIssue(of: any())
     guard case .failure(let error) = result else {
       XCTFail("Expected failure, got \(result)", file: file, line: line)
       return nil

@@ -19,6 +19,10 @@ import Foundation
 public protocol RevocationWorkManager: Sendable {
   func start() async
   func stop() async
+  /// Runs the revocation check now, or right after one under way, if the original of a completed re-issue
+  /// gained a revocation record while it was re-issued, so the new copy's status is read without waiting for
+  /// the interval, as the Android wallet does. Does nothing while the checks are stopped.
+  func checkAfterReIssue(of originalId: String) async
 }
 
 final actor RevocationWorkManagerImpl: RevocationWorkManager {
@@ -30,6 +34,8 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
   private var revocationTask: Task<Void, Never>?
   private var isRunning = false
   private var didRunInitialCheck = false
+  private var isChecking = false
+  private var checkAgain = false
 
   init(configLogic: WalletKitConfig, walletKitController: WalletKitController) {
     self.configLogic = configLogic
@@ -49,7 +55,7 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
       try? await Task.sleep(seconds: self.firstCheckDelay())
 
       while await self.isRunning {
-        try? await self.checkRevocation()
+        await self.runCheck()
         try? await Task.sleep(seconds: self.configLogic.revocationIntervalSeconds)
       }
     }
@@ -59,6 +65,29 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
     isRunning = false
     revocationTask?.cancel()
     revocationTask = nil
+  }
+
+  func checkAfterReIssue(of originalId: String) async {
+    guard
+      isRunning,
+      let statuses = try? await walletKitController.fetchRevokedDocumentStatuses(),
+      statuses[originalId] != nil
+    else { return }
+    await runCheck()
+  }
+
+  /// Runs one check or, while one is under way, asks it to run once more when it ends, so two never overlap.
+  private func runCheck() async {
+    guard !isChecking else {
+      checkAgain = true
+      return
+    }
+    isChecking = true
+    repeat {
+      checkAgain = false
+      try? await checkRevocation()
+    } while checkAgain
+    isChecking = false
   }
 
   /// The first check of the process comes `initialDelay` after the workers start, which is after login.

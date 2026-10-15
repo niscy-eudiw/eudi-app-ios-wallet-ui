@@ -32,12 +32,18 @@ final actor ReIssuanceWorkManagerImpl: ReIssuanceWorkManager {
 
   private let documentIssuanceConfig: DocumentIssuanceConfig
   private let walletKitController: WalletKitController
+  private let revocationWorkManager: RevocationWorkManager
 
   private let initialDelay: TimeInterval = 30
   private var reIssuanceTask: Task<Void, Never>?
   private var isRunning = false
 
-  init(configLogic: WalletKitConfig, walletKitController: WalletKitController) {
+  init(
+    configLogic: WalletKitConfig,
+    walletKitController: WalletKitController,
+    revocationWorkManager: RevocationWorkManager
+  ) {
+    self.revocationWorkManager = revocationWorkManager
     self.documentIssuanceConfig = configLogic.documentIssuanceConfig
     self.walletKitController = walletKitController
   }
@@ -100,6 +106,7 @@ final actor ReIssuanceWorkManagerImpl: ReIssuanceWorkManager {
 
         removedIds.append(document.id)
         succeed.append(newDocument.id)
+        await revocationWorkManager.checkAfterReIssue(of: document.id)
 
       } catch {
         failed.append(document.id)

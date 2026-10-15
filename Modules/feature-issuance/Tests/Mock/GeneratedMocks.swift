@@ -12762,6 +12762,16 @@ public class MockRevocationWorkManager: RevocationWorkManager, Cuckoo.ProtocolMo
         )
     }
 
+    public func checkAfterReIssue(of p0: String) async {
+        return await cuckoo_manager.call(
+            "checkAfterReIssue(of p0: String) async",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.checkAfterReIssue(of: p0)
+        )
+    }
+
     public struct __StubbingProxy_RevocationWorkManager: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
@@ -12781,6 +12791,14 @@ public class MockRevocationWorkManager: RevocationWorkManager, Cuckoo.ProtocolMo
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockRevocationWorkManager.self,
                 method: "stop() async",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func checkAfterReIssue<M1: Cuckoo.Matchable>(of p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(String)> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockRevocationWorkManager.self,
+                method: "checkAfterReIssue(of p0: String) async",
                 parameterMatchers: matchers
             ))
         }
@@ -12820,6 +12838,18 @@ public class MockRevocationWorkManager: RevocationWorkManager, Cuckoo.ProtocolMo
                 sourceLocation: sourceLocation
             )
         }
+        
+        
+        @discardableResult
+        func checkAfterReIssue<M1: Cuckoo.Matchable>(of p0: M1) -> Cuckoo.__DoNotUse<(String), Void> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "checkAfterReIssue(of p0: String) async",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
     }
 }
 
@@ -12832,6 +12862,10 @@ public class RevocationWorkManagerStub:RevocationWorkManager, @unchecked Sendabl
     }
     
     public func stop() async {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func checkAfterReIssue(of p0: String) async {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
 }

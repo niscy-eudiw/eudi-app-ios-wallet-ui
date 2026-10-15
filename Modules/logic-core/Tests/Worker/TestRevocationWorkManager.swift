@@ -314,6 +314,40 @@ final class TestRevocationWorkManager: EudiTest {
 
     await fulfillment(of: [listRefreshed, detailsRefreshed, dashboardNotified], timeout: 2)
   }
+
+  func testCheckAfterReIssue_WhenTheOriginalGainedARecord_ThenACheckRunsNow() async {
+    stub(walletKitConfig) { mock in
+      when(mock.revocationIntervalSeconds.get).thenReturn(3600)
+    }
+    stubSweep(stored: ["original": .revoked], statuses: [:])
+    await workManager.start()
+
+    await workManager.checkAfterReIssue(of: "original")
+
+    verify(walletKitController).fetchIssuedDocuments()
+    await workManager.stop()
+  }
+
+  func testCheckAfterReIssue_WhenTheOriginalHasNoRecord_ThenNoCheckRuns() async {
+    stub(walletKitConfig) { mock in
+      when(mock.revocationIntervalSeconds.get).thenReturn(3600)
+    }
+    stubSweep(stored: [:], statuses: [:])
+    await workManager.start()
+
+    await workManager.checkAfterReIssue(of: "original")
+
+    verify(walletKitController, never()).fetchIssuedDocuments()
+    await workManager.stop()
+  }
+
+  func testCheckAfterReIssue_WhenTheChecksAreStopped_ThenNoCheckRuns() async {
+    stubSweep(stored: ["original": .revoked], statuses: [:])
+
+    await workManager.checkAfterReIssue(of: "original")
+
+    verify(walletKitController, never()).fetchIssuedDocuments()
+  }
 }
 
 private extension TestRevocationWorkManager {

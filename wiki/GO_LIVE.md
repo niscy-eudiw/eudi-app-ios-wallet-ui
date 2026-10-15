@@ -1290,8 +1290,13 @@ The rules are the Android wallet's (`RevocationRecordUpdate`, Android's `revocat
   are open, is refused before the issuer is contacted ("The issuer has revoked or suspended this
   document, so it cannot be reissued."), as is any document whose records cannot be read. The background
   re-issuance worker skips blocked documents: a re-issued copy would get a new identifier and no record,
-  which would undo the block. If the records cannot be read, that round re-issues nothing. The Android
-  wallet applies the same rules.
+  which would undo the block. If the records cannot be read, that round re-issues nothing.
+  `WalletKitController.reIssueDocument` checks again just before it asks the issuer, for a document
+  blocked after the worker chose it. Closing the refusal reloads the details, so the card shows the
+  block. If the original is blocked while a re-issue is already under way (the issuer's sign-in), the
+  re-issue still completes, as the issuer chose to issue; the revocation check then runs at once
+  (`RevocationWorkManager.checkAfterReIssue`), so the new copy's own status is read without waiting
+  for the interval. The Android wallet applies the same rules.
 * A renewed document, manual or background, keeps the original's bookmark, as on Android.
 * A background re-issuance that cannot renew a document leaves a failed re-issuance record
   (`FailedReIssuedDocument`): the document's issuer card opens by itself and says "The wallet could not

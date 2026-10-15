@@ -135,6 +135,8 @@ final class DocumentDetailsViewModel<Router: RouterHost>: ViewModel<Router, Docu
       case .issuerNotTrusted:
         setState { $0.copy(isLoading: false).copy(error: nil) }
         isTrustBlockedAlertShowing = true
+      case .failure(let error as WalletCoreError) where error == .documentBlocked:
+        self.onReIssueBlocked(error)
       case .failure(let error):
         self.setState {
           $0.copy(
@@ -148,6 +150,26 @@ final class DocumentDetailsViewModel<Router: RouterHost>: ViewModel<Router, Docu
         }
       }
     }
+  }
+
+  /// Shows the refusal with no retry, which would only repeat it, and reloads the details when it is closed,
+  /// so the card shows the block, as the Android wallet does.
+  private func onReIssueBlocked(_ error: WalletCoreError) {
+    setState {
+      $0.copy(
+        isLoading: false,
+        error: .init(
+          description: .custom(error.errorMessage),
+          cancelAction: self.onReIssueBlockedClosed(),
+          action: nil
+        )
+      )
+    }
+  }
+
+  private func onReIssueBlockedClosed() {
+    setState { $0.copy(error: nil) }
+    Task { await fetchDocumentDetails() }
   }
 
   func saveBookmark(_ identifier: String) {

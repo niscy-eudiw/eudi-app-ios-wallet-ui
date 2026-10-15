@@ -91,7 +91,8 @@ public final class LogicCoreAssembly: Assembly {
     container.register(ReIssuanceWorkManager.self) { r in
       ReIssuanceWorkManagerImpl(
         configLogic: r.force(WalletKitConfig.self),
-        walletKitController: r.force(WalletKitController.self)
+        walletKitController: r.force(WalletKitController.self),
+        revocationWorkManager: r.force(RevocationWorkManager.self)
       )
     }
     .inObjectScope(ObjectScope.container)

@@ -31,17 +31,20 @@ final actor DocumentDetailsInteractorImpl: DocumentDetailsInteractor {
   private let prefsController: PrefsController
   private let configLogic: ConfigLogic
   private let sessionController: SessionController
+  private let revocationWorkManager: RevocationWorkManager
 
   init(
     walletController: WalletKitController,
     prefsController: PrefsController,
     configLogic: ConfigLogic,
-    sessionController: SessionController
+    sessionController: SessionController,
+    revocationWorkManager: RevocationWorkManager
   ) {
     self.walletController = walletController
     self.prefsController = prefsController
     self.configLogic = configLogic
     self.sessionController = sessionController
+    self.revocationWorkManager = revocationWorkManager
   }
 
   func fetchStoredDocument(documentId: String) async -> DocumentDetailsPartialState {
@@ -87,6 +90,7 @@ final actor DocumentDetailsInteractorImpl: DocumentDetailsInteractor {
           isBackgroundOperation: false
         )
       }
+      await revocationWorkManager.checkAfterReIssue(of: identifier)
       return .success
     } catch {
       return error.isTrustBlocked ? .issuerNotTrusted : .failure(error)

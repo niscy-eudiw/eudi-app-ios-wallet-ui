@@ -23,6 +23,7 @@ final class TestReIssuanceWorkManager: EudiTest {
   var walletKitController: MockWalletKitController!
   var walletKitConfig: MockWalletKitConfig!
   var workManager: ReIssuanceWorkManagerImpl!
+  var revocationWorkManager: MockRevocationWorkManager!
 
   override func setUp() {
     walletKitController = MockWalletKitController()
@@ -36,9 +37,14 @@ final class TestReIssuanceWorkManager: EudiTest {
         )
       )
     }
+    revocationWorkManager = MockRevocationWorkManager()
+    stub(revocationWorkManager) { mock in
+      when(mock.checkAfterReIssue(of: any())).thenDoNothing()
+    }
     workManager = ReIssuanceWorkManagerImpl(
       configLogic: walletKitConfig,
-      walletKitController: walletKitController
+      walletKitController: walletKitController,
+      revocationWorkManager: revocationWorkManager
     )
     stub(walletKitController) { mock in
       when(mock.getDocumentCredentialOptions(with: any())).thenReturn(nil)
@@ -52,6 +58,7 @@ final class TestReIssuanceWorkManager: EudiTest {
     walletKitController = nil
     walletKitConfig = nil
     workManager = nil
+    revocationWorkManager = nil
   }
 
   func testCheckReIssuance_WhenDocumentsAreRevokedSuspendedOrUnrecognised_ThenOnlyTheOthersAreReIssued() async throws {
@@ -66,6 +73,31 @@ final class TestReIssuanceWorkManager: EudiTest {
     for id in ["a", "b", "c"] {
       verify(walletKitController, never()).reIssueDocument(identifier: equal(to: id), isBackgroundOperation: any())
     }
+  }
+
+  func testCheckReIssuance_WhenADocumentIsReIssued_ThenTheRevocationCheckIsAskedAboutItsOriginal() async throws {
+    stub(walletKitController) { mock in
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn([:])
+      when(mock.fetchIssuedDocuments()).thenReturn([FixtureDocument.make(id: "d")])
+      when(mock.reIssueDocument(identifier: equal(to: "d"), isBackgroundOperation: any()))
+        .thenReturn(
+          WalletStorage.Document(
+            id: "newD",
+            docType: "",
+            docDataFormat: .cbor,
+            data: Data(),
+            docKeyInfo: nil,
+            createdAt: nil,
+            metadata: nil,
+            displayName: "",
+            status: .issued
+          )
+        )
+    }
+
+    try await workManager.checkReIssuance()
+
+    verify(revocationWorkManager).checkAfterReIssue(of: equal(to: "d"))
   }
 
   func testCheckReIssuance_WhenNothingIsDue_ThenTheOldFailureRecordsAreCleared() async throws {

@@ -74,7 +74,8 @@ public final class FeatureDashboardAssembly: Assembly {
         walletController: r.force(WalletKitController.self),
         prefsController: r.force(PrefsController.self),
         configLogic: r.force(ConfigLogic.self),
-        sessionController: r.force(SessionController.self)
+        sessionController: r.force(SessionController.self),
+        revocationWorkManager: r.force(RevocationWorkManager.self)
       )
     }
     .inObjectScope(ObjectScope.transient)
