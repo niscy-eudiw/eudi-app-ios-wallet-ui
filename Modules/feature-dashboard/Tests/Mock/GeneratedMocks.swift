@@ -15071,24 +15071,24 @@ import Foundation
 @testable import feature_common
 @testable import feature_dashboard
 
-public class MockReIssuanceWorkManager: ReIssuanceWorkManager, Cuckoo.ProtocolMock, @unchecked Sendable {
-    public typealias MocksType = any ReIssuanceWorkManager
-    public typealias Stubbing = __StubbingProxy_ReIssuanceWorkManager
-    public typealias Verification = __VerificationProxy_ReIssuanceWorkManager
+class MockReIssuanceWorkManager: ReIssuanceWorkManager, Cuckoo.ProtocolMock, @unchecked Sendable {
+    typealias MocksType = any ReIssuanceWorkManager
+    typealias Stubbing = __StubbingProxy_ReIssuanceWorkManager
+    typealias Verification = __VerificationProxy_ReIssuanceWorkManager
 
     // Original typealiases
 
-    public let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+    let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
 
     private var __defaultImplStub: (any ReIssuanceWorkManager)?
 
-    public func enableDefaultImplementation(_ stub: any ReIssuanceWorkManager) {
+    func enableDefaultImplementation(_ stub: any ReIssuanceWorkManager) {
         __defaultImplStub = stub
         cuckoo_manager.enableDefaultStubImplementation()
     }
 
 
-    public func start() async {
+    func start() async {
         return await cuckoo_manager.call(
             "start() async",
             parameters: (),
@@ -15098,7 +15098,7 @@ public class MockReIssuanceWorkManager: ReIssuanceWorkManager, Cuckoo.ProtocolMo
         )
     }
 
-    public func stop() async {
+    func stop() async {
         return await cuckoo_manager.call(
             "stop() async",
             parameters: (),
@@ -15108,10 +15108,10 @@ public class MockReIssuanceWorkManager: ReIssuanceWorkManager, Cuckoo.ProtocolMo
         )
     }
 
-    public struct __StubbingProxy_ReIssuanceWorkManager: Cuckoo.StubbingProxy {
+    struct __StubbingProxy_ReIssuanceWorkManager: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
-        public init(manager: Cuckoo.MockManager) {
+        init(manager: Cuckoo.MockManager) {
             self.cuckoo_manager = manager
         }
         
@@ -15132,12 +15132,12 @@ public class MockReIssuanceWorkManager: ReIssuanceWorkManager, Cuckoo.ProtocolMo
         }
     }
 
-    public struct __VerificationProxy_ReIssuanceWorkManager: Cuckoo.VerificationProxy {
+    struct __VerificationProxy_ReIssuanceWorkManager: Cuckoo.VerificationProxy {
         private let cuckoo_manager: Cuckoo.MockManager
         private let callMatcher: Cuckoo.CallMatcher
         private let sourceLocation: Cuckoo.SourceLocation
     
-        public init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+        init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
             self.cuckoo_manager = manager
             self.callMatcher = callMatcher
             self.sourceLocation = sourceLocation
@@ -15169,15 +15169,15 @@ public class MockReIssuanceWorkManager: ReIssuanceWorkManager, Cuckoo.ProtocolMo
     }
 }
 
-public class ReIssuanceWorkManagerStub:ReIssuanceWorkManager, @unchecked Sendable {
+class ReIssuanceWorkManagerStub:ReIssuanceWorkManager, @unchecked Sendable {
 
 
     
-    public func start() async {
+    func start() async {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
-    public func stop() async {
+    func stop() async {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
 }
@@ -15198,24 +15198,24 @@ import Foundation
 @testable import feature_common
 @testable import feature_dashboard
 
-public class MockRevocationWorkManager: RevocationWorkManager, Cuckoo.ProtocolMock, @unchecked Sendable {
-    public typealias MocksType = any RevocationWorkManager
-    public typealias Stubbing = __StubbingProxy_RevocationWorkManager
-    public typealias Verification = __VerificationProxy_RevocationWorkManager
+class MockRevocationWorkManager: RevocationWorkManager, Cuckoo.ProtocolMock, @unchecked Sendable {
+    typealias MocksType = any RevocationWorkManager
+    typealias Stubbing = __StubbingProxy_RevocationWorkManager
+    typealias Verification = __VerificationProxy_RevocationWorkManager
 
     // Original typealiases
 
-    public let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+    let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
 
     private var __defaultImplStub: (any RevocationWorkManager)?
 
-    public func enableDefaultImplementation(_ stub: any RevocationWorkManager) {
+    func enableDefaultImplementation(_ stub: any RevocationWorkManager) {
         __defaultImplStub = stub
         cuckoo_manager.enableDefaultStubImplementation()
     }
 
 
-    public func start() async {
+    func start() async {
         return await cuckoo_manager.call(
             "start() async",
             parameters: (),
@@ -15225,7 +15225,7 @@ public class MockRevocationWorkManager: RevocationWorkManager, Cuckoo.ProtocolMo
         )
     }
 
-    public func stop() async {
+    func stop() async {
         return await cuckoo_manager.call(
             "stop() async",
             parameters: (),
@@ -15235,7 +15235,7 @@ public class MockRevocationWorkManager: RevocationWorkManager, Cuckoo.ProtocolMo
         )
     }
 
-    public func checkAfterReIssue(of p0: String) async {
+    func checkAfterReIssue(of p0: String) async {
         return await cuckoo_manager.call(
             "checkAfterReIssue(of p0: String) async",
             parameters: (p0),
@@ -15245,10 +15245,10 @@ public class MockRevocationWorkManager: RevocationWorkManager, Cuckoo.ProtocolMo
         )
     }
 
-    public struct __StubbingProxy_RevocationWorkManager: Cuckoo.StubbingProxy {
+    struct __StubbingProxy_RevocationWorkManager: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
-        public init(manager: Cuckoo.MockManager) {
+        init(manager: Cuckoo.MockManager) {
             self.cuckoo_manager = manager
         }
         
@@ -15277,12 +15277,12 @@ public class MockRevocationWorkManager: RevocationWorkManager, Cuckoo.ProtocolMo
         }
     }
 
-    public struct __VerificationProxy_RevocationWorkManager: Cuckoo.VerificationProxy {
+    struct __VerificationProxy_RevocationWorkManager: Cuckoo.VerificationProxy {
         private let cuckoo_manager: Cuckoo.MockManager
         private let callMatcher: Cuckoo.CallMatcher
         private let sourceLocation: Cuckoo.SourceLocation
     
-        public init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+        init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
             self.cuckoo_manager = manager
             self.callMatcher = callMatcher
             self.sourceLocation = sourceLocation
@@ -15326,19 +15326,180 @@ public class MockRevocationWorkManager: RevocationWorkManager, Cuckoo.ProtocolMo
     }
 }
 
-public class RevocationWorkManagerStub:RevocationWorkManager, @unchecked Sendable {
+class RevocationWorkManagerStub:RevocationWorkManager, @unchecked Sendable {
 
 
     
-    public func start() async {
+    func start() async {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    func stop() async {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    func checkAfterReIssue(of p0: String) async {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+}
+
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Worker/WalletWorkScheduler.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+public class MockWalletWorkScheduler: WalletWorkScheduler, Cuckoo.ProtocolMock, @unchecked Sendable {
+    public typealias MocksType = any WalletWorkScheduler
+    public typealias Stubbing = __StubbingProxy_WalletWorkScheduler
+    public typealias Verification = __VerificationProxy_WalletWorkScheduler
+
+    // Original typealiases
+
+    public let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+
+    private var __defaultImplStub: (any WalletWorkScheduler)?
+
+    public func enableDefaultImplementation(_ stub: any WalletWorkScheduler) {
+        __defaultImplStub = stub
+        cuckoo_manager.enableDefaultStubImplementation()
+    }
+
+
+    public func schedule() async {
+        return await cuckoo_manager.call(
+            "schedule() async",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.schedule()
+        )
+    }
+
+    public func scheduleRevocationCheck(afterReIssueOf p0: String) async {
+        return await cuckoo_manager.call(
+            "scheduleRevocationCheck(afterReIssueOf p0: String) async",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.scheduleRevocationCheck(afterReIssueOf: p0)
+        )
+    }
+
+    public func stop() async {
+        return await cuckoo_manager.call(
+            "stop() async",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.stop()
+        )
+    }
+
+    public struct __StubbingProxy_WalletWorkScheduler: Cuckoo.StubbingProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+    
+        public init(manager: Cuckoo.MockManager) {
+            self.cuckoo_manager = manager
+        }
+        
+        func schedule() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletWorkScheduler.self,
+                method: "schedule() async",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func scheduleRevocationCheck<M1: Cuckoo.Matchable>(afterReIssueOf p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(String)> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletWorkScheduler.self,
+                method: "scheduleRevocationCheck(afterReIssueOf p0: String) async",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func stop() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletWorkScheduler.self,
+                method: "stop() async",
+                parameterMatchers: matchers
+            ))
+        }
+    }
+
+    public struct __VerificationProxy_WalletWorkScheduler: Cuckoo.VerificationProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+        private let callMatcher: Cuckoo.CallMatcher
+        private let sourceLocation: Cuckoo.SourceLocation
+    
+        public init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+            self.cuckoo_manager = manager
+            self.callMatcher = callMatcher
+            self.sourceLocation = sourceLocation
+        }
+        
+        
+        @discardableResult
+        func schedule() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "schedule() async",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func scheduleRevocationCheck<M1: Cuckoo.Matchable>(afterReIssueOf p0: M1) -> Cuckoo.__DoNotUse<(String), Void> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "scheduleRevocationCheck(afterReIssueOf p0: String) async",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func stop() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "stop() async",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+    }
+}
+
+public class WalletWorkSchedulerStub:WalletWorkScheduler, @unchecked Sendable {
+
+
+    
+    public func schedule() async {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func scheduleRevocationCheck(afterReIssueOf p0: String) async {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
     public func stop() async {
-        return DefaultValueRegistry.defaultValue(for: (Void).self)
-    }
-    
-    public func checkAfterReIssue(of p0: String) async {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
 }

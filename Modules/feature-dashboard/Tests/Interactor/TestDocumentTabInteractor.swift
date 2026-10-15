@@ -28,16 +28,16 @@ final class TestDocumentTabInteractor: EudiTest {
   var prefsController: MockPrefsController!
   var filterValidator: MockFilterValidator!
   var configLogic: MockConfigLogic!
-  var revocationWorkManager: MockRevocationWorkManager!
+  var walletWorkScheduler: MockWalletWorkScheduler!
   
   override func setUp() {
     self.walletKitController = MockWalletKitController()
     self.prefsController = MockPrefsController()
     self.configLogic = MockConfigLogic()
     self.filterValidator = MockFilterValidator()
-    self.revocationWorkManager = MockRevocationWorkManager()
-    stub(revocationWorkManager) { mock in
-      when(mock.checkAfterReIssue(of: any())).thenDoNothing()
+    self.walletWorkScheduler = MockWalletWorkScheduler()
+    stub(walletWorkScheduler) { mock in
+      when(mock.scheduleRevocationCheck(afterReIssueOf: any())).thenDoNothing()
     }
     stub(walletKitController) { mock in
       when(mock.fetchAllDocuments()).thenReturn([])
@@ -47,7 +47,7 @@ final class TestDocumentTabInteractor: EudiTest {
       prefsController: prefsController,
       filterValidator: filterValidator,
       configLogic: configLogic,
-      revocationWorkManager: revocationWorkManager
+      walletWorkScheduler: walletWorkScheduler
     )
     
     stubConfigLogic()
@@ -477,7 +477,7 @@ final class TestDocumentTabInteractor: EudiTest {
 
     _ = await interactor.requestDeferredIssuance()
 
-    verify(revocationWorkManager).checkAfterReIssue(of: equal(to: "original"))
+    verify(walletWorkScheduler).scheduleRevocationCheck(afterReIssueOf: equal(to: "original"))
   }
 
   func testRequestDeferredIssuance_WhenEveryRevokedDocumentRemains_ThenNoRevocationCheckIsAsked() async {
@@ -488,7 +488,7 @@ final class TestDocumentTabInteractor: EudiTest {
 
     _ = await interactor.requestDeferredIssuance()
 
-    verify(revocationWorkManager, never()).checkAfterReIssue(of: any())
+    verify(walletWorkScheduler, never()).scheduleRevocationCheck(afterReIssueOf: any())
   }
 
   private func stubDeferredIssuanceOfOneDocument(revocationStatuses: [String: DocumentRevocationStatus]) {

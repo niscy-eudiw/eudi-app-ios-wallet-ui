@@ -28,16 +28,16 @@ final class TestDocumentDetailsInteractor: EudiTest {
   var prefsController: MockPrefsController!
   var configLogic: MockConfigLogic!
   var sessionController: MockSessionController!
-  var revocationWorkManager: MockRevocationWorkManager!
+  var walletWorkScheduler: MockWalletWorkScheduler!
 
   override func setUp() {
     self.walletKitController = MockWalletKitController()
     self.prefsController = MockPrefsController()
     self.configLogic = MockConfigLogic()
     self.sessionController = MockSessionController()
-    self.revocationWorkManager = MockRevocationWorkManager()
-    stub(revocationWorkManager) { mock in
-      when(mock.checkAfterReIssue(of: any())).thenDoNothing()
+    self.walletWorkScheduler = MockWalletWorkScheduler()
+    stub(walletWorkScheduler) { mock in
+      when(mock.scheduleRevocationCheck(afterReIssueOf: any())).thenDoNothing()
     }
     stub(sessionController) { mock in
       when(mock.beginExternalFlow()).thenDoNothing()
@@ -51,7 +51,7 @@ final class TestDocumentDetailsInteractor: EudiTest {
       prefsController: prefsController,
       configLogic: configLogic,
       sessionController: sessionController,
-      revocationWorkManager: revocationWorkManager
+      walletWorkScheduler: walletWorkScheduler
     )
     
     stubConfigLogic()
@@ -515,7 +515,7 @@ final class TestDocumentDetailsInteractor: EudiTest {
 
     verify(sessionController).beginExternalFlow()
     verify(sessionController).endExternalFlow()
-    verify(revocationWorkManager).checkAfterReIssue(of: equal(to: identifier))
+    verify(walletWorkScheduler).scheduleRevocationCheck(afterReIssueOf: equal(to: identifier))
   }
 
   func testReIssueDocument_WhenTheDocumentIsRevoked_ThenItIsRefusedBeforeTheIssuerIsContacted() async {
@@ -670,7 +670,7 @@ extension TestDocumentDetailsInteractor {
     let result = await interactor.reIssueDocument(identifier: identifier)
     verify(walletKitController, never()).reIssueDocument(identifier: any(), isBackgroundOperation: any())
     verify(sessionController, never()).beginExternalFlow()
-    verify(revocationWorkManager, never()).checkAfterReIssue(of: any())
+    verify(walletWorkScheduler, never()).scheduleRevocationCheck(afterReIssueOf: any())
     guard case .failure(let error) = result else {
       XCTFail("Expected failure, got \(result)", file: file, line: line)
       return nil

@@ -97,6 +97,14 @@ public final class LogicCoreAssembly: Assembly {
     }
     .inObjectScope(ObjectScope.container)
 
+    container.register(WalletWorkScheduler.self) { r in
+      WalletWorkSchedulerImpl(
+        revocationWorkManager: r.force(RevocationWorkManager.self),
+        reIssuanceWorkManager: r.force(ReIssuanceWorkManager.self)
+      )
+    }
+    .inObjectScope(ObjectScope.container)
+
     container.register(WalletKitAttestationProvider.self) { r in
       WalletKitAttestationProviderImpl(
         with: r.force(WalletAttestationRepository.self),

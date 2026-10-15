@@ -16,7 +16,7 @@
 
 import Foundation
 
-public protocol ReIssuanceWorkManager: Sendable {
+protocol ReIssuanceWorkManager: Sendable {
   func start() async
   func stop() async
 }

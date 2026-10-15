@@ -27,8 +27,7 @@ public final class FeatureDashboardAssembly: Assembly {
     container.register(DashboardInteractor.self) { r in
       DashboardInteractorImpl(
         walletKitController: r.force(WalletKitController.self),
-        revocationWorkManager: r.force(RevocationWorkManager.self),
-        reIssuanceWorkManager: r.force(ReIssuanceWorkManager.self)
+        walletWorkScheduler: r.force(WalletWorkScheduler.self)
       )
     }
     .inObjectScope(ObjectScope.transient)
@@ -59,7 +58,7 @@ public final class FeatureDashboardAssembly: Assembly {
         prefsController: r.force(PrefsController.self),
         filterValidator: r.force(FilterValidator.self),
         configLogic: r.force(ConfigLogic.self),
-        revocationWorkManager: r.force(RevocationWorkManager.self)
+        walletWorkScheduler: r.force(WalletWorkScheduler.self)
       )
     }
 
@@ -76,7 +75,7 @@ public final class FeatureDashboardAssembly: Assembly {
         prefsController: r.force(PrefsController.self),
         configLogic: r.force(ConfigLogic.self),
         sessionController: r.force(SessionController.self),
-        revocationWorkManager: r.force(RevocationWorkManager.self)
+        walletWorkScheduler: r.force(WalletWorkScheduler.self)
       )
     }
     .inObjectScope(ObjectScope.transient)

@@ -25,25 +25,21 @@ final class TestDashboardInteractor: EudiTest {
   
   var interactor: DashboardInteractor!
   var walletKitController: MockWalletKitController!
-  var revocationWorkManager: MockRevocationWorkManager!
-  var reIssuanceWorkManager: MockReIssuanceWorkManager!
+  var walletWorkScheduler: MockWalletWorkScheduler!
   
   override func setUp() {
     self.walletKitController = MockWalletKitController()
-    self.revocationWorkManager = MockRevocationWorkManager()
-    self.reIssuanceWorkManager = MockReIssuanceWorkManager()
+    self.walletWorkScheduler = MockWalletWorkScheduler()
     self.interactor = DashboardInteractorImpl(
       walletKitController: walletKitController,
-      revocationWorkManager: revocationWorkManager,
-      reIssuanceWorkManager: reIssuanceWorkManager
+      walletWorkScheduler: walletWorkScheduler
     )
   }
   
   override func tearDown() {
     self.interactor = nil
     self.walletKitController = nil
-    self.revocationWorkManager = nil
-    self.reIssuanceWorkManager = nil
+    self.walletWorkScheduler = nil
   }
   
   func testLoadDocuments_WhenCalled_ThenTheWalletLoadsItsDocuments() async {
@@ -66,17 +62,13 @@ final class TestDashboardInteractor: EudiTest {
     verify(walletKitController).loadDocuments()
   }
 
-  func testStartWorkers_WhenCalled_ThenStartsBothWorkers() async {
-    stub(revocationWorkManager) { mock in
-      when(mock.start()).thenDoNothing()
-    }
-    stub(reIssuanceWorkManager) { mock in
-      when(mock.start()).thenDoNothing()
+  func testStartWorkers_WhenCalled_ThenSchedulesTheBackgroundChecks() async {
+    stub(walletWorkScheduler) { mock in
+      when(mock.schedule()).thenDoNothing()
     }
 
     await interactor.startWorkers()
 
-    verify(revocationWorkManager).start()
-    verify(reIssuanceWorkManager).start()
+    verify(walletWorkScheduler).schedule()
   }
 }

@@ -16,7 +16,7 @@
 
 import Foundation
 
-public protocol RevocationWorkManager: Sendable {
+protocol RevocationWorkManager: Sendable {
   func start() async
   func stop() async
   /// Runs the revocation check now, or right after one under way, if the original of a completed re-issue
@@ -34,8 +34,7 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
   private var revocationTask: Task<Void, Never>?
   private var isRunning = false
   private var didRunInitialCheck = false
-  private var isChecking = false
-  private var checkAgain = false
+  private let checkRunner = SerialCheckRunner()
 
   init(configLogic: WalletKitConfig, walletKitController: WalletKitController) {
     self.configLogic = configLogic
@@ -76,18 +75,11 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
     await runCheck()
   }
 
-  /// Runs one check or, while one is under way, asks it to run once more when it ends, so two never overlap.
+  /// Runs one check through `checkRunner`, so two never overlap.
   private func runCheck() async {
-    guard !isChecking else {
-      checkAgain = true
-      return
+    await checkRunner.run { [weak self] in
+      try? await self?.checkRevocation()
     }
-    isChecking = true
-    repeat {
-      checkAgain = false
-      try? await checkRevocation()
-    } while checkAgain
-    isChecking = false
   }
 
   /// The first check of the process comes `initialDelay` after the workers start, which is after login.

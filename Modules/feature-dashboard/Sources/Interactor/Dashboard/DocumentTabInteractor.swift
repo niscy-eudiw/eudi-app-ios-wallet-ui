@@ -75,7 +75,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
   private let prefsController: PrefsController
   private let filterValidator: FilterValidator
   private let configLogic: ConfigLogic
-  private let revocationWorkManager: RevocationWorkManager
+  private let walletWorkScheduler: WalletWorkScheduler
 
   private var filtersStateAsync: AsyncStream<DocumentFiltersPartialState>.Continuation?
 
@@ -84,13 +84,13 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     prefsController: PrefsController,
     filterValidator: FilterValidator,
     configLogic: ConfigLogic,
-    revocationWorkManager: RevocationWorkManager
+    walletWorkScheduler: WalletWorkScheduler
   ) {
     self.walletKitController = walletKitController
     self.prefsController = prefsController
     self.filterValidator = filterValidator
     self.configLogic = configLogic
-    self.revocationWorkManager = revocationWorkManager
+    self.walletWorkScheduler = walletWorkScheduler
   }
 
   deinit {
@@ -252,7 +252,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
   ) async {
     let remainingIds = Set(await walletKitController.fetchAllDocuments().map(\.id))
     guard let goneId = revocationStatuses.keys.first(where: { !remainingIds.contains($0) }) else { return }
-    await revocationWorkManager.checkAfterReIssue(of: goneId)
+    await walletWorkScheduler.scheduleRevocationCheck(afterReIssueOf: goneId)
   }
 
   private func createFiltersGroup() -> Filters {

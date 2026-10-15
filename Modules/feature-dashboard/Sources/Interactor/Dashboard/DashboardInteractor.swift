@@ -25,17 +25,14 @@ public protocol DashboardInteractor: Sendable {
 final actor DashboardInteractorImpl: DashboardInteractor {
 
   private let walletKitController: WalletKitController
-  private let revocationWorkManager: RevocationWorkManager
-  private let reIssuanceWorkManager: ReIssuanceWorkManager
+  private let walletWorkScheduler: WalletWorkScheduler
 
   init(
     walletKitController: WalletKitController,
-    revocationWorkManager: RevocationWorkManager,
-    reIssuanceWorkManager: ReIssuanceWorkManager
+    walletWorkScheduler: WalletWorkScheduler
   ) {
     self.walletKitController = walletKitController
-    self.revocationWorkManager = revocationWorkManager
-    self.reIssuanceWorkManager = reIssuanceWorkManager
+    self.walletWorkScheduler = walletWorkScheduler
   }
 
   /// A load error is ignored: the tabs show the documents that did load.
@@ -44,7 +41,6 @@ final actor DashboardInteractorImpl: DashboardInteractor {
   }
 
   func startWorkers() async {
-    await revocationWorkManager.start()
-    await reIssuanceWorkManager.start()
+    await walletWorkScheduler.schedule()
   }
 }
