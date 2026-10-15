@@ -509,6 +509,8 @@ final class TestDocumentDetailsInteractor: EudiTest {
       XCTAssertTrue(true)
     case .issuerNotTrusted:
       XCTFail("Expected success, got issuerNotTrusted")
+    case .documentBlocked:
+      XCTFail("Expected success, got documentBlocked")
     case .failure:
       XCTFail("Expected success, got failure")
     }
@@ -524,9 +526,11 @@ final class TestDocumentDetailsInteractor: EudiTest {
       when(mock.fetchRevokedDocumentStatuses()).thenReturn([identifier: .revoked])
     }
 
-    let error = await assertReIssueRefused(identifier: identifier)
+    let result = await assertReIssueRefused(identifier: identifier)
 
-    XCTAssertEqual(error as? WalletCoreError, .documentBlocked)
+    guard case .documentBlocked = result else {
+      return XCTFail("Expected documentBlocked, got \(result)")
+    }
   }
 
   func testReIssueDocument_WhenTheDocumentIsSuspended_ThenItIsRefusedBeforeTheIssuerIsContacted() async {
@@ -535,9 +539,11 @@ final class TestDocumentDetailsInteractor: EudiTest {
       when(mock.fetchRevokedDocumentStatuses()).thenReturn([identifier: .suspended])
     }
 
-    let error = await assertReIssueRefused(identifier: identifier)
+    let result = await assertReIssueRefused(identifier: identifier)
 
-    XCTAssertEqual(error as? WalletCoreError, .documentBlocked)
+    guard case .documentBlocked = result else {
+      return XCTFail("Expected documentBlocked, got \(result)")
+    }
   }
 
   func testReIssueDocument_WhenTheRevocationRecordsCannotBeRead_ThenItIsRefused() async {
@@ -546,8 +552,11 @@ final class TestDocumentDetailsInteractor: EudiTest {
       when(mock.fetchRevokedDocumentStatuses()).thenThrow(WalletCoreError.unableFetchDocuments)
     }
 
-    let error = await assertReIssueRefused(identifier: identifier)
+    let result = await assertReIssueRefused(identifier: identifier)
 
+    guard case .failure(let error) = result else {
+      return XCTFail("Expected failure, got \(result)")
+    }
     XCTAssertEqual(error as? WalletCoreError, .unableFetchDocuments)
   }
 
@@ -583,6 +592,8 @@ final class TestDocumentDetailsInteractor: EudiTest {
       XCTFail("Expected failure, got success")
     case .issuerNotTrusted:
       XCTFail("Expected failure, got issuerNotTrusted")
+    case .documentBlocked:
+      XCTFail("Expected failure, got documentBlocked")
     case .failure(let error):
       XCTAssertEqual(
         error.localizedDescription,
@@ -666,16 +677,12 @@ extension TestDocumentDetailsInteractor {
     }
   }
 
-  func assertReIssueRefused(identifier: String, file: StaticString = #filePath, line: UInt = #line) async -> Error? {
+  func assertReIssueRefused(identifier: String) async -> DocumentDetailsReIssuancePartialState {
     let result = await interactor.reIssueDocument(identifier: identifier)
     verify(walletKitController, never()).reIssueDocument(identifier: any(), isBackgroundOperation: any())
     verify(sessionController, never()).beginExternalFlow()
     verify(walletWorkScheduler, never()).scheduleRevocationCheck(afterReIssueOf: any())
-    guard case .failure(let error) = result else {
-      XCTFail("Expected failure, got \(result)", file: file, line: line)
-      return nil
-    }
-    return error
+    return result
   }
   
   func stubShouldRebootTrue(for id: String) {

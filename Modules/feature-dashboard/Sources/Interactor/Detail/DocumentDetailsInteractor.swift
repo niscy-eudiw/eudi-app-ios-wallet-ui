@@ -90,6 +90,9 @@ final actor DocumentDetailsInteractorImpl: DocumentDetailsInteractor {
       await walletWorkScheduler.scheduleRevocationCheck(afterReIssueOf: identifier)
       return .success
     } catch {
+      if (error as? WalletCoreError) == .documentBlocked {
+        return .documentBlocked
+      }
       return error.isTrustBlocked ? .issuerNotTrusted : .failure(error)
     }
   }
@@ -177,5 +180,7 @@ public enum DocumentDetailsDeletionPartialState: Sendable {
 public enum DocumentDetailsReIssuancePartialState: Sendable {
   case success
   case issuerNotTrusted
+  /// The issuer has revoked or suspended the document, so it was not re-issued.
+  case documentBlocked
   case failure(Error)
 }

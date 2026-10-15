@@ -371,8 +371,6 @@ final class TestDocumentTabInteractor: EudiTest {
     verify(filterValidator).applySearch(query: equal(to: "search"))
   }
   
-  /// The interactor's stream keeps only the newest state, so the first result may be replaced by the second
-  /// before the test reads it; the last one always arrives.
   func testOnFilterChangeState_WhenStreamEmitsResults_ThenProcessesResultsCorrectly() async {
     // Given
     let filterApplyResult: FilterResult = .filterApplyResult(
@@ -390,45 +388,28 @@ final class TestDocumentTabInteractor: EudiTest {
       )
     )
     
+    let (validatorStream, validator) = AsyncStream<FilterResultPartialState>.makeStream()
     stub(filterValidator) { stub in
-      when(stub.getFilterResultStream()).thenReturn(AsyncStream { continuation in
-        continuation.yield(FilterResultPartialState.success(filterApplyResult))
-        continuation.yield(FilterResultPartialState.success(filterUpdateResult))
-        continuation.finish()
-      })
-    }
-    
-    // When
-    let resultStream = await interactor.onFilterChangeState()
-    let received = expectation(description: "the last result")
-    let collector = Task {
-      var results = [DocumentFiltersPartialState]()
-      for await result in resultStream {
-        results.append(result)
-        if case .filterUpdateResult = result {
-          received.fulfill()
-          break
-        }
-      }
-      return results
+      when(stub.getFilterResultStream()).thenReturn(validatorStream)
     }
 
+    // When
+    var results = await interactor.onFilterChangeState().makeAsyncIterator()
+    validator.yield(.success(filterApplyResult))
+    let first = await results.next()
+    validator.yield(.success(filterUpdateResult))
+    let second = await results.next()
+
     // Then
-    await fulfillment(of: [received], timeout: 5)
-    collector.cancel()
-    let results = await collector.value
-    guard let last = results.last, case let .filterUpdateResult(sections) = last else {
-      return XCTFail("Expected .filterUpdateResult last, but got \(results)")
+    guard case let .filterApplyResult(transactions, sections, _) = first else {
+      return XCTFail("Expected .filterApplyResult, but got \(String(describing: first))")
     }
+    XCTAssertTrue(transactions.isEmpty)
     XCTAssertEqual(sections.count, 0)
-    if results.count == 2 {
-      if case let .filterApplyResult(transactions, sections, _) = results[0] {
-        XCTAssertTrue(transactions.isEmpty)
-        XCTAssertEqual(sections.count, 0)
-      } else {
-        XCTFail("Expected .filterApplyResult first, but got \(results[0])")
-      }
+    guard case let .filterUpdateResult(updatedSections) = second else {
+      return XCTFail("Expected .filterUpdateResult, but got \(String(describing: second))")
     }
+    XCTAssertEqual(updatedSections.count, 0)
   }
   
   func testRequestDeferredIssuance_WhenAllIssuanceSucceeds_ThenReturnsIssuedModels() async {

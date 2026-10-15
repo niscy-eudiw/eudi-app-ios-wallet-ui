@@ -28,7 +28,7 @@ final class TestDocumentDetailsViewModel: EudiTest {
     let interactor = MockDocumentDetailsInteractor()
     let reloaded = expectation(description: "details reloaded")
     stub(interactor) { mock in
-      when(mock.reIssueDocument(identifier: any())).thenReturn(.failure(WalletCoreError.documentBlocked))
+      when(mock.reIssueDocument(identifier: any())).thenReturn(.documentBlocked)
       when(mock.fetchStoredDocument(documentId: any())).then { _ in
         reloaded.fulfill()
         return .failure(WalletCoreError.unableFetchDocument)

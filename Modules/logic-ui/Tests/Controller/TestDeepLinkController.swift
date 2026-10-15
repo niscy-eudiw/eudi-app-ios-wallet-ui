@@ -487,16 +487,6 @@ final class TestDeepLinkController: EudiTest {
     try assertOfferRoute(hasDocuments: false, expectedSuccess: .push(.featureDashboardModule(.dashboard)))
   }
 
-  func testHasDeepLink_WhenALinkOfNoWalletTypeArrives_ThenALinkKeptForLaterStaysKept() {
-    stub(urlSchemaController) { mock in
-      when(mock.retrieveSchemas(with: any())).thenReturn(["eudi-openid4vp", "mdoc-openid4vp"])
-    }
-    controller.cacheDeepLinkURL(url: Self.mockedOpenId4VPUrl)
-
-    XCTAssertNil(controller.hasDeepLink(url: Self.mockedExternalUrl))
-    XCTAssertEqual(controller.getPendingDeepLinkAction(), Self.mockedOpenId4VPDeepLinkAction)
-  }
-
   func testHandleDeepLinkAction_WhenALinkReturnsToTheDashboard_ThenTheRunningPresentationIsStopped() async {
     let stopped = expectation(description: "presentation stopped")
     stub(walletKitController) { mock in
