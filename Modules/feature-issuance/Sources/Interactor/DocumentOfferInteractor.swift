@@ -87,7 +87,10 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
         return .registrationBlocked(reason)
       }
 
-      return .success(offer.transformToDocumentOfferUi(), issuerRegistration)
+      return .success(
+        offer.transformToDocumentOfferUi(issuerLogoOrigins: await walletController.issuerLogoOrigins()),
+        issuerRegistration
+      )
     } catch {
       return error.isTrustBlocked ? .issuerNotTrusted : .failure(error)
     }
@@ -222,8 +225,9 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
 
   func fetchStoredDocuments(documentIds: [String]) async -> OfferDocumentsPartialState {
     let documents = await walletController.fetchDocuments(with: documentIds)
+    let issuerLogoOrigins = await walletController.issuerLogoOrigins()
     let documentsDetails = documents.compactMap {
-      $0.transformToDocumentUi(isSensitive: false)
+      $0.transformToDocumentUi(isSensitive: false, issuerLogoOrigins: issuerLogoOrigins)
     }
 
     if documentsDetails.isEmpty {

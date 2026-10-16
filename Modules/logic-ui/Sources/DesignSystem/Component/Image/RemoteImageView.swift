@@ -56,7 +56,11 @@ public struct RemoteImageView: View {
   }
 
   public var body: some View {
-    WebImage(url: url, options: retryFailed ? [.retryFailed] : []) { image in
+    WebImage(
+      url: Self.loadableUrl(url),
+      options: retryFailed ? [.retryFailed] : [],
+      context: Self.loadingContext(for: url)
+    ) { image in
       image
         .resizable()
         .scaledToFit()
@@ -97,5 +101,50 @@ public extension RemoteImageView {
         return false
       }
     }
+  }
+}
+
+public extension RemoteImageView {
+
+  enum Constants {
+    /// The largest image the wallet downloads, Android's limit for a logo.
+    public static let maxImageByteCount: Int64 = 2 * 1024 * 1024
+    /// The decoded size above which an image is scaled down while it is decoded.
+    public static let maxDecodedByteCount: UInt = 16 * 1024 * 1024
+  }
+
+  /// The image's address if the wallet may load it: `https` with a host only, as on Android, whatever passed it.
+  static func loadableUrl(_ url: URL?) -> URL? {
+    url?.isHttpsWebLink == true ? url : nil
+  }
+
+  /// True for a response to accept: still on the requested origin after any redirect, and not declared larger than
+  /// `Constants.maxImageByteCount`; the decode is capped either way.
+  static func acceptsResponse(requestedUrl: URL, responseUrl: URL?, expectedContentLength: Int64) -> Bool {
+    guard
+      let responseUrl,
+      responseUrl.isHttpsWebLink,
+      responseUrl.host?.lowercased() == requestedUrl.host?.lowercased(),
+      (responseUrl.port ?? 443) == (requestedUrl.port ?? 443)
+    else {
+      return false
+    }
+    return expectedContentLength <= Constants.maxImageByteCount
+  }
+
+  /// Refuses a response off the requested origin or too large, and scales a large image down while decoding it.
+  static func loadingContext(for url: URL?) -> [SDWebImageContextOption: Any]? {
+    guard let requestedUrl = loadableUrl(url) else { return nil }
+    let responseModifier = SDWebImageDownloaderResponseModifier { response in
+      acceptsResponse(
+        requestedUrl: requestedUrl,
+        responseUrl: response.url,
+        expectedContentLength: response.expectedContentLength
+      ) ? response : nil
+    }
+    return [
+      .downloadResponseModifier: responseModifier,
+      .imageScaleDownLimitBytes: Constants.maxDecodedByteCount
+    ]
   }
 }

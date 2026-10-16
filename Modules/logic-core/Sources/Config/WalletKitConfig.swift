@@ -189,7 +189,8 @@ struct WalletKitConfigImpl: WalletKitConfig {
               issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
               validateRegistrationCertificate: validateIssuerRegistrationCertificate
             ),
-            order: 0
+            order: 0,
+            logoOrigins: ["https://eudiw.dev"]
           )
         ]
       case .DEV:
@@ -232,7 +233,8 @@ struct WalletKitConfigImpl: WalletKitConfig {
               issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
               validateRegistrationCertificate: validateIssuerRegistrationCertificate
             ),
-            order: 0
+            order: 0,
+            logoOrigins: ["https://eudiw.dev"]
           )
         ]
       }

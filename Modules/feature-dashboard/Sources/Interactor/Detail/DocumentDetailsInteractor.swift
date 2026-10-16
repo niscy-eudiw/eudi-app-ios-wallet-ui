@@ -49,7 +49,8 @@ final actor DocumentDetailsInteractorImpl: DocumentDetailsInteractor {
 
   func fetchStoredDocument(documentId: String) async -> DocumentDetailsPartialState {
     let document = await walletController.fetchDocument(with: documentId)
-    guard let documentDetails = document?.transformToDocumentUi() else {
+    let issuerLogoOrigins = await walletController.issuerLogoOrigins()
+    guard let documentDetails = document?.transformToDocumentUi(issuerLogoOrigins: issuerLogoOrigins) else {
       return .failure(WalletCoreError.unableFetchDocument)
     }
     let isBookmarked = await walletController.isDocumentBookmarked(with: documentId)

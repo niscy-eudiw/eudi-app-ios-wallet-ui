@@ -32,6 +32,9 @@ final class TestDocumentDetailsInteractor: EudiTest {
 
   override func setUp() {
     self.walletKitController = MockWalletKitController()
+    stub(walletKitController) { mock in
+      when(mock.issuerLogoOrigins()).thenReturn([])
+    }
     self.prefsController = MockPrefsController()
     self.configLogic = MockConfigLogic()
     self.sessionController = MockSessionController()

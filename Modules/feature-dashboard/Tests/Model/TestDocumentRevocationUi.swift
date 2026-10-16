@@ -25,7 +25,8 @@ final class TestDocumentRevocationUi: EudiTest {
   func testTransformToDocumentTabUi_WhenSuspended_ThenShowsSuspended() {
     let model = Constants.createEuPidModel().transformToDocumentTabUi(
       categories: [:],
-      revocationStatus: .suspended
+      revocationStatus: .suspended,
+      issuerLogoOrigins: []
     )
 
     XCTAssertEqual(model.value.state, .suspended)
@@ -35,7 +36,8 @@ final class TestDocumentRevocationUi: EudiTest {
   func testTransformToDocumentTabUi_WhenRevoked_ThenShowsRevoked() {
     let model = Constants.createEuPidModel().transformToDocumentTabUi(
       categories: [:],
-      revocationStatus: .revoked
+      revocationStatus: .revoked,
+      issuerLogoOrigins: []
     )
 
     XCTAssertEqual(model.value.state, .revoked)
@@ -45,7 +47,8 @@ final class TestDocumentRevocationUi: EudiTest {
   func testTransformToDocumentTabUi_WhenUnrecognised_ThenShowsRevoked() {
     let model = Constants.createEuPidModel().transformToDocumentTabUi(
       categories: [:],
-      revocationStatus: .unrecognised
+      revocationStatus: .unrecognised,
+      issuerLogoOrigins: []
     )
 
     XCTAssertEqual(model.value.state, .revoked)
@@ -55,7 +58,8 @@ final class TestDocumentRevocationUi: EudiTest {
   func testTransformToDocumentTabUi_WhenNoRecord_ThenShowsIssued() {
     let model = Constants.createEuPidModel().transformToDocumentTabUi(
       categories: [:],
-      revocationStatus: nil
+      revocationStatus: nil,
+      issuerLogoOrigins: []
     )
 
     XCTAssertEqual(model.value.state, .issued)

@@ -260,8 +260,9 @@ final actor AddDocumentInteractorImpl: AddDocumentInteractor {
 
   func fetchStoredDocuments(documentIds: [String]) async -> IssueDocumentsPartialState {
     let documents = await walletController.fetchDocuments(with: documentIds)
+    let issuerLogoOrigins = await walletController.issuerLogoOrigins()
     let documentsDetails = documents.compactMap {
-      $0.transformToDocumentUi(isSensitive: false)
+      $0.transformToDocumentUi(isSensitive: false, issuerLogoOrigins: issuerLogoOrigins)
     }
 
     if documentsDetails.isEmpty {

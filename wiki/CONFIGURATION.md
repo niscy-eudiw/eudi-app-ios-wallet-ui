@@ -653,6 +653,13 @@ compile:
 The credential configuration is derived directly from the issuer's metadata. The issuer URL is configured via the `issuersConfig` property (its `VciConfig` entries) inside the logic-core module in *WalletKitConfigImpl*.
 If you want to add or adjust the displayed scoped documents, you must modify the issuer's metadata, and the wallet will automatically resolve your changes.
 
+Issuer logos load only over `https`, from a configured issuer's own origin or one of its `VciConfig.logoOrigins` (the
+backend issuers list `https://eudiw.dev`, as on Android), checked with `URL.isAllowedIssuerLogo(allowedOrigins:)`.
+Every remote image, relying-party and Trust Mark logos included, loads only over `https`; a response that ends on
+another origin after a redirect, or declares more than `RemoteImageView.Constants.maxImageByteCount` (2 MiB), is
+refused, and a large image is scaled down while it is decoded. The placeholder icon shows otherwise. The rule
+applies even when Core or Kit pass an `http` address.
+
 Credential offers are accepted only from the issuers in `issuersConfig` (`OfferIssuer`, checked before anything is
 fetched). An offer that carries itself in the link must name a configured issuer as its `credential_issuer`, written
 exactly as its `credentialIssuerURL`; an offer passed by address must be fetched over `https` from a configured

@@ -68,8 +68,9 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
       claimNames: docClaimsModels.flatMap { $0.docClaims.map(\.name) },
       userImageClaimKeys: configUiLogic.userImageClaimKeys
     )
+    let issuerLogoOrigins = await interactor.issuerLogoOrigins()
     let documents = docClaimsModels.compactMap {
-      $0.transformToDocumentUi(isSensitive: false)
+      $0.transformToDocumentUi(isSensitive: false, issuerLogoOrigins: issuerLogoOrigins)
     }
 
     return AuthorizationUIModel(

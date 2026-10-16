@@ -134,6 +134,8 @@ public protocol WalletKitController: Sendable {
   /// Registers the documents for the Digital Credential API, or withdraws every registration while the user has
   /// turned the offering off (`Prefs.Key.offerDocumentsToApps`).
   func reconcileRegistrations() async
+  /// The origins issuer logos may load from: the configured issuers' own and their `VciConfig.logoOrigins`.
+  func issuerLogoOrigins() async -> [String]
   /// The issuer's registration for the issuer-list flow and re-issuance, resolved before the issuer is contacted. A
   /// lookup that fails refuses for a trust failure and throws any other error, so a failure never reads as "no
   /// registration"; with the check off nothing is looked up.
@@ -924,6 +926,12 @@ final actor WalletKitControllerImpl: WalletKitController {
 }
 
 extension WalletKitControllerImpl {
+
+  func issuerLogoOrigins() -> [String] {
+    walletKitConfig.issuersConfig.values.flatMap { vciConfig in
+      [vciConfig.config.credentialIssuerURL].compactMap { $0 } + vciConfig.logoOrigins
+    }
+  }
 
   /// Deletes the log file a debug build or an earlier build left, as the Android wallet does.
   static func removeLogFileOfAnEarlierBuild() {

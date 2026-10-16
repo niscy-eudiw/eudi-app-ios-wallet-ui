@@ -33,6 +33,9 @@ final class TestDocumentOfferInteractor: EudiTest {
   override func setUp() {
     super.setUp()
     self.walletKitController = MockWalletKitController()
+    stub(walletKitController) { mock in
+      when(mock.issuerLogoOrigins()).thenReturn([])
+    }
     self.configLogic = MockConfigLogic()
     stub(walletKitController) { mock in
       // The offer carries the issuer's registration; tests that need a different scenario
@@ -773,10 +776,11 @@ final class TestDocumentOfferInteractor: EudiTest {
       txCodeSpec: TxCode(inputMode: .text, length: 6, description: "description")
     )
     
-    let offerUI = issuanceModel.transformToDocumentOfferUi()
+    let offerUI = issuanceModel.transformToDocumentOfferUi(issuerLogoOrigins: ["https://logo.com"])
     
     XCTAssertEqual(offerUI.issuerName, "Issuer")
     XCTAssertEqual(offerUI.issuerLogo?.absoluteString, "https://logo.com/logo.png")
+    XCTAssertNil(issuanceModel.transformToDocumentOfferUi(issuerLogoOrigins: ["https://issuer.example"]).issuerLogo)
     XCTAssertEqual(offerUI.uiOffers.count, 1)
     XCTAssertEqual(offerUI.uiOffers.first?.documentName, "Display Name")
     XCTAssertEqual(offerUI.txCode?.isRequired, true)

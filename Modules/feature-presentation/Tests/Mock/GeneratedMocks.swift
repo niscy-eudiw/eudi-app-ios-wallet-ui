@@ -9224,6 +9224,16 @@ return await cuckoo_manager.call(
         )
     }
 
+    public func issuerLogoOrigins() async -> [String] {
+        return await cuckoo_manager.call(
+            "issuerLogoOrigins() async -> [String]",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.issuerLogoOrigins()
+        )
+    }
+
     public func getIssuerRegistration(issuerId p0: String, configIds p1: [String]) async throws -> IssuerRegistration? {
         return try await cuckoo_manager.callThrows(
             "getIssuerRegistration(issuerId p0: String, configIds p1: [String]) async throws -> IssuerRegistration?",
@@ -9726,6 +9736,14 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
                 method: "reconcileRegistrations() async",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func issuerLogoOrigins() -> Cuckoo.ProtocolStubFunction<(), [String]> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "issuerLogoOrigins() async -> [String]",
                 parameterMatchers: matchers
             ))
         }
@@ -10468,6 +10486,18 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
+        func issuerLogoOrigins() -> Cuckoo.__DoNotUse<(), [String]> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "issuerLogoOrigins() async -> [String]",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
         func getIssuerRegistration<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(issuerId p0: M1, configIds p1: M2) -> Cuckoo.__DoNotUse<(String, [String]), IssuerRegistration?> where M1.MatchedType == String, M2.MatchedType == [String] {
             let matchers: [Cuckoo.ParameterMatcher<(String, [String])>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
             return cuckoo_manager.verify(
@@ -10744,6 +10774,10 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
     
     public func reconcileRegistrations() async {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func issuerLogoOrigins() async -> [String] {
+        return DefaultValueRegistry.defaultValue(for: ([String]).self)
     }
     
     public func getIssuerRegistration(issuerId p0: String, configIds p1: [String]) async throws -> IssuerRegistration? {
@@ -12528,6 +12562,21 @@ import MdocDataModel18013
 import Cuckoo
 import Foundation
 import MdocDataModel18013
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_presentation
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/URL+IssuerLogo.swift'
+
+import Cuckoo
+import Foundation
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
