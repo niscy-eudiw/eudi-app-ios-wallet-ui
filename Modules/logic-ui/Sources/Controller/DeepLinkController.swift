@@ -41,15 +41,19 @@ final class DeepLinkControllerImpl: DeepLinkController {
   private let urlSchemaController: UrlSchemaController
   private let walletKitController: WalletKitController
   private let pendingLink = OSAllocatedUnfairLock<URL?>(initialState: nil)
+  private let rqesCallbacks: [URLComponents]
 
   /// Removes a link an earlier build kept in `UserDefaults`, so that it does not outlive its process.
+  /// `rqesCallbackUris` are the signing services' redirect URIs (`ConfigLogic.rqesConfig`).
   init(
     prefsController: PrefsController,
     urlSchemaController: UrlSchemaController,
-    walletKitController: WalletKitController
+    walletKitController: WalletKitController,
+    rqesCallbackUris: [String]
   ) {
     self.urlSchemaController = urlSchemaController
     self.walletKitController = walletKitController
+    self.rqesCallbacks = rqesCallbackUris.compactMap(URLComponents.init(string:))
     prefsController.remove(forKey: .cachedDeepLink)
   }
 
@@ -57,13 +61,24 @@ final class DeepLinkControllerImpl: DeepLinkController {
     pendingLink.withLock { $0 }.flatMap(hasDeepLink(url:))
   }
 
+  /// An `rqes` link counts only when its host and path are a configured signing service's callback, as the
+  /// Android wallet matches the RQES host: any app can open the scheme, so anything else on it is dropped.
   public func hasDeepLink(url: URL) -> DeepLink.Executable? {
     if let components = URLComponents(url: url, resolvingAgainstBaseURL: true),
        let scheme = components.scheme,
-       let action = DeepLink.Action.parseType(with: scheme, and: urlSchemaController) {
+       let action = DeepLink.Action.parseType(with: scheme, and: urlSchemaController),
+       action != .rqes || isRqesCallback(components) {
       return DeepLink.Executable(link: components, plainUrl: url, action: action)
     }
     return nil
+  }
+
+  private func isRqesCallback(_ components: URLComponents) -> Bool {
+    rqesCallbacks.contains { callback in
+      callback.scheme?.lowercased() == components.scheme?.lowercased()
+      && callback.host?.lowercased() == components.host?.lowercased()
+      && callback.path == components.path
+    }
   }
 
   public func handleDeepLinkAction(

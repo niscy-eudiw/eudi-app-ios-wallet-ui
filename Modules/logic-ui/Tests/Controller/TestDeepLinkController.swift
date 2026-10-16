@@ -44,7 +44,8 @@ final class TestDeepLinkController: EudiTest {
     self.controller = DeepLinkControllerImpl(
       prefsController: prefsController,
       urlSchemaController: urlSchemaController,
-      walletKitController: walletKitController
+      walletKitController: walletKitController,
+      rqesCallbackUris: ["rqes://oauth/callback"]
     )
   }
   
@@ -76,6 +77,25 @@ final class TestDeepLinkController: EudiTest {
     XCTAssertNil(controller.hasDeepLink(url: Self.mockedExternalUrl))
   }
   
+  func testHasDeepLink_WhenAnRqesLinkIsTheSigningServiceCallback_ThenReturnsTheRqesAction() {
+    stub(urlSchemaController) { mock in
+      when(mock.retrieveSchemas(with: any())).then { type in type == "rqes" ? ["rqes"] : [] }
+    }
+
+    let action = controller.hasDeepLink(url: URL(string: "rqes://oauth/callback?code=abc&state=xyz")!)
+
+    XCTAssertEqual(action?.action, .rqes)
+  }
+
+  func testHasDeepLink_WhenAnRqesLinkHasAnotherHostOrPath_ThenReturnsNothing() {
+    stub(urlSchemaController) { mock in
+      when(mock.retrieveSchemas(with: any())).then { type in type == "rqes" ? ["rqes"] : [] }
+    }
+
+    XCTAssertNil(controller.hasDeepLink(url: URL(string: "rqes://attacker/callback?code=abc")!))
+    XCTAssertNil(controller.hasDeepLink(url: URL(string: "rqes://oauth/elsewhere?code=abc")!))
+  }
+
   func testHasDeepLink_WhenUrlIsMalformed_ThenReturnDeepLinkActionNil() {
     // Given
     let malFormedUrl = Self.mockedMalformedUrl
@@ -376,7 +396,7 @@ final class TestDeepLinkController: EudiTest {
 
   func testHandleDeepLinkAction_WhenRqesWithoutAuthorizationCode_ThenEarlyReturn() async {
     // Given: .rqes action with no `code` query item — the `code` guard returns early
-    let url = URL(string: "rqes://callback?other=value")!
+    let url = URL(string: "rqes://oauth/callback?other=value")!
     let executable = DeepLink.Executable(
       link: URLComponents(url: url, resolvingAgainstBaseURL: true)!,
       plainUrl: url,
@@ -404,7 +424,7 @@ final class TestDeepLinkController: EudiTest {
     // Hits the Task { @MainActor in ... } block of the .rqes case. The Task itself
     // polls for topViewController which never resolves in unit tests, so we
     // simply verify the function returns and reaches the spawn point.
-    let url = URL(string: "rqes://callback?code=abc123")!
+    let url = URL(string: "rqes://oauth/callback?code=abc123")!
     let executable = DeepLink.Executable(
       link: URLComponents(url: url, resolvingAgainstBaseURL: true)!,
       plainUrl: url,
@@ -516,10 +536,10 @@ final class TestDeepLinkController: EudiTest {
     stub(urlSchemaController) { mock in
       // First call: openid4vp schemas (no match), then credential_offer (no match), then rqes (match)
       when(mock.retrieveSchemas(with: any())).then { name in
-        return name == "rqes" ? ["rqes-callback"] : []
+        return name == "rqes" ? ["rqes"] : []
       }
     }
-    let url = URL(string: "rqes-callback://complete?code=abc")!
+    let url = URL(string: "rqes://oauth/callback?code=abc")!
 
     // When
     let action = controller.hasDeepLink(url: url)
@@ -616,7 +636,7 @@ private extension TestDeepLinkController {
     action: .haip_vci
   )
 
-  static let mockedRqesUrl: URL = URL(string: "rqes://callback?code=auth-code")!
+  static let mockedRqesUrl: URL = URL(string: "rqes://oauth/callback?code=auth-code")!
 
   static let mockedRqesDeepLinkAction = DeepLink.Executable(
     link: URLComponents(url: mockedRqesUrl, resolvingAgainstBaseURL: true)!,

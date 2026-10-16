@@ -36,7 +36,8 @@ public final class LogicUiAssembly: Assembly {
       DeepLinkControllerImpl(
         prefsController: r.force(PrefsController.self),
         urlSchemaController: r.force(UrlSchemaController.self),
-        walletKitController: r.force(WalletKitController.self)
+        walletKitController: r.force(WalletKitController.self),
+        rqesCallbackUris: r.force(ConfigLogic.self).rqesConfig.rssps.map(\.authFlowRedirectionURI)
       )
     }
     .inObjectScope(ObjectScope.container)

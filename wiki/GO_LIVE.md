@@ -1551,6 +1551,10 @@ How the reference app handles a wallet link (`DeepLinkController.handleDeepLinkA
   returns nil for it, so the wallet neither opens it nor keeps it. The app registers custom schemes only
   and no associated domains, so iOS delivers none today; a deployment that adds associated domains must
   add a route for its own links.
+* An `rqes` link counts only when its host and path are a signing service's callback
+  (`authFlowRedirectionURI` in `RQESConfig`, `rqes://oauth/callback` in the reference build), as Android matches the
+  RQES host; any app can open a custom scheme, so anything else on it is dropped (`DeepLinkControllerImpl.hasDeepLink`).
+  A deployment that changes the redirect URI changes it there only.
 
 Files to review:
 
