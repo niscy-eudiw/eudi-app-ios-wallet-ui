@@ -264,4 +264,31 @@ extension TestSettingsInteractor {
     // Then
     return url
   }
+
+  func testIsOfferingDocumentsToApps_WhenTheUserNeverChoseIt_ThenIsOn() async {
+    stub(prefsController) { mock in
+      when(mock.getValue(forKey: equal(to: Prefs.Key.offerDocumentsToApps))).thenReturn(nil)
+    }
+
+    let isOffering = await interactor.isOfferingDocumentsToApps()
+
+    XCTAssertTrue(isOffering)
+  }
+
+  func testSetOfferingDocumentsToApps_WhenTurnedOff_ThenStoresItAndWithdrawsTheRegistrations() async {
+    stub(prefsController) { mock in
+      when(mock.setValue(any(), forKey: any())).thenDoNothing()
+    }
+    stub(walletKitController) { mock in
+      when(mock.reconcileRegistrations()).thenDoNothing()
+    }
+
+    await interactor.setOfferingDocumentsToApps(isEnabled: false)
+
+    verify(prefsController).setValue(
+      ParameterMatcher<Any?> { ($0 as? Bool) == false },
+      forKey: equal(to: Prefs.Key.offerDocumentsToApps)
+    )
+    verify(walletKitController).reconcileRegistrations()
+  }
 }

@@ -658,6 +658,10 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "relying_party_not_verified_warning")
     case .requestUserImageNotice:
       bundle.localizedString(forKey: "request_user_image_notice")
+    case .offerDocumentsToApps:
+      bundle.localizedString(forKey: "offer_documents_to_apps")
+    case .documentOfferingDisabledMessage:
+      bundle.localizedString(forKey: "document_offering_disabled_message")
     case .requestUserImageConfirmationTitle:
       bundle.localizedString(forKey: "request_user_image_confirmation_title")
     case .requestUserImageConfirmationMessage:

@@ -37,6 +37,11 @@ public protocol SettingsInteractor: Sendable {
   func isBatchCounterEnabled() async -> Bool
   func setIssuerRegistrationValidation(isEnabled: Bool) async
   func isIssuerRegistrationValidationEnabled() async -> Bool
+  /// Whether this iOS version has the Digital Credential API; without it the setting would do nothing.
+  func isDocumentOfferingAvailable() async -> Bool
+  func isOfferingDocumentsToApps() async -> Bool
+  /// Stores the choice and registers or withdraws the documents at once.
+  func setOfferingDocumentsToApps(isEnabled: Bool) async
   /// Runs the factory reset; see `WalletResetController.resetWallet()`.
   func resetWallet() async -> WalletResetPartialState
 }
@@ -110,6 +115,22 @@ final actor SettingsInteractorImpl: SettingsInteractor {
 
   func isIssuerRegistrationValidationEnabled() async -> Bool {
     prefsController.getBool(forKey: .validateIssuerRegistrationCertificate)
+  }
+
+  func isDocumentOfferingAvailable() -> Bool {
+    if #available(iOS 26.0, *) {
+      return true
+    }
+    return false
+  }
+
+  func isOfferingDocumentsToApps() async -> Bool {
+    prefsController.isOfferingDocumentsToApps()
+  }
+
+  func setOfferingDocumentsToApps(isEnabled: Bool) async {
+    prefsController.setValue(isEnabled, forKey: .offerDocumentsToApps)
+    await walletController.reconcileRegistrations()
   }
 
   func setIssuerRegistrationValidation(isEnabled: Bool) async {

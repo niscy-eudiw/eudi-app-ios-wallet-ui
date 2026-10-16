@@ -1562,6 +1562,13 @@ import Foundation
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/PrefsController+DocumentOffering.swift'
+
+import Cuckoo
+@testable import logic_business
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/PrefsController+WalletReset.swift'
 
 import Cuckoo

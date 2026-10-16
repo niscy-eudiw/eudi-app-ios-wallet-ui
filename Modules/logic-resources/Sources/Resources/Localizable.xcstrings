@@ -804,6 +804,17 @@
         }
       }
     },
+    "document_offering_disabled_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This wallet does not offer documents to apps and websites. You can turn this on in the wallet's Settings."
+          }
+        }
+      }
+    },
     "document_provider_extension_accept_button" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1686,6 +1697,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not registered data"
+          }
+        }
+      }
+    },
+    "offer_documents_to_apps" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offer documents to apps and websites"
           }
         }
       }

@@ -34,6 +34,7 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
 
   private let dcApiHandler: DcApiHandler
   private let configUiLogic: ConfigUiLogic
+  private let prefsController: PrefsController
 
   private let interactor: WalletKitController = DIGraph.shared.resolver.force(
     WalletKitController.self
@@ -41,12 +42,16 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
 
   init(
     dcApiHandler: DcApiHandler,
-    configUiLogic: ConfigUiLogic
+    configUiLogic: ConfigUiLogic,
+    prefsController: PrefsController
   ) {
     self.dcApiHandler = dcApiHandler
     self.configUiLogic = configUiLogic
+    self.prefsController = prefsController
   }
 
+  /// A request is declined while the user has turned off offering documents to apps and websites, since one may
+  /// still arrive through a registration the system has not yet withdrawn.
   /// A request that would include a document with a revocation record (revoked, suspended or unrecognised) is
   /// declined, as the in-app flows refuse one; when the records cannot be read, the request is declined too.
   /// `DcApiHandler` validates no reader certificate chain and returns no trust verdict, so the relying
@@ -56,6 +61,9 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
   func loadRequestData(
     context: ISO18013MobileDocumentRequestContext
   ) async throws -> AuthorizationUIModel {
+    guard prefsController.isOfferingDocumentsToApps() else {
+      throw WalletCoreError.documentOfferingDisabled
+    }
     let (docClaimsModels, _, authorityKeyIdentifier, _) = try await dcApiHandler.validateRequest(context.request)
     let blocked = try await interactor.fetchRevokedDocumentStatuses()
     guard !docClaimsModels.contains(where: { blocked[$0.id] != nil }) else {
@@ -88,6 +96,9 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
   func acceptVerification(
     context: ISO18013MobileDocumentRequestContext
   ) async throws {
+    guard prefsController.isOfferingDocumentsToApps() else {
+      throw WalletCoreError.documentOfferingDisabled
+    }
     try await context.sendResponse { rawRequest in
 
       try await self.dcApiHandler.validateConsistency(

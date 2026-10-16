@@ -37,6 +37,13 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
     }
   }
 
+  var isOfferingDocumentsToApps: Bool = true {
+    didSet {
+      guard !isHydratingDocumentOffering, oldValue != isOfferingDocumentsToApps else { return }
+      updateDocumentOffering(isOfferingDocumentsToApps)
+    }
+  }
+
   var isIssuerRegistrationValidationEnabled: Bool = false {
     didSet {
       guard !isHydratingIssuerRegistration, oldValue != isIssuerRegistrationValidationEnabled else { return }
@@ -55,6 +62,7 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
 
   @ObservationIgnored
   private var isHydratingIssuerRegistration = false
+  private var isHydratingDocumentOffering = false
 
   private let interactor: SettingsInteractor
   private let walletKitController: WalletKitController
@@ -131,6 +139,11 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
     isIssuerRegistrationValidationEnabled = await interactor.isIssuerRegistrationValidationEnabled()
     isHydratingIssuerRegistration = false
 
+    let isDocumentOfferingAvailable = await interactor.isDocumentOfferingAvailable()
+    isHydratingDocumentOffering = true
+    isOfferingDocumentsToApps = await interactor.isOfferingDocumentsToApps()
+    isHydratingDocumentOffering = false
+
     var items: [SettingMenuItemUIModel] = []
 
     if isBiometryAvailable {
@@ -188,6 +201,26 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
         action: {}
       )
     )
+
+    if isDocumentOfferingAvailable {
+      items.append(
+        .init(
+          title: .offerDocumentsToApps,
+          icon: Theme.shared.image.share,
+          showDivider: true,
+          isToggle: true,
+          toggleBinding: Binding(
+            get: { [weak self] in
+              self?.isOfferingDocumentsToApps ?? true
+            },
+            set: { [weak self] newValue in
+              self?.isOfferingDocumentsToApps = newValue
+            }
+          ),
+          action: {}
+        )
+      )
+    }
 
     items.append(
       .init(
@@ -252,6 +285,12 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
   private func updateBatchCounter(_ isEnabled: Bool) {
     Task {
       await interactor.setBatchCounter(isEnabled: isEnabled)
+    }
+  }
+
+  private func updateDocumentOffering(_ isEnabled: Bool) {
+    Task {
+      await interactor.setOfferingDocumentsToApps(isEnabled: isEnabled)
     }
   }
 

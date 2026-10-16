@@ -3606,6 +3606,36 @@ public class MockSettingsInteractor: SettingsInteractor, Cuckoo.ProtocolMock, @u
         )
     }
 
+    public func isDocumentOfferingAvailable() async -> Bool {
+        return await cuckoo_manager.call(
+            "isDocumentOfferingAvailable() async -> Bool",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.isDocumentOfferingAvailable()
+        )
+    }
+
+    public func isOfferingDocumentsToApps() async -> Bool {
+        return await cuckoo_manager.call(
+            "isOfferingDocumentsToApps() async -> Bool",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.isOfferingDocumentsToApps()
+        )
+    }
+
+    public func setOfferingDocumentsToApps(isEnabled p0: Bool) async {
+        return await cuckoo_manager.call(
+            "setOfferingDocumentsToApps(isEnabled p0: Bool) async",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.setOfferingDocumentsToApps(isEnabled: p0)
+        )
+    }
+
     public func resetWallet() async -> WalletResetPartialState {
         return await cuckoo_manager.call(
             "resetWallet() async -> WalletResetPartialState",
@@ -3707,6 +3737,30 @@ public class MockSettingsInteractor: SettingsInteractor, Cuckoo.ProtocolMock, @u
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockSettingsInteractor.self,
                 method: "isIssuerRegistrationValidationEnabled() async -> Bool",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func isDocumentOfferingAvailable() -> Cuckoo.ProtocolStubFunction<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockSettingsInteractor.self,
+                method: "isDocumentOfferingAvailable() async -> Bool",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func isOfferingDocumentsToApps() -> Cuckoo.ProtocolStubFunction<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockSettingsInteractor.self,
+                method: "isOfferingDocumentsToApps() async -> Bool",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func setOfferingDocumentsToApps<M1: Cuckoo.Matchable>(isEnabled p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(Bool)> where M1.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockSettingsInteractor.self,
+                method: "setOfferingDocumentsToApps(isEnabled p0: Bool) async",
                 parameterMatchers: matchers
             ))
         }
@@ -3865,6 +3919,42 @@ public class MockSettingsInteractor: SettingsInteractor, Cuckoo.ProtocolMock, @u
         
         
         @discardableResult
+        func isDocumentOfferingAvailable() -> Cuckoo.__DoNotUse<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "isDocumentOfferingAvailable() async -> Bool",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func isOfferingDocumentsToApps() -> Cuckoo.__DoNotUse<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "isOfferingDocumentsToApps() async -> Bool",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func setOfferingDocumentsToApps<M1: Cuckoo.Matchable>(isEnabled p0: M1) -> Cuckoo.__DoNotUse<(Bool), Void> where M1.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "setOfferingDocumentsToApps(isEnabled p0: Bool) async",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
         func resetWallet() -> Cuckoo.__DoNotUse<(), WalletResetPartialState> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
@@ -3923,6 +4013,18 @@ public class SettingsInteractorStub:SettingsInteractor, @unchecked Sendable {
     
     public func isIssuerRegistrationValidationEnabled() async -> Bool {
         return DefaultValueRegistry.defaultValue(for: (Bool).self)
+    }
+    
+    public func isDocumentOfferingAvailable() async -> Bool {
+        return DefaultValueRegistry.defaultValue(for: (Bool).self)
+    }
+    
+    public func isOfferingDocumentsToApps() async -> Bool {
+        return DefaultValueRegistry.defaultValue(for: (Bool).self)
+    }
+    
+    public func setOfferingDocumentsToApps(isEnabled p0: Bool) async {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
     public func resetWallet() async -> WalletResetPartialState {
@@ -9091,6 +9193,20 @@ import Foundation
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/PrefsController+DocumentOffering.swift'
+
+import Cuckoo
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/PrefsController+WalletReset.swift'
 
 import Cuckoo
@@ -11643,6 +11759,16 @@ return await cuckoo_manager.call(
         )
     }
 
+    public func reconcileRegistrations() async {
+        return await cuckoo_manager.call(
+            "reconcileRegistrations() async",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.reconcileRegistrations()
+        )
+    }
+
     public func getIssuerRegistration(issuerId p0: String, configIds p1: [String]) async throws -> IssuerRegistration? {
         return try await cuckoo_manager.callThrows(
             "getIssuerRegistration(issuerId p0: String, configIds p1: [String]) async throws -> IssuerRegistration?",
@@ -12137,6 +12263,14 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<(OfferedIssuanceModel)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
                 method: "getIssuerRegistration(for p0: OfferedIssuanceModel) async -> IssuerRegistration?",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func reconcileRegistrations() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "reconcileRegistrations() async",
                 parameterMatchers: matchers
             ))
         }
@@ -12867,6 +13001,18 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
+        func reconcileRegistrations() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "reconcileRegistrations() async",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
         func getIssuerRegistration<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(issuerId p0: M1, configIds p1: M2) -> Cuckoo.__DoNotUse<(String, [String]), IssuerRegistration?> where M1.MatchedType == String, M2.MatchedType == [String] {
             let matchers: [Cuckoo.ParameterMatcher<(String, [String])>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
             return cuckoo_manager.verify(
@@ -13139,6 +13285,10 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
     
     public func getIssuerRegistration(for p0: OfferedIssuanceModel) async -> IssuerRegistration? {
         return DefaultValueRegistry.defaultValue(for: (IssuerRegistration?).self)
+    }
+    
+    public func reconcileRegistrations() async {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
     public func getIssuerRegistration(issuerId p0: String, configIds p1: [String]) async throws -> IssuerRegistration? {

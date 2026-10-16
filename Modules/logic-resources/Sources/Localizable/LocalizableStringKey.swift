@@ -329,6 +329,8 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case understandRisksAgree
   case relyingPartyNotVerifiedWarning
   case requestUserImageNotice
+  case offerDocumentsToApps
+  case documentOfferingDisabledMessage
   case requestUserImageConfirmationTitle
   case requestUserImageConfirmationMessage
   case accessCertificateNotTrustedWarning

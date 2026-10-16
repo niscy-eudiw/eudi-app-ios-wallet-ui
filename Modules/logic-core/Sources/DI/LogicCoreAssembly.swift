@@ -55,7 +55,8 @@ public final class LogicCoreAssembly: Assembly {
         statusRefreshFailureStorageController: r.force((any StatusRefreshFailureStorageController).self),
         storageEraseController: r.force(StorageEraseController.self),
         networkSessionProvider: r.force((any NetworkSessionProvider).self),
-        documentRegistrationManager: r.force((any DocumentRegistrationManager).self)
+        documentRegistrationManager: r.force((any DocumentRegistrationManager).self),
+        prefsController: r.force(PrefsController.self)
       )
     }
     .inObjectScope(ObjectScope.container)

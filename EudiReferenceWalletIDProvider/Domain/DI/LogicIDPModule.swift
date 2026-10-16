@@ -37,7 +37,8 @@ final class LogicIDPModule: Assembly {
     container.register(RequestAuthorizationInteractor.self) { r in
       RequestAuthorizationInteractorImpl(
         dcApiHandler: r.force(DcApiHandler.self),
-        configUiLogic: r.force(ConfigUiLogic.self)
+        configUiLogic: r.force(ConfigUiLogic.self),
+        prefsController: r.force(PrefsController.self)
       )
     }
   }

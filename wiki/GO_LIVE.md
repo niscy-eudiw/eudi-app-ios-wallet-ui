@@ -963,6 +963,10 @@ Current registration behavior:
   updated whenever a revocation check stores or clears a record; when the records cannot be read nothing is
   registered, as on Android. The extension also declines a request that would include such a document
   (`RequestAuthorizationInteractor.loadRequestData`). See [Revocation And Status Checking](#revocation-and-status-checking).
+* Settings has a switch, "Offer documents to apps and websites", which is on by default and shown only on iOS 26
+  and later. While it is off, nothing is registered and every registration is withdrawn when the user turns it off
+  (`PrefsController.isOfferingDocumentsToApps()`). The extension declines a request that still arrives, after
+  the login and before any requested data is shown, and again on Accept, as Android does.
 
 Current request handling:
 

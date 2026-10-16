@@ -131,6 +131,9 @@ public protocol WalletKitController: Sendable {
 
   func refreshUsageCounters() async throws
   func getIssuerRegistration(for offer: OfferedIssuanceModel) async -> IssuerRegistration?
+  /// Registers the documents for the Digital Credential API, or withdraws every registration while the user has
+  /// turned the offering off (`PrefsController.isOfferingDocumentsToApps()`).
+  func reconcileRegistrations() async
   /// The issuer's registration for the issuer-list flow and re-issuance, resolved before the issuer is contacted. A
   /// lookup that fails refuses for a trust failure and throws any other error, so a failure never reads as "no
   /// registration"; with the check off nothing is looked up.
@@ -162,6 +165,7 @@ final actor WalletKitControllerImpl: WalletKitController {
   private let statusRefreshFailureStorageController: any StatusRefreshFailureStorageController
   private let storageEraseController: StorageEraseController
   private let documentRegistrationManager: DocumentRegistrationManager
+  private let prefsController: PrefsController
   /// "Check Registration Certificates" as WalletKit was configured with it at launch; the setting applies after a
   /// restart, so the app's own decisions follow the same value.
   private let isRegistrationChecked: Bool
@@ -178,7 +182,8 @@ final actor WalletKitControllerImpl: WalletKitController {
     statusRefreshFailureStorageController: any StatusRefreshFailureStorageController,
     storageEraseController: StorageEraseController,
     networkSessionProvider: NetworkSessionProvider,
-    documentRegistrationManager: DocumentRegistrationManager
+    documentRegistrationManager: DocumentRegistrationManager,
+    prefsController: PrefsController
   ) {
     self.walletKitConfig = walletKitConfig
     self.configLogic = configLogic
@@ -191,6 +196,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     self.statusRefreshFailureStorageController = statusRefreshFailureStorageController
     self.storageEraseController = storageEraseController
     self.documentRegistrationManager = documentRegistrationManager
+    self.prefsController = prefsController
     self.isRegistrationChecked = walletKitConfig.validateIssuerRegistrationCertificate
 
     guard let walletKit = try? EudiWallet(
@@ -901,12 +907,16 @@ final actor WalletKitControllerImpl: WalletKitController {
   }
 }
 
-private extension WalletKitControllerImpl {
+extension WalletKitControllerImpl {
 
   /// Registers the issued CBOR documents for the Digital Credential API, leaving out every document with a
   /// revocation record (revoked, suspended or unrecognised), as the Android wallet does. When the records cannot be
-  /// read, nothing is registered.
+  /// read, or the user has turned the offering off, nothing is registered.
   func reconcileRegistrations() async {
+    guard prefsController.isOfferingDocumentsToApps() else {
+      await documentRegistrationManager.reconcile(desired: [])
+      return
+    }
     let blocked = try? await fetchRevokedDocumentStatuses()
     await documentRegistrationManager.reconcile(
       desired: fetchIssuedDocuments()
@@ -920,6 +930,9 @@ private extension WalletKitControllerImpl {
         }
     )
   }
+}
+
+private extension WalletKitControllerImpl {
 
   func decodeDeeplink(link: URLComponents) -> String? {
     link.removeSchemeFromComponents()?.string
