@@ -1662,7 +1662,7 @@ keyChain = Keychain(
   service: service,
   accessGroup: accessGroup
 )
-.accessibility(.whenUnlocked)
+.accessibility(Self.accessibility) // .whenUnlockedThisDeviceOnly
 ```
 
 Biometric validation key:
@@ -1670,28 +1670,29 @@ Biometric validation key:
 ```swift
 .accessibility(
   .whenPasscodeSetThisDeviceOnly,
-  authenticationPolicy: [.biometryAny]
+  authenticationPolicy: [.biometryCurrentSet]
 )
 ```
 
-A biometric unlock first has the system evaluate `.deviceOwnerAuthenticationWithBiometrics` on a new
-`LAContext`, then writes this item with a fresh value and reads it back with the evaluated context, so the
-user sees one prompt. The unlock fails when the evaluation fails or returns `false`, when the item is
-missing, or when it holds another value (`SystemBiometryController`, `KeyChainController`). A failed
-write of the item fails it too. The prompt offers no device-passcode button (`localizedFallbackTitle` is
-empty): the wallet PIN is the fallback. The item is written again at every unlock under `.biometryAny`, so
-a change in biometric enrolment is not detected; that needs `.biometryCurrentSet` or a stored
-`evaluatedPolicyDomainState`.
+The item is written once, when the user turns biometric unlock on (`KeyChainController.storeBiometricProbe()`).
+A biometric unlock has the system evaluate `.deviceOwnerAuthenticationWithBiometrics` on a new `LAContext`,
+then reads the item with the evaluated context, so the user sees one prompt. The unlock fails when the
+evaluation fails or returns `false`, or when the item cannot be read (`SystemBiometryController`,
+`KeyChainController`). After a fingerprint or face is added or removed, `.biometryCurrentSet` makes the item
+unreadable, so the PIN is needed until the user turns biometric unlock off and on again. The prompt offers no
+device-passcode button (`localizedFallbackTitle` is empty): the wallet PIN is the fallback.
 
-`.whenUnlocked` is not a `ThisDeviceOnly` class. Every item `KeyChainController` writes with it, the
-PIN salt, hash and iteration count and the PIN lockout state included, goes into encrypted and iCloud
-backups and can be restored to another device. The salt and hash then leave the device, and a
-6-digit PIN can be searched offline, outside the lockout.
+`.whenUnlockedThisDeviceOnly` keeps every item `KeyChainController` writes, the PIN salt, hash and
+iteration count and the PIN lockout state included, out of encrypted and iCloud backups, so it cannot be
+restored to another device and the 6-digit PIN cannot be searched offline. Items an earlier build wrote as
+`.whenUnlocked` move to the new class at the next start
+(`KeyChainControllerImpl.moveItemsFromThePreviousClass`); while the device is locked they wait for a later
+start. wallet-storage writes its own items as `.whenPasscodeSetThisDeviceOnly`.
 
 Production decisions:
 
-* Confirm the default Keychain accessibility class. Use `.whenUnlockedThisDeviceOnly` (or another
-  `ThisDeviceOnly` class) for the PIN record and the lockout state, so they are never backed up.
+* Keep `KeyChainControllerImpl.accessibility` a `ThisDeviceOnly` class, so the PIN record and the
+  lockout state are never backed up.
 * Confirm whether Keychain items should survive device restore.
 * Confirm behavior when the device passcode is removed.
 * Confirm behavior when biometric enrollment changes.
@@ -1754,7 +1755,7 @@ Persisted state keys (`KeychainPinThrottleProvider.KeyIdentifier`):
 * `pinLockoutStartedAt` — wall-clock timestamp (`Date().timeIntervalSince1970`) when the current lockout began. Used for clock-rollback detection.
 * `pinLockoutEndsAt` — wall-clock timestamp when the current lockout ends.
 
-The values are stored as Strings in the Keychain (e.g. `"3"`, `"1762345678.123"`). The Keychain item accessibility class follows `KeyChainController`'s default (`.whenUnlocked`), which means the values are readable only while the device is unlocked. It is not a `ThisDeviceOnly` class, so the values go into encrypted and iCloud backups and can be restored to another device; see [Keychain](#keychain).
+The values are stored as Strings in the Keychain (e.g. `"3"`, `"1762345678.123"`). The Keychain item accessibility class follows `KeyChainController`'s default (`.whenUnlockedThisDeviceOnly`): the values are readable only while the device is unlocked, and they never go into a backup or to another device; see [Keychain](#keychain).
 
 Default policy (`AuthenticationConfigImpl`):
 

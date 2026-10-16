@@ -83,4 +83,30 @@ final class TestKeyChainController: EudiTest {
   func testValidateBiometricItem_WhenItemIsPresent_ThenSucceeds() {
     XCTAssertNoThrow(try KeyChainControllerImpl.validateBiometricItem("probe"))
   }
+
+  func testAccessibility_IsWhenUnlockedThisDeviceOnly() {
+    XCTAssertEqual(KeyChainControllerImpl.accessibility, .whenUnlockedThisDeviceOnly)
+  }
+
+  func testPreviousClassQuery_SelectsOnlyTheServicesWhenUnlockedPasswords() {
+    let query = KeyChainControllerImpl.previousClassQuery(service: "service", accessGroup: "group")
+
+    XCTAssertEqual(query[kSecClass as String] as? String, kSecClassGenericPassword as String)
+    XCTAssertEqual(query[kSecAttrService as String] as? String, "service")
+    XCTAssertEqual(query[kSecAttrAccessGroup as String] as? String, "group")
+    XCTAssertEqual(query[kSecAttrAccessible as String] as? String, kSecAttrAccessibleWhenUnlocked as String)
+  }
+
+  func testPreviousClassQuery_WhenThereIsNoAccessGroup_ThenLeavesItOut() {
+    let query = KeyChainControllerImpl.previousClassQuery(service: "service", accessGroup: "")
+
+    XCTAssertNil(query[kSecAttrAccessGroup as String])
+  }
+
+  func testThisDeviceOnlyAttributes_MoveTheItemsToWhenUnlockedThisDeviceOnly() {
+    XCTAssertEqual(
+      KeyChainControllerImpl.thisDeviceOnlyAttributes()[kSecAttrAccessible as String] as? String,
+      kSecAttrAccessibleWhenUnlockedThisDeviceOnly as String
+    )
+  }
 }

@@ -63,7 +63,8 @@ final class KeyChainControllerImpl: KeyChainController {
       service: service,
       accessGroup: accessGroup
     )
-    .accessibility(.whenUnlocked)
+    .accessibility(Self.accessibility)
+    Self.moveItemsFromThePreviousClass(service: service, accessGroup: accessGroup)
   }
 
   public func storeValue(key: KeyChainWrapper, value: String) {
@@ -189,6 +190,38 @@ private extension KeyChainControllerImpl {
 }
 
 extension KeyChainControllerImpl {
+
+  /// The class of every item this controller writes, except the biometric probe: readable only while the device is
+  /// unlocked, and never part of a backup, so the PIN salt and verifier cannot be restored to another device.
+  static var accessibility: Accessibility { .whenUnlockedThisDeviceOnly }
+
+  /// The items of `service` that a build before `accessibility` wrote as `.whenUnlocked`.
+  static func previousClassQuery(service: String, accessGroup: String) -> [String: Any] {
+    var query: [String: Any] = [
+      kSecClass as String: kSecClassGenericPassword,
+      kSecAttrService as String: service,
+      kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
+    ]
+    if !accessGroup.isEmpty {
+      query[kSecAttrAccessGroup as String] = accessGroup
+    }
+    return query
+  }
+
+  /// The update that moves those items to `accessibility`.
+  static func thisDeviceOnlyAttributes() -> [String: Any] {
+    [kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly]
+  }
+
+  /// Moves the items an earlier build wrote as `.whenUnlocked` to `accessibility`. It runs on every start and finds
+  /// nothing once they have moved; while the device is locked they cannot be moved, and a later start moves them.
+  /// wallet-storage's items are written as `.whenPasscodeSetThisDeviceOnly` and are not touched.
+  static func moveItemsFromThePreviousClass(service: String, accessGroup: String) {
+    SecItemUpdate(
+      previousClassQuery(service: service, accessGroup: accessGroup) as CFDictionary,
+      thisDeviceOnlyAttributes() as CFDictionary
+    )
+  }
 
   /// Accepts the biometric probe only when the keychain returned it; a missing item fails. Internal so that unit
   /// tests can check the rule without a biometry-protected item.
