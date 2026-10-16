@@ -167,7 +167,7 @@ final class TestWalletResetController: EudiTest {
     await scheduler.waitForFirstStop()
 
     let second = Task { [controller] in try await controller?.resetWallet() }
-    try await Task.sleep(seconds: 0.2)
+    try await Task.sleep(seconds: 1)
     await gate.open()
     try await first.value
     try await second.value

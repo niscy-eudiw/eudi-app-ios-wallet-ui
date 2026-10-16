@@ -85,6 +85,26 @@ final class TestTransactionLogStorageController: EudiTest {
     XCTAssertEqual(logs.map(\.identifier), ["c"])
   }
 
+  func testEraseStore_WhenTheStoreIsOnDisk_ThenNoFileKeepsTheDeletedHistory() async throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let service = SwiftDataServiceImpl(storageConfig: StubStorageConfig(folder: directory))
+    let onDisk = TransactionLogStorageControllerImpl(swiftDataService: service, prefsController: prefsController)
+    let marker = "erase-marker-\(UUID().uuidString)"
+    try await onDisk.store(TransactionLog(identifier: "a", value: marker))
+    try await onDisk.deleteAll()
+
+    try await StorageEraseControllerImpl(swiftDataService: service).eraseStore()
+    try await onDisk.store(log("b"))
+
+    let files = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+    for file in files {
+      let bytes = try Data(contentsOf: file)
+      XCTAssertNil(bytes.range(of: Data(marker.utf8)), file.lastPathComponent)
+    }
+    try FileManager.default.removeItem(at: directory)
+  }
+
   func testRetrieveAll_WhenTheHistoryExceedsOneBatch_ThenReturnsEveryEntry() async throws {
     try await controller.store((0..<250).map { log("entry-\($0)") })
 
@@ -119,9 +139,14 @@ private struct StubStorageConfig: StorageConfig {
   let databaseName = "test"
   let databaseFolder = "Test"
   let databaseExtension = "store"
+  var folder: URL?
   var schemas: Schema { StorageConfigImpl().schemas }
-  var storeURL: URL { FileManager.default.temporaryDirectory.appendingPathComponent("unused.store") }
-  var modelConfiguration: ModelConfiguration { ModelConfiguration(isStoredInMemoryOnly: true) }
+  var storeURL: URL {
+    (folder ?? FileManager.default.temporaryDirectory).appendingPathComponent("wallet.store")
+  }
+  var modelConfiguration: ModelConfiguration {
+    folder == nil ? ModelConfiguration(isStoredInMemoryOnly: true) : ModelConfiguration(url: storeURL)
+  }
 }
 
 private final class StubPrefsController: PrefsController {

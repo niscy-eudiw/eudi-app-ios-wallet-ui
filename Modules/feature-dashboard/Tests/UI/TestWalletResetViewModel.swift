@@ -93,10 +93,10 @@ private extension TestWalletResetViewModel {
     )
     return Fixture(viewModel: viewModel, router: router, deepLinkController: deepLinkController)
   }
-}
 
-private struct Fixture {
-  let viewModel: WalletResetViewModel<MockRouterHost>
-  let router: MockRouterHost
-  let deepLinkController: MockDeepLinkController
+  struct Fixture {
+    let viewModel: WalletResetViewModel<MockRouterHost>
+    let router: MockRouterHost
+    let deepLinkController: MockDeepLinkController
+  }
 }

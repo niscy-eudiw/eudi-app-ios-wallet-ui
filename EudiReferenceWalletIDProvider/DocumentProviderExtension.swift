@@ -42,10 +42,8 @@ struct DocumentProviderExtension: IdentityDocumentProvider {
   /// among them, which the app cannot reach. The reset advances `Prefs.Key.walletResetGeneration`; the extension
   /// keeps the last value it saw in its own defaults.
   private func clearCachesAfterWalletReset() {
-    let generation = DIGraph.shared.resolver.force(PrefsController.self).getInt(forKey: .walletResetGeneration)
-    let seenKey = "seenWalletResetGeneration"
-    guard UserDefaults.standard.integer(forKey: seenKey) != generation else { return }
+    let prefsController = DIGraph.shared.resolver.force(PrefsController.self)
+    guard prefsController.takeNewWalletReset(seenIn: .standard) else { return }
     FileManager.default.removeContents(of: FileManager.default.cachesAndTemporaryDirectories)
-    UserDefaults.standard.set(generation, forKey: seenKey)
   }
 }
