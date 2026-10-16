@@ -24,6 +24,7 @@ final class TestLogicUiAssembly: EudiTest {
 
   func testAssemble_WhenTheLinkAndInteractionControllersAreResolvedTwice_ThenEachIsTheSameInstance() {
     let container = Container()
+    LogicBusinessAssembly().assemble(container: container)
     LogicUiAssembly().assemble(container: container)
     let prefsController = MockPrefsController()
     stub(prefsController) { mock in
