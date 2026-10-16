@@ -60,6 +60,8 @@ final class UserInteractionControllerImpl: UserInteractionController {
   private var onInteraction: (@MainActor () -> Void)?
   private var cancellables = Set<AnyCancellable>()
 
+  /// `nonisolated` because Swinject's registration closure, which is not on the main actor, creates the controller;
+  /// the initializer sets no state.
   nonisolated init() {}
 
   func start(onInteraction: @escaping @MainActor () -> Void) {

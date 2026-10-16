@@ -302,10 +302,10 @@ final class TestSessionController: EudiTest {
   }
 
   func testMonotonicNow_WhenTimePasses_ThenAdvancesInSeconds() async throws {
-    let start = SessionControllerImpl.monotonicNow()
+    let start = MonotonicClock.now()
 
     try await Task.sleep(seconds: 0.05)
-    let elapsed = SessionControllerImpl.monotonicNow() - start
+    let elapsed = MonotonicClock.now() - start
 
     XCTAssertGreaterThanOrEqual(elapsed, 0.04)
     XCTAssertLessThan(elapsed, 5)
@@ -314,7 +314,7 @@ final class TestSessionController: EudiTest {
   func testMonotonicNow_WhenRead_ThenIsTheMonotonicClockInSeconds() {
     let reference = TimeInterval(clock_gettime_nsec_np(CLOCK_MONOTONIC)) / 1_000_000_000
 
-    XCTAssertEqual(SessionControllerImpl.monotonicNow(), reference, accuracy: 1)
+    XCTAssertEqual(MonotonicClock.now(), reference, accuracy: 1)
   }
 }
 

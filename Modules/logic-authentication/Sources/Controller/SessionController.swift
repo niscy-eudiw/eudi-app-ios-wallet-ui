@@ -89,14 +89,16 @@ public extension SessionController {
   }
 }
 
+/// Seconds on a monotonic clock that keeps counting while the device sleeps (`CLOCK_MONOTONIC`).
+enum MonotonicClock {
+  static func now() -> TimeInterval {
+    TimeInterval(clock_gettime_nsec_np(CLOCK_MONOTONIC)) / 1_000_000_000
+  }
+}
+
 /// The `SessionController` of the app, registered once per process.
 @MainActor
 final class SessionControllerImpl: SessionController {
-
-  /// Seconds on a monotonic clock that keeps counting while the device sleeps (`CLOCK_MONOTONIC`).
-  nonisolated static func monotonicNow() -> TimeInterval {
-    TimeInterval(clock_gettime_nsec_np(CLOCK_MONOTONIC)) / 1_000_000_000
-  }
 
   private let authenticationConfig: AuthenticationConfig
   private let now: @MainActor () -> TimeInterval
@@ -114,9 +116,11 @@ final class SessionControllerImpl: SessionController {
     isCoveredByScreen || externalFlows > 0
   }
 
+  /// `nonisolated` because Swinject's registration closure, which is not on the main actor, creates the controller;
+  /// the initializer only stores the Sendable configuration and clock, so no main-actor state is touched.
   nonisolated init(
     authenticationConfig: AuthenticationConfig,
-    now: @escaping @MainActor () -> TimeInterval = { SessionControllerImpl.monotonicNow() }
+    now: @escaping @MainActor () -> TimeInterval = { MonotonicClock.now() }
   ) {
     self.authenticationConfig = authenticationConfig
     self.now = now

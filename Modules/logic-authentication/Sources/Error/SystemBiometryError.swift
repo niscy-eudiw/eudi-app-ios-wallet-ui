@@ -14,7 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 
-@preconcurrency import LocalAuthentication
+import LocalAuthentication
 import logic_business
 import logic_resources
 import UIKit

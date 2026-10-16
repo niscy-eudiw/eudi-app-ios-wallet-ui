@@ -16,7 +16,7 @@
 import Foundation
 import Security
 import os
-@preconcurrency import LocalAuthentication
+import LocalAuthentication
 @preconcurrency import KeychainAccess
 
 public protocol KeyChainWrapper {
