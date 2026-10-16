@@ -139,6 +139,9 @@ You will also need to download the EUDI Verifier app. More information can be fo
    wallet cannot read its PIN record (for example while the device is locked), or holds documents but
    has no PIN, start-up stops on an error with "Try again"; it never offers to create a new PIN over
    existing documents.
+3. To start again from scratch, use "Reset wallet" in Settings. After a confirmation and your PIN, Face ID or
+   Touch ID, it deletes your documents and their keys, your transaction history, your PIN, settings and logs,
+   and the wallet starts again as on first use.
 
 ### Issuance flow (Scoped - Wallet initiated)
 

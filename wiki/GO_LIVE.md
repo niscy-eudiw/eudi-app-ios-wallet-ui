@@ -1793,6 +1793,7 @@ Current preferences include:
 * `batchCounter`
 * `validateIssuerRegistrationCertificate`
 * `trustMarkIntroductionCompleted`
+* `transactionLogRevision`
 
 Production rules:
 
@@ -1800,6 +1801,36 @@ Production rules:
 * A link kept for after login lives in memory only. Earlier builds kept it under `cachedDeepLink`;
   `DeepLinkControllerImpl` removes that value at start.
 * Clear transient values after use.
+
+### Factory Reset
+
+Settings offer "Reset wallet", as on Android. A confirmation lists what will be deleted, the PIN or biometrics
+confirm it, and a screen runs the reset (`WalletResetControllerImpl`, `logic-authentication`). In this order:
+
+1. The background checks stop (`WalletWorkScheduler.stop()`). The reset waits for a check under way for at most
+   `WalletKitConfig.workerStopTimeoutSeconds` (30 s) and fails without deleting anything if one is still running
+   then, so a re-issuance cannot store a document halfway through.
+2. WalletKit deletes every document, issued, deferred and pending, in up to two passes, and logs each deletion
+   before it returns; the Digital Credential API registrations are updated with it. The reset fails if the
+   keychain still holds a document afterwards.
+3. The transaction history, then the bookmarks, revocation records, re-issuance failures and status refresh
+   failures.
+4. The keychain service: the PIN salt, hash and lockout state, the biometric key and document storage
+   (`KeyChainController.clear()`).
+5. Every preference except `language`, so that onboarding runs again; "Check Registration Certificates"
+   returns to off, which WalletKit applies at the next start.
+6. The app's Caches and temporary files: WalletKit's log file and the image cache among them.
+7. The session locks, and the app returns to start-up, which leads to onboarding.
+
+Once started, the reset runs to the end even if its screen goes away. Links that arrive meanwhile are dropped, and
+a link kept for after login is forgotten, so none opens after onboarding. A failed step shows an error with
+"Try again"; every step can run again. After a failure the background checks restart at once; after a reset they
+start with the dashboard, after the next login.
+
+The reset does not reach: the keys WalletKit keeps for deferred documents it no longer lists
+(PAR_IOS_UI_19, part 3); files the app or an integrator writes outside Caches and the temporary directory; and
+deleted SwiftData rows, whose space SQLite reuses rather than overwrites at once. Data already shared with
+relying parties is outside the wallet.
 
 ## Logging And Audit
 

@@ -97,10 +97,16 @@ public final class LogicCoreAssembly: Assembly {
     }
     .inObjectScope(ObjectScope.container)
 
+    container.register(WalletResetStatusProvider.self) { _ in
+      WalletResetStatusProviderImpl()
+    }
+    .inObjectScope(ObjectScope.container)
+
     container.register(WalletWorkScheduler.self) { r in
       WalletWorkSchedulerImpl(
         revocationWorkManager: r.force(RevocationWorkManager.self),
-        reIssuanceWorkManager: r.force(ReIssuanceWorkManager.self)
+        reIssuanceWorkManager: r.force(ReIssuanceWorkManager.self),
+        stopTimeout: r.force(WalletKitConfig.self).workerStopTimeoutSeconds
       )
     }
     .inObjectScope(ObjectScope.container)

@@ -2713,6 +2713,72 @@
         }
       }
     },
+    "reset_wallet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset wallet"
+          }
+        }
+      }
+    },
+    "reset_wallet_biometry_caption" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To reset the wallet you need to verify your identity."
+          }
+        }
+      }
+    },
+    "reset_wallet_confirm_button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        }
+      }
+    },
+    "reset_wallet_confirm_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This permanently deletes from this device: your documents and their keys; your transaction history; your PIN, settings and logs. The wallet then starts again as on first use."
+          }
+        }
+      }
+    },
+    "reset_wallet_confirm_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset the wallet?"
+          }
+        }
+      }
+    },
+    "reset_wallet_in_progress" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resetting the wallet"
+          }
+        }
+      }
+    },
     "retrieve_logs" : {
       "extractionState" : "manual",
       "localizations" : {

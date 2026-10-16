@@ -25,18 +25,26 @@ public protocol WalletWorkScheduler: Sendable {
   /// revocation record while it was re-issued, so the new copy's status is read without waiting for the interval.
   /// It returns at once; nothing runs while the checks are stopped.
   func scheduleRevocationCheck(afterReIssueOf originalId: String) async
-  /// Stops the periodic checks.
-  func stop() async
+  /// Stops the periodic checks and waits for a check under way to finish, for at most
+  /// `WalletKitConfig.workerStopTimeoutSeconds`. Returns false when one was still running then, as the Android
+  /// wallet's `stop()`; the checks stay stopped either way.
+  func stop() async -> Bool
 }
 
 final actor WalletWorkSchedulerImpl: WalletWorkScheduler {
 
   private let revocationWorkManager: RevocationWorkManager
   private let reIssuanceWorkManager: ReIssuanceWorkManager
+  private let stopTimeout: TimeInterval
 
-  init(revocationWorkManager: RevocationWorkManager, reIssuanceWorkManager: ReIssuanceWorkManager) {
+  init(
+    revocationWorkManager: RevocationWorkManager,
+    reIssuanceWorkManager: ReIssuanceWorkManager,
+    stopTimeout: TimeInterval
+  ) {
     self.revocationWorkManager = revocationWorkManager
     self.reIssuanceWorkManager = reIssuanceWorkManager
+    self.stopTimeout = stopTimeout
   }
 
   func schedule() async {
@@ -50,8 +58,24 @@ final actor WalletWorkSchedulerImpl: WalletWorkScheduler {
     }
   }
 
-  func stop() async {
-    await revocationWorkManager.stop()
-    await reIssuanceWorkManager.stop()
+  /// The stop and the timeout race; a stop still waiting when the time is up keeps running in the background, so
+  /// the checks end stopped either way.
+  func stop() async -> Bool {
+    let (outcomes, continuation) = AsyncStream.makeStream(of: Bool.self)
+    Task { [revocationWorkManager, reIssuanceWorkManager] in
+      async let revocationStopped: Void = revocationWorkManager.stop()
+      async let reIssuanceStopped: Void = reIssuanceWorkManager.stop()
+      _ = await (revocationStopped, reIssuanceStopped)
+      continuation.yield(true)
+    }
+    let timeout = Task { [stopTimeout] in
+      try? await Task.sleep(seconds: stopTimeout)
+      continuation.yield(false)
+    }
+    var iterator = outcomes.makeAsyncIterator()
+    let stopped = await iterator.next() ?? false
+    timeout.cancel()
+    continuation.finish()
+    return stopped
   }
 }

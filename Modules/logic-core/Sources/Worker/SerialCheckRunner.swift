@@ -22,6 +22,7 @@ final actor SerialCheckRunner {
 
   private var isRunning = false
   private var runAgain = false
+  private var idleWaiters: [CheckedContinuation<Void, Never>] = []
 
   func run(_ check: @Sendable () async -> Void) async {
     guard !isRunning else {
@@ -34,5 +35,13 @@ final actor SerialCheckRunner {
       await check()
     } while runAgain
     isRunning = false
+    idleWaiters.forEach { $0.resume() }
+    idleWaiters.removeAll()
+  }
+
+  /// Returns once no check is running, at once when none is.
+  func waitUntilIdle() async {
+    guard isRunning else { return }
+    await withCheckedContinuation { idleWaiters.append($0) }
   }
 }

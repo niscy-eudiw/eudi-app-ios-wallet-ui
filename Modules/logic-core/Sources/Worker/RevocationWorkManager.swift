@@ -18,6 +18,7 @@ import Foundation
 
 protocol RevocationWorkManager: Sendable {
   func start() async
+  /// Stops the checks and returns once a check under way has finished.
   func stop() async
   /// Runs the revocation check now, or right after one under way, if the original of a completed re-issue
   /// gained a revocation record while it was re-issued, so the new copy's status is read without waiting for
@@ -64,6 +65,7 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
     isRunning = false
     revocationTask?.cancel()
     revocationTask = nil
+    await checkRunner.waitUntilIdle()
   }
 
   func checkAfterReIssue(of originalId: String) async {

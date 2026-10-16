@@ -41,7 +41,8 @@ public final class FeatureDashboardAssembly: Assembly {
         walletController: r.force(WalletKitController.self),
         configLogic: r.force(ConfigLogic.self),
         biometryInteractor: r.force(BiometryInteractor.self),
-        prefsController: r.force(PrefsController.self)
+        prefsController: r.force(PrefsController.self),
+        walletResetController: r.force(WalletResetController.self)
       )
     }
 

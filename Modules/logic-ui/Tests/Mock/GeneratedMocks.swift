@@ -3453,6 +3453,16 @@ class MockWalletKitConfig: WalletKitConfig, Cuckoo.ProtocolMock, @unchecked Send
         }
     }
 
+    var workerStopTimeoutSeconds: TimeInterval {
+        get {
+            return cuckoo_manager.getter(
+                "workerStopTimeoutSeconds",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.workerStopTimeoutSeconds
+            )
+        }
+    }
+
     var documentIssuanceConfig: DocumentIssuanceConfig {
         get {
             return cuckoo_manager.getter(
@@ -3525,6 +3535,10 @@ class MockWalletKitConfig: WalletKitConfig, Cuckoo.ProtocolMock, @unchecked Send
             return .init(manager: cuckoo_manager, name: "revocationIntervalSeconds")
         }
         
+        var workerStopTimeoutSeconds: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockWalletKitConfig,TimeInterval> {
+            return .init(manager: cuckoo_manager, name: "workerStopTimeoutSeconds")
+        }
+        
         var documentIssuanceConfig: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockWalletKitConfig,DocumentIssuanceConfig> {
             return .init(manager: cuckoo_manager, name: "documentIssuanceConfig")
         }
@@ -3587,6 +3601,10 @@ class MockWalletKitConfig: WalletKitConfig, Cuckoo.ProtocolMock, @unchecked Send
         
         var revocationIntervalSeconds: Cuckoo.VerifyReadOnlyProperty<TimeInterval> {
             return .init(manager: cuckoo_manager, name: "revocationIntervalSeconds", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        var workerStopTimeoutSeconds: Cuckoo.VerifyReadOnlyProperty<TimeInterval> {
+            return .init(manager: cuckoo_manager, name: "workerStopTimeoutSeconds", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
         
         var documentIssuanceConfig: Cuckoo.VerifyReadOnlyProperty<DocumentIssuanceConfig> {
@@ -3662,6 +3680,12 @@ class WalletKitConfigStub:WalletKitConfig, @unchecked Sendable {
     }
     
     var revocationIntervalSeconds: TimeInterval {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (TimeInterval).self)
+        }
+    }
+    
+    var workerStopTimeoutSeconds: TimeInterval {
         get {
             return DefaultValueRegistry.defaultValue(for: (TimeInterval).self)
         }
@@ -4156,6 +4180,17 @@ return await cuckoo_manager.call(
             errorType: Swift.Error.self,
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
             defaultCall: await __defaultImplStub!.fetchTransactionLogs()
+        )
+    }
+
+    public func deleteAllRecords() async throws {
+        return try await cuckoo_manager.callThrows(
+            "deleteAllRecords() async throws",
+            parameters: (),
+            escapingParameters: (),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.deleteAllRecords()
         )
     }
 
@@ -4704,6 +4739,14 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
                 method: "fetchTransactionLogs() async throws -> [TransactionLogDomain]",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func deleteAllRecords() -> Cuckoo.ProtocolStubNoReturnThrowingFunction<(),Swift.Error> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "deleteAllRecords() async throws",
                 parameterMatchers: matchers
             ))
         }
@@ -5334,6 +5377,18 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
+        func deleteAllRecords() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "deleteAllRecords() async throws",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
         func transactionLogRevision() -> Cuckoo.__DoNotUse<(), Int> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
@@ -5778,6 +5833,10 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
     
     public func fetchTransactionLogs() async throws -> [TransactionLogDomain] {
         return DefaultValueRegistry.defaultValue(for: ([TransactionLogDomain]).self)
+    }
+    
+    public func deleteAllRecords() async throws {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
     public func transactionLogRevision() async -> Int {
@@ -7988,6 +8047,120 @@ class WalletKitAttestationProviderStub:WalletKitAttestationProvider, @unchecked 
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Provider/WalletResetStatusProvider.swift'
+
+import Cuckoo
+import Foundation
+import os
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+public class MockWalletResetStatusProvider: WalletResetStatusProvider, Cuckoo.ProtocolMock, @unchecked Sendable {
+    public typealias MocksType = any WalletResetStatusProvider
+    public typealias Stubbing = __StubbingProxy_WalletResetStatusProvider
+    public typealias Verification = __VerificationProxy_WalletResetStatusProvider
+
+    // Original typealiases
+
+    public let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+
+    private var __defaultImplStub: (any WalletResetStatusProvider)?
+
+    public func enableDefaultImplementation(_ stub: any WalletResetStatusProvider) {
+        __defaultImplStub = stub
+        cuckoo_manager.enableDefaultStubImplementation()
+    }
+
+    public var isResetting: Bool {
+        get {
+            return cuckoo_manager.getter(
+                "isResetting",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.isResetting
+            )
+        }
+    }
+
+
+    public func setResetting(_ p0: Bool) {
+        return cuckoo_manager.call(
+            "setResetting(_ p0: Bool)",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.setResetting(p0)
+        )
+    }
+
+    public struct __StubbingProxy_WalletResetStatusProvider: Cuckoo.StubbingProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+    
+        public init(manager: Cuckoo.MockManager) {
+            self.cuckoo_manager = manager
+        }
+        
+        var isResetting: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockWalletResetStatusProvider,Bool> {
+            return .init(manager: cuckoo_manager, name: "isResetting")
+        }
+        
+        func setResetting<M1: Cuckoo.Matchable>(_ p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(Bool)> where M1.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletResetStatusProvider.self,
+                method: "setResetting(_ p0: Bool)",
+                parameterMatchers: matchers
+            ))
+        }
+    }
+
+    public struct __VerificationProxy_WalletResetStatusProvider: Cuckoo.VerificationProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+        private let callMatcher: Cuckoo.CallMatcher
+        private let sourceLocation: Cuckoo.SourceLocation
+    
+        public init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+            self.cuckoo_manager = manager
+            self.callMatcher = callMatcher
+            self.sourceLocation = sourceLocation
+        }
+        
+        var isResetting: Cuckoo.VerifyReadOnlyProperty<Bool> {
+            return .init(manager: cuckoo_manager, name: "isResetting", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        
+        @discardableResult
+        func setResetting<M1: Cuckoo.Matchable>(_ p0: M1) -> Cuckoo.__DoNotUse<(Bool), Void> where M1.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "setResetting(_ p0: Bool)",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+    }
+}
+
+public class WalletResetStatusProviderStub:WalletResetStatusProvider, @unchecked Sendable {
+    
+    public var isResetting: Bool {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (Bool).self)
+        }
+    }
+
+
+    
+    public func setResetting(_ p0: Bool) {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+}
+
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Storage/StoredDocumentPresence.swift'
 
 import Cuckoo
@@ -8326,9 +8499,9 @@ public class MockWalletWorkScheduler: WalletWorkScheduler, Cuckoo.ProtocolMock, 
         )
     }
 
-    public func stop() async {
+    public func stop() async -> Bool {
         return await cuckoo_manager.call(
-            "stop() async",
+            "stop() async -> Bool",
             parameters: (),
             escapingParameters: (),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
@@ -8359,10 +8532,10 @@ public class MockWalletWorkScheduler: WalletWorkScheduler, Cuckoo.ProtocolMock, 
             ))
         }
         
-        func stop() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+        func stop() -> Cuckoo.ProtocolStubFunction<(), Bool> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletWorkScheduler.self,
-                method: "stop() async",
+                method: "stop() async -> Bool",
                 parameterMatchers: matchers
             ))
         }
@@ -8405,10 +8578,10 @@ public class MockWalletWorkScheduler: WalletWorkScheduler, Cuckoo.ProtocolMock, 
         
         
         @discardableResult
-        func stop() -> Cuckoo.__DoNotUse<(), Void> {
+        func stop() -> Cuckoo.__DoNotUse<(), Bool> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "stop() async",
+                "stop() async -> Bool",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -8429,8 +8602,8 @@ public class WalletWorkSchedulerStub:WalletWorkScheduler, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
-    public func stop() async {
-        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    public func stop() async -> Bool {
+        return DefaultValueRegistry.defaultValue(for: (Bool).self)
     }
 }
 

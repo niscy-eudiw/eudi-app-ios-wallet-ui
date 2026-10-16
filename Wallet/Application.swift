@@ -28,6 +28,7 @@ struct Application: App {
   private let routerHost: RouterHost
   private let deepLinkController: DeepLinkController
   private let sessionLockController: SessionLockController
+  private let resetStatusProvider: WalletResetStatusProvider
 
   init() {
 
@@ -37,6 +38,7 @@ struct Application: App {
     self.routerHost = DIGraph.shared.resolver.force(RouterHost.self)
     self.deepLinkController = DIGraph.shared.resolver.force(DeepLinkController.self)
     self.sessionLockController = DIGraph.shared.resolver.force(SessionLockController.self)
+    self.resetStatusProvider = DIGraph.shared.resolver.force(WalletResetStatusProvider.self)
     self.toolbarConfig = routerHost.getToolbarConfig()
   }
 
@@ -66,6 +68,7 @@ struct Application: App {
         sessionLockController.start()
       }
       .onOpenURL { url in
+        guard !resetStatusProvider.isResetting else { return }
         sessionLockController.willHandleLink()
         if let deepLink = deepLinkController.hasDeepLink(url: url) {
           deepLinkController.handleDeepLinkAction(

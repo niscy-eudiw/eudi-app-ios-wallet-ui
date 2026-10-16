@@ -16,7 +16,13 @@
 import Foundation
 import logic_core
 import logic_business
+import logic_authentication
 import feature_common
+
+public enum WalletResetPartialState: Sendable {
+  case success
+  case failure(Error)
+}
 
 public protocol SettingsInteractor: Sendable {
   func getAppVersion() async -> String
@@ -31,6 +37,8 @@ public protocol SettingsInteractor: Sendable {
   func isBatchCounterEnabled() async -> Bool
   func setIssuerRegistrationValidation(isEnabled: Bool) async
   func isIssuerRegistrationValidationEnabled() async -> Bool
+  /// Runs the factory reset; see `WalletResetController.resetWallet()`.
+  func resetWallet() async -> WalletResetPartialState
 }
 
 final actor SettingsInteractorImpl: SettingsInteractor {
@@ -39,17 +47,29 @@ final actor SettingsInteractorImpl: SettingsInteractor {
   private let prefsController: PrefsController
   private let configLogic: ConfigLogic
   private let biometryInteractor: BiometryInteractor
+  private let walletResetController: WalletResetController
 
   init(
     walletController: WalletKitController,
     configLogic: ConfigLogic,
     biometryInteractor: BiometryInteractor,
-    prefsController: PrefsController
+    prefsController: PrefsController,
+    walletResetController: WalletResetController
   ) {
     self.walletController = walletController
     self.prefsController = prefsController
     self.configLogic = configLogic
     self.biometryInteractor = biometryInteractor
+    self.walletResetController = walletResetController
+  }
+
+  func resetWallet() async -> WalletResetPartialState {
+    do {
+      try await walletResetController.resetWallet()
+      return .success
+    } catch {
+      return .failure(error)
+    }
   }
 
   func getAppVersion() -> String {

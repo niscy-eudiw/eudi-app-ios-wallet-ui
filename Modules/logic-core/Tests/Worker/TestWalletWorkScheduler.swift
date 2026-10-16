@@ -37,7 +37,8 @@ final class TestWalletWorkScheduler: EudiTest {
     }
     scheduler = WalletWorkSchedulerImpl(
       revocationWorkManager: revocationWorkManager,
-      reIssuanceWorkManager: reIssuanceWorkManager
+      reIssuanceWorkManager: reIssuanceWorkManager,
+      stopTimeout: 5
     )
   }
 
@@ -55,10 +56,25 @@ final class TestWalletWorkScheduler: EudiTest {
   }
 
   func testStop_WhenCalled_ThenStopsBothChecks() async {
-    await scheduler.stop()
+    let stopped = await scheduler.stop()
 
+    XCTAssertTrue(stopped)
     verify(revocationWorkManager).stop()
     verify(reIssuanceWorkManager).stop()
+  }
+
+  func testStop_WhenACheckOutlastsTheTimeout_ThenReportsItStillRunning() async {
+    let gate = AsyncGate()
+    let blockedScheduler = WalletWorkSchedulerImpl(
+      revocationWorkManager: revocationWorkManager,
+      reIssuanceWorkManager: SlowStoppingReIssuanceWorkManager(gate: gate),
+      stopTimeout: 0.2
+    )
+
+    let stopped = await blockedScheduler.stop()
+    await gate.open()
+
+    XCTAssertFalse(stopped)
   }
 
   func testScheduleRevocationCheck_WhenTheCheckIsStillRunning_ThenReturnsAndTheCheckFinishesLater() async {
@@ -67,7 +83,8 @@ final class TestWalletWorkScheduler: EudiTest {
     let revocationWorkManager = RecordingRevocationWorkManager(gate: gate, finished: finished)
     let gatedScheduler = WalletWorkSchedulerImpl(
       revocationWorkManager: revocationWorkManager,
-      reIssuanceWorkManager: reIssuanceWorkManager
+      reIssuanceWorkManager: reIssuanceWorkManager,
+      stopTimeout: 5
     )
     let returned = expectation(description: "scheduling returned")
 
@@ -102,5 +119,19 @@ private actor RecordingRevocationWorkManager: RevocationWorkManager {
     checkedIds.append(originalId)
     await gate.wait()
     finished.fulfill()
+  }
+}
+
+private actor SlowStoppingReIssuanceWorkManager: ReIssuanceWorkManager {
+  private let gate: AsyncGate
+
+  init(gate: AsyncGate) {
+    self.gate = gate
+  }
+
+  func start() async {}
+
+  func stop() async {
+    await gate.wait()
   }
 }

@@ -27,17 +27,20 @@ final class TestSettingsInteractor: EudiTest {
   var configLogic: MockConfigLogic!
   var biometryInteractor: MockBiometryInteractor!
   var prefsController: MockPrefsController!
+  var walletResetController: MockWalletResetController!
 
   override func setUp() {
     self.walletKitController = MockWalletKitController()
     self.prefsController = MockPrefsController()
     self.configLogic = MockConfigLogic()
     self.biometryInteractor = MockBiometryInteractor()
+    self.walletResetController = MockWalletResetController()
     self.interactor = SettingsInteractorImpl(
       walletController: walletKitController,
       configLogic: configLogic,
       biometryInteractor: biometryInteractor,
-      prefsController: prefsController
+      prefsController: prefsController,
+      walletResetController: walletResetController
     )
   }
 
@@ -214,6 +217,25 @@ final class TestSettingsInteractor: EudiTest {
     verify(prefsController).setValue(any(), forKey: Prefs.Key.batchCounter)
   }
 
+  func testResetWallet_WhenTheResetSucceeds_ThenReportsSuccess() async {
+    stub(walletResetController) { mock in
+      when(mock.resetWallet()).thenDoNothing()
+    }
+
+    let state = await interactor.resetWallet()
+
+    guard case .success = state else { return XCTFail("Expected success, got \(state)") }
+  }
+
+  func testResetWallet_WhenTheResetFails_ThenReportsTheFailure() async {
+    stub(walletResetController) { mock in
+      when(mock.resetWallet()).thenThrow(WalletCoreError.unableToIssueAndStore)
+    }
+
+    let state = await interactor.resetWallet()
+
+    guard case .failure = state else { return XCTFail("Expected a failure, got \(state)") }
+  }
 }
 
 extension TestSettingsInteractor {

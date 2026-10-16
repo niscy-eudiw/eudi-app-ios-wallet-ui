@@ -87,6 +87,9 @@ public protocol WalletKitController: Sendable {
 
   func fetchTransactionLog(with id: String) async throws -> TransactionLogDomain
   func fetchTransactionLogs() async throws -> [TransactionLogDomain]
+  /// Deletes the wallet's own records for the factory reset: the transaction history first, then the bookmarks,
+  /// the revocation records, the re-issuance failures and the status refresh failures.
+  func deleteAllRecords() async throws
   /// Changes whenever the transaction history is written or deleted, so a reader can tell whether it changed.
   func transactionLogRevision() async -> Int
   func deleteTransactionLog(with id: String) async throws
@@ -721,6 +724,14 @@ final actor WalletKitControllerImpl: WalletKitController {
       throw WalletCoreError.unableToFetchTransactionLog
     }
     return log
+  }
+
+  func deleteAllRecords() async throws {
+    try await transactionLogStorageController.deleteAll()
+    try await bookmarkStorageController.deleteAll()
+    try await revokedDocumentStorageController.deleteAll()
+    try await failedReIssuedDocStorageController.deleteAll()
+    try await statusRefreshFailureStorageController.deleteAll()
   }
 
   func transactionLogRevision() async -> Int {

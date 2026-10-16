@@ -46,6 +46,8 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
 
   var isRestartRequiredAlertShowing: Bool = false
 
+  var isResetConfirmationShowing: Bool = false
+
   var biometryError: SystemBiometryError?
 
   @ObservationIgnored
@@ -202,11 +204,19 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
         .init(
           title: .changelog,
           icon: Theme.shared.image.changelog,
-          showDivider: false,
           action: { changelogUrl.open() }
         )
       )
     }
+
+    items.append(
+      .init(
+        title: .resetWallet,
+        icon: Theme.shared.image.trash,
+        showDivider: false,
+        action: { [weak self] in self?.isResetConfirmationShowing = true }
+      )
+    )
 
     setState {
       $0.copy(
@@ -217,6 +227,26 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
         changelogUrl: changelogUrl
       )
     }
+  }
+
+  /// After the confirmation, the user verifies their identity; the reset screen then runs the reset.
+  func onResetConfirmed() {
+    isResetConfirmationShowing = false
+    router.push(
+      with: .featureCommonModule(
+        .biometry(
+          config: UIConfig.Biometry(
+            navigationTitle: .resetWallet,
+            caption: .resetWalletBiometryCaption,
+            quickPinOnlyCaption: .resetWalletBiometryCaption,
+            navigationSuccessType: .push(.featureDashboardModule(.walletReset)),
+            navigationBackType: .pop,
+            isPreAuthorization: false,
+            shouldInitializeBiometricOnCreate: true
+          )
+        )
+      )
+    )
   }
 
   private func updateBatchCounter(_ isEnabled: Bool) {

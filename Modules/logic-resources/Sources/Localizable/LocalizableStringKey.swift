@@ -233,6 +233,12 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case categorySocialSecurity
   case categoryTravel
   case changelog
+  case resetWallet
+  case resetWalletConfirmTitle
+  case resetWalletConfirmMessage
+  case resetWalletConfirmButton
+  case resetWalletBiometryCaption
+  case resetWalletInProgress
   case orderBy
   case filterByCategory
   case searchDocuments

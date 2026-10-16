@@ -18,6 +18,7 @@ import Foundation
 
 protocol ReIssuanceWorkManager: Sendable {
   func start() async
+  /// Stops the checks and returns once a re-issuance under way has finished, so nothing is stored afterwards.
   func stop() async
 }
 
@@ -37,6 +38,7 @@ final actor ReIssuanceWorkManagerImpl: ReIssuanceWorkManager {
   private let initialDelay: TimeInterval = 30
   private var reIssuanceTask: Task<Void, Never>?
   private var isRunning = false
+  private let checkRunner = SerialCheckRunner()
 
   init(
     configLogic: WalletKitConfig,
@@ -61,7 +63,7 @@ final actor ReIssuanceWorkManagerImpl: ReIssuanceWorkManager {
       try? await Task.sleep(seconds: initialDelay)
 
       while await self.isRunning {
-        try? await self.checkReIssuance()
+        await self.runCheck()
         try? await Task.sleep(seconds: self.documentIssuanceConfig.reIssuanceBackgroundRule.backgroundIntervalSeconds)
       }
     }
@@ -71,6 +73,14 @@ final actor ReIssuanceWorkManagerImpl: ReIssuanceWorkManager {
     isRunning = false
     reIssuanceTask?.cancel()
     reIssuanceTask = nil
+    await checkRunner.waitUntilIdle()
+  }
+
+  /// Runs one round through `checkRunner`, so `stop()` can wait for it.
+  private func runCheck() async {
+    await checkRunner.run { [weak self] in
+      try? await self?.checkReIssuance()
+    }
   }
 
   /// A revoked, suspended or unrecognised document is not re-issued, as on Android: the copy would get a

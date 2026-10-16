@@ -93,6 +93,10 @@ protocol WalletKitConfig: Sendable {
    */
   var revocationIntervalSeconds: TimeInterval { get }
 
+  /// How long the factory reset waits for a background check under way to finish before it gives up without
+  /// deleting anything, as the Android wallet's `workerStopTimeout`.
+  var workerStopTimeoutSeconds: TimeInterval { get }
+
   /**
    * Configuration for document issuance, including default rules and specific overrides.
    */
@@ -376,6 +380,10 @@ struct WalletKitConfigImpl: WalletKitConfig {
 
   var revocationIntervalSeconds: TimeInterval {
     300
+  }
+
+  var workerStopTimeoutSeconds: TimeInterval {
+    30
   }
 
   var documentIssuanceConfig: DocumentIssuanceConfig {

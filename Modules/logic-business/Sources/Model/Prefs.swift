@@ -18,7 +18,7 @@ import Foundation
 public struct Prefs {}
 
 public extension Prefs {
-  enum Key: String {
+  enum Key: String, CaseIterable {
     case biometryEnabled
     /// Where builds before the session lock kept a link for after login; now only removed at start.
     case cachedDeepLink

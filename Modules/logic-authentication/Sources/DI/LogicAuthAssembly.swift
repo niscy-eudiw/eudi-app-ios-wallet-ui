@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import logic_business
+import logic_core
 import Swinject
 
 public final class LogicAuthAssembly: Assembly {
@@ -52,6 +53,18 @@ public final class LogicAuthAssembly: Assembly {
 
     container.register(SessionController.self) { r in
       SessionControllerImpl(authenticationConfig: r.force(AuthenticationConfig.self))
+    }
+    .inObjectScope(ObjectScope.container)
+
+    container.register(WalletResetController.self) { r in
+      WalletResetControllerImpl(
+        walletKitController: r.force(WalletKitController.self),
+        walletWorkScheduler: r.force(WalletWorkScheduler.self),
+        keyChainController: r.force(KeyChainController.self),
+        prefsController: r.force(PrefsController.self),
+        sessionController: r.force(SessionController.self),
+        resetStatusProvider: r.force(WalletResetStatusProvider.self)
+      )
     }
     .inObjectScope(ObjectScope.container)
 

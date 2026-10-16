@@ -59,6 +59,41 @@ final class TestSerialCheckRunner: EudiTest {
     let runs = await log.runs
     XCTAssertEqual(runs, 1)
   }
+
+  func testWaitUntilIdle_WhenACheckRuns_ThenReturnsOnceItEnds() async {
+    let runner = SerialCheckRunner()
+    let gate = AsyncGate()
+    let log = CheckLog()
+    let started = expectation(description: "check started")
+
+    Task {
+      await runner.run {
+        _ = await log.begin()
+        started.fulfill()
+        await gate.wait()
+        await log.end()
+      }
+    }
+    await fulfillment(of: [started], timeout: 5)
+    let idle = expectation(description: "idle")
+    let returnedEarly = expectation(description: "returned before the check ended")
+    returnedEarly.isInverted = true
+    Task {
+      await runner.waitUntilIdle()
+      returnedEarly.fulfill()
+      idle.fulfill()
+    }
+    await fulfillment(of: [returnedEarly], timeout: 0.3)
+    await gate.open()
+
+    await fulfillment(of: [idle], timeout: 5)
+    let runs = await log.runs
+    XCTAssertEqual(runs, 1)
+  }
+
+  func testWaitUntilIdle_WhenNothingRuns_ThenReturnsAtOnce() async {
+    await SerialCheckRunner().waitUntilIdle()
+  }
 }
 
 private actor CheckLog {
