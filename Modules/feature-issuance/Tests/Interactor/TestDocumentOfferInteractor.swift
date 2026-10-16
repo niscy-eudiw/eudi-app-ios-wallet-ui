@@ -1115,6 +1115,48 @@ final class TestDocumentOfferInteractor: EudiTest {
       XCTFail("Expected success, but got \(result)")
     }
   }
+
+  func testNotIssuedDocumentNames_WhenOneOfTwoOfferedDocumentsIsIssued_ThenNamesTheOther() {
+    let offered = [
+      offeredDocument(docType: "eu.europa.ec.eudi.pid.1", name: "PID"),
+      offeredDocument(docType: "org.iso.18013.5.1.mDL", name: "Driving Licence")
+    ]
+
+    let names = DocumentOfferInteractorImpl.notIssuedDocumentNames(
+      offered: offered,
+      issuedDocTypes: ["eu.europa.ec.eudi.pid.1"]
+    )
+
+    XCTAssertEqual(names, ["Driving Licence"])
+  }
+
+  func testNotIssuedDocumentNames_WhenTwoOfTheSameTypeAreOfferedAndOneIsIssued_ThenNamesOne() {
+    let offered = [
+      offeredDocument(docType: "eu.europa.ec.eudi.pid.1", name: "PID"),
+      offeredDocument(docType: "eu.europa.ec.eudi.pid.1", name: "PID (second)")
+    ]
+
+    let names = DocumentOfferInteractorImpl.notIssuedDocumentNames(
+      offered: offered,
+      issuedDocTypes: ["eu.europa.ec.eudi.pid.1"]
+    )
+
+    XCTAssertEqual(names, ["PID (second)"])
+  }
+
+  private func offeredDocument(docType: String, name: String) -> OfferedDocModel {
+    OfferedDocModel(
+      credentialConfigurationIdentifier: name,
+      docType: docType,
+      scope: nil,
+      identifier: nil,
+      displayName: name,
+      algValuesSupported: [],
+      claims: [],
+      credentialOptions: .init(credentialPolicy: .oneTimeUse, batchSize: 1),
+      keyOptions: nil
+    )
+  }
 }
 
 private extension TestDocumentOfferInteractor {

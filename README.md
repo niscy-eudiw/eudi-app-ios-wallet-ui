@@ -162,8 +162,10 @@ You will also need to download the EUDI Verifier app. More information can be fo
 3. Review the documents included in the credential offer and tap "Issue".
 4. In the web view that appears, select "Country Selection", then "FormEU", and tap "Submit".
 5. Fill in the form. Any data will suffice, but selecting a birth date over 18 is recommended, as it is required for certain app functionalities (e.g., RQES).
-6. After submission, a success screen will appear. Tap "Done".
+6. After submission, a success screen will appear. If the issuer issued only some of the offered documents, it
+   names the ones that were not added to your wallet. Tap "Done".
 7. You will be redirected back to the "Documents" tab within the "Dashboard" screen. The flow is now complete.
+   An offer from an issuer the wallet is not set up to use is refused before anything is fetched.
 
 With "Check Registration Certificates" enabled in Settings, both issuance flows require the provider
 to be registered for what it offers. If its registration certificate is missing, cannot be

@@ -154,7 +154,11 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
         return await fetchAndHandleDocuments(
           successNavigation: successNavigation,
           documentIdentifiers: documentIdentifiers,
-          isPartialState: true
+          isPartialState: true,
+          notIssuedDocumentNames: Self.notIssuedDocumentNames(
+            offered: docOffers,
+            issuedDocTypes: issuedDocuments.map(\.docType)
+          )
         )
       }
 
@@ -228,6 +232,19 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
     return .success(documentsDetails)
   }
 
+  /// The names of the offered documents that were not issued: each issued document accounts for one offered
+  /// document of its type.
+  static func notIssuedDocumentNames(offered: [OfferedDocModel], issuedDocTypes: [String]) -> [String] {
+    var remaining = issuedDocTypes
+    return offered.compactMap { offer in
+      if let index = remaining.firstIndex(where: { $0 == offer.docTypeOrVct }) {
+        remaining.remove(at: index)
+        return nil
+      }
+      return offer.displayName
+    }
+  }
+
   private func discard(_ documents: [WalletStorage.Document]) async {
     for document in documents {
       try? await walletController.deleteDocument(with: document.id, status: document.status)
@@ -237,7 +254,8 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
   private func fetchAndHandleDocuments(
     successNavigation: UIConfig.TwoWayNavigationType,
     documentIdentifiers: [String],
-    isPartialState: Bool = false
+    isPartialState: Bool = false,
+    notIssuedDocumentNames: [String] = []
   ) async -> OfferResultPartialState {
     let state = await self.fetchStoredDocuments(documentIds: documentIdentifiers)
     switch state {
@@ -246,7 +264,8 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
           return .partialSuccess(
             retrieveDocumentSuccessRoute(
               successNavigation: successNavigation,
-              documents: documents
+              documents: documents,
+              notIssuedDocumentNames: notIssuedDocumentNames
             )
           )
         } else {
@@ -296,7 +315,8 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
 
   private func retrieveDocumentSuccessRoute(
     successNavigation: UIConfig.TwoWayNavigationType,
-    documents: [DocumentUIModel]
+    documents: [DocumentUIModel],
+    notIssuedDocumentNames: [String] = []
   ) -> AppRoute {
     var navigationType: UIConfig.DeepLinkNavigationType {
       return switch successNavigation {
@@ -312,7 +332,8 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
           relyingParty: documents.first?.issuer?.name,
           issuerLogoUrl: documents.first?.issuer?.logoUrl,
           relyingPartyIsTrusted: false,
-          isIssuingDocument: true
+          isIssuingDocument: true,
+          notIssuedDocumentNames: notIssuedDocumentNames
         ),
         requestItems: documents.map { item in
           ListItemSection(

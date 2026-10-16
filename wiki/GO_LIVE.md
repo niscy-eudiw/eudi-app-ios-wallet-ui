@@ -1163,6 +1163,10 @@ use", as on Android, because wallet-kit would otherwise give an unknown issuer t
 settings. To accept an issuer's offers, add a `VciConfig` entry for it to `issuersConfig` in the build variants that
 need it.
 
+When an issuer issues only some of the documents of an offer, the success screen names the ones not added
+(`DocumentSuccessUIConfig.notIssuedDocumentNames`), as on Android; the cause wallet-kit reports is not shown. The
+"Add document" flow asks for one document type, and a format the issuer did not issue there is not named.
+
 Current demo/dev code contains issuer URLs such as (two per build variant — a primary at `order: 1`
 and a backend at `order: 0`):
 
