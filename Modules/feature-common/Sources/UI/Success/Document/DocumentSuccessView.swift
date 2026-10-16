@@ -58,7 +58,7 @@ private func content<RequestItem: Sendable>(
       if !viewState.config.notIssuedDocumentNames.isEmpty {
         VSpacer.medium()
         WarningNoticeView(
-          message: .issuanceSuccessNotIssued([viewState.config.notIssuedDocumentNames.joined(separator: ", ")])
+          message: .issuanceSuccessNotIssuedWarning([viewState.config.notIssuedDocumentNames.joined(separator: ", ")])
         )
       }
 

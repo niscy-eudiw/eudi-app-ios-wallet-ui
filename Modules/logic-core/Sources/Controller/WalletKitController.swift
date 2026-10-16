@@ -132,7 +132,7 @@ public protocol WalletKitController: Sendable {
   func refreshUsageCounters() async throws
   func getIssuerRegistration(for offer: OfferedIssuanceModel) async -> IssuerRegistration?
   /// Registers the documents for the Digital Credential API, or withdraws every registration while the user has
-  /// turned the offering off (`PrefsController.isOfferingDocumentsToApps()`).
+  /// turned the offering off (`Prefs.Key.offerDocumentsToApps`).
   func reconcileRegistrations() async
   /// The issuer's registration for the issuer-list flow and re-issuance, resolved before the issuer is contacted. A
   /// lookup that fails refuses for a trust failure and throws any other error, so a failure never reads as "no
@@ -232,10 +232,10 @@ final actor WalletKitControllerImpl: WalletKitController {
   /// Refuses an offer whose issuer is not configured before anything is fetched (`OfferIssuer`): wallet-kit would
   /// otherwise give it the first configured issuer's client settings.
   private func requireConfiguredIssuer(of offerUri: String) throws {
-    let configuredIssuers = walletKitConfig.issuersConfig.values.compactMap(\.config.credentialIssuerURL)
-    guard case .configured = OfferIssuer.of(offerUri: offerUri, configuredIssuers: configuredIssuers) else {
-      throw WalletCoreError.issuerNotConfigured
-    }
+    try OfferIssuer.requireConfigured(
+      offerUri: offerUri,
+      configuredIssuers: walletKitConfig.issuersConfig.values.compactMap(\.config.credentialIssuerURL)
+    )
   }
 
   private func resolveCredentialOptions(
@@ -923,23 +923,37 @@ extension WalletKitControllerImpl {
   /// Registers the issued CBOR documents for the Digital Credential API, leaving out every document with a
   /// revocation record (revoked, suspended or unrecognised), as the Android wallet does. When the records cannot be
   /// read, or the user has turned the offering off, nothing is registered.
+  /// The setting is read after the last suspension point, so a pass that started before the user turned the
+  /// offering off cannot register documents after the pass that withdrew them.
   func reconcileRegistrations() async {
-    guard prefsController.isOfferingDocumentsToApps() else {
-      await documentRegistrationManager.reconcile(desired: [])
-      return
-    }
     let blocked = try? await fetchRevokedDocumentStatuses()
+    let candidates = fetchIssuedDocuments()
+      .filter { $0.docDataFormat == .cbor }
+      .map {
+        RegistrationDescriptor(
+          documentIdentifier: $0.id,
+          mobileDocumentType: $0.docType,
+          invalidationDate: $0.validUntil
+        )
+      }
     await documentRegistrationManager.reconcile(
-      desired: fetchIssuedDocuments()
-        .filter { $0.docDataFormat == .cbor && blocked != nil && blocked?[$0.id] == nil }
-        .map {
-          RegistrationDescriptor(
-            documentIdentifier: $0.id,
-            mobileDocumentType: $0.docType,
-            invalidationDate: $0.validUntil
-          )
-        }
+      desired: Self.registrationDescriptors(
+        candidates: candidates,
+        blockedDocumentIds: blocked.map { Set($0.keys) },
+        isOffering: prefsController.getBool(forKey: .offerDocumentsToApps)
+      )
     )
+  }
+
+  /// The candidates without a revocation record; none while the offering is off or when the records could not be
+  /// read (`blockedDocumentIds` is nil).
+  static func registrationDescriptors(
+    candidates: [RegistrationDescriptor],
+    blockedDocumentIds: Set<String>?,
+    isOffering: Bool
+  ) -> [RegistrationDescriptor] {
+    guard isOffering, let blockedDocumentIds else { return [] }
+    return candidates.filter { !blockedDocumentIds.contains($0.documentIdentifier) }
   }
 }
 

@@ -965,7 +965,7 @@ Current registration behavior:
   (`RequestAuthorizationInteractor.loadRequestData`). See [Revocation And Status Checking](#revocation-and-status-checking).
 * Settings has a switch, "Offer documents to apps and websites", which is on by default and shown only on iOS 26
   and later. While it is off, nothing is registered and every registration is withdrawn when the user turns it off
-  (`PrefsController.isOfferingDocumentsToApps()`). The extension declines a request that still arrives, after
+  (`Prefs.Key.offerDocumentsToApps`, on by default in `PrefsControllerImpl`). The extension declines a request that still arrives, after
   the login and before any requested data is shown, and again on Accept, as Android does.
 
 Current request handling:
@@ -990,7 +990,7 @@ Production validation:
 * Confirm the document is registered with the system.
 * Trigger a web presentment request.
 * Confirm the extension appears and can authorize or deny the request.
-* Delete the document and confirm its registration is removed; revoke or suspend it and record whether your build blocks it in the extension (the reference app does not).
+* Delete the document and confirm its registration is removed; revoke or suspend it and confirm that its registration is withdrawn and that the extension declines a request for it.
 
 ## Trust Store
 
@@ -1378,7 +1378,9 @@ The rules are the Android wallet's (`RevocationRecordUpdate`, Android's `revocat
   next check that reads the document's status replaces or clears it.
 * Every record blocks the document. A revoked, suspended or unrecognised document is left out of
   remote and proximity presentations; if the records cannot be read, the request fails rather than
-  offer a blocked document. The DC-API extension does not consult these records. The documents list,
+  offer a blocked document. The DC-API extension leaves them out of its registrations, declines a request that
+  would include one, and declines when the records cannot be read (`WalletKitController.reconcileRegistrations`,
+  `DocumentProviderPolicy.checkRequest`). The documents list,
   the details screen and the issuer card show a suspended document as suspended and the others as
   revoked; the list's "Revoked" filter lists all of them.
 * The dashboard notice, "Revoked or suspended documents", lists only the documents a check blocks for
@@ -1583,7 +1585,9 @@ How the reference app handles a wallet link (`DeepLinkController.handleDeepLinkA
 * An `rqes` link counts only when its host and path are a signing service's callback
   (`authFlowRedirectionURI` in `RQESConfig`, `rqes://oauth/callback` in the reference build), as Android matches the
   RQES host; any app can open a custom scheme, so anything else on it is dropped (`DeepLinkControllerImpl.hasDeepLink`).
-  A deployment that changes the redirect URI changes it there only.
+  A deployment that changes the redirect URI's host or path changes it there only; a new scheme must also be
+  registered in the first `CFBundleURLTypes` entry of `Wallet.plist` and must contain `rqes`, since the scheme is
+  matched with `retrieveSchemas(with: "rqes")`.
 
 Files to review:
 
@@ -1625,7 +1629,8 @@ Modules/logic-api/Sources/Provider/NetworkSessionProvider.swift
 ```
 
 A cookie one relying party sets is therefore never sent to another, and nothing links the wallet's sessions across
-launches. WalletKit 0.56.0 fetches SD-JWT issuer keys with its own `URLSession.shared`, which the app cannot change.
+launches. WalletKit 0.56.0 fetches an SD-JWT issuer's keys, when the credential carries no `x5c` chain, with its own
+`URLSession.shared`, which the app cannot change.
 
 iOS App Transport Security applies to `URLSession` connections by default. Production must keep TLS
 validation strict.
@@ -1686,7 +1691,8 @@ Biometric validation key:
 )
 ```
 
-The item is written once, when the user turns biometric unlock on (`KeyChainController.storeBiometricProbe()`).
+The item is written once, when the user turns biometric unlock on (`KeyChainController.storeBiometricProbe()`),
+or, on an install from before the binding, at its first biometric login (`Prefs.Key.biometricUnlockBound`).
 A biometric unlock has the system evaluate `.deviceOwnerAuthenticationWithBiometrics` on a new `LAContext`,
 then reads the item with the evaluated context, so the user sees one prompt. The unlock fails when the
 evaluation fails or returns `false`, or when the item cannot be read (`SystemBiometryController`,
@@ -1695,19 +1701,21 @@ unreadable, so the PIN is needed until the user turns biometric unlock off and o
 device-passcode button (`localizedFallbackTitle` is empty): the wallet PIN is the fallback.
 
 `.whenUnlockedThisDeviceOnly` keeps every item `KeyChainController` writes, the PIN salt, hash and
-iteration count and the PIN lockout state included, out of encrypted and iCloud backups, so it cannot be
-restored to another device and the 6-digit PIN cannot be searched offline. Items an earlier build wrote as
+iteration count and the PIN lockout state included, in backups only under a key bound to this device: they can be
+restored only to the same device, so the salt and hash never reach another device and the 6-digit PIN cannot be
+searched offline elsewhere. Items an earlier build wrote as
 `.whenUnlocked` move to the new class at the next start
-(`KeyChainControllerImpl.moveItemsFromThePreviousClass`); while the device is locked they wait for a later
-start. wallet-storage writes its own items as `.whenPasscodeSetThisDeviceOnly`.
+(`KeyChainControllerImpl.moveItemsFromThePreviousClass`); while the device is locked the move fails, and the next
+Keychain read, at the latest the PIN check at login, tries again. wallet-storage writes its own items as `.whenPasscodeSetThisDeviceOnly`.
 
 Production decisions:
 
 * Keep `KeyChainControllerImpl.accessibility` a `ThisDeviceOnly` class, so the PIN record and the
-  lockout state are never backed up.
+  lockout state can be restored only to the same device.
 * Confirm whether Keychain items should survive device restore.
 * Confirm behavior when the device passcode is removed.
-* Confirm behavior when biometric enrollment changes.
+* A change in biometric enrolment turns biometric unlock off until the user turns it on again (see Biometric
+  enrollment change); confirm this suits policy.
 * Confirm app and extension Keychain sharing.
 
 ### PIN Storage
@@ -1769,7 +1777,7 @@ Persisted state keys (`KeychainPinThrottleProvider.KeyIdentifier`):
 * `pinLockoutStartedAt` — wall-clock timestamp (`Date().timeIntervalSince1970`) when the current lockout began. Used for clock-rollback detection.
 * `pinLockoutEndsAt` — wall-clock timestamp when the current lockout ends.
 
-The values are stored as Strings in the Keychain (e.g. `"3"`, `"1762345678.123"`). The Keychain item accessibility class follows `KeyChainController`'s default (`.whenUnlockedThisDeviceOnly`): the values are readable only while the device is unlocked, and they never go into a backup or to another device; see [Keychain](#keychain).
+The values are stored as Strings in the Keychain (e.g. `"3"`, `"1762345678.123"`). The Keychain item accessibility class follows `KeyChainController`'s default (`.whenUnlockedThisDeviceOnly`): the values are readable only while the device is unlocked, and a backup can restore them only to the same device; see [Keychain](#keychain).
 
 Default policy (`AuthenticationConfigImpl`):
 
@@ -2542,6 +2550,11 @@ Before release candidate approval, test:
 * Incorrect PIN attempts and lockout.
 * Biometric enablement.
 * Biometric enrollment change.
+* A weak PIN refused at setup and on change; setup on a device without a passcode shows the warning.
+* An offer from an issuer that is not configured refused; a partial issuance naming the documents not added.
+* The portrait notice, and Share or Accept asking for confirmation.
+* "Offer documents to apps and websites" off: registrations withdrawn, the extension declines.
+* A proximity request that several document sets satisfy offers the choice.
 * PID issuance from list.
 * Credential offer issuance by QR.
 * Authorization-code issuance redirect.

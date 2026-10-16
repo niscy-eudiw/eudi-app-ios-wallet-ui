@@ -17,7 +17,7 @@ import XCTest
 @testable import logic_authentication
 @testable import logic_test
 
-final class TestWeakPin: EudiTest {
+final class TestAuthenticationConfig: EudiTest {
 
   private let config = AuthenticationConfigImpl()
 
@@ -43,7 +43,7 @@ final class TestWeakPin: EudiTest {
     XCTAssertFalse(config.isWeakPin("901234"))
   }
 
-  func testDefaults_RequireNoPasscodeAndListAndroidsTenCommonPins() {
+  func testDefaults_WhenNotChanged_ThenRequireNoPasscodeAndListAndroidsTenCommonPins() {
     XCTAssertFalse(config.requireDeviceSecure)
     XCTAssertEqual(config.commonPins.count, 10)
   }

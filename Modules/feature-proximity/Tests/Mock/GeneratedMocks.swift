@@ -5250,6 +5250,7 @@ import Cuckoo
 import Cuckoo
 import Foundation
 import Security
+import os
 import LocalAuthentication
 import KeychainAccess
 @testable import logic_core
@@ -6681,20 +6682,6 @@ import Foundation
 
 import Cuckoo
 import Foundation
-@testable import logic_core
-@testable import logic_business
-@testable import logic_analytics
-@testable import logic_ui
-@testable import logic_api
-@testable import logic_authentication
-@testable import feature_common
-@testable import feature_proximity
-
-
-
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/PrefsController+DocumentOffering.swift'
-
-import Cuckoo
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -12717,6 +12704,21 @@ import Cuckoo
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/DocumentProviderPolicy.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_proximity
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/DocumentRevocationStatus.swift'
 
 import Cuckoo
@@ -12733,6 +12735,21 @@ import Foundation
 
 
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/DynamicIssuancePendingData.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_proximity
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/OfferIssuer.swift'
 
 import Cuckoo
 import Foundation

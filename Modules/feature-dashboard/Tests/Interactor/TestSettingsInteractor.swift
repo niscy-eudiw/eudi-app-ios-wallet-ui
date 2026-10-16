@@ -223,6 +223,33 @@ final class TestSettingsInteractor: EudiTest {
 
     guard case .failure = state else { return XCTFail("Expected a failure, got \(state)") }
   }
+
+  func testIsOfferingDocumentsToApps_WhenTheSettingIsOn_ThenReportsIt() async {
+    stub(prefsController) { mock in
+      when(mock.getBool(forKey: equal(to: Prefs.Key.offerDocumentsToApps))).thenReturn(true)
+    }
+
+    let isOffering = await interactor.isOfferingDocumentsToApps()
+
+    XCTAssertTrue(isOffering)
+  }
+
+  func testSetOfferingDocumentsToApps_WhenTurnedOff_ThenStoresItAndWithdrawsTheRegistrations() async {
+    stub(prefsController) { mock in
+      when(mock.setValue(any(), forKey: any())).thenDoNothing()
+    }
+    stub(walletKitController) { mock in
+      when(mock.reconcileRegistrations()).thenDoNothing()
+    }
+
+    await interactor.setOfferingDocumentsToApps(isEnabled: false)
+
+    verify(prefsController).setValue(
+      ParameterMatcher<Any?> { ($0 as? Bool) == false },
+      forKey: equal(to: Prefs.Key.offerDocumentsToApps)
+    )
+    verify(walletKitController).reconcileRegistrations()
+  }
 }
 
 extension TestSettingsInteractor {
@@ -263,32 +290,5 @@ extension TestSettingsInteractor {
 
     // Then
     return url
-  }
-
-  func testIsOfferingDocumentsToApps_WhenTheUserNeverChoseIt_ThenIsOn() async {
-    stub(prefsController) { mock in
-      when(mock.getValue(forKey: equal(to: Prefs.Key.offerDocumentsToApps))).thenReturn(nil)
-    }
-
-    let isOffering = await interactor.isOfferingDocumentsToApps()
-
-    XCTAssertTrue(isOffering)
-  }
-
-  func testSetOfferingDocumentsToApps_WhenTurnedOff_ThenStoresItAndWithdrawsTheRegistrations() async {
-    stub(prefsController) { mock in
-      when(mock.setValue(any(), forKey: any())).thenDoNothing()
-    }
-    stub(walletKitController) { mock in
-      when(mock.reconcileRegistrations()).thenDoNothing()
-    }
-
-    await interactor.setOfferingDocumentsToApps(isEnabled: false)
-
-    verify(prefsController).setValue(
-      ParameterMatcher<Any?> { ($0 as? Bool) == false },
-      forKey: equal(to: Prefs.Key.offerDocumentsToApps)
-    )
-    verify(walletKitController).reconcileRegistrations()
   }
 }

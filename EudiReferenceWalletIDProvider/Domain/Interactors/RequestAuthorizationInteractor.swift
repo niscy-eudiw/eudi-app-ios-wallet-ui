@@ -61,19 +61,13 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
   func loadRequestData(
     context: ISO18013MobileDocumentRequestContext
   ) async throws -> AuthorizationUIModel {
-    guard prefsController.isOfferingDocumentsToApps() else {
-      throw WalletCoreError.documentOfferingDisabled
-    }
     let (docClaimsModels, _, authorityKeyIdentifier, _) = try await dcApiHandler.validateRequest(context.request)
-    let blocked = try await interactor.fetchRevokedDocumentStatuses()
-    guard !docClaimsModels.contains(where: { blocked[$0.id] != nil }) else {
-      throw WalletCoreError.documentBlocked
-    }
+    try await checkRequest(documentIds: docClaimsModels.map(\.id))
     let websiteName = context.requestingWebsiteOrigin?.absoluteString ?? LocalizableStringKey.unknownVerifier.toString
-    let userImageClaimKeys = configUiLogic.userImageClaimKeys
-    let requestsUserImage = docClaimsModels.contains { document in
-      document.docClaims.contains { userImageClaimKeys.contains($0.name) }
-    }
+    let requestsUserImage = DocumentProviderPolicy.requestsUserImage(
+      claimNames: docClaimsModels.flatMap { $0.docClaims.map(\.name) },
+      userImageClaimKeys: configUiLogic.userImageClaimKeys
+    )
     let documents = docClaimsModels.compactMap {
       $0.transformToDocumentUi(isSensitive: false)
     }
@@ -96,9 +90,8 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
   func acceptVerification(
     context: ISO18013MobileDocumentRequestContext
   ) async throws {
-    guard prefsController.isOfferingDocumentsToApps() else {
-      throw WalletCoreError.documentOfferingDisabled
-    }
+    let (docClaimsModels, _, _, _) = try await dcApiHandler.validateRequest(context.request)
+    try await checkRequest(documentIds: docClaimsModels.map(\.id))
     try await context.sendResponse { rawRequest in
 
       try await self.dcApiHandler.validateConsistency(
@@ -113,5 +106,16 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
 
       return ISO18013MobileDocumentResponse(responseData: responseData)
     }
+  }
+
+  /// Checks the setting and the revocation records again on every step, since either may change while the sheet is
+  /// open (`DocumentProviderPolicy.checkRequest`); records that cannot be read decline the request.
+  private func checkRequest(documentIds: [String]) async throws {
+    let blocked = try await interactor.fetchRevokedDocumentStatuses()
+    try DocumentProviderPolicy.checkRequest(
+      isOffering: prefsController.getBool(forKey: .offerDocumentsToApps),
+      requestedDocumentIds: documentIds,
+      blockedDocumentIds: Set(blocked.keys)
+    )
   }
 }

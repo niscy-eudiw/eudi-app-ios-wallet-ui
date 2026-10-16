@@ -62,6 +62,7 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
 
   @ObservationIgnored
   private var isHydratingIssuerRegistration = false
+  @ObservationIgnored
   private var isHydratingDocumentOffering = false
 
   private let interactor: SettingsInteractor
@@ -205,7 +206,7 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
     if isDocumentOfferingAvailable {
       items.append(
         .init(
-          title: .offerDocumentsToApps,
+          title: .offerDocumentsToAppsTitle,
           icon: Theme.shared.image.share,
           showDivider: true,
           isToggle: true,

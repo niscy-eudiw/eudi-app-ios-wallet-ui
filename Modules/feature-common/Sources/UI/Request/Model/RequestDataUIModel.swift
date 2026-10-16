@@ -331,6 +331,7 @@ public extension Array where Element == RequestDataUiModel {
 }
 
 private extension ExpandableListItem where T == DocumentElementClaim {
+  /// True when a row among `itemIds` would be disclosed: selected, or without a checkbox.
   func disclosesAnyOf(_ itemIds: Set<String>) -> Bool {
     switch self {
     case .nested(let item):
@@ -506,6 +507,7 @@ private extension Array where Element == DocClaim {
 
 private extension Array where Element == DocumentElementClaim {
 
+  /// The ids of the claims, in groups too, whose last path element is one of `userImageClaimKeys`.
   func userImageItemIds(userImageClaimKeys: Set<String>) -> Set<String> {
     reduce(into: Set<String>()) { ids, claim in
       switch claim {

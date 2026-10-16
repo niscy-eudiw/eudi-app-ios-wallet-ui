@@ -31,7 +31,8 @@ public enum DeviceLockState: Sendable, Equatable {
 public protocol QuickPinInteractor: Sendable {
   var maxFailedPinAttempts: Int { get }
 
-  /// Refuses a PIN that is easy to guess (`AuthenticationConfig.isWeakPin`), as `checkNewPin` does.
+  /// Refuses a PIN that is easy to guess (`AuthenticationConfig.isWeakPin`), as `checkNewPin` does, and any PIN while
+  /// a passcode is required and missing (`AuthenticationConfig.requireDeviceSecure`).
   func setPin(newPin: String) async -> QuickPinPartialState
   /// Refuses a new PIN that is easy to guess with `AuthenticationError.quickPinWeak`, when it is entered.
   func checkNewPin(_ pin: String) async -> QuickPinPartialState
@@ -78,15 +79,10 @@ final actor QuickPinInteractorImpl: QuickPinInteractor {
   }
 
   public func setPin(newPin: String) -> QuickPinPartialState {
-    guard !authenticationConfig.isWeakPin(newPin) else {
-      return .failure(AuthenticationError.quickPinWeak)
+    guard getDeviceLockState() != .required else {
+      return .failure(AuthenticationError.deviceLockRequired)
     }
-    do {
-      try pinStorageController.setPin(with: newPin)
-      return .success
-    } catch {
-      return .failure(error)
-    }
+    return storePin(newPin)
   }
 
   public func checkNewPin(_ pin: String) -> QuickPinPartialState {
@@ -96,6 +92,20 @@ final actor QuickPinInteractorImpl: QuickPinInteractor {
   public func getDeviceLockState() -> DeviceLockState {
     guard !deviceLockController.isDeviceSecure() else { return .secure }
     return authenticationConfig.requireDeviceSecure ? .required : .missing
+  }
+
+  /// Stores a new PIN unless it is easy to guess; changing the PIN of a set-up wallet skips the passcode check, as
+  /// on Android.
+  private func storePin(_ newPin: String) -> QuickPinPartialState {
+    guard !authenticationConfig.isWeakPin(newPin) else {
+      return .failure(AuthenticationError.quickPinWeak)
+    }
+    do {
+      try pinStorageController.setPin(with: newPin)
+      return .success
+    } catch {
+      return .failure(error)
+    }
   }
 
   public func isPinValid(pin: String) -> QuickPinPartialState {
@@ -108,7 +118,7 @@ final actor QuickPinInteractorImpl: QuickPinInteractor {
 
   public func changePin(currentPin: String, newPin: String) -> QuickPinPartialState {
     if self.isCurrentPinValid(pin: currentPin) {
-      return self.setPin(newPin: newPin)
+      return self.storePin(newPin)
     } else {
       return .failure(AuthenticationError.quickPinInvalid)
     }

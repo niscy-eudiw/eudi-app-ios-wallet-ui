@@ -122,7 +122,7 @@ final class TestQuickPinViewModel: EudiTest {
 
     try await enter("135792", in: viewModel)
 
-    XCTAssertEqual(viewModel.viewState.deviceLockNotice, .quickPinDeviceLockRequired)
+    XCTAssertEqual(viewModel.viewState.deviceLockNotice, .quickPinDeviceLockRequiredWarning)
     verify(interactor, never()).checkNewPin(any())
     guard case .firstInput = viewModel.viewState.step else {
       return XCTFail("Moved past the first entry")

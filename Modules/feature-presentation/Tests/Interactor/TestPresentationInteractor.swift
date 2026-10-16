@@ -224,8 +224,6 @@ final class TestPresentationInteractor: EudiTest {
   }
 
   func testOnRequestReceived_WhenThePortraitIsRequested_ThenItsRowIsMarkedAsAPictureOfTheHolder() async {
-    // Given: a request for the portrait and the family name. The claims are parsed by WalletKitController's
-    // extension, not the mock, so the request itself carries them.
     let request = Constants.mockPresentationRequest
     let element: (String) -> MsoMdocElement = { name in
       .init(
@@ -258,10 +256,8 @@ final class TestPresentationInteractor: EudiTest {
     )
     await stubReceivedRequest(portraitRequest)
 
-    // When
     let state = await interactor.onRequestReceived()
 
-    // Then
     guard case .success(let successModel) = state else {
       return XCTFail("Wrong state \(state)")
     }

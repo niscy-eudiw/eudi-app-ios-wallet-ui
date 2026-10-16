@@ -13,11 +13,16 @@
  * ANY KIND, either express or implied. See the Licence for the specific language
  * governing permissions and limitations under the Licence.
  */
-public extension PrefsController {
+import XCTest
+@testable import logic_business
+@testable import logic_test
 
-  /// Whether the wallet offers its documents to apps and websites through the Digital Credential API: on until the
-  /// user turns it off in Settings, as on Android.
-  func isOfferingDocumentsToApps() -> Bool {
-    getValue(forKey: .offerDocumentsToApps) as? Bool ?? true
+final class TestPrefsController: EudiTest {
+
+  func testGetBool_WhenTheUserNeverChoseToOfferDocuments_ThenIsOn() {
+    let prefsController = PrefsControllerImpl()
+    prefsController.remove(forKey: .offerDocumentsToApps)
+
+    XCTAssertTrue(prefsController.getBool(forKey: .offerDocumentsToApps))
   }
 }

@@ -74,6 +74,20 @@ final class TestOfferIssuer: EudiTest {
       .unreadable
     )
   }
+
+  func testRequireConfigured_WhenTheIssuerIsNotConfigured_ThenThrowsIssuerNotConfigured() {
+    XCTAssertThrowsError(
+      try OfferIssuer.requireConfigured(offerUri: byValue(issuer: "https://attacker.example"), configuredIssuers: configured)
+    ) { error in
+      XCTAssertEqual(error.localizedDescription, WalletCoreError.issuerNotConfigured.localizedDescription)
+    }
+  }
+
+  func testRequireConfigured_WhenTheIssuerIsConfigured_ThenPasses() {
+    XCTAssertNoThrow(
+      try OfferIssuer.requireConfigured(offerUri: byValue(issuer: "https://issuer.example"), configuredIssuers: configured)
+    )
+  }
 }
 
 private extension TestOfferIssuer {

@@ -52,6 +52,13 @@ public enum OfferIssuer: Equatable, Sendable {
     }
     return issuer.map(OfferIssuer.configured) ?? .notConfigured
   }
+
+  /// Throws `WalletCoreError.issuerNotConfigured` unless `offerUri` comes from one of `configuredIssuers`.
+  public static func requireConfigured(offerUri: String, configuredIssuers: [String]) throws {
+    guard case .configured = of(offerUri: offerUri, configuredIssuers: configuredIssuers) else {
+      throw WalletCoreError.issuerNotConfigured
+    }
+  }
 }
 
 private extension URLComponents {

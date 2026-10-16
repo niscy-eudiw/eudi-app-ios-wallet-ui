@@ -39,6 +39,7 @@ public protocol SettingsInteractor: Sendable {
   func isIssuerRegistrationValidationEnabled() async -> Bool
   /// Whether this iOS version has the Digital Credential API; without it the setting would do nothing.
   func isDocumentOfferingAvailable() async -> Bool
+  /// The "Offer documents to apps and websites" setting, on by default.
   func isOfferingDocumentsToApps() async -> Bool
   /// Stores the choice and registers or withdraws the documents at once.
   func setOfferingDocumentsToApps(isEnabled: Bool) async
@@ -125,7 +126,7 @@ final actor SettingsInteractorImpl: SettingsInteractor {
   }
 
   func isOfferingDocumentsToApps() async -> Bool {
-    prefsController.isOfferingDocumentsToApps()
+    prefsController.getBool(forKey: .offerDocumentsToApps)
   }
 
   func setOfferingDocumentsToApps(isEnabled: Bool) async {

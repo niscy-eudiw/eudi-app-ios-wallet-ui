@@ -247,7 +247,8 @@ To enable the app to interact with a locally running service, a minor code chang
 
 > Warning: this change turns off server certificate validation for the host it names. It applies to
 > the session that carries the app's own requests and the OpenID4VCI and OpenID4VP traffic that
-> wallet-kit sends. Use it only for local development and never let it reach a release build; see
+> wallet-kit sends, except wallet-kit's fetch of an SD-JWT issuer's keys when the credential carries no `x5c`
+> chain, which uses `URLSession.shared`. Use it only for local development and never let it reach a release build; see
 > [Network Security](GO_LIVE.md#network-security) and
 > [Local Development With Self-Signed Certificates](GO_LIVE.md#local-development-with-self-signed-certificates)
 > in the go-live guide.

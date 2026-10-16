@@ -658,17 +658,17 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "relying_party_not_verified_warning")
     case .requestUserImageNotice:
       bundle.localizedString(forKey: "request_user_image_notice")
-    case .offerDocumentsToApps:
+    case .offerDocumentsToAppsTitle:
       bundle.localizedString(forKey: "offer_documents_to_apps")
-    case .quickPinWeak:
+    case .quickPinWeakError:
       bundle.localizedString(forKey: "quick_pin_weak")
-    case .issuanceOfferIssuerNotConfigured:
+    case .issuanceOfferIssuerNotConfiguredError:
       bundle.localizedString(forKey: "issuance_offer_issuer_not_configured")
-    case .issuanceSuccessNotIssued(let args):
+    case .issuanceSuccessNotIssuedWarning(let args):
       bundle.localizedStringWithArguments(forKey: "issuance_success_not_issued", arguments: args)
-    case .quickPinDeviceLockMissing:
+    case .quickPinDeviceLockMissingWarning:
       bundle.localizedString(forKey: "quick_pin_device_lock_missing")
-    case .quickPinDeviceLockRequired:
+    case .quickPinDeviceLockRequiredWarning:
       bundle.localizedString(forKey: "quick_pin_device_lock_required")
     case .documentOfferingDisabledMessage:
       bundle.localizedString(forKey: "document_offering_disabled_message")

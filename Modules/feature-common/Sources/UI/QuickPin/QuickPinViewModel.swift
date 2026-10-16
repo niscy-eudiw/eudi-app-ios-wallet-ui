@@ -292,10 +292,10 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
   private func refreshDeviceLockState() async {
     let notice: LocalizableStringKey? = switch await interactor.getDeviceLockState() {
     case .secure: nil
-    case .missing: .quickPinDeviceLockMissing
-    case .required: .quickPinDeviceLockRequired
+    case .missing: .quickPinDeviceLockMissingWarning
+    case .required: .quickPinDeviceLockRequiredWarning
     }
-    let isRequired = notice == .quickPinDeviceLockRequired
+    let isRequired = notice == .quickPinDeviceLockRequiredWarning
     setState { $0.copy(deviceLockNotice: notice).copy(isDeviceLockRequired: isRequired) }
   }
 

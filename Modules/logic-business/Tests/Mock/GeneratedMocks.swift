@@ -239,6 +239,7 @@ import Cuckoo
 import Cuckoo
 import Foundation
 import Security
+import os
 import LocalAuthentication
 import KeychainAccess
 @testable import logic_business
@@ -1558,13 +1559,6 @@ import Foundation
 
 import Cuckoo
 import Foundation
-@testable import logic_business
-
-
-
-// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/PrefsController+DocumentOffering.swift'
-
-import Cuckoo
 @testable import logic_business
 
 

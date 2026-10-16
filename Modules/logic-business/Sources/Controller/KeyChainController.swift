@@ -15,6 +15,7 @@
  */
 import Foundation
 import Security
+import os
 @preconcurrency import LocalAuthentication
 @preconcurrency import KeychainAccess
 
@@ -54,6 +55,8 @@ final class KeyChainControllerImpl: KeyChainController {
   private let biometryKey = "eu.europa.ec.euidi.biometric.access"
   private let configLogic: ConfigLogic
   private let keyChain: Keychain
+  /// Whether the items of an earlier build have moved to `accessibility`; until then every read retries the move.
+  private let isPreviousClassMoved = OSAllocatedUnfairLock(initialState: false)
 
   public init(configLogic: ConfigLogic) {
     self.configLogic = configLogic
@@ -64,7 +67,7 @@ final class KeyChainControllerImpl: KeyChainController {
       accessGroup: accessGroup
     )
     .accessibility(Self.accessibility)
-    Self.moveItemsFromThePreviousClass(service: service, accessGroup: accessGroup)
+    moveItemsFromThePreviousClassIfNeeded()
   }
 
   public func storeValue(key: KeyChainWrapper, value: String) {
@@ -76,14 +79,17 @@ final class KeyChainControllerImpl: KeyChainController {
   }
 
   public func getValue(key: KeyChainWrapper) -> String? {
-    keyChain[key.value]
+    moveItemsFromThePreviousClassIfNeeded()
+    return keyChain[key.value]
   }
 
   func getData(key: KeyChainWrapper) -> Data? {
-    try? keyChain.getData(key.value)
+    moveItemsFromThePreviousClassIfNeeded()
+    return try? keyChain.getData(key.value)
   }
 
   public func fetchValue(key: KeyChainWrapper) throws -> String? {
+    moveItemsFromThePreviousClassIfNeeded()
     do {
       return try keyChain.getString(key.value)
     } catch {
@@ -92,6 +98,7 @@ final class KeyChainControllerImpl: KeyChainController {
   }
 
   public func fetchData(key: KeyChainWrapper) throws -> Data? {
+    moveItemsFromThePreviousClassIfNeeded()
     do {
       return try keyChain.getData(key.value)
     } catch {
@@ -147,6 +154,15 @@ final class KeyChainControllerImpl: KeyChainController {
 }
 
 private extension KeyChainControllerImpl {
+
+  func moveItemsFromThePreviousClassIfNeeded() {
+    let service = configLogic.keyChainConfig.documentStorageServiceName
+    let accessGroup = configLogic.keyChainConfig.keychainAccessGroup
+    isPreviousClassMoved.withLock { isMoved in
+      guard !isMoved else { return }
+      isMoved = Self.isMoveComplete(Self.moveItemsFromThePreviousClass(service: service, accessGroup: accessGroup))
+    }
+  }
   /// The keychain status a KeychainAccess error carries, or `errSecInternalError` for any other error.
   func keyChainStatus(of error: Error) -> OSStatus {
     (error as? Status)?.rawValue ?? errSecInternalError
@@ -182,7 +198,7 @@ private extension KeyChainControllerImpl {
     try self.keyChain
       .accessibility(
         .whenPasscodeSetThisDeviceOnly,
-        authenticationPolicy: [.biometryCurrentSet]
+        authenticationPolicy: Self.biometricProbePolicy
       )
       .set(value, key: self.biometryKey)
   }
@@ -191,8 +207,12 @@ private extension KeyChainControllerImpl {
 
 extension KeyChainControllerImpl {
 
+  /// The probe's policy: readable only with the biometric enrolment present when it was written.
+  static var biometricProbePolicy: AuthenticationPolicy { [.biometryCurrentSet] }
+
   /// The class of every item this controller writes, except the biometric probe: readable only while the device is
-  /// unlocked, and never part of a backup, so the PIN salt and verifier cannot be restored to another device.
+  /// unlocked, and backed up only under a key bound to this device, so the PIN salt and verifier never reach another
+  /// device.
   static var accessibility: Accessibility { .whenUnlockedThisDeviceOnly }
 
   /// The items of `service` that a build before `accessibility` wrote as `.whenUnlocked`.
@@ -213,14 +233,19 @@ extension KeyChainControllerImpl {
     [kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly]
   }
 
-  /// Moves the items an earlier build wrote as `.whenUnlocked` to `accessibility`. It runs on every start and finds
-  /// nothing once they have moved; while the device is locked they cannot be moved, and a later start moves them.
+  /// Moves the items an earlier build wrote as `.whenUnlocked` to `accessibility`.
   /// wallet-storage's items are written as `.whenPasscodeSetThisDeviceOnly` and are not touched.
-  static func moveItemsFromThePreviousClass(service: String, accessGroup: String) {
+  static func moveItemsFromThePreviousClass(service: String, accessGroup: String) -> OSStatus {
     SecItemUpdate(
       previousClassQuery(service: service, accessGroup: accessGroup) as CFDictionary,
       thisDeviceOnlyAttributes() as CFDictionary
     )
+  }
+
+  /// Done once the update succeeds or finds nothing; while the device is locked it fails, and the next read, at the
+  /// latest the PIN check at login, tries again.
+  static func isMoveComplete(_ status: OSStatus) -> Bool {
+    status == errSecSuccess || status == errSecItemNotFound
   }
 
   /// Accepts the biometric probe only when the keychain returned it; a missing item fails. Internal so that unit

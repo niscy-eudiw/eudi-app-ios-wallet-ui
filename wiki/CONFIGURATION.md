@@ -651,6 +651,7 @@ compile:
 ## Scoped Issuance Document Configuration
 
 The credential configuration is derived directly from the issuer's metadata. The issuer URL is configured via the `issuersConfig` property (its `VciConfig` entries) inside the logic-core module in *WalletKitConfigImpl*.
+If you want to add or adjust the displayed scoped documents, you must modify the issuer's metadata, and the wallet will automatically resolve your changes.
 
 Credential offers are accepted only from the issuers in `issuersConfig` (`OfferIssuer`, checked before anything is
 fetched). An offer that carries itself in the link must name a configured issuer as its `credential_issuer`, written
@@ -659,7 +660,6 @@ issuer's origin. Any other offer is refused with "This offer comes from an issue
 use", as on Android, because wallet-kit would otherwise give an unknown issuer the first configured issuer's client
 settings. To accept an issuer's offers, add a `VciConfig` entry for it to `issuersConfig` in the build variants that
 need it.
-If you want to add or adjust the displayed scoped documents, you must modify the issuer's metadata, and the wallet will automatically resolve your changes.
 
 ## How to work with self-signed certificates
 
@@ -819,8 +819,8 @@ A new PIN is refused when it is one digit repeated, an ascending or descending r
 `commonPins` (`AuthenticationConfig.isWeakPin`). The PIN screen refuses it when it is entered, and
 `QuickPinInteractor.setPin` when it is set or changed. During setup the PIN screen checks for a device passcode
 (`DeviceLockController`) and warns when there is none; with `requireDeviceSecure` it accepts no PIN until one is set,
-and checks again at each entry. Changing the PIN of a wallet that is already set up is not affected. The defaults
-are the Android wallet's.
+and checks again at each entry. The passcode check does not apply when the PIN of a set-up wallet is changed; the
+weak-PIN rule does. The defaults are the Android wallet's.
 
 Default policy (`AuthenticationConfigImpl`):
 
@@ -832,6 +832,10 @@ struct AuthenticationConfigImpl: AuthenticationConfig {
   public let backgroundLockTimeout: TimeInterval = 60
   public let idleLockTimeout: TimeInterval = 300
   public let protectedFlowLockTimeout: TimeInterval = 600
+  public let commonPins: Set<String> = [
+    "123123", "121212", "112233", "123321", "102030", "147258", "159753", "789456", "696969", "000123"
+  ]
+  public let requireDeviceSecure: Bool = false
 }
 ```
 

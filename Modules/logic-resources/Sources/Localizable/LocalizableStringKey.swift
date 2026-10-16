@@ -329,12 +329,12 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case understandRisksAgree
   case relyingPartyNotVerifiedWarning
   case requestUserImageNotice
-  case offerDocumentsToApps
-  case quickPinWeak
-  case issuanceOfferIssuerNotConfigured
-  case issuanceSuccessNotIssued([String])
-  case quickPinDeviceLockMissing
-  case quickPinDeviceLockRequired
+  case offerDocumentsToAppsTitle
+  case quickPinWeakError
+  case issuanceOfferIssuerNotConfiguredError
+  case issuanceSuccessNotIssuedWarning([String])
+  case quickPinDeviceLockMissingWarning
+  case quickPinDeviceLockRequiredWarning
   case documentOfferingDisabledMessage
   case requestUserImageConfirmationTitle
   case requestUserImageConfirmationMessage

@@ -167,6 +167,7 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
     isUserImageConfirmationShowing = true
   }
 
+  /// Asks for the PIN or biometrics that send the response, once the user has confirmed sending the portrait.
   func onUserImageShareConfirmed() {
     isUserImageConfirmationShowing = false
     showBiometryView = true

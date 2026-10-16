@@ -101,6 +101,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
     isUserImageConfirmationShowing = true
   }
 
+  /// Shares once the user has confirmed sending the picture of the holder.
   func onUserImageShareConfirmed() {
     isUserImageConfirmationShowing = false
     onShare()

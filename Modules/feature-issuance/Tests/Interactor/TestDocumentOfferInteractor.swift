@@ -1116,6 +1116,44 @@ final class TestDocumentOfferInteractor: EudiTest {
     }
   }
 
+  func testIssueDocuments_WhenOneOfTwoOfferedDocumentsIsIssued_ThenTheSuccessScreenNamesTheOther() async {
+    let document = Document(
+      id: "doc-id",
+      docType: "type",
+      docDataFormat: .sdjwt,
+      data: Data(),
+      docKeyInfo: nil,
+      createdAt: Date(),
+      metadata: nil,
+      displayName: "My Document",
+      status: .issued
+    )
+    stub(walletKitController) { mock in
+      when(mock.issueDocumentsByOfferUrl(offerUri: any(), docTypes: any(), txCodeValue: any()))
+        .thenReturn(IssuanceResult(documents: [document], issuerRegistration: nil))
+      when(mock.fetchDocuments(with: any())).thenReturn([Constants.createEuPidModel()])
+    }
+
+    let result = await interactor.issueDocuments(
+      with: "uri",
+      issuerName: "issuerName",
+      docOffers: [
+        offeredDocument(docType: "type", name: "My Document"),
+        offeredDocument(docType: "other", name: "Other Document")
+      ],
+      successNavigation: .push(.featureDashboardModule(.dashboard)),
+      txCodeValue: nil
+    )
+
+    guard
+      case .partialSuccess(let route) = result,
+      case .featureIssuanceModule(.issuanceSuccess(let config, _)) = route
+    else {
+      return XCTFail("Expected a partial success, got \(result)")
+    }
+    XCTAssertEqual((config as? DocumentSuccessUIConfig)?.notIssuedDocumentNames, ["Other Document"])
+  }
+
   func testNotIssuedDocumentNames_WhenOneOfTwoOfferedDocumentsIsIssued_ThenNamesTheOther() {
     let offered = [
       offeredDocument(docType: "eu.europa.ec.eudi.pid.1", name: "PID"),
@@ -1144,7 +1182,19 @@ final class TestDocumentOfferInteractor: EudiTest {
     XCTAssertEqual(names, ["PID (second)"])
   }
 
-  private func offeredDocument(docType: String, name: String) -> OfferedDocModel {
+}
+
+private extension TestDocumentOfferInteractor {
+  func stubConfigLogic() {
+    stub(configLogic) { mock in
+      when(mock.forcePidActivation.get).thenReturn(true)
+    }
+  }
+}
+
+private extension TestDocumentOfferInteractor {
+
+  func offeredDocument(docType: String, name: String) -> OfferedDocModel {
     OfferedDocModel(
       credentialConfigurationIdentifier: name,
       docType: docType,
@@ -1156,13 +1206,5 @@ final class TestDocumentOfferInteractor: EudiTest {
       credentialOptions: .init(credentialPolicy: .oneTimeUse, batchSize: 1),
       keyOptions: nil
     )
-  }
-}
-
-private extension TestDocumentOfferInteractor {
-  func stubConfigLogic() {
-    stub(configLogic) { mock in
-      when(mock.forcePidActivation.get).thenReturn(true)
-    }
   }
 }

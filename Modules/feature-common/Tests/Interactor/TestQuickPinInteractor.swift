@@ -35,6 +35,9 @@ final class TestQuickPinInteractor: EudiTest {
     self.authenticationConfig = MockAuthenticationConfig()
     self.sessionController = MockSessionController()
     self.deviceLockController = MockDeviceLockController()
+    stub(deviceLockController) { mock in
+      when(mock.isDeviceSecure()).thenReturn(true)
+    }
     
     stub(authenticationConfig) { mock in
       when(mock.maxFailedPinAttempts.get).thenReturn(3)
@@ -325,23 +328,63 @@ final class TestQuickPinInteractor: EudiTest {
     }
   }
 
-  func testGetDeviceLockState_FollowsThePasscodeAndTheConfiguration() async {
-    stub(deviceLockController) { mock in
-      when(mock.isDeviceSecure()).thenReturn(true)
-    }
-    let secure = await interactor.getDeviceLockState()
-    XCTAssertEqual(secure, .secure)
+  func testGetDeviceLockState_WhenAPasscodeIsSet_ThenIsSecure() async {
+    stubDeviceLock(isSecure: true, isRequired: true)
 
-    stub(deviceLockController) { mock in
-      when(mock.isDeviceSecure()).thenReturn(false)
-    }
-    let missing = await interactor.getDeviceLockState()
-    XCTAssertEqual(missing, .missing)
+    let state = await interactor.getDeviceLockState()
 
-    stub(authenticationConfig) { mock in
-      when(mock.requireDeviceSecure.get).thenReturn(true)
-    }
-    let required = await interactor.getDeviceLockState()
-    XCTAssertEqual(required, .required)
+    XCTAssertEqual(state, .secure)
   }
+
+  func testGetDeviceLockState_WhenNoPasscodeIsSet_ThenIsMissing() async {
+    stubDeviceLock(isSecure: false, isRequired: false)
+
+    let state = await interactor.getDeviceLockState()
+
+    XCTAssertEqual(state, .missing)
+  }
+
+  func testGetDeviceLockState_WhenNoPasscodeIsSetAndOneIsRequired_ThenIsRequired() async {
+    stubDeviceLock(isSecure: false, isRequired: true)
+
+    let state = await interactor.getDeviceLockState()
+
+    XCTAssertEqual(state, .required)
+  }
+
+  func testSetPin_WhenAPasscodeIsRequiredAndMissing_ThenRefusesIt() async {
+    stubDeviceLock(isSecure: false, isRequired: true)
+
+    let state = await interactor.setPin(newPin: "1357")
+
+    guard case .failure(let error) = state else {
+      return XCTFail("Wrong state \(state)")
+    }
+    XCTAssertEqual(error.localizedDescription, AuthenticationError.deviceLockRequired.localizedDescription)
+    verify(pinStorageController, never()).setPin(with: any())
+  }
+
+  func testChangePin_WhenAPasscodeIsRequiredAndMissing_ThenStillChangesIt() async {
+    stubDeviceLock(isSecure: false, isRequired: true)
+    stub(pinStorageController) { mock in
+      when(mock.isPinValid(with: any())).thenReturn(true)
+      when(mock.setPin(with: any())).thenDoNothing()
+    }
+
+    let state = await interactor.changePin(currentPin: "1357", newPin: "2468")
+
+    guard case .success = state else {
+      return XCTFail("Wrong state \(state)")
+    }
+  }
+
+  private func stubDeviceLock(isSecure: Bool, isRequired: Bool) {
+    stub(deviceLockController) { mock in
+      when(mock.isDeviceSecure()).thenReturn(isSecure)
+    }
+    stub(authenticationConfig) { mock in
+      when(mock.requireDeviceSecure.get).thenReturn(isRequired)
+    }
+  }
+
 }

@@ -73,6 +73,7 @@ final class DeepLinkControllerImpl: DeepLinkController {
     return nil
   }
 
+  /// True when the link's scheme, host and path are those of a configured signing service's callback.
   private func isRqesCallback(_ components: URLComponents) -> Bool {
     rqesCallbacks.contains { callback in
       callback.scheme?.lowercased() == components.scheme?.lowercased()

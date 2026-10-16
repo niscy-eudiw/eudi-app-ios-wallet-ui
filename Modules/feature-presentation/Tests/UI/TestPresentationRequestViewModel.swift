@@ -58,10 +58,12 @@ final class TestPresentationRequestViewModel: EudiTest {
   func testOnShareClick_WhenNoPortraitWouldBeShared_ThenSharesWithoutAConfirmation() async {
     let viewModel = makeViewModel(isTrusted: true)
     await viewModel.doWork()
+    let shared = expectSharing()
 
     viewModel.onShareClick()
 
     XCTAssertFalse(viewModel.isUserImageConfirmationShowing)
+    await fulfillment(of: [shared], timeout: 3)
   }
 
   @MainActor
@@ -69,10 +71,12 @@ final class TestPresentationRequestViewModel: EudiTest {
     let viewModel = makeViewModel(isTrusted: true, combinations: [RequestCombinationUiModel(documents: [portraitRequest()])])
     await viewModel.doWork()
     viewModel.onShareClick()
+    let shared = expectSharing()
 
     viewModel.onUserImageShareConfirmed()
 
     XCTAssertFalse(viewModel.isUserImageConfirmationShowing)
+    await fulfillment(of: [shared], timeout: 3)
   }
 }
 
@@ -132,5 +136,17 @@ private extension TestPresentationRequestViewModel {
       section: .init(id: "doc-id", title: "Document", listItems: [portrait]),
       userImageItemIds: ["portrait-id"]
     )
+  }
+
+  /// Fulfilled when the view model prepares the response, the first step of sharing.
+  func expectSharing() -> XCTestExpectation {
+    let shared = expectation(description: "the response is prepared")
+    stub(interactor) { mock in
+      when(mock.onResponsePrepare(combinationIndex: any())).then { _ in
+        shared.fulfill()
+        return .failure(RuntimeError.genericError)
+      }
+    }
+    return shared
   }
 }

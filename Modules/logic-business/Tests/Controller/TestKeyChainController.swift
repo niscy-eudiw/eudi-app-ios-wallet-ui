@@ -84,11 +84,11 @@ final class TestKeyChainController: EudiTest {
     XCTAssertNoThrow(try KeyChainControllerImpl.validateBiometricItem("probe"))
   }
 
-  func testAccessibility_IsWhenUnlockedThisDeviceOnly() {
+  func testAccessibility_WhenItemsAreWritten_ThenTheyStayOnThisDevice() {
     XCTAssertEqual(KeyChainControllerImpl.accessibility, .whenUnlockedThisDeviceOnly)
   }
 
-  func testPreviousClassQuery_SelectsOnlyTheServicesWhenUnlockedPasswords() {
+  func testPreviousClassQuery_WhenBuilt_ThenSelectsOnlyTheServicesWhenUnlockedPasswords() {
     let query = KeyChainControllerImpl.previousClassQuery(service: "service", accessGroup: "group")
 
     XCTAssertEqual(query[kSecClass as String] as? String, kSecClassGenericPassword as String)
@@ -103,10 +103,23 @@ final class TestKeyChainController: EudiTest {
     XCTAssertNil(query[kSecAttrAccessGroup as String])
   }
 
-  func testThisDeviceOnlyAttributes_MoveTheItemsToWhenUnlockedThisDeviceOnly() {
+  func testThisDeviceOnlyAttributes_WhenApplied_ThenMoveTheItemsToWhenUnlockedThisDeviceOnly() {
     XCTAssertEqual(
       KeyChainControllerImpl.thisDeviceOnlyAttributes()[kSecAttrAccessible as String] as? String,
       kSecAttrAccessibleWhenUnlockedThisDeviceOnly as String
     )
+  }
+
+  func testBiometricProbePolicy_WhenTheProbeIsWritten_ThenItIsBoundToTheCurrentEnrolment() {
+    XCTAssertEqual(KeyChainControllerImpl.biometricProbePolicy, [.biometryCurrentSet])
+  }
+
+  func testIsMoveComplete_WhenTheUpdateSucceedsOrFindsNothing_ThenIsDone() {
+    XCTAssertTrue(KeyChainControllerImpl.isMoveComplete(errSecSuccess))
+    XCTAssertTrue(KeyChainControllerImpl.isMoveComplete(errSecItemNotFound))
+  }
+
+  func testIsMoveComplete_WhenTheDeviceIsLocked_ThenIsRetried() {
+    XCTAssertFalse(KeyChainControllerImpl.isMoveComplete(errSecInteractionNotAllowed))
   }
 }

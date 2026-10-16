@@ -58,7 +58,7 @@ public enum WalletCoreError: LocalizedError, Equatable {
     case .documentOfferingDisabled:
       LocalizableStringKey.documentOfferingDisabledMessage.toString
     case .issuerNotConfigured:
-      LocalizableStringKey.issuanceOfferIssuerNotConfigured.toString
+      LocalizableStringKey.issuanceOfferIssuerNotConfiguredError.toString
     }
   }
 }

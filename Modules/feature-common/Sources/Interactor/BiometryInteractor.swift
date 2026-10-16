@@ -151,11 +151,13 @@ final actor BiometryInteractorImpl: BiometryInteractor {
     pinThrottleController.recordSuccess()
   }
 
+  /// Binds biometric unlock to the current enrolment and records it.
   private func bindBiometricUnlock() async throws {
     try await biometryController.enableBiometricUnlock()
     prefsController.setValue(true, forKey: .biometricUnlockBound)
   }
 
+  /// The failure state for `error`, a generic biometric error unless it is a `SystemBiometryError`.
   private static func biometricFailure(for error: Error) -> BiometricsState {
     .failure(error as? SystemBiometryError ?? .biometricError)
   }

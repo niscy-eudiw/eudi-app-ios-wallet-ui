@@ -267,9 +267,62 @@ final class TestProximityInteractor: EudiTest {
       XCTFail("Wrong state \(state)")
     }
   }
+
+  func testOnRequestReceived_WhenThePortraitIsRequested_ThenItsRowIsMarkedAsAPictureOfTheHolder() async {
+    let request = Constants.mockPresentationRequest
+    let element: (String) -> MsoMdocElement = { name in
+      .init(
+        elementIdentifier: name,
+        isOptional: false,
+        stringValue: "value",
+        docClaim: .init(name: name, dataValue: .string("value"), stringValue: "value"),
+        isValid: true
+      )
+    }
+    let portraitRequest = PresentationRequest(
+      itemSets: [
+        [
+          .msoMdoc(
+            .init(
+              docId: Constants.isoMdlModelId,
+              docType: Constants.isoMdlDocType,
+              displayName: Constants.isoMdlName,
+              nameSpacedElements: [.init(nameSpace: "nameSpace", elements: [element("portrait"), element("family_name")])]
+            )
+          )
+        ]
+      ],
+      relyingParty: request.relyingParty,
+      dataRequestInfo: request.dataRequestInfo,
+      isTrusted: request.isTrusted,
+      overaskedClaims: request.overaskedClaims,
+      transactionDataSets: [],
+      requestNames: []
+    )
+    stub(presentationSessionCoordinator) { mock in
+      when(mock.requestReceived()).thenReturn(portraitRequest)
+    }
+    stubRevokedDocumentStatuses(with: [])
+
+    let state = await interactor.onRequestReceived()
+
+    guard case .success(let combinations, _, _, _, _) = state else {
+      return XCTFail("Wrong state \(state)")
+    }
+    let document = combinations.first?.documents.first
+    let portraitIds = Set(
+      document?.section.listItems.compactMap { item -> String? in
+        guard case .primitive(let id, _, _, _, let path, _, _, _)? = item.domainModel, path.last == "portrait" else {
+          return nil
+        }
+        return id
+      } ?? []
+    )
+    XCTAssertEqual(portraitIds.count, 1)
+    XCTAssertEqual(document?.userImageItemIds, portraitIds)
+  }
+
   func testOnRequestReceived_WhenTwoDocumentSetsSatisfyTheRequest_ThenOffersBoth() async {
-    
-    // Given
     let single = Self.mockPresentationRequest
     let request = PresentationRequest(
       itemSets: single.itemSets + single.itemSets,
@@ -289,17 +342,14 @@ final class TestProximityInteractor: EudiTest {
     
     stubRevokedDocumentStatuses(with: [])
     
-    // When
     let state = await interactor.onRequestReceived()
     
-    // Then
     switch state {
     case .success(let uimodels, let relyingParty, let dataRequestInfo, let isTrusted, let registration):
       XCTAssertEqual(uimodels, [RequestCombinationUiModel(documents: expectedUiModels), RequestCombinationUiModel(documents: expectedUiModels)])
       XCTAssertEqual(relyingParty, request.relyingParty)
       XCTAssertEqual(dataRequestInfo, request.dataRequestInfo)
       XCTAssertEqual(isTrusted, request.isTrusted)
-      // proximity carries no registration certificate
       XCTAssertEqual(registration.registration, .notSupported)
     default:
       XCTFail("Wrong state \(state)")

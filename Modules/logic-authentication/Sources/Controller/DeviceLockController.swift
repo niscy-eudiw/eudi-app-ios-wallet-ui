@@ -22,8 +22,15 @@ public protocol DeviceLockController: Sendable {
 
 final class DeviceLockControllerImpl: DeviceLockController {
 
+  private let contextProvider: @Sendable () -> LAContext
+
+  /// - Parameter contextProvider: Creates the context for each check.
+  init(contextProvider: @escaping @Sendable () -> LAContext = { LAContext() }) {
+    self.contextProvider = contextProvider
+  }
+
   /// A passcode is set when the system can evaluate `.deviceOwnerAuthentication`, the policy that falls back to it.
   func isDeviceSecure() -> Bool {
-    LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: nil)
+    contextProvider().canEvaluatePolicy(.deviceOwnerAuthentication, error: nil)
   }
 }
