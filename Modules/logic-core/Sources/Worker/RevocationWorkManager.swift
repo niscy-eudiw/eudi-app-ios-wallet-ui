@@ -52,11 +52,14 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
 
       guard let self else { return }
 
-      try? await Task.sleep(seconds: self.firstCheckDelay())
-
-      while await self.isRunning {
-        await self.runCheck()
-        try? await Task.sleep(seconds: self.configLogic.revocationIntervalSeconds)
+      do {
+        try await Task.sleep(seconds: self.firstCheckDelay())
+        while await self.isRunning, !Task.isCancelled {
+          await self.runCheck()
+          try await Task.sleep(seconds: self.configLogic.revocationIntervalSeconds)
+        }
+      } catch {
+        return
       }
     }
   }
@@ -77,10 +80,12 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
     await runCheck()
   }
 
-  /// Runs one check through `checkRunner`, so two never overlap.
+  /// Runs one check through `checkRunner`, so two never overlap. A check that starts after `stop()` does nothing,
+  /// so `stop()` returning means no check runs.
   private func runCheck() async {
     await checkRunner.run { [weak self] in
-      try? await self?.checkRevocation()
+      guard let self, await self.isRunning else { return }
+      try? await self.checkRevocation()
     }
   }
 

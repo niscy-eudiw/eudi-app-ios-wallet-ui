@@ -20,7 +20,7 @@ public protocol TransactionLogStorageController: StorageController where Value =
   func retrieve(parentPresentationId: String) async throws -> [TransactionLog]
   /// Changes whenever the history is written or deleted, here or in the ID Provider extension; equal values mean
   /// the history did not change between two reads.
-  func revision() async -> Int
+  func retrieveRevision() async -> Int
 }
 
 final actor TransactionLogStorageControllerImpl: TransactionLogStorageController {
@@ -33,7 +33,7 @@ final actor TransactionLogStorageControllerImpl: TransactionLogStorageController
     self.prefsController = prefsController
   }
 
-  func revision() async -> Int {
+  func retrieveRevision() async -> Int {
     prefsController.getInt(forKey: .transactionLogRevision)
   }
 

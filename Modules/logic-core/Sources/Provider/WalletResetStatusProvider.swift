@@ -23,6 +23,7 @@ public protocol WalletResetStatusProvider: Sendable {
   func setResetting(_ isResetting: Bool)
 }
 
+/// Keeps the flag behind a lock, so the app and the reset read and write it from any thread.
 final class WalletResetStatusProviderImpl: WalletResetStatusProvider {
 
   private let state = OSAllocatedUnfairLock(initialState: false)

@@ -88,6 +88,13 @@
     },
     {
       "target" : {
+        "containerPath" : "container:Modules\/logic-storage",
+        "identifier" : "logic-storage-tests",
+        "name" : "logic-storage-tests"
+      }
+    },
+    {
+      "target" : {
         "containerPath" : "container:Modules\/logic-ui",
         "identifier" : "logic-ui-tests",
         "name" : "logic-ui-tests"

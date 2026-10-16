@@ -238,7 +238,7 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
           config: UIConfig.Biometry(
             navigationTitle: .resetWallet,
             caption: .resetWalletBiometryCaption,
-            quickPinOnlyCaption: .resetWalletBiometryCaption,
+            quickPinOnlyCaption: .resetWalletPinCaption,
             navigationSuccessType: .push(.featureDashboardModule(.walletReset)),
             navigationBackType: .pop,
             isPreAuthorization: false,

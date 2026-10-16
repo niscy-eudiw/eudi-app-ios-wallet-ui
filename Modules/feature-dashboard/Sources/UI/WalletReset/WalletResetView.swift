@@ -17,6 +17,7 @@ import SwiftUI
 import logic_ui
 import logic_resources
 
+/// The screen that runs the factory reset, with Android's texts.
 struct WalletResetView<Router: RouterHost>: View {
   @State private var viewModel: WalletResetViewModel<Router>
 
@@ -30,10 +31,16 @@ struct WalletResetView<Router: RouterHost>: View {
       navigationTitle: .resetWallet,
       isLoading: viewModel.viewState.isLoading
     ) {
-      Text(.resetWalletInProgress)
-        .typography(Theme.shared.font.bodyLarge)
-        .foregroundStyle(Theme.shared.color.primaryLabel)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+      VStack(spacing: SPACING_MEDIUM) {
+        Text(.resetWalletProgressTitle)
+          .typography(Theme.shared.font.headlineSmall)
+          .foregroundStyle(Theme.shared.color.primaryLabel)
+        Text(.resetWalletProgressMessage)
+          .typography(Theme.shared.font.bodyLarge)
+          .foregroundStyle(Theme.shared.color.primaryLabel)
+          .multilineTextAlignment(.center)
+      }
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
     .task {
       await viewModel.reset()

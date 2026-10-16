@@ -6406,6 +6406,21 @@ import Foundation
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/FileManager+Extensions.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_issuance
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Int+Extensions.swift'
 
 import Cuckoo
@@ -8754,13 +8769,13 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func transactionLogRevision() async -> Int {
+    public func fetchTransactionLogRevision() async -> Int {
         return await cuckoo_manager.call(
-            "transactionLogRevision() async -> Int",
+            "fetchTransactionLogRevision() async -> Int",
             parameters: (),
             escapingParameters: (),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.transactionLogRevision()
+            defaultCall: await __defaultImplStub!.fetchTransactionLogRevision()
         )
     }
 
@@ -9311,10 +9326,10 @@ return await cuckoo_manager.call(
             ))
         }
         
-        func transactionLogRevision() -> Cuckoo.ProtocolStubFunction<(), Int> {
+        func fetchTransactionLogRevision() -> Cuckoo.ProtocolStubFunction<(), Int> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "transactionLogRevision() async -> Int",
+                method: "fetchTransactionLogRevision() async -> Int",
                 parameterMatchers: matchers
             ))
         }
@@ -9949,10 +9964,10 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func transactionLogRevision() -> Cuckoo.__DoNotUse<(), Int> {
+        func fetchTransactionLogRevision() -> Cuckoo.__DoNotUse<(), Int> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "transactionLogRevision() async -> Int",
+                "fetchTransactionLogRevision() async -> Int",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -10399,7 +10414,7 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
-    public func transactionLogRevision() async -> Int {
+    public func fetchTransactionLogRevision() async -> Int {
         return DefaultValueRegistry.defaultValue(for: (Int).self)
     }
     
@@ -15543,6 +15558,16 @@ public class MockRouterHost: RouterHost, Cuckoo.ProtocolMock, @unchecked Sendabl
         )
     }
 
+    public func restartAtStartup() {
+        return cuckoo_manager.call(
+            "restartAtStartup()",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.restartAtStartup()
+        )
+    }
+
     public struct __StubbingProxy_RouterHost: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
@@ -15650,6 +15675,14 @@ public class MockRouterHost: RouterHost, Cuckoo.ProtocolMock, @unchecked Sendabl
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockRouterHost.self,
                 method: "requireLoginIfLocked()",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func restartAtStartup() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockRouterHost.self,
+                method: "restartAtStartup()",
                 parameterMatchers: matchers
             ))
         }
@@ -15821,6 +15854,18 @@ public class MockRouterHost: RouterHost, Cuckoo.ProtocolMock, @unchecked Sendabl
                 sourceLocation: sourceLocation
             )
         }
+        
+        
+        @discardableResult
+        func restartAtStartup() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "restartAtStartup()",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
     }
 }
 
@@ -15877,6 +15922,10 @@ public class RouterHostStub:RouterHost, @unchecked Sendable {
     }
     
     public func requireLoginIfLocked() {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func restartAtStartup() {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
 }

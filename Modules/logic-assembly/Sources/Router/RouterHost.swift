@@ -145,6 +145,10 @@ final class RouterHostImpl: RouterHost {
     else {
       return
     }
+    restartAtStartup()
+  }
+
+  public func restartAtStartup() {
     UIApplication.shared.currentUIWindow?.rootViewController?.dismiss(animated: false)
     queueNavigation.removeAll()
     pathElements.removeAll()

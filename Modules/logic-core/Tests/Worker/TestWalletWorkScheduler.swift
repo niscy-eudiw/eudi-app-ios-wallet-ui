@@ -38,7 +38,8 @@ final class TestWalletWorkScheduler: EudiTest {
     scheduler = WalletWorkSchedulerImpl(
       revocationWorkManager: revocationWorkManager,
       reIssuanceWorkManager: reIssuanceWorkManager,
-      stopTimeout: 5
+      stopTimeout: 5,
+      resetStatusProvider: WalletResetStatusProviderImpl()
     )
   }
 
@@ -55,6 +56,22 @@ final class TestWalletWorkScheduler: EudiTest {
     verify(reIssuanceWorkManager).start()
   }
 
+  func testSchedule_WhenAResetRuns_ThenStartsNothing() async {
+    let resetStatusProvider = WalletResetStatusProviderImpl()
+    resetStatusProvider.setResetting(true)
+    let resettingScheduler = WalletWorkSchedulerImpl(
+      revocationWorkManager: revocationWorkManager,
+      reIssuanceWorkManager: reIssuanceWorkManager,
+      stopTimeout: 5,
+      resetStatusProvider: resetStatusProvider
+    )
+
+    await resettingScheduler.schedule()
+
+    verify(revocationWorkManager, never()).start()
+    verify(reIssuanceWorkManager, never()).start()
+  }
+
   func testStop_WhenCalled_ThenStopsBothChecks() async {
     let stopped = await scheduler.stop()
 
@@ -67,8 +84,9 @@ final class TestWalletWorkScheduler: EudiTest {
     let gate = AsyncGate()
     let blockedScheduler = WalletWorkSchedulerImpl(
       revocationWorkManager: revocationWorkManager,
-      reIssuanceWorkManager: SlowStoppingReIssuanceWorkManager(gate: gate),
-      stopTimeout: 0.2
+      reIssuanceWorkManager: StubReIssuanceWorkManager(gate: gate),
+      stopTimeout: 0.2,
+      resetStatusProvider: WalletResetStatusProviderImpl()
     )
 
     let stopped = await blockedScheduler.stop()
@@ -84,7 +102,8 @@ final class TestWalletWorkScheduler: EudiTest {
     let gatedScheduler = WalletWorkSchedulerImpl(
       revocationWorkManager: revocationWorkManager,
       reIssuanceWorkManager: reIssuanceWorkManager,
-      stopTimeout: 5
+      stopTimeout: 5,
+      resetStatusProvider: WalletResetStatusProviderImpl()
     )
     let returned = expectation(description: "scheduling returned")
 
@@ -122,7 +141,7 @@ private actor RecordingRevocationWorkManager: RevocationWorkManager {
   }
 }
 
-private actor SlowStoppingReIssuanceWorkManager: ReIssuanceWorkManager {
+private actor StubReIssuanceWorkManager: ReIssuanceWorkManager {
   private let gate: AsyncGate
 
   init(gate: AsyncGate) {

@@ -19,7 +19,8 @@ import Foundation
 /// The wallet's background work: the periodic revocation and re-issuance checks. As the Android wallet's
 /// `WalletWorkScheduler`, it is the only way in from outside `logic-core`; the workers themselves stay internal.
 public protocol WalletWorkScheduler: Sendable {
-  /// Starts the periodic checks. Work already running is kept. The dashboard calls it once the user has logged in.
+  /// Starts the periodic checks. Work already running is kept. The dashboard calls it once the user has logged in;
+  /// nothing starts while a factory reset runs.
   func schedule() async
   /// Runs the revocation check soon, after one under way, when the original of a completed re-issue gained a
   /// revocation record while it was re-issued, so the new copy's status is read without waiting for the interval.
@@ -36,18 +37,22 @@ final actor WalletWorkSchedulerImpl: WalletWorkScheduler {
   private let revocationWorkManager: RevocationWorkManager
   private let reIssuanceWorkManager: ReIssuanceWorkManager
   private let stopTimeout: TimeInterval
+  private let resetStatusProvider: WalletResetStatusProvider
 
   init(
     revocationWorkManager: RevocationWorkManager,
     reIssuanceWorkManager: ReIssuanceWorkManager,
-    stopTimeout: TimeInterval
+    stopTimeout: TimeInterval,
+    resetStatusProvider: WalletResetStatusProvider
   ) {
     self.revocationWorkManager = revocationWorkManager
     self.reIssuanceWorkManager = reIssuanceWorkManager
     self.stopTimeout = stopTimeout
+    self.resetStatusProvider = resetStatusProvider
   }
 
   func schedule() async {
+    guard !resetStatusProvider.isResetting else { return }
     await revocationWorkManager.start()
     await reIssuanceWorkManager.start()
   }

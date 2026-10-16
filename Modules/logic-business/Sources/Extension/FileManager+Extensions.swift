@@ -13,21 +13,22 @@
  * ANY KIND, either express or implied. See the Licence for the specific language
  * governing permissions and limitations under the Licence.
  */
+import Foundation
 
-/// Holds callers in `wait()` until the test calls `open()`, so a test can keep async work running while it checks
-/// what happens in the meantime.
-actor AsyncGate {
-  private var isOpen = false
-  private var waiters: [CheckedContinuation<Void, Never>] = []
+public extension FileManager {
 
-  func wait() async {
-    guard !isOpen else { return }
-    await withCheckedContinuation { waiters.append($0) }
+  /// Removes everything inside each directory, as far as it can, and keeps the directories themselves. The
+  /// factory reset uses it for the app's caches and temporary files, and the ID Provider extension for its own.
+  func removeContents(of directories: [URL]) {
+    for directory in directories {
+      for item in (try? contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? [] {
+        try? removeItem(at: item)
+      }
+    }
   }
 
-  func open() {
-    isOpen = true
-    waiters.forEach { $0.resume() }
-    waiters.removeAll()
+  /// The app's caches and temporary directory.
+  var cachesAndTemporaryDirectories: [URL] {
+    urls(for: .cachesDirectory, in: .userDomainMask) + [temporaryDirectory]
   }
 }

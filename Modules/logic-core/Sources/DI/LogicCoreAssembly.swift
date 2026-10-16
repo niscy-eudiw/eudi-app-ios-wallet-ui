@@ -53,6 +53,7 @@ public final class LogicCoreAssembly: Assembly {
         revokedDocumentStorageController: r.force((any RevokedDocumentStorageController).self),
         failedReIssuedDocStorageController: r.force((any FailedReIssuedDocStorageController).self),
         statusRefreshFailureStorageController: r.force((any StatusRefreshFailureStorageController).self),
+        storageEraseController: r.force(StorageEraseController.self),
         networkSessionProvider: r.force((any NetworkSessionProvider).self),
         documentRegistrationManager: r.force((any DocumentRegistrationManager).self)
       )
@@ -106,7 +107,8 @@ public final class LogicCoreAssembly: Assembly {
       WalletWorkSchedulerImpl(
         revocationWorkManager: r.force(RevocationWorkManager.self),
         reIssuanceWorkManager: r.force(ReIssuanceWorkManager.self),
-        stopTimeout: r.force(WalletKitConfig.self).workerStopTimeoutSeconds
+        stopTimeout: r.force(WalletKitConfig.self).workerStopTimeoutSeconds,
+        resetStatusProvider: r.force(WalletResetStatusProvider.self)
       )
     }
     .inObjectScope(ObjectScope.container)

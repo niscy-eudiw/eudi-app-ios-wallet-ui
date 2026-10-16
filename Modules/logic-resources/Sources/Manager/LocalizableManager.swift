@@ -472,8 +472,12 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "reset_wallet_confirm_button")
     case .resetWalletBiometryCaption:
       bundle.localizedString(forKey: "reset_wallet_biometry_caption")
-    case .resetWalletInProgress:
-      bundle.localizedString(forKey: "reset_wallet_in_progress")
+    case .resetWalletPinCaption:
+      bundle.localizedString(forKey: "reset_wallet_pin_caption")
+    case .resetWalletProgressTitle:
+      bundle.localizedString(forKey: "reset_wallet_progress_title")
+    case .resetWalletProgressMessage:
+      bundle.localizedString(forKey: "reset_wallet_progress_message")
     case .orderBy:
       bundle.localizedString(forKey: "order_by")
     case .filterByCategory:

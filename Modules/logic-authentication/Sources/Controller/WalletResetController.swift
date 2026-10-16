@@ -35,13 +35,15 @@ public protocol WalletResetController: Sendable {
   /// Runs the reset. The background checks are stopped first, and the reset fails without deleting anything when
   /// one is still running after `WalletKitConfig.workerStopTimeoutSeconds`. The documents are deleted through
   /// WalletKit, which also logs their deletion and updates the Digital Credential API registrations; the history is
-  /// cleared after that, then the other records, the keychain, the preferences except the language, and the
-  /// cached and temporary files; the session is locked last. Once started, the reset runs to the end even if its
+  /// cleared after that, then the other records and the store itself, the keychain, the preferences except the
+  /// language and the two counters, the cached and temporary files, the cookies and the URL cache; the session is
+  /// locked last. Once started, the reset runs to the end even if its
   /// caller is cancelled, and `WalletResetStatusProvider.isResetting` is true meanwhile. A failed step throws and
   /// restarts the background checks; running the reset again is safe.
   func resetWallet() async throws
 }
 
+/// Runs the reset in a task of its own, kept in `runningReset`, so a second call joins the one under way.
 final actor WalletResetControllerImpl: WalletResetController {
 
   private let walletKitController: WalletKitController
@@ -50,7 +52,7 @@ final actor WalletResetControllerImpl: WalletResetController {
   private let prefsController: PrefsController
   private let sessionController: SessionController
   private let resetStatusProvider: WalletResetStatusProvider
-  private let removeCachedFiles: @Sendable () throws -> Void
+  private let clearCachedData: @Sendable () -> Void
   private var runningReset: Task<Void, Error>?
 
   init(
@@ -60,7 +62,7 @@ final actor WalletResetControllerImpl: WalletResetController {
     prefsController: PrefsController,
     sessionController: SessionController,
     resetStatusProvider: WalletResetStatusProvider,
-    removeCachedFiles: @escaping @Sendable () throws -> Void = WalletResetControllerImpl.removeCachedAndTemporaryFiles
+    clearCachedData: @escaping @Sendable () -> Void = WalletResetControllerImpl.removeCachedData
   ) {
     self.walletKitController = walletKitController
     self.walletWorkScheduler = walletWorkScheduler
@@ -68,7 +70,7 @@ final actor WalletResetControllerImpl: WalletResetController {
     self.prefsController = prefsController
     self.sessionController = sessionController
     self.resetStatusProvider = resetStatusProvider
-    self.removeCachedFiles = removeCachedFiles
+    self.clearCachedData = clearCachedData
   }
 
   func resetWallet() async throws {
@@ -81,15 +83,12 @@ final actor WalletResetControllerImpl: WalletResetController {
     try await reset.value
   }
 
-  /// The app's caches, WalletKit's log file and the image cache among them, and its temporary files.
-  static func removeCachedAndTemporaryFiles() throws {
-    let fileManager = FileManager.default
-    let directories = fileManager.urls(for: .cachesDirectory, in: .userDomainMask) + [fileManager.temporaryDirectory]
-    for directory in directories {
-      for item in (try? fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? [] {
-        try fileManager.removeItem(at: item)
-      }
-    }
+  /// The app's caches, WalletKit's log file and the image cache among them, its temporary files, the cookies and
+  /// the URL cache. Best effort, as on Android: a file that cannot be removed does not stop the reset.
+  static func removeCachedData() {
+    FileManager.default.removeContents(of: FileManager.default.cachesAndTemporaryDirectories)
+    HTTPCookieStorage.shared.removeCookies(since: .distantPast)
+    URLCache.shared.removeAllCachedResponses()
   }
 }
 
@@ -99,26 +98,29 @@ private extension WalletResetControllerImpl {
     static let deletionPasses = 2
   }
 
+  /// The flag is cleared before the checks restart after a failure, because `WalletWorkScheduler.schedule()` does
+  /// nothing while a reset runs.
   func performReset() async throws {
     resetStatusProvider.setResetting(true)
-    defer { resetStatusProvider.setResetting(false) }
-
-    guard await walletWorkScheduler.stop() else {
-      await walletWorkScheduler.schedule()
-      throw WalletResetError.backgroundWorkStillRunning
-    }
-
     do {
-      try await deleteDocuments()
-      try await walletKitController.deleteAllRecords()
-      guard keyChainController.clear() else { throw WalletResetError.keychainNotCleared }
-      clearPreferences()
-      try removeCachedFiles()
-      await sessionController.lock()
+      try await runSteps()
+      resetStatusProvider.setResetting(false)
     } catch {
+      resetStatusProvider.setResetting(false)
       await walletWorkScheduler.schedule()
       throw error
     }
+  }
+
+  func runSteps() async throws {
+    guard await walletWorkScheduler.stop() else { throw WalletResetError.backgroundWorkStillRunning }
+    try await deleteDocuments()
+    try await walletKitController.deleteAllRecords()
+    guard keyChainController.clear() else { throw WalletResetError.keychainNotCleared }
+    clearPreferences()
+    clearCachedData()
+    advanceResetGeneration()
+    await sessionController.lock()
   }
 
   /// Deletes every document WalletKit stores, in up to `Constants.deletionPasses` passes, so that one stored by
@@ -131,10 +133,18 @@ private extension WalletResetControllerImpl {
     throw WalletResetError.documentsRemain
   }
 
-  /// Every preference goes except the language, so that onboarding runs again.
+  /// Every preference goes, so that onboarding runs again, except the language and the two counters, which must
+  /// never go back: a reader that cached the history at an old revision, or an extension that saw an old reset,
+  /// would otherwise trust stale data.
   func clearPreferences() {
-    for key in Prefs.Key.allCases where key != .language {
+    let kept: Set<Prefs.Key> = [.language, .transactionLogRevision, .walletResetGeneration]
+    for key in Prefs.Key.allCases where !kept.contains(key) {
       prefsController.remove(forKey: key)
     }
+  }
+
+  func advanceResetGeneration() {
+    let generation = prefsController.getInt(forKey: .walletResetGeneration)
+    prefsController.setValue(generation &+ 1, forKey: .walletResetGeneration)
   }
 }

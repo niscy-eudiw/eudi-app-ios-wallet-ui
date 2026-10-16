@@ -30,5 +30,7 @@ public extension Prefs {
     /// Changes whenever the transaction history is written or deleted, by the app or the ID Provider extension, so
     /// the history is read again only when it changed.
     case transactionLogRevision
+    /// Advances with every completed factory reset, so the ID Provider extension can clear its own caches and log.
+    case walletResetGeneration
   }
 }

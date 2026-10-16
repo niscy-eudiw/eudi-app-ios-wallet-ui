@@ -19,6 +19,7 @@ import logic_business
 import logic_authentication
 import feature_common
 
+/// The outcome of the factory reset, for the reset screen.
 public enum WalletResetPartialState: Sendable {
   case success
   case failure(Error)

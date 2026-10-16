@@ -60,11 +60,14 @@ final actor ReIssuanceWorkManagerImpl: ReIssuanceWorkManager {
 
       guard let self else { return }
 
-      try? await Task.sleep(seconds: initialDelay)
-
-      while await self.isRunning {
-        await self.runCheck()
-        try? await Task.sleep(seconds: self.documentIssuanceConfig.reIssuanceBackgroundRule.backgroundIntervalSeconds)
+      do {
+        try await Task.sleep(seconds: initialDelay)
+        while await self.isRunning, !Task.isCancelled {
+          await self.runCheck()
+          try await Task.sleep(seconds: self.documentIssuanceConfig.reIssuanceBackgroundRule.backgroundIntervalSeconds)
+        }
+      } catch {
+        return
       }
     }
   }
@@ -76,10 +79,12 @@ final actor ReIssuanceWorkManagerImpl: ReIssuanceWorkManager {
     await checkRunner.waitUntilIdle()
   }
 
-  /// Runs one round through `checkRunner`, so `stop()` can wait for it.
+  /// Runs one round through `checkRunner`, so `stop()` can wait for it. A round that starts after `stop()` does
+  /// nothing.
   private func runCheck() async {
     await checkRunner.run { [weak self] in
-      try? await self?.checkReIssuance()
+      guard let self, await self.isRunning else { return }
+      try? await self.checkReIssuance()
     }
   }
 

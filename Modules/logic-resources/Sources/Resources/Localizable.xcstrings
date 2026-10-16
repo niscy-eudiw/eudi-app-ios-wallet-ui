@@ -2730,7 +2730,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "To reset the wallet you need to verify your identity."
+            "value" : "Use your biometrics to reset the wallet."
           }
         }
       }
@@ -2752,7 +2752,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This permanently deletes from this device: your documents and their keys; your transaction history; your PIN, settings and logs. The wallet then starts again as on first use."
+            "value" : "This permanently deletes from this device:\n• your documents and their keys\n• your transaction history\n• your PIN, settings and logs\n\nThe wallet then starts again as on first use."
           }
         }
       }
@@ -2768,7 +2768,29 @@
         }
       }
     },
-    "reset_wallet_in_progress" : {
+    "reset_wallet_pin_caption" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To reset the wallet you need to verify your identity."
+          }
+        }
+      }
+    },
+    "reset_wallet_progress_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your documents and data are being deleted. The wallet then starts again as on first use."
+          }
+        }
+      }
+    },
+    "reset_wallet_progress_title" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {

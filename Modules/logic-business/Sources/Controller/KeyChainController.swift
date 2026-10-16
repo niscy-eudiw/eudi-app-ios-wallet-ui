@@ -125,10 +125,14 @@ final class KeyChainControllerImpl: KeyChainController {
     try? self.keyChain.remove(self.biometryKey)
   }
 
+  /// Removes the app's keychain service, every generic-password item in the wallet's access group (document
+  /// storage included) and every key item there, such as WalletKit's DPoP keys, so that no key an issuer has seen
+  /// outlives a reset or a reinstall.
   @discardableResult
   public func clear() -> Bool {
     try? keyChain.removeAll()
-    return clearDocumentStorage()
+    let isDocumentStorageCleared = clearDocumentStorage()
+    return clearKeys() && isDocumentStorageCleared
   }
 }
 
@@ -136,6 +140,19 @@ private extension KeyChainControllerImpl {
   /// The keychain status a KeychainAccess error carries, or `errSecInternalError` for any other error.
   func keyChainStatus(of error: Error) -> OSStatus {
     (error as? Status)?.rawValue ?? errSecInternalError
+  }
+
+  func clearKeys() -> Bool {
+    var query: [String: Any] = [
+      kSecClass as String: kSecClassKey,
+      kSecUseDataProtectionKeychain as String: true
+    ]
+    let accessGroup = configLogic.keyChainConfig.keychainAccessGroup
+    if !accessGroup.isEmpty {
+      query[kSecAttrAccessGroup as String] = accessGroup
+    }
+    let status = SecItemDelete(query as CFDictionary)
+    return status == errSecSuccess || status == errSecItemNotFound
   }
 
   func clearDocumentStorage() -> Bool {

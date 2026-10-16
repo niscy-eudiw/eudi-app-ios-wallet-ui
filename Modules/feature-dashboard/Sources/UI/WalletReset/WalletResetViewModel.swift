@@ -17,6 +17,7 @@ import logic_ui
 import logic_resources
 import feature_common
 
+/// Whether the reset is still running, and the error to show when it failed.
 @Copyable
 struct WalletResetViewState: ViewState {
   let isLoading: Bool
@@ -43,12 +44,13 @@ final class WalletResetViewModel<Router: RouterHost>: ViewModel<Router, WalletRe
     super.init(router: router, initialState: .init(isLoading: true, error: nil))
   }
 
+  /// Runs the reset; the screen calls it when it appears, and the error's Try again calls it again.
   func reset() async {
     setState { $0.copy(isLoading: true, error: nil) }
     switch await interactor.resetWallet() {
     case .success:
       deepLinkController.removeCachedDeepLinkURL()
-      router.requireLoginIfLocked()
+      router.restartAtStartup()
     case .failure:
       setState {
         $0.copy(

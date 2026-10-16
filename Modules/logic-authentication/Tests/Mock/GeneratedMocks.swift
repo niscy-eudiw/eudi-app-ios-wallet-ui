@@ -3386,6 +3386,17 @@ import Foundation
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/FileManager+Extensions.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_authentication
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Int+Extensions.swift'
 
 import Cuckoo
@@ -5647,13 +5658,13 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func transactionLogRevision() async -> Int {
+    public func fetchTransactionLogRevision() async -> Int {
         return await cuckoo_manager.call(
-            "transactionLogRevision() async -> Int",
+            "fetchTransactionLogRevision() async -> Int",
             parameters: (),
             escapingParameters: (),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.transactionLogRevision()
+            defaultCall: await __defaultImplStub!.fetchTransactionLogRevision()
         )
     }
 
@@ -6204,10 +6215,10 @@ return await cuckoo_manager.call(
             ))
         }
         
-        func transactionLogRevision() -> Cuckoo.ProtocolStubFunction<(), Int> {
+        func fetchTransactionLogRevision() -> Cuckoo.ProtocolStubFunction<(), Int> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "transactionLogRevision() async -> Int",
+                method: "fetchTransactionLogRevision() async -> Int",
                 parameterMatchers: matchers
             ))
         }
@@ -6842,10 +6853,10 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func transactionLogRevision() -> Cuckoo.__DoNotUse<(), Int> {
+        func fetchTransactionLogRevision() -> Cuckoo.__DoNotUse<(), Int> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "transactionLogRevision() async -> Int",
+                "fetchTransactionLogRevision() async -> Int",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -7292,7 +7303,7 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
-    public func transactionLogRevision() async -> Int {
+    public func fetchTransactionLogRevision() async -> Int {
         return DefaultValueRegistry.defaultValue(for: (Int).self)
     }
     

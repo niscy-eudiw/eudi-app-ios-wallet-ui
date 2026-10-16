@@ -32,6 +32,9 @@ public protocol RouterHost {
   /// Sends a locked wallet to login, clearing the navigation, when a screen other than a login screen is
   /// on it (`ConfigUiLogic.loginRouteKeys`); does nothing while it is unlocked.
   @MainActor func requireLoginIfLocked()
+  /// Clears the navigation and starts again at start-up, which decides between login and onboarding afresh; the
+  /// factory reset ends with it.
+  @MainActor func restartAtStartup()
 }
 
 public final class PreviewRouter: RouterHost {
@@ -73,4 +76,6 @@ public final class PreviewRouter: RouterHost {
   }
 
   public func requireLoginIfLocked() {}
+
+  public func restartAtStartup() {}
 }

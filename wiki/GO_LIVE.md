@@ -155,7 +155,7 @@ The application is a modular iOS project. Important modules and targets for prod
 | `EudiReferenceWalletIDProvider` | Identity Document Provider extension for Digital Credentials API presentment on supported iOS versions. |
 | `logic-core` | WalletKit integration, issuer configuration, presentation, document issuance, document registration, revocation, transaction logging. |
 | `logic-business` | Global app config, build variant parsing, RQES config, Keychain controller, preferences, Bluetooth and shared helpers. |
-| `logic-authentication` | PIN storage provider, PIN controller, biometric controller, PIN throttle/lockout, session lock (`SessionController`), authentication configuration. |
+| `logic-authentication` | PIN storage provider, PIN controller, biometric controller, PIN throttle/lockout, session lock (`SessionController`), factory reset (`WalletResetController`), authentication configuration. |
 | `logic-storage` | SwiftData storage for bookmarks, transactions, revoked, suspended and unrecognised documents, status refresh failures, and failed reissuance data. |
 | `logic-api` | `URLSession` provider and network request helpers. |
 | `logic-analytics` | Optional analytics provider integration. |
@@ -573,6 +573,7 @@ protocol WalletKitConfig: Sendable {
   var documentsCategories: DocumentCategories { get }
   var transactionLogger: TransactionLogger { get }
   var revocationIntervalSeconds: TimeInterval { get }
+  var workerStopTimeoutSeconds: TimeInterval { get }
   var documentIssuanceConfig: DocumentIssuanceConfig { get }
   var trustMarkSource: TrustMarkSource { get }
 }
@@ -1326,10 +1327,11 @@ creation, and the documents are loaded at the same point. Start-up loads none, a
 opened before login is kept without starting its session (see
 [Deep Links And Redirect URIs](#deep-links-and-redirect-uris)). The first revocation check
 runs 30 seconds after the workers start, and later checks follow every `revocationIntervalSeconds`.
-Nothing in the app calls `WalletWorkScheduler.stop()`, so the workers run until the process ends; the scheduler
-(`schedule()`, `stop()`) is the only way to reach them, as the work managers are internal to `logic-core`. If an
-integrator calls `stop()` and then `schedule()` after the first revocation check, the next revocation check waits the
-full interval; the
+Only the factory reset calls `WalletWorkScheduler.stop()`; otherwise the workers run until the process ends. A
+failed reset starts them again at once, and after a reset they start with the dashboard, after the next login. The
+scheduler (`schedule()`, `stop()`) is the only way to reach them, as the work managers are internal to `logic-core`.
+If an integrator calls `stop()` and then `schedule()` after the first revocation check, the next revocation check
+waits the full interval; the
 re-issuance worker always waits 30 seconds after a start, then `backgroundIntervalSeconds`. The workers
 are tasks in the app's process; iOS background execution is not used.
 
@@ -1769,7 +1771,7 @@ confirms, through the factory reset, and through the cleanup that drops an entry
 decode (`WalletKitController.fetchTransactionLogs`), as on Android. The store is read in batches of 100
 (`SwiftDataServiceImpl`), and the transactions tab reads it again only when the history changed: every write
 or deletion, by the app or the ID Provider extension, advances `Prefs.Key.transactionLogRevision`
-(`TransactionLogStorageController.revision()`), and `TransactionTabInteractorImpl.fetchTransactions()` reuses
+(`TransactionLogStorageController.retrieveRevision()`), and `TransactionTabInteractorImpl.fetchTransactions()` reuses
 its last read while that value is unchanged. The tab still holds the whole history in memory, because its
 filters, search and date range work over all entries.
 
@@ -1794,6 +1796,7 @@ Current preferences include:
 * `validateIssuerRegistrationCertificate`
 * `trustMarkIntroductionCompleted`
 * `transactionLogRevision`
+* `walletResetGeneration`
 
 Production rules:
 
@@ -1809,28 +1812,36 @@ confirm it, and a screen runs the reset (`WalletResetControllerImpl`, `logic-aut
 
 1. The background checks stop (`WalletWorkScheduler.stop()`). The reset waits for a check under way for at most
    `WalletKitConfig.workerStopTimeoutSeconds` (30 s) and fails without deleting anything if one is still running
-   then, so a re-issuance cannot store a document halfway through.
+   then, so a re-issuance cannot store a document halfway through. A check cannot start once the stop has
+   begun, and the checks cannot be scheduled again while the reset runs.
 2. WalletKit deletes every document, issued, deferred and pending, in up to two passes, and logs each deletion
-   before it returns; the Digital Credential API registrations are updated with it. The reset fails if the
-   keychain still holds a document afterwards.
+   before it returns; the Digital Credential API registrations are updated with it, also when a deletion
+   fails. The reset fails if the keychain still holds a document afterwards.
 3. The transaction history, then the bookmarks, revocation records, re-issuance failures and status refresh
-   failures.
-4. The keychain service: the PIN salt, hash and lockout state, the biometric key and document storage
-   (`KeyChainController.clear()`).
-5. Every preference except `language`, so that onboarding runs again; "Check Registration Certificates"
-   returns to off, which WalletKit applies at the next start.
-6. The app's Caches and temporary files: WalletKit's log file and the image cache among them.
-7. The session locks, and the app returns to start-up, which leads to onboarding.
+   failures; then the SwiftData store is erased and opened empty, so no deleted row stays readable in its
+   write-ahead log.
+4. The keychain: the app's keychain service, with the PIN salt, hash and lockout state and the biometric key, and
+   every generic-password and key item in the wallet's access group: document storage, and WalletKit's DPoP
+   keys, so an issuer cannot link the wallet before and after the reset (`KeyChainController.clear()`).
+5. Every preference except `language`, `transactionLogRevision` and `walletResetGeneration`, so that onboarding
+   runs again; the two counters never go back. "Check Registration Certificates" returns to off, which WalletKit
+   applies at the next start.
+6. The app's Caches and temporary files, WalletKit's log file and the image cache among them, the cookies and
+   the URL cache, as far as they can be removed. `walletResetGeneration` advances, and the ID Provider extension
+   clears its own Caches and temporary files, its WalletKit log among them, the next time it starts.
+7. The session locks, and the app starts again at start-up (`RouterHost.restartAtStartup()`), which leads to
+   onboarding.
 
-Once started, the reset runs to the end even if its screen goes away. Links that arrive meanwhile are dropped, and
-a link kept for after login is forgotten, so none opens after onboarding. A failed step shows an error with
-"Try again"; every step can run again. After a failure the background checks restart at once; after a reset they
-start with the dashboard, after the next login.
+Once started, the reset runs to the end even if its screen goes away, and its screen is a protected flow, so the
+background lock waits 10 minutes. Links that arrive meanwhile are dropped, and a link kept for after login is
+forgotten, so none opens after onboarding. A failed step shows an error with "Try again"; every step can run
+again. After a failure the background checks restart at once; after a reset they start with the dashboard, after
+the next login.
 
-The reset does not reach: the keys WalletKit keeps for deferred documents it no longer lists
-(PAR_IOS_UI_19, part 3); files the app or an integrator writes outside Caches and the temporary directory; and
-deleted SwiftData rows, whose space SQLite reuses rather than overwrites at once. Data already shared with
-relying parties is outside the wallet.
+The reset does not reach: the keys WalletKit keeps for deferred documents it no longer lists, which
+`deleteAllDocuments()` does not delete; files the app or an integrator writes outside Caches and the temporary
+directory; and a request the ID Provider extension answers while the reset runs, since the extension runs in its
+own process. Data already shared with relying parties is outside the wallet.
 
 ## Logging And Audit
 

@@ -104,6 +104,17 @@ final class TestTransactionTabInteractor: EudiTest {
     verify(walletKitController, times(1)).fetchTransactionLogs()
   }
 
+  func testFetchTransactions_WhenTheLastReadFailed_ThenReadsAgain() async throws {
+    stubFetchTransactionsWithError()
+    _ = try? await interactor.fetchTransactions()
+    stubFetchTransactions(with: [Constants.eudiRemoteVerifierMock])
+
+    let state = try await interactor.fetchTransactions()
+
+    guard case .success = state else { return XCTFail("Wrong state \(state)") }
+    verify(walletKitController, times(2)).fetchTransactionLogs()
+  }
+
   func testFetchTransactions_WhenTheHistoryChanged_ThenReadsItAgain() async throws {
     stubFetchTransactions(with: [Constants.eudiRemoteVerifierMock])
 
@@ -449,7 +460,7 @@ private extension TestTransactionTabInteractor {
   
   func stubTransactionLogRevision(_ revision: Int) {
     stub(walletKitController) { mock in
-      when(mock.transactionLogRevision()).thenReturn(revision)
+      when(mock.fetchTransactionLogRevision()).thenReturn(revision)
     }
   }
 

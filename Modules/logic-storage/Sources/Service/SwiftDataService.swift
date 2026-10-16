@@ -24,14 +24,17 @@ protocol SwiftDataService: Actor {
   func readAll<T: PersistentModel & IdentifiableObject, R>(predicate: Predicate<T>, map: (T) -> R) throws -> [R]
   func delete<T: PersistentModel & IdentifiableObject>(predicate: Predicate<T>) throws
   func deleteAll<T: PersistentModel & IdentifiableObject>(of type: T.Type) throws
+  func eraseStore() throws
 }
 
 final actor SwiftDataServiceImpl: SwiftDataService {
 
-  private let container: ModelContainer
-  private let context: ModelContext
+  private let storageConfig: StorageConfig
+  private var container: ModelContainer
+  private var context: ModelContext
 
   init(storageConfig: StorageConfig) {
+    self.storageConfig = storageConfig
     do {
       self.container = try ModelContainer(
         for: storageConfig.schemas,
@@ -82,6 +85,17 @@ final actor SwiftDataServiceImpl: SwiftDataService {
     let results = try context.fetch(FetchDescriptor<T>())
     for result in results { context.delete(result) }
     if !results.isEmpty { try context.save() }
+  }
+}
+
+extension SwiftDataServiceImpl {
+
+  /// Erases the store's files, the write-ahead log included, so deleted rows cannot be read back from disk, and
+  /// opens an empty store in their place, as the Android wallet rebuilds its database on reset.
+  func eraseStore() throws {
+    container.deleteAllData()
+    container = try ModelContainer(for: storageConfig.schemas, configurations: storageConfig.modelConfiguration)
+    context = ModelContext(container)
   }
 }
 

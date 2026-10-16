@@ -32,6 +32,11 @@ public final class LogicStorageAssembly: Assembly {
     }
     .inObjectScope(ObjectScope.container)
 
+    container.register(StorageEraseController.self) { r in
+      StorageEraseControllerImpl(swiftDataService: r.force(SwiftDataService.self))
+    }
+    .inObjectScope(ObjectScope.container)
+
     container.register((any BookmarkStorageController).self) { r in
       BookmarkStorageControllerImpl(swiftDataService: r.force(SwiftDataService.self))
     }

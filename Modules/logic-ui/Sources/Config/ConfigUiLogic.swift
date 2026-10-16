@@ -81,6 +81,7 @@ struct ConfigUiLogicImpl: ConfigUiLogic {
     "ProximityRequest",
     "ProximityLoader",
     AppRoute.featureDashboardModule(.signDocument).info.key,
+    AppRoute.featureDashboardModule(.walletReset).info.key,
     AppRoute.featureCommonModule(.biometry(config: NoConfig())).info.key
   ]
 

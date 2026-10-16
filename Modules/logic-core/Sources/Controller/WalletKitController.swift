@@ -88,10 +88,11 @@ public protocol WalletKitController: Sendable {
   func fetchTransactionLog(with id: String) async throws -> TransactionLogDomain
   func fetchTransactionLogs() async throws -> [TransactionLogDomain]
   /// Deletes the wallet's own records for the factory reset: the transaction history first, then the bookmarks,
-  /// the revocation records, the re-issuance failures and the status refresh failures.
+  /// the revocation records, the re-issuance failures and the status refresh failures; then erases the store, so
+  /// no deleted row stays readable on disk.
   func deleteAllRecords() async throws
   /// Changes whenever the transaction history is written or deleted, so a reader can tell whether it changed.
-  func transactionLogRevision() async -> Int
+  func fetchTransactionLogRevision() async -> Int
   func deleteTransactionLog(with id: String) async throws
   func fetchPresentationActions(parentPresentationId: String) async throws -> [TransactionLogDomain]
   func recordDataDeletionRequest(for presentation: TransactionLogDomain.Presentation, contactUrl: URL) async throws
@@ -157,6 +158,7 @@ final actor WalletKitControllerImpl: WalletKitController {
   private let revokedDocumentStorageController: any RevokedDocumentStorageController
   private let failedReIssuedDocStorageController: any FailedReIssuedDocStorageController
   private let statusRefreshFailureStorageController: any StatusRefreshFailureStorageController
+  private let storageEraseController: StorageEraseController
   private let documentRegistrationManager: DocumentRegistrationManager
   /// "Check Registration Certificates" as WalletKit was configured with it at launch; the setting applies after a
   /// restart, so the app's own decisions follow the same value.
@@ -172,6 +174,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     revokedDocumentStorageController: any RevokedDocumentStorageController,
     failedReIssuedDocStorageController: any FailedReIssuedDocStorageController,
     statusRefreshFailureStorageController: any StatusRefreshFailureStorageController,
+    storageEraseController: StorageEraseController,
     networkSessionProvider: NetworkSessionProvider,
     documentRegistrationManager: DocumentRegistrationManager
   ) {
@@ -184,6 +187,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     self.revokedDocumentStorageController = revokedDocumentStorageController
     self.failedReIssuedDocStorageController = failedReIssuedDocStorageController
     self.statusRefreshFailureStorageController = statusRefreshFailureStorageController
+    self.storageEraseController = storageEraseController
     self.documentRegistrationManager = documentRegistrationManager
     self.isRegistrationChecked = walletKitConfig.validateIssuerRegistrationCertificate
 
@@ -258,8 +262,15 @@ final actor WalletKitControllerImpl: WalletKitController {
     )
   }
 
+  /// Deletes every document and updates the Digital Credential API registrations, also when the deletion fails
+  /// part way, so a document that is gone is no longer offered.
   func clearAllDocuments() async throws {
-    try await wallet.deleteAllDocuments()
+    do {
+      try await wallet.deleteAllDocuments()
+    } catch {
+      await reconcileRegistrations()
+      throw error
+    }
     await reconcileRegistrations()
   }
 
@@ -732,10 +743,11 @@ final actor WalletKitControllerImpl: WalletKitController {
     try await revokedDocumentStorageController.deleteAll()
     try await failedReIssuedDocStorageController.deleteAll()
     try await statusRefreshFailureStorageController.deleteAll()
+    try await storageEraseController.eraseStore()
   }
 
-  func transactionLogRevision() async -> Int {
-    await transactionLogStorageController.revision()
+  func fetchTransactionLogRevision() async -> Int {
+    await transactionLogStorageController.retrieveRevision()
   }
 
   func fetchTransactionLogs() async throws -> [TransactionLogDomain] {

@@ -2541,6 +2541,16 @@ import Foundation
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/FileManager+Extensions.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_api
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/Int+Extensions.swift'
 
 import Cuckoo

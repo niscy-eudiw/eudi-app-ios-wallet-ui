@@ -78,7 +78,7 @@ final actor TransactionTabInteractorImpl: TransactionTabInteractor {
 
   func fetchTransactions() async throws -> TransactionsPartialState {
 
-    let revision = await walletKitController.transactionLogRevision()
+    let revision = await walletKitController.fetchTransactionLogRevision()
     if let lastRead, lastRead.revision == revision {
       return lastRead.state
     }

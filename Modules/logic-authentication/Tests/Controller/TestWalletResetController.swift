@@ -29,7 +29,7 @@ final class TestWalletResetController: EudiTest {
   private var prefsController: MockPrefsController!
   private var sessionController: MockSessionController!
   private var resetStatusProvider: WalletResetStatusProviderImpl!
-  private var calls: StepLog!
+  private var calls: RecordingStepLog!
   private var controller: WalletResetControllerImpl!
 
   override func setUp() {
@@ -40,7 +40,7 @@ final class TestWalletResetController: EudiTest {
     prefsController = MockPrefsController()
     sessionController = MockSessionController()
     resetStatusProvider = WalletResetStatusProviderImpl()
-    calls = StepLog()
+    calls = RecordingStepLog()
     stubEverySucceeding()
     controller = makeController()
   }
@@ -62,7 +62,7 @@ final class TestWalletResetController: EudiTest {
 
     XCTAssertEqual(
       calls.entries,
-      ["stop", "documents", "records", "keychain", "preferences", "files", "lock"]
+      ["stop", "documents", "records", "keychain", "preferences", "files", "generation", "lock"]
     )
     verify(walletWorkScheduler, never()).schedule()
     XCTAssertFalse(resetStatusProvider.isResetting)
@@ -103,7 +103,7 @@ final class TestWalletResetController: EudiTest {
     verify(walletKitController, never()).deleteAllRecords()
   }
 
-  func testResetWallet_WhenItRuns_ThenReportsItIsResettingAndKeepsTheLanguage() async throws {
+  func testResetWallet_WhenItRuns_ThenReportsItIsResetting() async throws {
     let wasResetting = OSAllocatedUnfairLock(initialState: false)
     stub(walletKitController) { mock in
       when(mock.clearAllDocuments()).then { [resetStatusProvider] in
@@ -114,9 +114,68 @@ final class TestWalletResetController: EudiTest {
     try await controller.resetWallet()
 
     XCTAssertTrue(wasResetting.withLock { $0 })
-    verify(prefsController, never()).remove(forKey: equal(to: .language))
-    verify(prefsController).remove(forKey: equal(to: .runAtLeastOnce))
+    XCTAssertFalse(resetStatusProvider.isResetting)
   }
+
+  func testResetWallet_WhenItRuns_ThenRemovesEveryPreferenceButTheLanguageAndTheCounters() async throws {
+    let kept: Set<Prefs.Key> = [.language, .transactionLogRevision, .walletResetGeneration]
+
+    try await controller.resetWallet()
+
+    for key in Prefs.Key.allCases {
+      if kept.contains(key) {
+        verify(prefsController, never()).remove(forKey: equal(to: key))
+      } else {
+        verify(prefsController).remove(forKey: equal(to: key))
+      }
+    }
+  }
+
+  func testResetWallet_WhenAStepFails_ThenClearsTheResettingFlagBeforeRestartingTheChecks() async {
+    let wasResettingAtRestart = OSAllocatedUnfairLock(initialState: true)
+    stub(walletKitController) { mock in
+      when(mock.deleteAllRecords()).thenThrow(WalletCoreError.unableToIssueAndStore)
+    }
+    stub(walletWorkScheduler) { mock in
+      when(mock.schedule()).then { [resetStatusProvider] in
+        wasResettingAtRestart.withLock { $0 = resetStatusProvider?.isResetting ?? true }
+      }
+    }
+
+    await assertResetFails()
+
+    XCTAssertFalse(wasResettingAtRestart.withLock { $0 })
+  }
+
+  func testResetWallet_WhenTheCallerIsCancelled_ThenTheResetRunsToTheEnd() async throws {
+    let ranCancelled = OSAllocatedUnfairLock(initialState: false)
+    controller = makeController(clearCachedData: { ranCancelled.withLock { $0 = Task.isCancelled } })
+
+    let caller = Task { [controller] in try await controller?.resetWallet() }
+    caller.cancel()
+    try await caller.value
+
+    XCTAssertFalse(ranCancelled.withLock { $0 })
+    verify(sessionController).lock()
+  }
+
+  func testResetWallet_WhenCalledWhileOneRuns_ThenJoinsIt() async throws {
+    let gate = AsyncGate()
+    let scheduler = RecordingWalletWorkScheduler(gate: gate)
+    controller = makeController(walletWorkScheduler: scheduler)
+    let first = Task { [controller] in try await controller?.resetWallet() }
+    await scheduler.waitForFirstStop()
+
+    let second = Task { [controller] in try await controller?.resetWallet() }
+    try await Task.sleep(seconds: 0.2)
+    await gate.open()
+    try await first.value
+    try await second.value
+
+    let stops = await scheduler.stops
+    XCTAssertEqual(stops, 1)
+  }
+
 }
 
 private extension TestWalletResetController {
@@ -128,15 +187,19 @@ private extension TestWalletResetController {
     } catch {}
   }
 
-  func makeController() -> WalletResetControllerImpl {
-    WalletResetControllerImpl(
+  func makeController(
+    walletWorkScheduler: WalletWorkScheduler? = nil,
+    clearCachedData: (@Sendable () -> Void)? = nil
+  ) -> WalletResetControllerImpl {
+    let calls = self.calls
+    return WalletResetControllerImpl(
       walletKitController: walletKitController,
-      walletWorkScheduler: walletWorkScheduler,
+      walletWorkScheduler: walletWorkScheduler ?? self.walletWorkScheduler,
       keyChainController: keyChainController,
       prefsController: prefsController,
       sessionController: sessionController,
       resetStatusProvider: resetStatusProvider,
-      removeCachedFiles: { [calls] in calls?.record("files") }
+      clearCachedData: clearCachedData ?? { calls?.record("files") }
     )
   }
 
@@ -158,6 +221,10 @@ private extension TestWalletResetController {
       when(mock.remove(forKey: any())).then { key in
         if key == .runAtLeastOnce { calls.record("preferences") }
       }
+      when(mock.getInt(forKey: any())).thenReturn(0)
+      when(mock.setValue(any(), forKey: any())).then { _, key in
+        if key == .walletResetGeneration { calls.record("generation") }
+      }
     }
     stub(sessionController) { mock in
       when(mock.lock()).then { calls.record("lock") }
@@ -165,12 +232,39 @@ private extension TestWalletResetController {
   }
 }
 
-private final class StepLog: Sendable {
+private final class RecordingStepLog: Sendable {
   private let log = OSAllocatedUnfairLock<[String]>(initialState: [])
 
   var entries: [String] { log.withLock { $0 } }
 
   func record(_ entry: String) {
     log.withLock { $0.append(entry) }
+  }
+}
+
+private actor RecordingWalletWorkScheduler: WalletWorkScheduler {
+  private let gate: AsyncGate
+  private(set) var stops = 0
+  private var firstStopWaiters: [CheckedContinuation<Void, Never>] = []
+
+  init(gate: AsyncGate) {
+    self.gate = gate
+  }
+
+  func schedule() async {}
+
+  func scheduleRevocationCheck(afterReIssueOf originalId: String) async {}
+
+  func stop() async -> Bool {
+    stops += 1
+    firstStopWaiters.forEach { $0.resume() }
+    firstStopWaiters.removeAll()
+    await gate.wait()
+    return true
+  }
+
+  func waitForFirstStop() async {
+    guard stops == 0 else { return }
+    await withCheckedContinuation { firstStopWaiters.append($0) }
   }
 }
