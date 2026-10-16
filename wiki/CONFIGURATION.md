@@ -659,6 +659,8 @@ Every remote image, relying-party and Trust Mark logos included, loads only over
 another origin after a redirect, or declares more than `RemoteImageView.Constants.maxImageByteCount` (2 MiB), is
 refused, and a large image is scaled down while it is decoded. The placeholder icon shows otherwise. The rule
 applies even when Core or Kit pass an `http` address.
+Images inside credentials, such as the portrait, are decoded within Android's limits (`ImageDecodeLimits`): an
+image above 40 megapixels is not decoded, and a side above 2048 px is scaled down while decoding.
 
 Credential offers are accepted only from the issuers in `issuersConfig` (`OfferIssuer`, checked before anything is
 fetched). An offer that carries itself in the link must name a configured issuer as its `credential_issuer`, written

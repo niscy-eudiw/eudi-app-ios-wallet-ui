@@ -125,7 +125,7 @@ public extension DocClaimsDecodable {
           }
         }
 
-      } else if let uiImage = claim.dataValue.image {
+      } else if let uiImage = claim.dataValue.boundedImage {
 
         let collapsed: ListItemData
 

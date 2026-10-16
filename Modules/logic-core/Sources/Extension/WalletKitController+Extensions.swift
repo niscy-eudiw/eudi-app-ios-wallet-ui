@@ -119,7 +119,7 @@ extension WalletKitController {
     }
 
     var value: DocumentElementValue {
-      if let image = docClaim.dataValue.image {
+      if let image = docClaim.dataValue.boundedImage {
         return .image(Image(uiImage: image))
       } else {
         let claim = docClaim
