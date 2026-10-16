@@ -32,6 +32,9 @@ final class TestSystemBiometryController: EudiTest {
     var evaluatePolicyResult: (success: Bool, error: Error?) = (true, nil)
     var evaluatedPolicies: [LAPolicy] = []
     var isInvalidated = false
+    /// Set for the contexts the recorder hands out, which report to it instead of being kept.
+    var recorder: ContextRecorder?
+    var recordId = 0
     
     override var biometryType: LABiometryType { stubBiometryType }
     
@@ -51,62 +54,87 @@ final class TestSystemBiometryController: EudiTest {
       reply: @escaping (Bool, Error?) -> Void
     ) {
       evaluatedPolicies.append(policy)
+      recorder?.recordEvaluation(of: recordId, policy: policy, fallbackTitle: localizedFallbackTitle)
       reply(evaluatePolicyResult.success, evaluatePolicyResult.error)
     }
     
     override func invalidate() {
       isInvalidated = true
+      recorder?.recordInvalidation(of: recordId)
     }
   }
 
-  final class RecordingLAContextProvider: Sendable {
+  /// What the tests check about a context the controller asked for, as values: `LAContext` is not `Sendable`.
+  struct ContextRecord: Sendable, Equatable {
+    let id: Int
+    var evaluatedPolicies: [LAPolicy] = []
+    var fallbackTitle: String?
+    var isInvalidated = false
+    /// Whether the context was already invalidated when the Keychain probe was read with it; nil if it never was.
+    var wasInvalidatedWhenProbed: Bool?
+  }
 
-    private struct State {
+  /// Hands out stub contexts that report what happens to them, and keeps only those reports.
+  final class ContextRecorder: Sendable {
+
+    private struct State: Sendable {
       var evaluatePolicyResult: (success: Bool, error: Error?) = (true, nil)
-      var contexts: [StubLAContext] = []
-      var wasInvalidatedWhenRecorded: [Bool] = []
+      var records: [ContextRecord] = []
     }
 
-    /// Holds the contexts it hands out. `LAContext` is not `Sendable`, so the state is unchecked, as with the
-    /// controller's own provider; the lock serialises every access.
-    private let state = OSAllocatedUnfairLock(uncheckedState: State())
+    private let state = OSAllocatedUnfairLock(initialState: State())
 
     var evaluatePolicyResult: (success: Bool, error: Error?) {
-      get { state.withLockUnchecked { $0.evaluatePolicyResult } }
-      set { state.withLockUnchecked { $0.evaluatePolicyResult = newValue } }
+      get { state.withLock { $0.evaluatePolicyResult } }
+      set { state.withLock { $0.evaluatePolicyResult = newValue } }
     }
 
-    var contexts: [StubLAContext] { state.withLockUnchecked { $0.contexts } }
-
-    var wasInvalidatedWhenRecorded: [Bool] { state.withLockUnchecked { $0.wasInvalidatedWhenRecorded } }
+    var records: [ContextRecord] { state.withLock { $0.records } }
 
     func makeContext() -> LAContext {
-      state.withLockUnchecked { state in
-        let context = StubLAContext()
-        context.evaluatePolicyResult = state.evaluatePolicyResult
-        state.contexts.append(context)
-        return context
+      let (id, result) = state.withLock { state in
+        state.records.append(ContextRecord(id: state.records.count))
+        return (state.records.count - 1, state.evaluatePolicyResult)
+      }
+      let context = StubLAContext()
+      context.evaluatePolicyResult = result
+      context.recorder = self
+      context.recordId = id
+      return context
+    }
+
+    func recordEvaluation(of id: Int, policy: LAPolicy, fallbackTitle: String?) {
+      state.withLock {
+        $0.records[id].evaluatedPolicies.append(policy)
+        $0.records[id].fallbackTitle = fallbackTitle
       }
     }
 
-    func record(_ context: LAContext) {
-      let wasInvalidated = (context as? StubLAContext)?.isInvalidated ?? true
-      state.withLockUnchecked { $0.wasInvalidatedWhenRecorded.append(wasInvalidated) }
+    func recordInvalidation(of id: Int) {
+      state.withLock { $0.records[id].isInvalidated = true }
+    }
+
+    /// Records the probe read with `context`, one of this recorder's.
+    func recordProbe(with context: LAContext) {
+      guard let context = context as? StubLAContext, context.recorder === self else { return }
+      let id = context.recordId
+      let wasInvalidated = context.isInvalidated
+      state.withLock { $0.records[id].wasInvalidatedWhenProbed = wasInvalidated }
     }
   }
-  
+
   // MARK: - Properties
   var biometryController: SystemBiometryController!
   var keyChainController: MockKeyChainController!
   var context: StubLAContext!
-  var contextProvider: RecordingLAContextProvider!
+  var contextProvider: ContextRecorder!
   
   // MARK: - Lifecycle
   override func setUp() {
     super.setUp()
     self.keyChainController = MockKeyChainController()
     self.context = StubLAContext()
-    let contextProvider = RecordingLAContextProvider()
+    let contextProvider = ContextRecorder()
     self.contextProvider = contextProvider
     self.biometryController = SystemBiometryControllerImpl(
       context: context,
@@ -314,7 +342,7 @@ final class TestSystemBiometryController: EudiTest {
 
     verify(keyChainController, never()).validateKeyChainBiometry(with: any())
     verify(keyChainController, never()).clearKeyChainBiometry()
-    XCTAssertEqual(contextProvider.contexts.map(\.isInvalidated), [true])
+    XCTAssertEqual(contextProvider.records.map(\.isInvalidated), [true])
   }
 
   func testRequestBiometricUnlock_WhenPolicyEvaluationIsCancelled_ThenBiometricErrorWithoutKeychainProbe() async {
@@ -350,7 +378,7 @@ final class TestSystemBiometryController: EudiTest {
     try await biometryController.enableBiometricUnlock()
 
     verify(keyChainController).storeBiometricProbe()
-    XCTAssertEqual(contextProvider.contexts.map(\.isInvalidated), [true])
+    XCTAssertEqual(contextProvider.records.map(\.isInvalidated), [true])
   }
 
   func testEnableBiometricUnlock_WhenThePolicyFails_ThenBiometricErrorWithoutAProbe() async {
@@ -391,21 +419,21 @@ final class TestSystemBiometryController: EudiTest {
 
   func testRequestBiometricUnlock_WhenPolicyEvaluated_ThenProbeReadsWithTheEvaluatedContext() async throws {
     stubCanEvaluateBiometrics()
-    let probedContexts = RecordingLAContextProvider()
+    let recorder: ContextRecorder = contextProvider
     stub(keyChainController) { stub in
       when(stub.validateKeyChainBiometry(with: any())).then { context in
-        probedContexts.record(context)
+        recorder.recordProbe(with: context)
       }
     }
 
     try await biometryController.requestBiometricUnlock()
 
-    let evaluationContext = try XCTUnwrap(contextProvider.contexts.first)
-    XCTAssertEqual(evaluationContext.evaluatedPolicies, [.deviceOwnerAuthenticationWithBiometrics])
-    XCTAssertEqual(evaluationContext.localizedFallbackTitle, "")
-    XCTAssertEqual(probedContexts.wasInvalidatedWhenRecorded, [false])
-    XCTAssertTrue(evaluationContext.isInvalidated)
-    verify(keyChainController).validateKeyChainBiometry(with: equal(to: evaluationContext as LAContext))
+    let record = try XCTUnwrap(contextProvider.records.first)
+    XCTAssertEqual(contextProvider.records.count, 1)
+    XCTAssertEqual(record.evaluatedPolicies, [.deviceOwnerAuthenticationWithBiometrics])
+    XCTAssertEqual(record.fallbackTitle, "")
+    XCTAssertEqual(record.wasInvalidatedWhenProbed, false)
+    XCTAssertTrue(record.isInvalidated)
     XCTAssertTrue(context.evaluatedPolicies.isEmpty)
   }
 
@@ -418,10 +446,9 @@ final class TestSystemBiometryController: EudiTest {
     try await biometryController.requestBiometricUnlock()
     try await biometryController.requestBiometricUnlock()
 
-    let contexts = contextProvider.contexts
-    XCTAssertEqual(contexts.count, 2)
-    XCTAssertFalse(contexts[0] === contexts[1])
-    XCTAssertEqual(contexts.map(\.evaluatedPolicies.count), [1, 1])
+    let records = contextProvider.records
+    XCTAssertEqual(records.map(\.id), [0, 1])
+    XCTAssertEqual(records.map(\.evaluatedPolicies.count), [1, 1])
   }
 
   func testSystemBiometryError_id_ReturnsLocalizedDescription() {
