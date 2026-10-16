@@ -223,6 +223,37 @@ final class TestPresentationInteractor: EudiTest {
     }
   }
 
+  func testOnResponsePrepare_WhenADocumentIsNotOnTheConsentScreen_ThenItIsNotInTheResponse() async {
+    let request = Constants.mockPresentationRequest
+    let shown = request.itemSets[0][0]
+    let hidden = DocElements.msoMdoc(
+      .init(docId: "hidden-doc", docType: "org.iso.18013.5.1.mDL", displayName: "Hidden", nameSpacedElements: [])
+    )
+    await stubReceivedRequest(
+      PresentationRequest(
+        itemSets: [[shown, hidden]],
+        relyingParty: request.relyingParty,
+        dataRequestInfo: request.dataRequestInfo,
+        isTrusted: request.isTrusted,
+        overaskedClaims: request.overaskedClaims,
+        transactionDataSets: [],
+        requestNames: []
+      )
+    )
+    stub(presentationCoordinator) { mock in
+      when(mock.setState(presentationState: any())).thenDoNothing()
+    }
+    _ = await interactor.onRequestReceived()
+
+    let state = await interactor.onResponsePrepare(combinationIndex: 0)
+
+    guard case .success(let response) = state else {
+      return XCTFail("Wrong state \(state)")
+    }
+    XCTAssertNil(response.items["hidden-doc"])
+    XCTAssertNotNil(response.items[shown.docId])
+  }
+
   func testOnRequestReceived_WhenThePortraitIsRequested_ThenItsRowIsMarkedAsAPictureOfTheHolder() async {
     let request = Constants.mockPresentationRequest
     let element: (String) -> MsoMdocElement = { name in

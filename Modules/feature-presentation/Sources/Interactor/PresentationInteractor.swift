@@ -58,6 +58,8 @@ public protocol PresentationInteractor: Sendable {
   func registrationForFailedRequest() async -> RelyingPartyRegistration?
 }
 
+/// A combination as the consent screen shows it: the response is built from `elements`, so it holds only the
+/// documents shown in `uiModels`, never one the screen left out.
 private struct RequestCombination {
   let elements: [DocElements]
   let uiModels: [RequestDataUiModel]
@@ -119,8 +121,9 @@ final actor PresentationInteractorImpl: PresentationInteractor {
           )
           let transactionData = transactionDataSets.indices.contains(index) ? transactionDataSets[index] : [:]
           let transactions = uiModels.flatMap { transactionData[$0.section.id] ?? [] }
+          let shownDocumentIds = Set(uiModels.map(\.section.id))
           return RequestCombination(
-            elements: documentSet,
+            elements: documentSet.filter { shownDocumentIds.contains($0.docId) },
             uiModels: uiModels,
             transactionData: transactions.toRequestTransactionDataUiModel(sectionId: "transaction-data:\(index)"),
             requestName: requestNames.indices.contains(index) ? requestNames[index] : nil
