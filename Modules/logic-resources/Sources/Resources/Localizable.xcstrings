@@ -2383,6 +2383,17 @@
         }
       }
     },
+    "request_transaction_data_chosen_by_relying_party" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chosen by the relying party; not checked by the wallet"
+          }
+        }
+      }
+    },
     "request_transaction_data_document" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2401,6 +2412,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hash representation"
+          }
+        }
+      }
+    },
+    "request_transaction_data_not_shown_error" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This request asks you to sign data that the wallet cannot show in full, so it was declined."
           }
         }
       }
@@ -2467,28 +2489,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Signing credential ID"
-          }
-        }
-      }
-    },
-    "request_transaction_data_trust_framework" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trust framework"
-          }
-        }
-      }
-    },
-    "request_transaction_data_trust_framework_value" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "eIDAS"
           }
         }
       }

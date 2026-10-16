@@ -131,6 +131,15 @@ final actor PresentationInteractorImpl: PresentationInteractor {
         }
         .filter { !$0.uiModels.isEmpty }
 
+      let shownTransactionData = presentable.indices.map { combinationIndex in
+        transactionDataSets.indices.contains(combinationIndex) ? transactionDataSets[combinationIndex] : [:]
+      }
+      guard zip(shownTransactionData, presentable).allSatisfy({ transactionData, combination in
+        Self.canShowTransactionData(transactionData, shownDocuments: combination.elements)
+      }) else {
+        return .failure(WalletCoreError.transactionDataNotShown)
+      }
+
       self.requestedItemSets = presentable.map(\.elements)
       self.requestedRequestNames = presentable.map(\.requestName)
       let combinations = presentable.map {
@@ -155,6 +164,19 @@ final actor PresentationInteractorImpl: PresentationInteractor {
       )
     } catch {
       return error.isTrustBlocked ? .notSecuredRequest : .failure(error)
+    }
+  }
+
+  /// True when every transaction-data entry can be shown as it will be signed: readable, and bound to a document on
+  /// the consent screen. Otherwise the request is declined rather than shown in part.
+  static func canShowTransactionData(
+    _ transactionData: [String: [PresentationTransactionDataDomain]],
+    shownDocuments: [DocElements]
+  ) -> Bool {
+    transactionData.allSatisfy { documentId, entries in
+      guard !entries.isEmpty else { return true }
+      guard shownDocuments.contains(where: { $0.docId == documentId }) else { return false }
+      return !entries.contains(.unavailable)
     }
   }
 

@@ -404,50 +404,32 @@ final class TestPresentationInteractor: EudiTest {
     verify(presentationCoordinator).setState(presentationState: any())
   }
 
-  func testOnRequestReceived_WhenTheRequestCarriesTransactionData_ThenTheCombinationShowsItsSignatureDetails() async {
-    // Given
-    let transactions: [PresentationTransactionDataDomain] = [.unavailable]
-    let request = Self.presentationRequest(
-      transactionDataSets: [[Constants.isoMdlModelId: transactions]],
-      requestNames: ["option-1"]
-    )
-    await stubReceivedRequest(request)
+  func testOnRequestReceived_WhenTransactionDataCannotBeShownInFull_ThenTheRequestIsDeclined() async {
+    for transactionData: [String: [PresentationTransactionDataDomain]] in [
+      [Constants.isoMdlModelId: [.unavailable]],
+      ["another-document": [.qes(.init(credentialIds: [], signatureRequests: []))]]
+    ] {
+      await stubReceivedRequest(Self.presentationRequest(transactionDataSets: [transactionData], requestNames: ["option-1"]))
 
-    // When
-    let state = await interactor.onRequestReceived()
+      let state = await interactor.onRequestReceived()
 
-    // Then
-    switch state {
-    case .success(let successModel):
-      XCTAssertEqual(successModel.requestDataCombinations.count, 1)
-      XCTAssertEqual(
-        successModel.requestDataCombinations.first?.transactionData,
-        transactions.toRequestTransactionDataUiModel(sectionId: "transaction-data:0")
-      )
-    default:
-      XCTFail("Wrong state \(state)")
+      guard case .failure(let error) = state else {
+        return XCTFail("Wrong state \(state)")
+      }
+      XCTAssertEqual(error.localizedDescription, WalletCoreError.transactionDataNotShown.localizedDescription)
     }
   }
 
-  func testOnRequestReceived_WhenTheTransactionDataBelongsToAnotherDocument_ThenTheCombinationShowsNone() async {
-    // Given
-    let request = Self.presentationRequest(
-      transactionDataSets: [["another-document": [.unavailable]]],
-      requestNames: ["option-1"]
-    )
-    await stubReceivedRequest(request)
+  func testCanShowTransactionData_WhenEveryEntryIsReadableAndBoundToAShownDocument_ThenIsTrue() {
+    let sdJwt = DocElements.sdJwt(.init(docId: "pid-sd", vct: "urn:eudi:pid:1", sdJwtElements: []))
+    let mdoc = Constants.mockPresentationRequest.itemSets[0][0]
+    let readable: [PresentationTransactionDataDomain] = [.qes(.init(credentialIds: [], signatureRequests: []))]
 
-    // When
-    let state = await interactor.onRequestReceived()
-
-    // Then
-    switch state {
-    case .success(let successModel):
-      XCTAssertEqual(successModel.requestDataCombinations.count, 1)
-      XCTAssertNil(successModel.requestDataCombinations.first?.transactionData)
-    default:
-      XCTFail("Wrong state \(state)")
-    }
+    XCTAssertTrue(PresentationInteractorImpl.canShowTransactionData([:], shownDocuments: [mdoc]))
+    XCTAssertTrue(PresentationInteractorImpl.canShowTransactionData(["pid-sd": readable], shownDocuments: [sdJwt]))
+    XCTAssertFalse(PresentationInteractorImpl.canShowTransactionData(["pid-sd": [.unavailable]], shownDocuments: [sdJwt]))
+    XCTAssertTrue(PresentationInteractorImpl.canShowTransactionData([mdoc.docId: readable], shownDocuments: [mdoc]))
+    XCTAssertFalse(PresentationInteractorImpl.canShowTransactionData(["elsewhere": readable], shownDocuments: [sdJwt]))
   }
 
   func testOnResponsePrepare_WhenTheCombinationHasARequestName_ThenTheResponseToSendCarriesIt() async {

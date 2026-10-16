@@ -80,10 +80,6 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "request_transaction_data_type_qes")
     case .requestTransactionDataTypeQesRequest:
       bundle.localizedString(forKey: "request_transaction_data_type_qes_request")
-    case .requestTransactionDataTrustFramework:
-      bundle.localizedString(forKey: "request_transaction_data_trust_framework")
-    case .requestTransactionDataTrustFrameworkValue:
-      bundle.localizedString(forKey: "request_transaction_data_trust_framework_value")
     case .requestTransactionDataRequestedCredentials:
       bundle.localizedString(forKey: "request_transaction_data_requested_credentials")
     case .requestTransactionDataSigningCredentialId:
@@ -664,6 +660,10 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "quick_pin_weak")
     case .issuanceOfferIssuerNotConfiguredError:
       bundle.localizedString(forKey: "issuance_offer_issuer_not_configured")
+    case .requestTransactionDataChosenByRelyingPartyWarning:
+      bundle.localizedString(forKey: "request_transaction_data_chosen_by_relying_party")
+    case .requestTransactionDataNotShownError:
+      bundle.localizedString(forKey: "request_transaction_data_not_shown_error")
     case .transactionDetailsRegistrationNotVerifiedWarning:
       bundle.localizedString(forKey: "transaction_details_registration_not_verified")
     case .transactionDetailsRegistrationNotBoundWarning:

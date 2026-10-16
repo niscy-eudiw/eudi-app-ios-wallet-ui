@@ -816,9 +816,8 @@ Rules:
 * If a verifier is not trusted, the user interface must clearly show that status before disclosure.
 
 When a presentation request includes transaction data for signing, each applicable option on the
-request screen shows a "Data to be signed" section below its requested data. Its initially
-collapsed "Signature details" row lists the trust framework once, then each transaction, numbered
-when there is more than one:
+request screen shows a "Data to be signed" section below its requested data. Its "Signature details" row is
+open when the screen appears and lists each transaction, numbered when there is more than one, as on Android:
 
 * A QES approval shows the transaction type, signature type, requested credential query ids,
   signing credential ID, number of signatures and, for each document, its label, location, expected
@@ -827,7 +826,12 @@ when there is more than one:
 * A QES request shows the transaction type, requested credential query ids and, for each signature
   request, the document's label, location, expected checksum and checksum algorithm, signature
   type, signature format, conformance level, signed attributes, one-time password and response URI.
-* Any transaction WalletKit cannot read as one of these types is shown as unavailable.
+* The signed attributes carry the line "Chosen by the relying party; not checked by the wallet" in the warning
+  colour.
+* A request whose transaction data cannot be shown in full is declined with an explanation, never shown in part
+  (`PresentationInteractorImpl.canShowTransactionData`): an entry WalletKit cannot read, or an entry bound to a
+  document the consent screen does not show. WalletKit 0.56.0 binds transaction data to SD-JWT and mdoc documents
+  alike.
 
 Where a document location is an HTTP(S) link, "Open document" opens it in the browser. These
 details are informational: sharing still uses the existing share flow, and WalletKit binds each

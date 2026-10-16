@@ -340,7 +340,6 @@ final class TestTransactionLogUi: EudiTest {
     XCTAssertEqual(
       signingRequest.groups[0].listItems.map(\.id),
       [
-        "transaction-data/framework",
         "transaction-data/transaction-0/title",
         "transaction-data/transaction-0/query-0",
         "transaction-data/transaction-1/title",

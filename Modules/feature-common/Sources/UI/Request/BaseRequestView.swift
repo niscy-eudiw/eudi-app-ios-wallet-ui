@@ -278,6 +278,7 @@ private struct BaseRequestViewContainer: View {
         backgroundColor: Theme.shared.color.groupedElevatedBackground,
         hideSensitiveContent: false,
         isLoading: viewState.isLoading,
+        expandsWhen: true,
         onItemClick: { item in
           if let url = transactionData.documentUrlsByItemId[item.id] {
             openURL(url)

@@ -66,11 +66,6 @@ private struct TransactionDataRowsBuilder<T: Sendable> {
   }
 
   mutating func addTransactions(_ transactions: [PresentationTransactionDataDomain]) {
-    addField(
-      itemId: "\(sectionId)/framework",
-      label: .requestTransactionDataTrustFramework,
-      value: LocalizableStringKey.requestTransactionDataTrustFrameworkValue.toString
-    )
     for (index, transaction) in transactions.enumerated() {
       let transactionId = "\(sectionId)/transaction-\(index)"
       if transactions.count > 1 {
@@ -199,7 +194,8 @@ private struct TransactionDataRowsBuilder<T: Sendable> {
     addField(
       itemId: "\(itemId)/attributes",
       label: nil,
-      value: LocalizableStringKey.requestTransactionDataSignedAttributes.toString
+      value: LocalizableStringKey.requestTransactionDataSignedAttributes.toString,
+      supportingText: .requestTransactionDataChosenByRelyingPartyWarning
     )
     for (index, attribute) in attributes.enumerated() {
       addField(
@@ -210,7 +206,14 @@ private struct TransactionDataRowsBuilder<T: Sendable> {
     }
   }
 
-  private mutating func addField(itemId: String, label: LocalizableStringKey?, value: String?) {
+  /// `supportingText` shows in the warning colour, as the marker on the signed attributes, which the relying party
+  /// chooses freely, does on Android.
+  private mutating func addField(
+    itemId: String,
+    label: LocalizableStringKey?,
+    value: String?,
+    supportingText: LocalizableStringKey? = nil
+  ) {
     guard let value else { return }
     rows.append(
       .single(
@@ -218,7 +221,9 @@ private struct TransactionDataRowsBuilder<T: Sendable> {
           collapsed: .init(
             id: itemId,
             mainContent: .text(.custom(value)),
-            overlineText: label
+            overlineText: label,
+            supportingText: supportingText,
+            supportingTextColor: Theme.shared.color.warning
           ),
           domainModel: nil
         )

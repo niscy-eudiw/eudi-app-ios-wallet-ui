@@ -42,8 +42,6 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case requestTransactionDataType
   case requestTransactionDataTypeQes
   case requestTransactionDataTypeQesRequest
-  case requestTransactionDataTrustFramework
-  case requestTransactionDataTrustFrameworkValue
   case requestTransactionDataRequestedCredentials
   case requestTransactionDataSigningCredentialId
   case requestTransactionDataDocument
@@ -334,6 +332,8 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case issuanceOfferIssuerNotConfiguredError
   case issuanceSuccessNotIssuedWarning([String])
   case transactionDetailsRegistrationNotVerifiedWarning
+  case requestTransactionDataChosenByRelyingPartyWarning
+  case requestTransactionDataNotShownError
   case transactionDetailsRegistrationNotBoundWarning
   case quickPinDeviceLockMissingWarning
   case quickPinDeviceLockRequiredWarning
