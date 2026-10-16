@@ -2431,6 +2431,9 @@ Project-specific actions:
   `picture` by default). A request for one of them shows a biometric-data notice. Share asks for confirmation while
   the picture would be disclosed, and so does Accept in the ID Provider extension, as on Android. Add the claims
   your credentials use.
+* A privacy-policy link from a registration certificate opens only when it is `https`: on the request and offer
+  screens any other link is not shown, and in history it stays plain text, as on Android, with no exception for
+  `http` from Core or Kit.
 * Review transaction log contents.
 * Review analytics providers and SDK privacy manifests.
 * Complete DPIA before production.

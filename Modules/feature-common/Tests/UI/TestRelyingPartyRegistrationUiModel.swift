@@ -166,6 +166,16 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
     XCTAssertFalse(registration.isFullyVerified)
   }
 
+  func testToRegistrationData_WhenThePrivacyPolicyIsNotHttps_ThenItIsNotShown() {
+    for address in ["http://nordicbank.example/privacy", "javascript:alert(1)", "eudi-wallet://privacy"] {
+      let registration = relyingParty(status: .notVerified(details: details(privacyPolicyUrl: URL(string: address))))
+
+      let data = registration.toRegistrationData(fallbackName: .unknownVerifier)
+
+      XCTAssertNil(data.privacyPolicyUrl, address)
+    }
+  }
+
   func testToRegistrationData_WhenNotVerifiedAndUndecodable_ThenOnlyTheNameSurvives() {
     let registration = relyingParty(status: .notVerified(details: nil))
 
@@ -276,13 +286,16 @@ private extension TestRelyingPartyRegistrationUiModel {
     )
   }
 
-  func details(logoUrl: URL? = nil) -> RegistrationDetails {
+  func details(
+    logoUrl: URL? = nil,
+    privacyPolicyUrl: URL? = URL(string: "https://nordicbank.example/privacy")
+  ) -> RegistrationDetails {
     RegistrationDetails(
       tradeName: "NordicBank A/S",
       uniqueId: "rp:nordicbank:prod",
       logoUrl: logoUrl,
       intendedUse: "Onboarding",
-      privacyPolicyUrl: URL(string: "https://nordicbank.example/privacy"),
+      privacyPolicyUrl: privacyPolicyUrl,
       serviceDescription: "Current account onboarding"
     )
   }

@@ -41,6 +41,19 @@ final class TestTransactionLogUi: EudiTest {
     ]
   }
 
+  func testPrivacyPolicyFields_WhenALinkIsNotHttps_ThenItIsShownAsTextOnly() {
+    let fields = TransactionDetailsFieldUi.privacyPolicyFields(
+      .init(
+        registrarUrl: nil,
+        purpose: nil,
+        privacyPolicyUrls: ["https://rp.example/privacy", "http://rp.example/privacy"],
+        dpa: nil
+      )
+    )
+
+    XCTAssertEqual(fields.map(\.url), [URL(string: "https://rp.example/privacy"), nil])
+  }
+
   func testTransformToTransactionUI_WhenPresentation_ThenUsesPartyNameAndType() {
     let ui = Constants.eudiRemoteVerifierMock.transformToTransactionUI()
 

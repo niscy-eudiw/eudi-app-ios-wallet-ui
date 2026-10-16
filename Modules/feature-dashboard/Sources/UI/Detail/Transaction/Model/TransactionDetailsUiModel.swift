@@ -275,10 +275,16 @@ extension TransactionDetailsFieldUi {
     return [.field(id: "party:purpose", label: .transactionDetailsPurposeLabel, value: purpose)]
   }
 
+  /// A privacy-policy link opens only when it is `https`, as on Android; otherwise it is shown as text.
   static func privacyPolicyFields(_ registration: PresentationRegistrationDomain?) -> [TransactionDetailsFieldUi] {
     (registration?.privacyPolicyUrls ?? []).enumerated().compactMap { index, policy in
       guard !policy.isBlankValue else { return nil }
-      return .field(id: "party:privacy:\(index)", label: .transactionDetailsPrivacyPolicyLabel, value: policy, url: policy.webUrl)
+      return .field(
+        id: "party:privacy:\(index)",
+        label: .transactionDetailsPrivacyPolicyLabel,
+        value: policy,
+        url: policy.webUrl.flatMap { $0.isHttpsWebLink ? $0 : nil }
+      )
     }
   }
 
