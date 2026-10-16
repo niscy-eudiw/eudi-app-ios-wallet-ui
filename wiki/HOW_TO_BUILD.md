@@ -281,7 +281,7 @@ final class SelfSignedDelegate: NSObject, URLSessionDelegate {
 
 let walletSession: URLSession = {
   let delegate = SelfSignedDelegate()
-  let configuration = URLSessionConfiguration.default
+  let configuration = NetworkSessionProviderImpl.makeConfiguration()
   return URLSession(
     configuration: configuration,
     delegate: delegate,

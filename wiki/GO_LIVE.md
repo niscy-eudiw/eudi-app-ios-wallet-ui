@@ -1591,11 +1591,15 @@ before App Store submission, and keep declarations aligned with App Store privac
 
 ## Network Security
 
-The app uses `URLSession.shared` through:
+The app uses one ephemeral `URLSession` that keeps no cookies and no response cache, also handed to WalletKit
+(`NetworkSessionProviderImpl.makeConfiguration()`):
 
 ```text
 Modules/logic-api/Sources/Provider/NetworkSessionProvider.swift
 ```
+
+A cookie one relying party sets is therefore never sent to another, and nothing links the wallet's sessions across
+launches. WalletKit 0.54.8 fetches SD-JWT issuer keys with its own `URLSession.shared`, which the app cannot change.
 
 iOS App Transport Security applies to `URLSession` connections by default. Production must keep TLS
 validation strict.
