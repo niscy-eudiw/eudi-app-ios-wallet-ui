@@ -662,6 +662,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "offer_documents_to_apps")
     case .quickPinWeak:
       bundle.localizedString(forKey: "quick_pin_weak")
+    case .issuanceOfferIssuerNotConfigured:
+      bundle.localizedString(forKey: "issuance_offer_issuer_not_configured")
     case .quickPinDeviceLockMissing:
       bundle.localizedString(forKey: "quick_pin_device_lock_missing")
     case .quickPinDeviceLockRequired:

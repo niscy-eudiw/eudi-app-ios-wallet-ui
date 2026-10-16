@@ -1155,6 +1155,14 @@ carries no reader authentication to combine it with.
 
 ## Issuer Configuration: `issuersConfig`
 
+Credential offers are accepted only from the issuers in `issuersConfig` (`OfferIssuer`, checked before anything is
+fetched). An offer that carries itself in the link must name a configured issuer as its `credential_issuer`, written
+exactly as its `credentialIssuerURL`; an offer passed by address must be fetched over `https` from a configured
+issuer's origin. Any other offer is refused with "This offer comes from an issuer that this wallet is not set up to
+use", as on Android, because wallet-kit would otherwise give an unknown issuer the first configured issuer's client
+settings. To accept an issuer's offers, add a `VciConfig` entry for it to `issuersConfig` in the build variants that
+need it.
+
 Current demo/dev code contains issuer URLs such as (two per build variant — a primary at `order: 1`
 and a backend at `order: 0`):
 

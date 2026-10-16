@@ -651,6 +651,14 @@ compile:
 ## Scoped Issuance Document Configuration
 
 The credential configuration is derived directly from the issuer's metadata. The issuer URL is configured via the `issuersConfig` property (its `VciConfig` entries) inside the logic-core module in *WalletKitConfigImpl*.
+
+Credential offers are accepted only from the issuers in `issuersConfig` (`OfferIssuer`, checked before anything is
+fetched). An offer that carries itself in the link must name a configured issuer as its `credential_issuer`, written
+exactly as its `credentialIssuerURL`; an offer passed by address must be fetched over `https` from a configured
+issuer's origin. Any other offer is refused with "This offer comes from an issuer that this wallet is not set up to
+use", as on Android, because wallet-kit would otherwise give an unknown issuer the first configured issuer's client
+settings. To accept an issuer's offers, add a `VciConfig` entry for it to `issuersConfig` in the build variants that
+need it.
 If you want to add or adjust the displayed scoped documents, you must modify the issuer's metadata, and the wallet will automatically resolve your changes.
 
 ## How to work with self-signed certificates

@@ -1346,6 +1346,17 @@
         }
       }
     },
+    "issuance_offer_issuer_not_configured" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This offer comes from an issuer that this wallet is not set up to use"
+          }
+        }
+      }
+    },
     "issuance_registration_blocked_message" : {
       "extractionState" : "manual",
       "localizations" : {
