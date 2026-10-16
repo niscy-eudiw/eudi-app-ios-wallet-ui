@@ -664,6 +664,10 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "quick_pin_weak")
     case .issuanceOfferIssuerNotConfiguredError:
       bundle.localizedString(forKey: "issuance_offer_issuer_not_configured")
+    case .transactionDetailsRegistrationNotVerifiedWarning:
+      bundle.localizedString(forKey: "transaction_details_registration_not_verified")
+    case .transactionDetailsRegistrationNotBoundWarning:
+      bundle.localizedString(forKey: "transaction_details_registration_not_bound")
     case .issuanceSuccessNotIssuedWarning(let args):
       bundle.localizedStringWithArguments(forKey: "issuance_success_not_issued", arguments: args)
     case .quickPinDeviceLockMissingWarning:

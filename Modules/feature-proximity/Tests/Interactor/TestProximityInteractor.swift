@@ -46,6 +46,7 @@ final class TestProximityInteractor: EudiTest {
       // Requests without a registration certificate: no policy, no violations.
       when(mock.relyingPartyRegistration.get).thenReturn(nil)
       when(mock.relyingPartyWarningViolations.get).thenReturn([])
+      when(mock.isRelyingPartyNotBoundToRequester.get).thenReturn(false)
     }
 
     stub(walletKitController) { mock in
@@ -56,7 +57,8 @@ final class TestProximityInteractor: EudiTest {
           trustViolations: any(),
           overaskedClaims: any(),
           verifierName: any(),
-          verifierIsTrusted: any()
+          verifierIsTrusted: any(),
+          isNotBoundToRequester: any()
         )
       ).thenReturn(
         RelyingPartyRegistration(
@@ -377,7 +379,8 @@ final class TestProximityInteractor: EudiTest {
           trustViolations: any(),
           overaskedClaims: any(),
           verifierName: any(),
-          verifierIsTrusted: equal(to: false)
+          verifierIsTrusted: equal(to: false),
+          isNotBoundToRequester: any()
         )
       ).thenReturn(
         RelyingPartyRegistration(
@@ -405,7 +408,8 @@ final class TestProximityInteractor: EudiTest {
       trustViolations: any(),
       overaskedClaims: any(),
       verifierName: any(),
-      verifierIsTrusted: equal(to: false)
+      verifierIsTrusted: equal(to: false),
+      isNotBoundToRequester: any()
     )
   }
 

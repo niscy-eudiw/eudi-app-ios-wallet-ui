@@ -146,7 +146,8 @@ public protocol WalletKitController: Sendable {
     trustViolations: [String],
     overaskedClaims: [logic_core.OveraskedClaim],
     verifierName: String?,
-    verifierIsTrusted: Bool
+    verifierIsTrusted: Bool,
+    isNotBoundToRequester: Bool
   ) async -> RelyingPartyRegistration
 
   func getVerifierRegistrationForFailedRequest() async -> RelyingPartyRegistration?
@@ -168,6 +169,7 @@ final actor WalletKitControllerImpl: WalletKitController {
   private let storageEraseController: StorageEraseController
   private let documentRegistrationManager: DocumentRegistrationManager
   private let prefsController: PrefsController
+  private let registrationCheckRecorder: RegistrationCheckRecorder
   /// "Check Registration Certificates" as WalletKit was configured with it at launch; the setting applies after a
   /// restart, so the app's own decisions follow the same value.
   private let isRegistrationChecked: Bool
@@ -185,7 +187,8 @@ final actor WalletKitControllerImpl: WalletKitController {
     storageEraseController: StorageEraseController,
     networkSessionProvider: NetworkSessionProvider,
     documentRegistrationManager: DocumentRegistrationManager,
-    prefsController: PrefsController
+    prefsController: PrefsController,
+    registrationCheckRecorder: RegistrationCheckRecorder
   ) {
     self.walletKitConfig = walletKitConfig
     self.configLogic = configLogic
@@ -199,6 +202,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     self.storageEraseController = storageEraseController
     self.documentRegistrationManager = documentRegistrationManager
     self.prefsController = prefsController
+    self.registrationCheckRecorder = registrationCheckRecorder
     if walletKitConfig.logFileName == nil {
       Self.removeLogFileOfAnEarlierBuild()
     }
@@ -672,7 +676,7 @@ final actor WalletKitControllerImpl: WalletKitController {
       return nil
     }
 
-    return await getVerifierRegistration(
+    return makeVerifierRegistration(
       policy: policy,
       trustViolations: [],
       overaskedClaims: [],
@@ -691,8 +695,30 @@ final actor WalletKitControllerImpl: WalletKitController {
     trustViolations: [String],
     overaskedClaims: [OveraskedClaim],
     verifierName: String?,
-    verifierIsTrusted: Bool
+    verifierIsTrusted: Bool,
+    isNotBoundToRequester: Bool
   ) async -> RelyingPartyRegistration {
+    let registration = makeVerifierRegistration(
+      policy: policy,
+      trustViolations: trustViolations,
+      overaskedClaims: overaskedClaims,
+      verifierName: verifierName,
+      verifierIsTrusted: verifierIsTrusted
+    )
+    await registrationCheckRecorder.record(
+      .of(registration.registration, isNotBoundToRequester: isNotBoundToRequester)
+    )
+    return registration
+  }
+
+  /// The outcome is recorded for the history entry wallet-kit writes when the presentation ends, as on Android.
+  private func makeVerifierRegistration(
+    policy: WrpRegistrationPolicy?,
+    trustViolations: [String],
+    overaskedClaims: [OveraskedClaim],
+    verifierName: String?,
+    verifierIsTrusted: Bool
+  ) -> RelyingPartyRegistration {
 
     let unregistered = RelyingPartyRegistration(
       name: verifierName,

@@ -44,6 +44,7 @@ final class TestPresentationInteractor: EudiTest {
       // Requests without a registration certificate: no policy, no violations.
       when(mock.relyingPartyRegistration.get).thenReturn(nil)
       when(mock.relyingPartyWarningViolations.get).thenReturn([])
+      when(mock.isRelyingPartyNotBoundToRequester.get).thenReturn(false)
     }
 
     stub(walletKitController) { mock in
@@ -54,7 +55,8 @@ final class TestPresentationInteractor: EudiTest {
           trustViolations: any(),
           overaskedClaims: any(),
           verifierName: any(),
-          verifierIsTrusted: any()
+          verifierIsTrusted: any(),
+          isNotBoundToRequester: any()
         )
       ).thenReturn(
         RelyingPartyRegistration(

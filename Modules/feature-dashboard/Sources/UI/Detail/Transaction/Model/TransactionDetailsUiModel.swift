@@ -117,7 +117,10 @@ extension TransactionLogDomain {
       let policies = TransactionDetailsFieldUi.privacyPolicyFields(log.registration)
       let contacts = TransactionDetailsFieldUi.contactFields(log.party, prefix: "party")
       let intermediary = log.intermediary.map { TransactionDetailsFieldUi.intermediaryFields($0) } ?? []
-      let groups = [purpose, policies, contacts, intermediary].filter { !$0.isEmpty }
+      let warning = log.registrationWarning.map {
+        [TransactionDetailsFieldUi.field(id: "party:registration-warning", label: nil, value: $0.toString)]
+      } ?? []
+      let groups = [warning, purpose, policies, contacts, intermediary].filter { !$0.isEmpty }
       return .init(type: log.party.type, details: groups)
     case .credentialIssuance(let log):
       let counts = TransactionDetailsFieldUi.countFields(log.details)

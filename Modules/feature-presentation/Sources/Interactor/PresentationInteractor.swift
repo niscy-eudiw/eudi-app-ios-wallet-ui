@@ -148,7 +148,8 @@ final actor PresentationInteractorImpl: PresentationInteractor {
             trustViolations: coordinator.relyingPartyWarningViolations,
             overaskedClaims: overaskedClaims,
             verifierName: response.relyingParty,
-            verifierIsTrusted: response.isTrusted
+            verifierIsTrusted: response.isTrusted,
+            isNotBoundToRequester: coordinator.isRelyingPartyNotBoundToRequester
           )
         )
       )

@@ -8698,13 +8698,13 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.OveraskedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool) async -> RelyingPartyRegistration {
+    public func getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.OveraskedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool, isNotBoundToRequester p5: Bool) async -> RelyingPartyRegistration {
         return await cuckoo_manager.call(
-            "getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.OveraskedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool) async -> RelyingPartyRegistration",
-            parameters: (p0, p1, p2, p3, p4),
-            escapingParameters: (p0, p1, p2, p3, p4),
+            "getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.OveraskedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool, isNotBoundToRequester p5: Bool) async -> RelyingPartyRegistration",
+            parameters: (p0, p1, p2, p3, p4, p5),
+            escapingParameters: (p0, p1, p2, p3, p4, p5),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.getVerifierRegistration(policy: p0, trustViolations: p1, overaskedClaims: p2, verifierName: p3, verifierIsTrusted: p4)
+            defaultCall: await __defaultImplStub!.getVerifierRegistration(policy: p0, trustViolations: p1, overaskedClaims: p2, verifierName: p3, verifierIsTrusted: p4, isNotBoundToRequester: p5)
         )
     }
 
@@ -9209,10 +9209,10 @@ return await cuckoo_manager.call(
             ))
         }
         
-        func getVerifierRegistration<M1: Cuckoo.OptionalMatchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable, M4: Cuckoo.OptionalMatchable, M5: Cuckoo.Matchable>(policy p0: M1, trustViolations p1: M2, overaskedClaims p2: M3, verifierName p3: M4, verifierIsTrusted p4: M5) -> Cuckoo.ProtocolStubFunction<(WrpRegistrationPolicy?, [String], [logic_core.OveraskedClaim], String?, Bool), RelyingPartyRegistration> where M1.OptionalMatchedType == WrpRegistrationPolicy, M2.MatchedType == [String], M3.MatchedType == [logic_core.OveraskedClaim], M4.OptionalMatchedType == String, M5.MatchedType == Bool {
-            let matchers: [Cuckoo.ParameterMatcher<(WrpRegistrationPolicy?, [String], [logic_core.OveraskedClaim], String?, Bool)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }, wrap(matchable: p3) { $0.3 }, wrap(matchable: p4) { $0.4 }]
+        func getVerifierRegistration<M1: Cuckoo.OptionalMatchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable, M4: Cuckoo.OptionalMatchable, M5: Cuckoo.Matchable, M6: Cuckoo.Matchable>(policy p0: M1, trustViolations p1: M2, overaskedClaims p2: M3, verifierName p3: M4, verifierIsTrusted p4: M5, isNotBoundToRequester p5: M6) -> Cuckoo.ProtocolStubFunction<(WrpRegistrationPolicy?, [String], [logic_core.OveraskedClaim], String?, Bool, Bool), RelyingPartyRegistration> where M1.OptionalMatchedType == WrpRegistrationPolicy, M2.MatchedType == [String], M3.MatchedType == [logic_core.OveraskedClaim], M4.OptionalMatchedType == String, M5.MatchedType == Bool, M6.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(WrpRegistrationPolicy?, [String], [logic_core.OveraskedClaim], String?, Bool, Bool)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }, wrap(matchable: p3) { $0.3 }, wrap(matchable: p4) { $0.4 }, wrap(matchable: p5) { $0.5 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.OveraskedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool) async -> RelyingPartyRegistration",
+                method: "getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.OveraskedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool, isNotBoundToRequester p5: Bool) async -> RelyingPartyRegistration",
                 parameterMatchers: matchers
             ))
         }
@@ -9963,10 +9963,10 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func getVerifierRegistration<M1: Cuckoo.OptionalMatchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable, M4: Cuckoo.OptionalMatchable, M5: Cuckoo.Matchable>(policy p0: M1, trustViolations p1: M2, overaskedClaims p2: M3, verifierName p3: M4, verifierIsTrusted p4: M5) -> Cuckoo.__DoNotUse<(WrpRegistrationPolicy?, [String], [logic_core.OveraskedClaim], String?, Bool), RelyingPartyRegistration> where M1.OptionalMatchedType == WrpRegistrationPolicy, M2.MatchedType == [String], M3.MatchedType == [logic_core.OveraskedClaim], M4.OptionalMatchedType == String, M5.MatchedType == Bool {
-            let matchers: [Cuckoo.ParameterMatcher<(WrpRegistrationPolicy?, [String], [logic_core.OveraskedClaim], String?, Bool)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }, wrap(matchable: p3) { $0.3 }, wrap(matchable: p4) { $0.4 }]
+        func getVerifierRegistration<M1: Cuckoo.OptionalMatchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable, M4: Cuckoo.OptionalMatchable, M5: Cuckoo.Matchable, M6: Cuckoo.Matchable>(policy p0: M1, trustViolations p1: M2, overaskedClaims p2: M3, verifierName p3: M4, verifierIsTrusted p4: M5, isNotBoundToRequester p5: M6) -> Cuckoo.__DoNotUse<(WrpRegistrationPolicy?, [String], [logic_core.OveraskedClaim], String?, Bool, Bool), RelyingPartyRegistration> where M1.OptionalMatchedType == WrpRegistrationPolicy, M2.MatchedType == [String], M3.MatchedType == [logic_core.OveraskedClaim], M4.OptionalMatchedType == String, M5.MatchedType == Bool, M6.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(WrpRegistrationPolicy?, [String], [logic_core.OveraskedClaim], String?, Bool, Bool)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }, wrap(matchable: p3) { $0.3 }, wrap(matchable: p4) { $0.4 }, wrap(matchable: p5) { $0.5 }]
             return cuckoo_manager.verify(
-                "getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.OveraskedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool) async -> RelyingPartyRegistration",
+                "getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.OveraskedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool, isNotBoundToRequester p5: Bool) async -> RelyingPartyRegistration",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -10237,7 +10237,7 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (IssuerRegistration?).self)
     }
     
-    public func getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.OveraskedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool) async -> RelyingPartyRegistration {
+    public func getVerifierRegistration(policy p0: WrpRegistrationPolicy?, trustViolations p1: [String], overaskedClaims p2: [logic_core.OveraskedClaim], verifierName p3: String?, verifierIsTrusted p4: Bool, isNotBoundToRequester p5: Bool) async -> RelyingPartyRegistration {
         return DefaultValueRegistry.defaultValue(for: (RelyingPartyRegistration).self)
     }
     
@@ -10544,6 +10544,16 @@ public class MockProximitySessionCoordinator: ProximitySessionCoordinator, Cucko
         }
     }
 
+    public var isRelyingPartyNotBoundToRequester: Bool {
+        get {
+            return cuckoo_manager.getter(
+                "isRelyingPartyNotBoundToRequester",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.isRelyingPartyNotBoundToRequester
+            )
+        }
+    }
+
     public required init(session p0: PresentationSession) {}
 
     public func initialize() async throws {
@@ -10659,6 +10669,10 @@ public class MockProximitySessionCoordinator: ProximitySessionCoordinator, Cucko
             return .init(manager: cuckoo_manager, name: "relyingPartyWarningViolations")
         }
         
+        var isRelyingPartyNotBoundToRequester: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockProximitySessionCoordinator,Bool> {
+            return .init(manager: cuckoo_manager, name: "isRelyingPartyNotBoundToRequester")
+        }
+        
         func initialize() -> Cuckoo.ProtocolStubNoReturnThrowingFunction<(),Swift.Error> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockProximitySessionCoordinator.self,
@@ -10753,6 +10767,10 @@ public class MockProximitySessionCoordinator: ProximitySessionCoordinator, Cucko
         
         var relyingPartyWarningViolations: Cuckoo.VerifyReadOnlyProperty<[String]> {
             return .init(manager: cuckoo_manager, name: "relyingPartyWarningViolations", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        var isRelyingPartyNotBoundToRequester: Cuckoo.VerifyReadOnlyProperty<Bool> {
+            return .init(manager: cuckoo_manager, name: "isRelyingPartyNotBoundToRequester", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
         
         
@@ -10884,6 +10902,12 @@ public class ProximitySessionCoordinatorStub:ProximitySessionCoordinator, @unche
             return DefaultValueRegistry.defaultValue(for: ([String]).self)
         }
     }
+    
+    public var isRelyingPartyNotBoundToRequester: Bool {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (Bool).self)
+        }
+    }
 
     
     public required init(session p0: PresentationSession) {}
@@ -10984,6 +11008,16 @@ public class MockRemoteSessionCoordinator: RemoteSessionCoordinator, Cuckoo.Prot
                 "relyingPartyWarningViolations",
                 superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
                 defaultCall: __defaultImplStub!.relyingPartyWarningViolations
+            )
+        }
+    }
+
+    public var isRelyingPartyNotBoundToRequester: Bool {
+        get {
+            return cuckoo_manager.getter(
+                "isRelyingPartyNotBoundToRequester",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.isRelyingPartyNotBoundToRequester
             )
         }
     }
@@ -11092,6 +11126,10 @@ public class MockRemoteSessionCoordinator: RemoteSessionCoordinator, Cuckoo.Prot
             return .init(manager: cuckoo_manager, name: "relyingPartyWarningViolations")
         }
         
+        var isRelyingPartyNotBoundToRequester: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockRemoteSessionCoordinator,Bool> {
+            return .init(manager: cuckoo_manager, name: "isRelyingPartyNotBoundToRequester")
+        }
+        
         func initialize() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockRemoteSessionCoordinator.self,
@@ -11178,6 +11216,10 @@ public class MockRemoteSessionCoordinator: RemoteSessionCoordinator, Cuckoo.Prot
         
         var relyingPartyWarningViolations: Cuckoo.VerifyReadOnlyProperty<[String]> {
             return .init(manager: cuckoo_manager, name: "relyingPartyWarningViolations", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        var isRelyingPartyNotBoundToRequester: Cuckoo.VerifyReadOnlyProperty<Bool> {
+            return .init(manager: cuckoo_manager, name: "isRelyingPartyNotBoundToRequester", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
         
         
@@ -11295,6 +11337,12 @@ public class RemoteSessionCoordinatorStub:RemoteSessionCoordinator, @unchecked S
     public var relyingPartyWarningViolations: [String] {
         get {
             return DefaultValueRegistry.defaultValue(for: ([String]).self)
+        }
+    }
+    
+    public var isRelyingPartyNotBoundToRequester: Bool {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (Bool).self)
         }
     }
 
@@ -12220,6 +12268,20 @@ import Foundation
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/RecordedRegistrationCheck.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/RelyingPartyRegistration.swift'
 
 import Cuckoo
@@ -12436,6 +12498,132 @@ import Foundation
 @testable import logic_api
 @testable import logic_authentication
 @testable import feature_common
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Provider/RegistrationCheckRecorder.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+
+public class MockRegistrationCheckRecorder: RegistrationCheckRecorder, Cuckoo.ProtocolMock, @unchecked Sendable {
+    public typealias MocksType = any RegistrationCheckRecorder
+    public typealias Stubbing = __StubbingProxy_RegistrationCheckRecorder
+    public typealias Verification = __VerificationProxy_RegistrationCheckRecorder
+
+    // Original typealiases
+
+    public let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+
+    private var __defaultImplStub: (any RegistrationCheckRecorder)?
+
+    public func enableDefaultImplementation(_ stub: any RegistrationCheckRecorder) {
+        __defaultImplStub = stub
+        cuckoo_manager.enableDefaultStubImplementation()
+    }
+
+
+    public func record(_ p0: RecordedRegistrationCheck) async {
+        return await cuckoo_manager.call(
+            "record(_ p0: RecordedRegistrationCheck) async",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.record(p0)
+        )
+    }
+
+    public func take() async -> RecordedRegistrationCheck? {
+        return await cuckoo_manager.call(
+            "take() async -> RecordedRegistrationCheck?",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.take()
+        )
+    }
+
+    public struct __StubbingProxy_RegistrationCheckRecorder: Cuckoo.StubbingProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+    
+        public init(manager: Cuckoo.MockManager) {
+            self.cuckoo_manager = manager
+        }
+        
+        func record<M1: Cuckoo.Matchable>(_ p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(RecordedRegistrationCheck)> where M1.MatchedType == RecordedRegistrationCheck {
+            let matchers: [Cuckoo.ParameterMatcher<(RecordedRegistrationCheck)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockRegistrationCheckRecorder.self,
+                method: "record(_ p0: RecordedRegistrationCheck) async",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func take() -> Cuckoo.ProtocolStubFunction<(), RecordedRegistrationCheck?> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockRegistrationCheckRecorder.self,
+                method: "take() async -> RecordedRegistrationCheck?",
+                parameterMatchers: matchers
+            ))
+        }
+    }
+
+    public struct __VerificationProxy_RegistrationCheckRecorder: Cuckoo.VerificationProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+        private let callMatcher: Cuckoo.CallMatcher
+        private let sourceLocation: Cuckoo.SourceLocation
+    
+        public init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+            self.cuckoo_manager = manager
+            self.callMatcher = callMatcher
+            self.sourceLocation = sourceLocation
+        }
+        
+        
+        @discardableResult
+        func record<M1: Cuckoo.Matchable>(_ p0: M1) -> Cuckoo.__DoNotUse<(RecordedRegistrationCheck), Void> where M1.MatchedType == RecordedRegistrationCheck {
+            let matchers: [Cuckoo.ParameterMatcher<(RecordedRegistrationCheck)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "record(_ p0: RecordedRegistrationCheck) async",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func take() -> Cuckoo.__DoNotUse<(), RecordedRegistrationCheck?> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "take() async -> RecordedRegistrationCheck?",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+    }
+}
+
+public class RegistrationCheckRecorderStub:RegistrationCheckRecorder, @unchecked Sendable {
+
+
+    
+    public func record(_ p0: RecordedRegistrationCheck) async {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func take() async -> RecordedRegistrationCheck? {
+        return DefaultValueRegistry.defaultValue(for: (RecordedRegistrationCheck?).self)
+    }
+}
+
 
 
 

@@ -1900,6 +1900,10 @@ Logging appears in several areas:
 * WalletKit log file through `logFileName`, written by debug builds only; it holds authorization codes, access
   tokens and issued credentials.
 * Transaction logging through `TransactionLogger`.
+* Each presentation's history entry keeps the outcome of the relying party's registration check
+  (`RecordedRegistrationCheck`, stored beside the entry). When the registration was not verified, or no outcome
+  was recorded, history warns that its contacts may not be the party's; when the certificate was issued to another
+  party than the one that asked, no deletion request is offered, as on Android.
 * Data-protection requests from history (a data deletion request, a report to the DPA) are recorded only after
   the system has handed them to the mail, phone or browser app (`TransactionDetailsInteractor.recordDataProtectionAction`),
   as on Android, so a failed attempt and its retry leave one record.

@@ -360,6 +360,39 @@ final class TestTransactionLogUi: EudiTest {
     XCTAssertEqual(log.toUiModel().sections.map(\.id), ["requested", "shared"])
   }
 
+  func testContacts_WhenTheRegistrationWasIssuedToAnotherParty_ThenOffersNoDeletionAndWarns() {
+    let presentation = sharedPresentation(registrationCheck: .notBoundToRequester)
+
+    XCTAssertTrue(presentation.contacts(for: .requestDataDeletion).isEmpty)
+    XCTAssertFalse(presentation.contacts(for: .reportSuspiciousTransaction).isEmpty)
+    XCTAssertEqual(presentation.registrationWarning, .transactionDetailsRegistrationNotBoundWarning)
+  }
+
+  func testRegistrationWarning_WhenTheRegistrationWasNotVerifiedOrNotRecorded_ThenWarns() {
+    for check in [RecordedRegistrationCheck.notVerified, .notEvaluated, nil] {
+      let presentation = sharedPresentation(registrationCheck: check)
+
+      XCTAssertEqual(presentation.registrationWarning, .transactionDetailsRegistrationNotVerifiedWarning)
+      XCTAssertFalse(presentation.contacts(for: .requestDataDeletion).isEmpty)
+    }
+  }
+
+  func testRegistrationWarning_WhenTheRegistrationWasVerified_ThenDoesNotWarn() {
+    XCTAssertNil(sharedPresentation(registrationCheck: .verified).registrationWarning)
+  }
+
+  private func sharedPresentation(registrationCheck: RecordedRegistrationCheck?) -> TransactionLogDomain.Presentation {
+    TransactionLogDomain.Presentation(
+      id: "1", time: time, result: .completed,
+      party: .init(name: "Verifier", identifier: nil, contacts: ["support@verifier.example"]),
+      intermediary: nil,
+      registration: .init(registrarUrl: nil, purpose: nil, privacyPolicyUrls: [], dpa: .init(name: "DPA", country: nil, contacts: ["https://dpa.example"])),
+      claimsRequested: [],
+      claimsPresented: [.init(credential: .init(identifier: .mDocPid), claims: [])],
+      registrationCheck: registrationCheck
+    )
+  }
+
   func testContacts_WhenNothingWasPresented_ThenDeletionCannotBeRequested() {
     let presentation = TransactionLogDomain.Presentation(
       id: "1", time: time, result: .notCompleted(reason: nil),
@@ -572,7 +605,8 @@ final class TestTransactionLogUi: EudiTest {
         intermediary: .init(name: "Broker", identifier: nil, contacts: []),
         registration: .init(registrarUrl: "https://registry.example", purpose: "Age check", privacyPolicyUrls: ["https://verifier.example/privacy"], dpa: .init(name: "DPA", country: "GR", contacts: ["dpa@example.org"])),
         claimsRequested: [.init(credential: .init(identifier: .mDocPid), claims: [])],
-        claimsPresented: []
+        claimsPresented: [],
+        registrationCheck: .verified
       )
     )
 

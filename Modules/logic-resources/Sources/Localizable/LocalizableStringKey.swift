@@ -333,6 +333,8 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case quickPinWeakError
   case issuanceOfferIssuerNotConfiguredError
   case issuanceSuccessNotIssuedWarning([String])
+  case transactionDetailsRegistrationNotVerifiedWarning
+  case transactionDetailsRegistrationNotBoundWarning
   case quickPinDeviceLockMissingWarning
   case quickPinDeviceLockRequiredWarning
   case documentOfferingDisabledMessage

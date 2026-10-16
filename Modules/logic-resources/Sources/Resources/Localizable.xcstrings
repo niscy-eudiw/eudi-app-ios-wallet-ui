@@ -4044,6 +4044,28 @@
         }
       }
     },
+    "transaction_details_registration_not_bound" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The registration shown here was issued to another party than the one that asked for the data, so its contact details are not that party's. A deletion request is not offered."
+          }
+        }
+      }
+    },
+    "transaction_details_registration_not_verified" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The relying party's registration was not verified when the data was shared, so the contact details shown with it may not be its own."
+          }
+        }
+      }
+    },
     "transaction_details_relying_party_label" : {
       "extractionState" : "manual",
       "localizations" : {
