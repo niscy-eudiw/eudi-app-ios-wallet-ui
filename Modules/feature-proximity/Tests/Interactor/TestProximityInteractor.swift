@@ -249,31 +249,6 @@ final class TestProximityInteractor: EudiTest {
       when(mock.requestReceived()).thenReturn(request)
     }
     
-    stub(walletKitController) { mock in
-      when(
-        mock.parseDocClaim(
-          docId: any(),
-          groupId: any(),
-          docClaim: any(),
-          type: any(),
-          parser: any()
-        )
-      ).thenReturn(
-       [
-        .primitive(
-          id: Constants.randomIdentifier,
-          title: "elementIdentifier",
-          documentId: Constants.isoMdlModelId,
-          nameSpace: "nameSpace",
-          path: ["elementIdentifier"],
-          type: .mdoc,
-          value: .string("value"),
-          status: .available(isRequired: false)
-        )
-       ]
-      )
-    }
-    
     stubRevokedDocumentStatuses(with: [])
     
     // When
@@ -312,31 +287,6 @@ final class TestProximityInteractor: EudiTest {
       when(mock.requestReceived()).thenReturn(request)
     }
     
-    stub(walletKitController) { mock in
-      when(
-        mock.parseDocClaim(
-          docId: any(),
-          groupId: any(),
-          docClaim: any(),
-          type: any(),
-          parser: any()
-        )
-      ).thenReturn(
-       [
-        .primitive(
-          id: Constants.randomIdentifier,
-          title: "elementIdentifier",
-          documentId: Constants.isoMdlModelId,
-          nameSpace: "nameSpace",
-          path: ["elementIdentifier"],
-          type: .mdoc,
-          value: .string("value"),
-          status: .available(isRequired: false)
-        )
-       ]
-      )
-    }
-    
     stubRevokedDocumentStatuses(with: [])
     
     // When
@@ -371,9 +321,6 @@ final class TestProximityInteractor: EudiTest {
       when(mock.requestReceived()).thenReturn(request)
     }
     stub(walletKitController) { mock in
-      when(
-        mock.parseDocClaim(docId: any(), groupId: any(), docClaim: any(), type: any(), parser: any())
-      ).thenReturn([])
       when(
         mock.getVerifierRegistration(
           policy: any(),
@@ -616,13 +563,6 @@ final class TestProximityInteractor: EudiTest {
     default:
       XCTFail("Expected failure state, got \(state)")
     }
-    verify(walletKitController, never()).parseDocClaim(
-      docId: any(),
-      groupId: any(),
-      docClaim: any(),
-      type: any(),
-      parser: any()
-    )
   }
 
   func testOnRequestReceived_WhenTheDocumentIsSuspendedOrUnrecognised_ThenItIsLeftOut() async {

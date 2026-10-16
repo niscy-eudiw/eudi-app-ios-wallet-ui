@@ -209,41 +209,6 @@ final class TestPresentationInteractor: EudiTest {
       when(mock.requestReceived()).thenReturn(request)
     }
 
-    stub(walletKitController) { mock in
-      when(
-        mock.parseDocClaim(
-          docId: any(),
-          groupId: any(),
-          docClaim: any(),
-          type: any(),
-          parser: any()
-        )
-      ).thenReturn(
-       [
-        .primitive(
-          id: Constants.randomIdentifier,
-          title: "elementIdentifier",
-          documentId: Constants.isoMdlModelId,
-          nameSpace: "nameSpace",
-          path: ["elementIdentifier"],
-          type: .mdoc,
-          value: .string("value"),
-          status: .available(isRequired: false)
-        ),
-        .primitive(
-          id: "revokedIdentifier",
-          title: "elementIdentifier",
-          documentId: Constants.isoMdlModelId,
-          nameSpace: "nameSpace",
-          path: ["elementIdentifier"],
-          type: .mdoc,
-          value: .string("value"),
-          status: .available(isRequired: false)
-        )
-       ]
-      )
-    }
-
     stubRevokedDocumentStatuses(with: ["revokedIdentifier"])
 
     // When
@@ -321,31 +286,6 @@ final class TestPresentationInteractor: EudiTest {
 
     stub(presentationCoordinator) { mock in
       when(mock.requestReceived()).thenReturn(request)
-    }
-
-    stub(walletKitController) { mock in
-      when(
-        mock.parseDocClaim(
-          docId: any(),
-          groupId: any(),
-          docClaim: any(),
-          type: any(),
-          parser: any()
-        )
-      ).thenReturn(
-       [
-        .primitive(
-          id: Constants.randomIdentifier,
-          title: "elementIdentifier",
-          documentId: Constants.isoMdlModelId,
-          nameSpace: "nameSpace",
-          path: ["elementIdentifier"],
-          type: .mdoc,
-          value: .string("value"),
-          status: .available(isRequired: false)
-        )
-       ]
-      )
     }
 
     stubRevokedDocumentStatuses(with: [])
@@ -597,18 +537,6 @@ final class TestPresentationInteractor: EudiTest {
       when(mock.fetchRevokedDocumentStatuses()).thenReturn(Self.statuses(allDocIds, as: .revoked))
     }
 
-    stub(walletKitController) { mock in
-      when(
-        mock.parseDocClaim(
-          docId: any(),
-          groupId: any(),
-          docClaim: any(),
-          type: any(),
-          parser: any()
-        )
-      ).thenReturn([])
-    }
-
     // When
     let result = await interactor.onRequestReceived()
 
@@ -637,13 +565,6 @@ final class TestPresentationInteractor: EudiTest {
     default:
       XCTFail("Expected failure, got \(result)")
     }
-    verify(walletKitController, never()).parseDocClaim(
-      docId: any(),
-      groupId: any(),
-      docClaim: any(),
-      type: any(),
-      parser: any()
-    )
   }
 
   func testOnRequestReceived_WhenTheDocumentIsSuspendedOrUnrecognised_ThenItIsLeftOut() async {
@@ -734,30 +655,6 @@ private extension TestPresentationInteractor {
       when(mock.requestReceived()).thenReturn(request)
     }
     stubRevokedDocumentStatuses(with: [])
-    stub(walletKitController) { mock in
-      when(
-        mock.parseDocClaim(
-          docId: any(),
-          groupId: any(),
-          docClaim: any(),
-          type: any(),
-          parser: any()
-        )
-      ).thenReturn(
-        [
-          .primitive(
-            id: Constants.randomIdentifier,
-            title: "elementIdentifier",
-            documentId: Constants.isoMdlModelId,
-            nameSpace: "nameSpace",
-            path: ["nameSpace", "elementIdentifier"],
-            type: .mdoc,
-            value: .string("value"),
-            status: .available(isRequired: false)
-          )
-        ]
-      )
-    }
     _ = await interactor.onRequestReceived()
   }
 
