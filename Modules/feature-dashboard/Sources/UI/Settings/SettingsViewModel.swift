@@ -239,6 +239,7 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
             navigationTitle: .resetWallet,
             caption: .resetWalletBiometryCaption,
             quickPinOnlyCaption: .resetWalletPinCaption,
+            pinTextFieldTitle: .resetWalletPinCaption,
             navigationSuccessType: .push(.featureDashboardModule(.walletReset)),
             navigationBackType: .pop,
             isPreAuthorization: false,
