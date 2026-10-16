@@ -33,8 +33,10 @@ public enum ProximityResponsePreparationPartialState: Sendable {
 }
 
 public enum ProximityRequestPartialState: Sendable {
+  /// Every document set that satisfies the request, blocked documents left out, for the user to choose from as in
+  /// the remote flow.
   case success(
-    [RequestDataUiModel],
+    [[RequestDataUiModel]],
     relyingParty: String,
     dataRequestInfo: String,
     isTrusted: Bool,
@@ -122,14 +124,19 @@ final actor ProximityInteractorImpl: ProximityInteractor {
       let coordinator = proximitySessionCoordinator
       let response = try await coordinator.requestReceived()
       let blockedDocuments = try await walletKitController.fetchRevokedDocumentStatuses()
-      let documents = (response.itemSets.first ?? []).filter { item in blockedDocuments[item.docId] == nil }
       let registrationPolicy = coordinator.relyingPartyRegistration
       let overaskedClaims = response.overaskedClaims
+      let combinations = response.itemSets
+        .map { documentSet in documentSet.filter { item in blockedDocuments[item.docId] == nil } }
+        .map { documentSet in
+          documentSet.toUiModels(
+            with: self.walletKitController,
+            overaskedPaths: documentSet.overaskedPaths(from: overaskedClaims)
+          )
+        }
+        .filter { !$0.isEmpty }
       return .success(
-        documents.toUiModels(
-          with: self.walletKitController,
-          overaskedPaths: documents.overaskedPaths(from: overaskedClaims)
-        ),
+        combinations,
         relyingParty: response.relyingParty,
         dataRequestInfo: response.dataRequestInfo,
         isTrusted: response.isTrusted,

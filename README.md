@@ -206,7 +206,8 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
 5. You will be prompted to enable Bluetooth (if it is not already enabled) and grant the necessary permissions for the app to use it (if you have not already done so).
 6. The Verifier scans the presented QR code.
 7. The app's "Request" screen will load. Here, you can select or deselect which attributes to share
-   with the Verifier. You must select at least one attribute to proceed. As in the remote flow, and
+   with the Verifier. You must select at least one attribute to proceed. If the request can be satisfied
+   in more than one way, choose the option you prefer, as in the remote flow. As in the remote flow, and
    subject to the same setting, a reader whose registration certificate cannot be validated raises a
    warning that keeps "Share" disabled until you acknowledge it. A reader that does not authenticate
    with a trusted reader certificate is shown with a generic name (unless a verified registration

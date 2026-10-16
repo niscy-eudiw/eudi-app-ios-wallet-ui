@@ -276,7 +276,69 @@ final class TestProximityInteractor: EudiTest {
     // Then
     switch state {
     case .success(let uimodels, let relyingParty, let dataRequestInfo, let isTrusted, let registration):
-      XCTAssertEqual(uimodels, expectedUiModels)
+      XCTAssertEqual(uimodels, [expectedUiModels])
+      XCTAssertEqual(relyingParty, request.relyingParty)
+      XCTAssertEqual(dataRequestInfo, request.dataRequestInfo)
+      XCTAssertEqual(isTrusted, request.isTrusted)
+      // proximity carries no registration certificate
+      XCTAssertEqual(registration.registration, .notSupported)
+    default:
+      XCTFail("Wrong state \(state)")
+    }
+  }
+  func testOnRequestReceived_WhenTwoDocumentSetsSatisfyTheRequest_ThenOffersBoth() async {
+    
+    // Given
+    let single = Self.mockPresentationRequest
+    let request = PresentationRequest(
+      itemSets: single.itemSets + single.itemSets,
+      relyingParty: single.relyingParty,
+      dataRequestInfo: single.dataRequestInfo,
+      isTrusted: single.isTrusted,
+      overaskedClaims: single.overaskedClaims,
+      transactionDataSets: single.transactionDataSets
+    )
+    
+    let expectedUiModels = Self.mockUiModels()
+    
+    stub(presentationSessionCoordinator) { mock in
+      when(mock.requestReceived()).thenReturn(request)
+    }
+    
+    stub(walletKitController) { mock in
+      when(
+        mock.parseDocClaim(
+          docId: any(),
+          groupId: any(),
+          docClaim: any(),
+          type: any(),
+          parser: any()
+        )
+      ).thenReturn(
+       [
+        .primitive(
+          id: Constants.randomIdentifier,
+          title: "elementIdentifier",
+          documentId: Constants.isoMdlModelId,
+          nameSpace: "nameSpace",
+          path: ["elementIdentifier"],
+          type: .mdoc,
+          value: .string("value"),
+          status: .available(isRequired: false)
+        )
+       ]
+      )
+    }
+    
+    stubRevokedDocumentStatuses(with: [])
+    
+    // When
+    let state = await interactor.onRequestReceived()
+    
+    // Then
+    switch state {
+    case .success(let uimodels, let relyingParty, let dataRequestInfo, let isTrusted, let registration):
+      XCTAssertEqual(uimodels, [expectedUiModels, expectedUiModels])
       XCTAssertEqual(relyingParty, request.relyingParty)
       XCTAssertEqual(dataRequestInfo, request.dataRequestInfo)
       XCTAssertEqual(isTrusted, request.isTrusted)
