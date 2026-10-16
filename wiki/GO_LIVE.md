@@ -1763,6 +1763,16 @@ container identifier is built by `Bundle.getAppGroupIdentifier()` in
 return "group.\(mainAppBundleID)"
 ```
 
+The transaction history is a legal record. It has no retention limit and nothing deletes it automatically:
+removing a document leaves its entries in place. Entries go only through the per-entry deletion the user
+confirms, through the factory reset, and through the cleanup that drops an entry the app can no longer
+decode (`WalletKitController.fetchTransactionLogs`), as on Android. The store is read in batches of 100
+(`SwiftDataServiceImpl`), and the transactions tab reads it again only when the history changed: every write
+or deletion, by the app or the ID Provider extension, advances `Prefs.Key.transactionLogRevision`
+(`TransactionLogStorageController.revision()`), and `TransactionTabInteractorImpl.fetchTransactions()` reuses
+its last read while that value is unchanged. The tab still holds the whole history in memory, because its
+filters, search and date range work over all entries.
+
 Production tasks:
 
 * Confirm which data is stored in SwiftData.

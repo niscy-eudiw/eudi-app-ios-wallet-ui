@@ -8172,6 +8172,16 @@ return await cuckoo_manager.call(
         )
     }
 
+    public func transactionLogRevision() async -> Int {
+        return await cuckoo_manager.call(
+            "transactionLogRevision() async -> Int",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.transactionLogRevision()
+        )
+    }
+
     public func deleteTransactionLog(with p0: String) async throws {
         return try await cuckoo_manager.callThrows(
             "deleteTransactionLog(with p0: String) async throws",
@@ -8707,6 +8717,14 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
                 method: "fetchTransactionLogs() async throws -> [TransactionLogDomain]",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func transactionLogRevision() -> Cuckoo.ProtocolStubFunction<(), Int> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "transactionLogRevision() async -> Int",
                 parameterMatchers: matchers
             ))
         }
@@ -9329,6 +9347,18 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
+        func transactionLogRevision() -> Cuckoo.__DoNotUse<(), Int> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "transactionLogRevision() async -> Int",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
         func deleteTransactionLog<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(String), Void> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
@@ -9761,6 +9791,10 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
     
     public func fetchTransactionLogs() async throws -> [TransactionLogDomain] {
         return DefaultValueRegistry.defaultValue(for: ([TransactionLogDomain]).self)
+    }
+    
+    public func transactionLogRevision() async -> Int {
+        return DefaultValueRegistry.defaultValue(for: (Int).self)
     }
     
     public func deleteTransactionLog(with p0: String) async throws {

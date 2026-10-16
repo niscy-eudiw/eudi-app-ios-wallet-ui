@@ -27,5 +27,8 @@ public extension Prefs {
     case batchCounter
     case validateIssuerRegistrationCertificate
     case trustMarkIntroductionCompleted
+    /// Changes whenever the transaction history is written or deleted, by the app or the ID Provider extension, so
+    /// the history is read again only when it changed.
+    case transactionLogRevision
   }
 }

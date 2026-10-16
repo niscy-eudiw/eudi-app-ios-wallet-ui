@@ -87,6 +87,8 @@ public protocol WalletKitController: Sendable {
 
   func fetchTransactionLog(with id: String) async throws -> TransactionLogDomain
   func fetchTransactionLogs() async throws -> [TransactionLogDomain]
+  /// Changes whenever the transaction history is written or deleted, so a reader can tell whether it changed.
+  func transactionLogRevision() async -> Int
   func deleteTransactionLog(with id: String) async throws
   func fetchPresentationActions(parentPresentationId: String) async throws -> [TransactionLogDomain]
   func recordDataDeletionRequest(for presentation: TransactionLogDomain.Presentation, contactUrl: URL) async throws
@@ -719,6 +721,10 @@ final actor WalletKitControllerImpl: WalletKitController {
       throw WalletCoreError.unableToFetchTransactionLog
     }
     return log
+  }
+
+  func transactionLogRevision() async -> Int {
+    await transactionLogStorageController.revision()
   }
 
   func fetchTransactionLogs() async throws -> [TransactionLogDomain] {

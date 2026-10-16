@@ -38,7 +38,10 @@ public final class LogicStorageAssembly: Assembly {
     .inObjectScope(ObjectScope.transient)
 
     container.register((any TransactionLogStorageController).self) { r in
-      TransactionLogStorageControllerImpl(swiftDataService: r.force(SwiftDataService.self))
+      TransactionLogStorageControllerImpl(
+        swiftDataService: r.force(SwiftDataService.self),
+        prefsController: r.force(PrefsController.self)
+      )
     }
     .inObjectScope(ObjectScope.transient)
 
