@@ -44,6 +44,7 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
   var isTrustBlockedAlertShowing: Bool = false
   var itemsChanged: Bool = false
   var isRiskAcknowledged: Bool = false
+  var isUserImageConfirmationShowing: Bool = false
 
   public init(router: Router, originator: AppRoute) {
     super.init(
@@ -89,6 +90,20 @@ open class BaseRequestViewModel<Router: RouterHost>: ViewModel<Router, RequestVi
   open func onShare() {
     guard let route = getSuccessRoute() else { return }
     router.push(with: route)
+  }
+
+  /// Shares, or first asks for confirmation when Share would disclose a picture of the holder, as on Android.
+  func onShareClick() {
+    guard viewState.items.sharesUserImage() else {
+      onShare()
+      return
+    }
+    isUserImageConfirmationShowing = true
+  }
+
+  func onUserImageShareConfirmed() {
+    isUserImageConfirmationShowing = false
+    onShare()
   }
 
   open func getPopRoute() -> AppRoute? {

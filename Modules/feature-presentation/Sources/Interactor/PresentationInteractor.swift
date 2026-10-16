@@ -70,16 +70,19 @@ final actor PresentationInteractorImpl: PresentationInteractor {
 
   private let presentationCoordinator: RemoteSessionCoordinator
   private let walletKitController: WalletKitController
+  private let configUiLogic: ConfigUiLogic
 
   private var requestedItemSets: [[DocElements]] = []
   private var requestedRequestNames: [String?] = []
 
   init(
     with presentationCoordinator: RemoteSessionCoordinator,
-    and walletKitController: WalletKitController
+    and walletKitController: WalletKitController,
+    configUiLogic: ConfigUiLogic
   ) {
     self.presentationCoordinator = presentationCoordinator
     self.walletKitController = walletKitController
+    self.configUiLogic = configUiLogic
   }
 
   public func getSessionStatePublisher() async -> RemotePublisherPartialState {
@@ -111,6 +114,7 @@ final actor PresentationInteractorImpl: PresentationInteractor {
           let uiModels = documentSet.toUiModels(
             with: self.walletKitController,
             claimsAreSelectable: false,
+            userImageClaimKeys: self.configUiLogic.userImageClaimKeys,
             overaskedPaths: documentSet.overaskedPaths(from: overaskedClaims)
           )
           let transactionData = transactionDataSets.indices.contains(index) ? transactionDataSets[index] : [:]

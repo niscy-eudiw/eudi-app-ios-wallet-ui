@@ -36,7 +36,7 @@ public struct BaseRequestView<Router: RouterHost>: View {
       BaseRequestViewContainer(
         viewState: viewModel.viewState,
         isRiskAcknowledged: $viewModel.isRiskAcknowledged,
-        onShare: viewModel.onShare,
+        onShare: viewModel.onShareClick,
         onSelectionChanged: { id in
           Task {
             await viewModel.onSelectionChanged(id: id)
@@ -65,6 +65,15 @@ public struct BaseRequestView<Router: RouterHost>: View {
       message: .incompleteRequestDataSelection,
       actions: {
         Button(.okButton) {}
+      }
+    )
+    .alertView(
+      isPresented: $viewModel.isUserImageConfirmationShowing,
+      title: .requestUserImageConfirmationTitle,
+      message: .requestUserImageConfirmationMessage,
+      actions: {
+        Button(.shareButton) { viewModel.onUserImageShareConfirmed() }
+        Button(.cancelButton, role: .cancel) {}
       }
     )
     .alertView(
@@ -127,6 +136,10 @@ private struct BaseRequestViewContainer: View {
         if let registration = viewState.relyingPartyRegistration {
           RelyingPartyRegistrationView(data: registration)
             .shimmer(isLoading: viewState.isLoading)
+        }
+
+        if viewState.items.requestsUserImage() {
+          WarningNoticeView(message: .requestUserImageNotice)
         }
 
         titledSection(.requestRequestedDataTitle) {

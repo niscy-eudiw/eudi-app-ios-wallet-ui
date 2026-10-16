@@ -100,4 +100,8 @@ final class TestConfigUiLogic: EudiTest {
       XCTAssertFalse(configUiLogic.isLoginRoute(route), route.info.key)
     }
   }
+
+  func testUserImageClaimKeys_ByDefault_AreThePortraitAndThePicture() {
+    XCTAssertEqual(configUiLogic.userImageClaimKeys, ["portrait", "picture"])
+  }
 }

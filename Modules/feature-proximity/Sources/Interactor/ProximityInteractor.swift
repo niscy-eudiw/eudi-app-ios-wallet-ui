@@ -83,13 +83,16 @@ final actor ProximityInteractorImpl: ProximityInteractor {
 
   private let proximitySessionCoordinator: ProximitySessionCoordinator
   private let walletKitController: WalletKitController
+  private let configUiLogic: ConfigUiLogic
 
   init(
     with proximitySessionCoordinator: ProximitySessionCoordinator,
-    and walletKitController: WalletKitController
+    and walletKitController: WalletKitController,
+    configUiLogic: ConfigUiLogic
   ) {
     self.proximitySessionCoordinator = proximitySessionCoordinator
     self.walletKitController = walletKitController
+    self.configUiLogic = configUiLogic
   }
 
   func getCoordinator() async -> ProximityCoordinatorPartialState {
@@ -131,6 +134,7 @@ final actor ProximityInteractorImpl: ProximityInteractor {
         .map { documentSet in
           documentSet.toUiModels(
             with: self.walletKitController,
+            userImageClaimKeys: self.configUiLogic.userImageClaimKeys,
             overaskedPaths: documentSet.overaskedPaths(from: overaskedClaims)
           )
         }

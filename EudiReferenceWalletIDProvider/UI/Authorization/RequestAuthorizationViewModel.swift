@@ -27,6 +27,8 @@ struct RequestAuthorizationViewState: ViewState {
   /// The warning to acknowledge before Accept: `accessCertificateNotTrusted` while the requester is not
   /// verified, which the reference app never reports it to be.
   let warning: RegistrationWarning?
+  /// Shows the biometric-data notice, and Accept asks for confirmation first, as Share does in the app.
+  let requestsUserImage: Bool
 }
 
 @MainActor
@@ -34,6 +36,7 @@ struct RequestAuthorizationViewState: ViewState {
 final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewState> {
   var showBiometryView: Bool = false
   var isRiskAcknowledged: Bool = false
+  var isUserImageConfirmationShowing: Bool = false
 
   private var isRequestAuthorized: Bool = false
 
@@ -57,7 +60,8 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
           ),
           description: .dataSharingTitle
         ),
-        warning: nil
+        warning: nil,
+        requestsUserImage: false
       )
     )
   }
@@ -115,7 +119,8 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
               description: .requestsTheFollowing
             )
           ),
-          warning: uiModel.isRelyingPartyVerified ? nil : .accessCertificateNotTrusted
+          warning: uiModel.isRelyingPartyVerified ? nil : .accessCertificateNotTrusted,
+          requestsUserImage: uiModel.requestsUserImage
         )
       }
     } catch let error {
@@ -150,6 +155,21 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
         )
       }
     }
+  }
+
+  /// Asks for the PIN or biometrics that send the response, after a confirmation when the request includes a
+  /// picture of the holder.
+  func onAcceptClick() {
+    guard viewState.requestsUserImage else {
+      showBiometryView = true
+      return
+    }
+    isUserImageConfirmationShowing = true
+  }
+
+  func onUserImageShareConfirmed() {
+    isUserImageConfirmationShowing = false
+    showBiometryView = true
   }
 
   func cancelRequest() {

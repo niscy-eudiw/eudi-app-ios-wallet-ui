@@ -656,6 +656,12 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "understand_risks_agree")
     case .relyingPartyNotVerifiedWarning:
       bundle.localizedString(forKey: "relying_party_not_verified_warning")
+    case .requestUserImageNotice:
+      bundle.localizedString(forKey: "request_user_image_notice")
+    case .requestUserImageConfirmationTitle:
+      bundle.localizedString(forKey: "request_user_image_confirmation_title")
+    case .requestUserImageConfirmationMessage:
+      bundle.localizedString(forKey: "request_user_image_confirmation_message")
     case .accessCertificateNotTrustedWarning:
       bundle.localizedString(forKey: "access_certificate_not_trusted_warning")
     case .relyingPartyOveraskedWarning:

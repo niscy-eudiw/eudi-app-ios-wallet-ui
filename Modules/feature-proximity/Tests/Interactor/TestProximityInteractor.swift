@@ -28,10 +28,15 @@ final class TestProximityInteractor: EudiTest {
   
   var interactor: ProximityInteractor!
   var walletKitController: MockWalletKitController!
+  var configUiLogic: MockConfigUiLogic!
   var presentationSessionCoordinator: MockProximitySessionCoordinator!
   
   override func setUp() {
     self.walletKitController = MockWalletKitController()
+    self.configUiLogic = MockConfigUiLogic(themeConfiguration: .default)
+    stub(configUiLogic) { mock in
+      when(mock.userImageClaimKeys.get).thenReturn(["portrait", "picture"])
+    }
     self.presentationSessionCoordinator = MockProximitySessionCoordinator(
       session: Constants.mockPresentationSession
     )
@@ -66,7 +71,8 @@ final class TestProximityInteractor: EudiTest {
 
     self.interactor = ProximityInteractorImpl(
       with: presentationSessionCoordinator,
-      and: walletKitController
+      and: walletKitController,
+      configUiLogic: configUiLogic
     )
   }
   

@@ -2397,6 +2397,10 @@ Controls to evidence:
 Project-specific actions:
 
 * Review presentation request UI for clarity.
+* Review the claims that count as a picture of the holder (`ConfigUiLogic.userImageClaimKeys`: `portrait` and
+  `picture` by default). A request for one of them shows a biometric-data notice. Share asks for confirmation while
+  the picture would be disclosed, and so does Accept in the ID Provider extension, as on Android. Add the claims
+  your credentials use.
 * Review transaction log contents.
 * Review analytics providers and SDK privacy manifests.
 * Complete DPIA before production.

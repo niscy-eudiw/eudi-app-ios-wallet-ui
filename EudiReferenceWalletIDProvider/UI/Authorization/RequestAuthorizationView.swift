@@ -45,6 +45,15 @@ struct RequestAuthorizationView: View {
       }
       .shimmer(isLoading: viewModel.viewState.isLoading)
       .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .alertView(
+        isPresented: $viewModel.isUserImageConfirmationShowing,
+        title: .requestUserImageConfirmationTitle,
+        message: .requestUserImageConfirmationMessage,
+        actions: {
+          Button(.shareButton) { viewModel.onUserImageShareConfirmed() }
+          Button(.cancelButton, role: .cancel) {}
+        }
+      )
       .onAppear {
         viewModel.initialize()
       }
@@ -63,6 +72,10 @@ struct RequestAuthorizationView: View {
           )
 
           VStack(alignment: .leading, spacing: SPACING_MEDIUM) {
+            if viewState.requestsUserImage {
+              WarningNoticeView(message: .requestUserImageNotice)
+            }
+
             ForEach(viewState.items.indices, id: \.self) { index in
               let section = viewState.items[index]
               WrapExpandableListView(
@@ -154,7 +167,7 @@ struct RequestAuthorizationView: View {
       isLoading: viewModel.viewState.isLoading,
       isEnabled: viewModel.canAccept,
       onAction: {
-        viewModel.showBiometryView = true
+        viewModel.onAcceptClick()
       }()
     )
   }

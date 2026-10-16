@@ -190,7 +190,8 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
    missing or cannot be validated, or if the request reaches beyond what the Verifier registered
    for, a warning appears and "Share" stays disabled until you acknowledge it. With the setting off
    — its default — no registration is evaluated and the Verifier is named by its access certificate.
-8. Tap "Share".
+   If the request includes your portrait, a notice says that it can be used as biometric data.
+8. Tap "Share". If the request includes your portrait, confirm that you want to share it.
 9. Enter the PIN you set up during the initial steps, or use Face ID or Touch ID if you turned it on
    in Settings. If the biometric check fails, enter the PIN.
 10. Upon successful submission, tap "Done".
@@ -213,8 +214,9 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
    with a trusted reader certificate is shown with a generic name (unless a verified registration
    certificate names it) and the warning that its identity could not be verified, which keeps "Share"
    disabled the same way, whatever the setting. If the reader ends the Bluetooth session before you
-   answer, the wallet stops the presentation and returns to the screen you started from.
-8. Tap "Share".
+   answer, the wallet stops the presentation and returns to the screen you started from. As in the
+   remote flow, a request for your portrait shows the biometric-data notice.
+8. Tap "Share". While your portrait is selected, confirm that you want to share it.
 9. Enter the PIN you set up during the initial steps, or use Face ID or Touch ID if you turned it on
    in Settings. If the biometric check fails, enter the PIN.
 10. Upon successful authentication, tap "Done".

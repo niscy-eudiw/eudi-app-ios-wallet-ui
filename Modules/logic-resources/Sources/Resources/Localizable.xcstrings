@@ -2669,6 +2669,39 @@
         }
       }
     },
+    "request_user_image_confirmation_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your portrait will be sent to this relying party. Share it only if you trust the relying party and the request needs it."
+          }
+        }
+      }
+    },
+    "request_user_image_confirmation_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share your portrait?"
+          }
+        }
+      }
+    },
+    "request_user_image_notice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This request includes your portrait, which can be used as biometric data to identify you by your face."
+          }
+        }
+      }
+    },
     "requests_the_following" : {
       "extractionState" : "manual",
       "localizations" : {

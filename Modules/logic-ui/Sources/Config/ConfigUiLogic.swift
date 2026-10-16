@@ -35,6 +35,11 @@ public protocol ConfigUiLogic: Sendable {
   /// opens no other screen, and one already on the path sends the wallet back to start-up.
   var loginRouteKeys: [AppRouteKey] { get }
 
+  /// The claims that hold a picture of the holder, by the last element of their path. A request for one of them
+  /// shows a biometric-data notice, and Share asks for confirmation while it would be disclosed, as the Android
+  /// wallet's `userImageClaimKeys`; add the claims your credentials use.
+  var userImageClaimKeys: Set<String> { get }
+
   init(themeConfiguration: ThemeConfiguration)
 }
 
@@ -84,6 +89,8 @@ struct ConfigUiLogicImpl: ConfigUiLogic {
     AppRoute.featureDashboardModule(.walletReset).info.key,
     AppRoute.featureCommonModule(.biometry(config: NoConfig())).info.key
   ]
+
+  public var userImageClaimKeys: Set<String> = ["portrait", "picture"]
 
   public var dashboardRoute: AppRoute {
     return .featureDashboardModule(.dashboard)

@@ -15,6 +15,7 @@
  */
 import Swinject
 import logic_core
+import logic_ui
 
 public final class FeatureProximityAssembly: Assembly {
 
@@ -24,7 +25,8 @@ public final class FeatureProximityAssembly: Assembly {
     container.register(ProximityInteractor.self) { r, session in
       ProximityInteractorImpl(
         with: session,
-        and: r.force(WalletKitController.self)
+        and: r.force(WalletKitController.self),
+        configUiLogic: r.force(ConfigUiLogic.self)
       )
     }
     .inObjectScope(ObjectScope.transient)

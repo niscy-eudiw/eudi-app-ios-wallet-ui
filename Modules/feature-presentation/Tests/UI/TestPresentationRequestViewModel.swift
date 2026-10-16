@@ -23,6 +23,8 @@ import logic_business
 
 final class TestPresentationRequestViewModel: EudiTest {
 
+  private let interactor = MockPresentationInteractor()
+
   @MainActor
   func testDoWork_WhenTheVerifierDidNotAuthenticate_ThenWarnsAboutItsAccessCertificate() async {
     let viewModel = makeViewModel(isTrusted: false)
@@ -40,19 +42,54 @@ final class TestPresentationRequestViewModel: EudiTest {
 
     XCTAssertNil(viewModel.viewState.registrationWarning)
   }
+
+  @MainActor
+  func testOnShareClick_WhenThePortraitWouldBeShared_ThenAsksForConfirmationFirst() async {
+    let viewModel = makeViewModel(isTrusted: true, combinations: [RequestCombinationUiModel(documents: [portraitRequest()])])
+    await viewModel.doWork()
+
+    viewModel.onShareClick()
+
+    XCTAssertTrue(viewModel.isUserImageConfirmationShowing)
+    verify(interactor, never()).onResponsePrepare(combinationIndex: any())
+  }
+
+  @MainActor
+  func testOnShareClick_WhenNoPortraitWouldBeShared_ThenSharesWithoutAConfirmation() async {
+    let viewModel = makeViewModel(isTrusted: true)
+    await viewModel.doWork()
+
+    viewModel.onShareClick()
+
+    XCTAssertFalse(viewModel.isUserImageConfirmationShowing)
+  }
+
+  @MainActor
+  func testOnUserImageShareConfirmed_ThenTheConfirmationClosesAndSharingGoesOn() async {
+    let viewModel = makeViewModel(isTrusted: true, combinations: [RequestCombinationUiModel(documents: [portraitRequest()])])
+    await viewModel.doWork()
+    viewModel.onShareClick()
+
+    viewModel.onUserImageShareConfirmed()
+
+    XCTAssertFalse(viewModel.isUserImageConfirmationShowing)
+  }
 }
 
 private extension TestPresentationRequestViewModel {
 
   @MainActor
-  func makeViewModel(isTrusted: Bool) -> PresentationRequestViewModel<MockRouterHost> {
-    let interactor = MockPresentationInteractor()
+  func makeViewModel(
+    isTrusted: Bool,
+    combinations: [RequestCombinationUiModel] = []
+  ) -> PresentationRequestViewModel<MockRouterHost> {
     stub(interactor) { mock in
+      when(mock.onResponsePrepare(combinationIndex: any())).thenReturn(.failure(RuntimeError.genericError))
       when(mock.getCoordinator()).thenReturn(.failure(RuntimeError.genericError))
       when(mock.onDeviceEngagement()).thenReturn(
         .success(
           OnlineAuthenticationRequestSuccessModel(
-            requestDataCombinations: [],
+            requestDataCombinations: combinations,
             relyingParty: "Verifier",
             dataRequestInfo: "",
             isTrusted: isTrusted,
@@ -71,6 +108,29 @@ private extension TestPresentationRequestViewModel {
       router: MockRouterHost(),
       interactor: interactor,
       originator: .featureDashboardModule(.dashboard)
+    )
+  }
+
+  /// A document whose portrait is requested; its claims are disclosed as a whole, as in a remote presentation.
+  func portraitRequest() -> RequestDataUiModel {
+    let portrait: ExpandableListItem<DocumentElementClaim> = .single(
+      .init(
+        collapsed: .init(groupId: "portrait-id", mainContent: .text(.custom("value")), overlineText: .custom("Portrait")),
+        domainModel: .primitive(
+          id: "portrait-id",
+          title: "Portrait",
+          documentId: "doc-id",
+          nameSpace: "nameSpace",
+          path: ["nameSpace", "portrait"],
+          type: .mdoc,
+          value: .string("value"),
+          status: .available(isRequired: false)
+        )
+      )
+    )
+    return .init(
+      section: .init(id: "doc-id", title: "Document", listItems: [portrait]),
+      userImageItemIds: ["portrait-id"]
     )
   }
 }

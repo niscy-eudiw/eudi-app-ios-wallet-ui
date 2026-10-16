@@ -26,10 +26,15 @@ import EudiWalletKit
 final class TestPresentationInteractor: EudiTest {
   var interactor: PresentationInteractor!
   var walletKitController: MockWalletKitController!
+  var configUiLogic: MockConfigUiLogic!
   var presentationCoordinator: MockRemoteSessionCoordinator!
 
   override func setUp() {
     walletKitController = MockWalletKitController()
+    configUiLogic = MockConfigUiLogic(themeConfiguration: .default)
+    stub(configUiLogic) { mock in
+      when(mock.userImageClaimKeys.get).thenReturn(["portrait", "picture"])
+    }
     presentationCoordinator = MockRemoteSessionCoordinator(
       session: Constants.mockPresentationSession
     )
@@ -64,7 +69,8 @@ final class TestPresentationInteractor: EudiTest {
 
     interactor = PresentationInteractorImpl(
       with: presentationCoordinator,
-      and: walletKitController
+      and: walletKitController,
+      configUiLogic: configUiLogic
     )
   }
 
@@ -125,7 +131,11 @@ final class TestPresentationInteractor: EudiTest {
 
   func testOnSendResponse_WhenAnotherSessionHasStarted_ThenSendsOnTheCoordinatorOfItsRoute() async {
     let otherCoordinator = MockRemoteSessionCoordinator(session: Constants.mockPresentationSession)
-    let otherInteractor = PresentationInteractorImpl(with: otherCoordinator, and: walletKitController)
+    let otherInteractor = PresentationInteractorImpl(
+      with: otherCoordinator,
+      and: walletKitController,
+      configUiLogic: configUiLogic
+    )
     stub(presentationCoordinator) { mock in
       when(mock.getState()).thenReturn(.responseToSend(Self.mockRequestItems))
       when(mock.sendResponse(response: any())).thenDoNothing()
@@ -246,6 +256,61 @@ final class TestPresentationInteractor: EudiTest {
       default:
         XCTFail("Expected success but got \(result)")
     }
+  }
+
+  func testOnRequestReceived_WhenThePortraitIsRequested_ThenItsRowIsMarkedAsAPictureOfTheHolder() async {
+    // Given: a request for the portrait and the family name. The claims are parsed by WalletKitController's
+    // extension, not the mock, so the request itself carries them.
+    let request = Constants.mockPresentationRequest
+    let element: (String) -> MsoMdocElement = { name in
+      .init(
+        elementIdentifier: name,
+        isOptional: false,
+        stringValue: "value",
+        docClaim: .init(name: name, dataValue: .string("value"), stringValue: "value"),
+        isValid: true
+      )
+    }
+    let portraitRequest = PresentationRequest(
+      itemSets: [
+        [
+          .msoMdoc(
+            .init(
+              docId: Constants.isoMdlModelId,
+              docType: Constants.isoMdlDocType,
+              displayName: Constants.isoMdlName,
+              nameSpacedElements: [.init(nameSpace: "nameSpace", elements: [element("portrait"), element("family_name")])]
+            )
+          )
+        ]
+      ],
+      relyingParty: request.relyingParty,
+      dataRequestInfo: request.dataRequestInfo,
+      isTrusted: request.isTrusted,
+      overaskedClaims: request.overaskedClaims,
+      transactionDataSets: [],
+      requestNames: []
+    )
+    await stubReceivedRequest(portraitRequest)
+
+    // When
+    let state = await interactor.onRequestReceived()
+
+    // Then
+    guard case .success(let successModel) = state else {
+      return XCTFail("Wrong state \(state)")
+    }
+    let document = successModel.requestDataCombinations.first?.documents.first
+    let portraitIds = Set(
+      document?.section.listItems.compactMap { item -> String? in
+        guard case .primitive(let id, _, _, _, let path, _, _, _)? = item.domainModel, path.last == "portrait" else {
+          return nil
+        }
+        return id
+      } ?? []
+    )
+    XCTAssertEqual(portraitIds.count, 1)
+    XCTAssertEqual(document?.userImageItemIds, portraitIds)
   }
 
   func testOnRequestReceived_WhenCoordinatorReturnsRequest_ThenEmitsSuccessStateWithParsedUiModels() async {

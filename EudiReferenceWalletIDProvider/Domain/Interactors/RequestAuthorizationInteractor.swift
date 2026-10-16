@@ -33,15 +33,18 @@ protocol RequestAuthorizationInteractor: Sendable {
 final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
 
   private let dcApiHandler: DcApiHandler
+  private let configUiLogic: ConfigUiLogic
 
   private let interactor: WalletKitController = DIGraph.shared.resolver.force(
     WalletKitController.self
   )
 
   init(
-    dcApiHandler: DcApiHandler
+    dcApiHandler: DcApiHandler,
+    configUiLogic: ConfigUiLogic
   ) {
     self.dcApiHandler = dcApiHandler
+    self.configUiLogic = configUiLogic
   }
 
   /// A request that would include a document with a revocation record (revoked, suspended or unrecognised) is
@@ -59,6 +62,10 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
       throw WalletCoreError.documentBlocked
     }
     let websiteName = context.requestingWebsiteOrigin?.absoluteString ?? LocalizableStringKey.unknownVerifier.toString
+    let userImageClaimKeys = configUiLogic.userImageClaimKeys
+    let requestsUserImage = docClaimsModels.contains { document in
+      document.docClaims.contains { userImageClaimKeys.contains($0.name) }
+    }
     let documents = docClaimsModels.compactMap {
       $0.transformToDocumentUi(isSensitive: false)
     }
@@ -73,6 +80,7 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
         )
       },
       isRelyingPartyVerified: false,
+      requestsUserImage: requestsUserImage,
       authorityKeyIdentifier: authorityKeyIdentifier
     )
   }

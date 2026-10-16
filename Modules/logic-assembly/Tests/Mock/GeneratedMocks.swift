@@ -10807,6 +10807,16 @@ public class MockConfigUiLogic: ConfigUiLogic, Cuckoo.ProtocolMock, @unchecked S
         }
     }
 
+    public var userImageClaimKeys: Set<String> {
+        get {
+            return cuckoo_manager.getter(
+                "userImageClaimKeys",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.userImageClaimKeys
+            )
+        }
+    }
+
     public required init(themeConfiguration p0: ThemeConfiguration) {}
 
     public struct __StubbingProxy_ConfigUiLogic: Cuckoo.StubbingProxy {
@@ -10834,6 +10844,10 @@ public class MockConfigUiLogic: ConfigUiLogic, Cuckoo.ProtocolMock, @unchecked S
         
         var loginRouteKeys: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockConfigUiLogic,[AppRouteKey]> {
             return .init(manager: cuckoo_manager, name: "loginRouteKeys")
+        }
+        
+        var userImageClaimKeys: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockConfigUiLogic,Set<String>> {
+            return .init(manager: cuckoo_manager, name: "userImageClaimKeys")
         }
     }
 
@@ -10867,6 +10881,10 @@ public class MockConfigUiLogic: ConfigUiLogic, Cuckoo.ProtocolMock, @unchecked S
         var loginRouteKeys: Cuckoo.VerifyReadOnlyProperty<[AppRouteKey]> {
             return .init(manager: cuckoo_manager, name: "loginRouteKeys", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
+        
+        var userImageClaimKeys: Cuckoo.VerifyReadOnlyProperty<Set<String>> {
+            return .init(manager: cuckoo_manager, name: "userImageClaimKeys", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
     }
 }
 
@@ -10899,6 +10917,12 @@ public class ConfigUiLogicStub:ConfigUiLogic, @unchecked Sendable {
     public var loginRouteKeys: [AppRouteKey] {
         get {
             return DefaultValueRegistry.defaultValue(for: ([AppRouteKey]).self)
+        }
+    }
+    
+    public var userImageClaimKeys: Set<String> {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (Set<String>).self)
         }
     }
 
@@ -12061,6 +12085,20 @@ import logic_resources
 
 
 // MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Warning/WarningAcknowledgementView.swift'
+
+import Cuckoo
+import SwiftUI
+import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_authentication
+@testable import logic_assembly
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Warning/WarningNoticeView.swift'
 
 import Cuckoo
 import SwiftUI

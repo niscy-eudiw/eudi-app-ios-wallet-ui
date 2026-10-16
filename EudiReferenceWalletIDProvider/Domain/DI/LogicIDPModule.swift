@@ -35,7 +35,10 @@ final class LogicIDPModule: Assembly {
     .inObjectScope(ObjectScope.container)
 
     container.register(RequestAuthorizationInteractor.self) { r in
-      RequestAuthorizationInteractorImpl(dcApiHandler: r.force(DcApiHandler.self))
+      RequestAuthorizationInteractorImpl(
+        dcApiHandler: r.force(DcApiHandler.self),
+        configUiLogic: r.force(ConfigUiLogic.self)
+      )
     }
   }
 }
