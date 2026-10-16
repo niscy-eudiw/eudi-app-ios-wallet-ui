@@ -569,7 +569,7 @@ protocol WalletKitConfig: Sendable {
   var trustConfiguration: TrustConfiguration { get }
   var userAuthenticationRequired: Bool { get }
   var keyOptions: KeyOptions? { get }
-  var logFileName: String { get }
+  var logFileName: String? { get }
   var documentsCategories: DocumentCategories { get }
   var transactionLogger: TransactionLogger { get }
   var revocationIntervalSeconds: TimeInterval { get }
@@ -615,7 +615,7 @@ Production meaning:
 | `trustConfig` | Trust configuration (`TrustConfiguration`) for reader / issuer validation: ETSI LoTE trust sources, verification-context mappings, static fallback anchors, and trust policies. Passed as a separate `EudiWallet` argument, not inside `EudiWalletConfiguration`. | Replace demo LoTE endpoints and fallback anchors with production trust anchors, and review `defaultPolicy` / `statusTrustPolicy` before go-live. |
 | `deviceAuthMethod` | Device authentication method used by WalletKit. | Current value is `.deviceSignature`; confirm with WalletKit and assurance policy. |
 | `uiCulture` | Locale passed to WalletKit. | Confirm supported locales and fallback behavior. |
-| `logFileName` | WalletKit log file name. | Disable or heavily redact production logs unless support policy requires a controlled log export. |
+| `logFileName` | WalletKit log file name; `nil` outside debug builds (`WalletKitConfigImpl.logFileName(for:)`), so release builds write no file, delete one an earlier build left, and Settings offers no "Retrieve logs". wallet-kit logs authorization codes, access tokens and issued credentials to the file at `.info`. | Keep it off in production unless support policy requires a controlled log export, as on Android. |
 
 ### User Authentication For WalletKit Storage
 
@@ -1897,7 +1897,8 @@ own process. Data already shared with relying parties is outside the wallet.
 
 Logging appears in several areas:
 
-* WalletKit log file through `logFileName`.
+* WalletKit log file through `logFileName`, written by debug builds only; it holds authorization codes, access
+  tokens and issued credentials.
 * Transaction logging through `TransactionLogger`.
 * Analytics providers through `logic-analytics`.
 * Debug logs from SDKs where enabled.

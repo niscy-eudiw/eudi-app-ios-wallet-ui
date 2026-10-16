@@ -75,7 +75,9 @@ protocol WalletKitConfig: Sendable {
   /**
    * The name of the file to be created to store logs
    */
-  var logFileName: String { get }
+  /// The wallet-kit log file, written only by debug builds: wallet-kit logs authorization codes, access tokens and
+  /// issued credentials to it, as the Android wallet's release builds write no log file.
+  var logFileName: String? { get }
 
   /**
    * Document categories
@@ -315,9 +317,17 @@ struct WalletKitConfigImpl: WalletKitConfig {
     ].compactMap { loadCertificate($0) }
   }
 
-  var logFileName: String {
-    return "eudi-ios-wallet-logs"
+  var logFileName: String? {
+    Self.logFileName(for: configLogic.appBuildType)
   }
+
+  /// The log file's name for `buildType`: debug builds only.
+  static func logFileName(for buildType: AppBuildType) -> String? {
+    buildType == .DEBUG ? debugLogFileName : nil
+  }
+
+  /// The log file's name in debug builds; a release build deletes a file of this name that an earlier build left.
+  static let debugLogFileName = "eudi-ios-wallet-logs"
 
   var documentsCategories: DocumentCategories {
     [

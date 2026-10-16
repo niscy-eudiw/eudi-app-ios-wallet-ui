@@ -223,14 +223,16 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
       )
     }
 
-    items.append(
-      .init(
-        title: .retrieveLogs,
-        icon: Theme.shared.image.retrieveLogs,
-        isShareLink: true,
-        action: {}
+    if logsUrl != nil {
+      items.append(
+        .init(
+          title: .retrieveLogs,
+          icon: Theme.shared.image.retrieveLogs,
+          isShareLink: true,
+          action: {}
+        )
       )
-    )
+    }
 
     if let changelogUrl = await interactor.retrieveChangeLogUrl() {
       items.append(

@@ -197,6 +197,9 @@ final actor WalletKitControllerImpl: WalletKitController {
     self.storageEraseController = storageEraseController
     self.documentRegistrationManager = documentRegistrationManager
     self.prefsController = prefsController
+    if walletKitConfig.logFileName == nil {
+      Self.removeLogFileOfAnEarlierBuild()
+    }
     self.isRegistrationChecked = walletKitConfig.validateIssuerRegistrationCertificate
 
     guard let walletKit = try? EudiWallet(
@@ -497,9 +500,11 @@ final actor WalletKitControllerImpl: WalletKitController {
     }
   }
 
+  /// Nil in builds that write no log file, so Settings offers no "Retrieve logs".
   func retrieveLogFileUrl() -> URL? {
     guard
-      let url = try? EudiWallet.getLogFileURL(walletKitConfig.logFileName)
+      let logFileName = walletKitConfig.logFileName,
+      let url = try? EudiWallet.getLogFileURL(logFileName)
     else {
       return nil
     }
@@ -919,6 +924,12 @@ final actor WalletKitControllerImpl: WalletKitController {
 }
 
 extension WalletKitControllerImpl {
+
+  /// Deletes the log file a debug build or an earlier build left, as the Android wallet does.
+  static func removeLogFileOfAnEarlierBuild() {
+    guard let url = try? EudiWallet.getLogFileURL(WalletKitConfigImpl.debugLogFileName) else { return }
+    try? FileManager.default.removeItem(at: url)
+  }
 
   /// Registers the issued CBOR documents for the Digital Credential API, leaving out every document with a
   /// revocation record (revoked, suspended or unrecognised), as the Android wallet does. When the records cannot be
