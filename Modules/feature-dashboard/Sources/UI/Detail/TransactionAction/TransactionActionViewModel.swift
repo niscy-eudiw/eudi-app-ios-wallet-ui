@@ -92,7 +92,7 @@ final class TransactionActionViewModel<Router: RouterHost>: ViewModel<Router, Tr
         contactUrl: contact.url
       ) {
       case .success(let url):
-        await openActionChannel(url)
+        await openActionChannel(url, contactUrl: contact.url)
       case .unavailable:
         setState {
           $0.copy(
@@ -151,7 +151,9 @@ final class TransactionActionViewModel<Router: RouterHost>: ViewModel<Router, Tr
     }
   }
 
-  private func openActionChannel(_ url: URL) async {
+  /// Hands the request to the system and records it only once the hand-off succeeded, so a failed attempt and its
+  /// retry leave exactly one record.
+  private func openActionChannel(_ url: URL, contactUrl: URL) async {
     let opened = await UIApplication.shared.open(url)
     guard opened else {
       setState {
@@ -160,12 +162,17 @@ final class TransactionActionViewModel<Router: RouterHost>: ViewModel<Router, Tr
             error: .init(
               description: .transactionDetailsActionOpenFailed,
               cancelAction: self.dismissError(),
-              action: { Task { await self.openActionChannel(url) } }
+              action: { Task { await self.openActionChannel(url, contactUrl: contactUrl) } }
             )
           )
       }
       return
     }
+    _ = await interactor.recordDataProtectionAction(
+      transactionId: viewState.transactionId,
+      action: viewState.action,
+      contactUrl: contactUrl
+    )
     setState {
       $0.copy(isLoading: false, externalAction: .opened).copy(error: nil)
     }

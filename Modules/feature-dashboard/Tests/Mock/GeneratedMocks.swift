@@ -3292,6 +3292,16 @@ public class MockTransactionDetailsInteractor: TransactionDetailsInteractor, Cuc
         )
     }
 
+    public func recordDataProtectionAction(transactionId p0: String, action p1: TransactionDataProtectionAction, contactUrl p2: URL) async -> TransactionDataProtectionRecordPartialState {
+        return await cuckoo_manager.call(
+            "recordDataProtectionAction(transactionId p0: String, action p1: TransactionDataProtectionAction, contactUrl p2: URL) async -> TransactionDataProtectionRecordPartialState",
+            parameters: (p0, p1, p2),
+            escapingParameters: (p0, p1, p2),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.recordDataProtectionAction(transactionId: p0, action: p1, contactUrl: p2)
+        )
+    }
+
     public struct __StubbingProxy_TransactionDetailsInteractor: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
@@ -3335,6 +3345,14 @@ public class MockTransactionDetailsInteractor: TransactionDetailsInteractor, Cuc
             let matchers: [Cuckoo.ParameterMatcher<(String, TransactionDataProtectionAction, URL)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }]
             return .init(stub: cuckoo_manager.createStub(for: MockTransactionDetailsInteractor.self,
                 method: "performDataProtectionAction(transactionId p0: String, action p1: TransactionDataProtectionAction, contactUrl p2: URL) async -> TransactionDataProtectionPartialState",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func recordDataProtectionAction<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable>(transactionId p0: M1, action p1: M2, contactUrl p2: M3) -> Cuckoo.ProtocolStubFunction<(String, TransactionDataProtectionAction, URL), TransactionDataProtectionRecordPartialState> where M1.MatchedType == String, M2.MatchedType == TransactionDataProtectionAction, M3.MatchedType == URL {
+            let matchers: [Cuckoo.ParameterMatcher<(String, TransactionDataProtectionAction, URL)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockTransactionDetailsInteractor.self,
+                method: "recordDataProtectionAction(transactionId p0: String, action p1: TransactionDataProtectionAction, contactUrl p2: URL) async -> TransactionDataProtectionRecordPartialState",
                 parameterMatchers: matchers
             ))
         }
@@ -3410,6 +3428,18 @@ public class MockTransactionDetailsInteractor: TransactionDetailsInteractor, Cuc
                 sourceLocation: sourceLocation
             )
         }
+        
+        
+        @discardableResult
+        func recordDataProtectionAction<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable, M3: Cuckoo.Matchable>(transactionId p0: M1, action p1: M2, contactUrl p2: M3) -> Cuckoo.__DoNotUse<(String, TransactionDataProtectionAction, URL), TransactionDataProtectionRecordPartialState> where M1.MatchedType == String, M2.MatchedType == TransactionDataProtectionAction, M3.MatchedType == URL {
+            let matchers: [Cuckoo.ParameterMatcher<(String, TransactionDataProtectionAction, URL)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }, wrap(matchable: p2) { $0.2 }]
+            return cuckoo_manager.verify(
+                "recordDataProtectionAction(transactionId p0: String, action p1: TransactionDataProtectionAction, contactUrl p2: URL) async -> TransactionDataProtectionRecordPartialState",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
     }
 }
 
@@ -3435,6 +3465,10 @@ public class TransactionDetailsInteractorStub:TransactionDetailsInteractor, @unc
     
     public func performDataProtectionAction(transactionId p0: String, action p1: TransactionDataProtectionAction, contactUrl p2: URL) async -> TransactionDataProtectionPartialState {
         return DefaultValueRegistry.defaultValue(for: (TransactionDataProtectionPartialState).self)
+    }
+    
+    public func recordDataProtectionAction(transactionId p0: String, action p1: TransactionDataProtectionAction, contactUrl p2: URL) async -> TransactionDataProtectionRecordPartialState {
+        return DefaultValueRegistry.defaultValue(for: (TransactionDataProtectionRecordPartialState).self)
     }
 }
 
@@ -15035,6 +15069,23 @@ import Cuckoo
 import Cuckoo
 import SwiftUI
 import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/DocDataValue+BoundedImage.swift'
+
+import Cuckoo
+import ImageIO
+import UIKit
+import MdocDataModel18013
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics

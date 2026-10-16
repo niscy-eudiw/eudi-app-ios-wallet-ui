@@ -1900,6 +1900,9 @@ Logging appears in several areas:
 * WalletKit log file through `logFileName`, written by debug builds only; it holds authorization codes, access
   tokens and issued credentials.
 * Transaction logging through `TransactionLogger`.
+* Data-protection requests from history (a data deletion request, a report to the DPA) are recorded only after
+  the system has handed them to the mail, phone or browser app (`TransactionDetailsInteractor.recordDataProtectionAction`),
+  as on Android, so a failed attempt and its retry leave one record.
 * Analytics providers through `logic-analytics`.
 * Debug logs from SDKs where enabled.
 * RQES `printLogs`.

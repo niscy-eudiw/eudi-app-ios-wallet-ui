@@ -9181,6 +9181,19 @@ import logic_resources
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/DocDataValue+BoundedImage.swift'
+
+import Cuckoo
+import ImageIO
+import UIKit
+import MdocDataModel18013
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_authentication
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/DocElements+Extensions.swift'
 
 import Cuckoo
