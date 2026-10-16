@@ -1888,6 +1888,28 @@
         }
       }
     },
+    "quick_pin_device_lock_missing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device has no passcode. Set one in the device settings to better protect your wallet."
+          }
+        }
+      }
+    },
+    "quick_pin_device_lock_required" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set a passcode in the device settings before you set up the wallet."
+          }
+        }
+      }
+    },
     "quick_pin_dont_match" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2115,6 +2137,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change pin"
+          }
+        }
+      }
+    },
+    "quick_pin_weak" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This PIN is too easy to guess. Avoid one digit repeated, sequences such as 123456, and common PINs."
           }
         }
       }

@@ -1734,7 +1734,9 @@ The start-up gate fails closed:
 
 Production tasks:
 
-* Confirm PIN length, complexity, and retry UX.
+* Confirm PIN length, complexity, and retry UX. PINs that are easy to guess are refused (one digit repeated,
+  ascending or descending runs, `AuthenticationConfig.commonPins`); decide whether setup needs a device passcode
+  (`requireDeviceSecure`, off by default, which only warns). See CONFIGURATION.
 * Consider binding PIN verification to a hardware-backed key operation (Secure Enclave) for additional defense in depth.
 * Benchmark PBKDF2 iterations on the slowest supported device.
 * Consider memory-hard KDF options if supported by your platform/security policy.

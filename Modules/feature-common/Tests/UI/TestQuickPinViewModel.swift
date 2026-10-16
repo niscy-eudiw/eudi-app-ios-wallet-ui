@@ -15,6 +15,7 @@
  */
 import XCTest
 import logic_business
+import logic_authentication
 @testable import feature_common
 @testable import feature_test
 @testable import logic_test
@@ -28,6 +29,10 @@ final class TestQuickPinViewModel: EudiTest {
     super.setUp()
     router = MockRouterHost()
     interactor = MockQuickPinInteractor()
+    stub(interactor) { mock in
+      when(mock.getDeviceLockState()).thenReturn(.secure)
+      when(mock.checkNewPin(any())).thenReturn(.success)
+    }
   }
 
   override func tearDown() {
@@ -89,6 +94,39 @@ final class TestQuickPinViewModel: EudiTest {
 
     await fulfillment(of: [shown], timeout: 3)
     verify(interactor, never()).unlockSession()
+  }
+
+  @MainActor
+  func testPinCreation_WhenThePinIsEasyToGuess_ThenRefusesItAtEntry() async throws {
+    stub(interactor) { mock in
+      when(mock.getDeviceLockState()).thenReturn(.secure)
+      when(mock.checkNewPin(any())).thenReturn(.failure(AuthenticationError.quickPinWeak))
+    }
+    let viewModel = makeViewModel(flow: .setWithoutActivation)
+
+    try await enter("123456", in: viewModel)
+
+    XCTAssertEqual(viewModel.viewState.pinError, .custom(AuthenticationError.quickPinWeak.errorMessage))
+    guard case .firstInput = viewModel.viewState.step else {
+      return XCTFail("Moved past the first entry")
+    }
+  }
+
+  @MainActor
+  func testPinCreation_WhenAPasscodeIsRequiredAndMissing_ThenAcceptsNoPin() async throws {
+    stub(interactor) { mock in
+      when(mock.getDeviceLockState()).thenReturn(.required)
+    }
+    let viewModel = makeViewModel(flow: .setWithoutActivation)
+    await viewModel.initialize()
+
+    try await enter("135792", in: viewModel)
+
+    XCTAssertEqual(viewModel.viewState.deviceLockNotice, .quickPinDeviceLockRequired)
+    verify(interactor, never()).checkNewPin(any())
+    guard case .firstInput = viewModel.viewState.step else {
+      return XCTFail("Moved past the first entry")
+    }
   }
 }
 

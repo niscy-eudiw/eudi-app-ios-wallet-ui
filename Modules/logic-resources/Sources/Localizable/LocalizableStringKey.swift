@@ -330,6 +330,9 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case relyingPartyNotVerifiedWarning
   case requestUserImageNotice
   case offerDocumentsToApps
+  case quickPinWeak
+  case quickPinDeviceLockMissing
+  case quickPinDeviceLockRequired
   case documentOfferingDisabledMessage
   case requestUserImageConfirmationTitle
   case requestUserImageConfirmationMessage

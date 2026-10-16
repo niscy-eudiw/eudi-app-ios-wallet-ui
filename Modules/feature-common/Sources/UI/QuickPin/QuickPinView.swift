@@ -108,6 +108,11 @@ private struct QuickPinViewContainer: View {
 
     VStack(spacing: .zero) {
 
+      if let deviceLockNotice = viewState.deviceLockNotice {
+        WarningNoticeView(message: deviceLockNotice)
+        VSpacer.mediumSmall()
+      }
+
       PinTextFieldView(
         pinTitle: viewState.pinTextFieldTitle,
         numericText: $uiPinInputField,
@@ -158,7 +163,9 @@ private struct QuickPinViewContainer: View {
     step: .firstInput,
     quickPinSize: 6,
     isLockedOut: false,
-    lockoutMessage: nil
+    lockoutMessage: nil,
+    deviceLockNotice: nil,
+    isDeviceLockRequired: false
   )
 
   ContentScreenView {

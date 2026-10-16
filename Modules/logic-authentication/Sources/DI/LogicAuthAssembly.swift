@@ -68,6 +68,11 @@ public final class LogicAuthAssembly: Assembly {
     }
     .inObjectScope(ObjectScope.container)
 
+    container.register(DeviceLockController.self) { _ in
+      DeviceLockControllerImpl()
+    }
+    .inObjectScope(ObjectScope.container)
+
     container.register(SystemBiometryController.self) { r in
       SystemBiometryControllerImpl(
         keyChainController: r.force(KeyChainController.self)

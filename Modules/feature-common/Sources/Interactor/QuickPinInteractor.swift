@@ -20,10 +20,22 @@ public enum QuickPinPartialState: Sendable {
   case failure(Error)
 }
 
+/// Whether the device has a passcode, for PIN setup: `missing` warns, `required` waits until one is set
+/// (`AuthenticationConfig.requireDeviceSecure`).
+public enum DeviceLockState: Sendable, Equatable {
+  case secure
+  case missing
+  case required
+}
+
 public protocol QuickPinInteractor: Sendable {
   var maxFailedPinAttempts: Int { get }
 
+  /// Refuses a PIN that is easy to guess (`AuthenticationConfig.isWeakPin`), as `checkNewPin` does.
   func setPin(newPin: String) async -> QuickPinPartialState
+  /// Refuses a new PIN that is easy to guess with `AuthenticationError.quickPinWeak`, when it is entered.
+  func checkNewPin(_ pin: String) async -> QuickPinPartialState
+  func getDeviceLockState() async -> DeviceLockState
   func isPinValid(pin: String) async -> QuickPinPartialState
   func changePin(currentPin: String, newPin: String) async -> QuickPinPartialState
   func hasPin() async throws -> Bool
@@ -42,6 +54,7 @@ final actor QuickPinInteractorImpl: QuickPinInteractor {
   private let pinThrottleController: PinThrottleController
   private let authenticationConfig: AuthenticationConfig
   private let sessionController: SessionController
+  private let deviceLockController: DeviceLockController
 
   public let maxFailedPinAttempts: Int
 
@@ -49,12 +62,14 @@ final actor QuickPinInteractorImpl: QuickPinInteractor {
     pinStorageController: PinStorageController,
     pinThrottleController: PinThrottleController,
     authenticationConfig: AuthenticationConfig,
-    sessionController: SessionController
+    sessionController: SessionController,
+    deviceLockController: DeviceLockController
   ) {
     self.pinStorageController = pinStorageController
     self.pinThrottleController = pinThrottleController
     self.authenticationConfig = authenticationConfig
     self.sessionController = sessionController
+    self.deviceLockController = deviceLockController
     self.maxFailedPinAttempts = authenticationConfig.maxFailedPinAttempts
   }
 
@@ -63,12 +78,24 @@ final actor QuickPinInteractorImpl: QuickPinInteractor {
   }
 
   public func setPin(newPin: String) -> QuickPinPartialState {
+    guard !authenticationConfig.isWeakPin(newPin) else {
+      return .failure(AuthenticationError.quickPinWeak)
+    }
     do {
       try pinStorageController.setPin(with: newPin)
       return .success
     } catch {
       return .failure(error)
     }
+  }
+
+  public func checkNewPin(_ pin: String) -> QuickPinPartialState {
+    authenticationConfig.isWeakPin(pin) ? .failure(AuthenticationError.quickPinWeak) : .success
+  }
+
+  public func getDeviceLockState() -> DeviceLockState {
+    guard !deviceLockController.isDeviceSecure() else { return .secure }
+    return authenticationConfig.requireDeviceSecure ? .required : .missing
   }
 
   public func isPinValid(pin: String) -> QuickPinPartialState {

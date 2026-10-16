@@ -27,7 +27,8 @@ public final class FeatureCommonAssembly: Assembly {
         pinStorageController: r.force(PinStorageController.self),
         pinThrottleController: r.force(PinThrottleController.self),
         authenticationConfig: r.force(AuthenticationConfig.self),
-        sessionController: r.force(SessionController.self)
+        sessionController: r.force(SessionController.self),
+        deviceLockController: r.force(DeviceLockController.self)
       )
     }
     .inObjectScope(ObjectScope.transient)

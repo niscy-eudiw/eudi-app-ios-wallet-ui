@@ -660,6 +660,12 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "request_user_image_notice")
     case .offerDocumentsToApps:
       bundle.localizedString(forKey: "offer_documents_to_apps")
+    case .quickPinWeak:
+      bundle.localizedString(forKey: "quick_pin_weak")
+    case .quickPinDeviceLockMissing:
+      bundle.localizedString(forKey: "quick_pin_device_lock_missing")
+    case .quickPinDeviceLockRequired:
+      bundle.localizedString(forKey: "quick_pin_device_lock_required")
     case .documentOfferingDisabledMessage:
       bundle.localizedString(forKey: "document_offering_disabled_message")
     case .requestUserImageConfirmationTitle:

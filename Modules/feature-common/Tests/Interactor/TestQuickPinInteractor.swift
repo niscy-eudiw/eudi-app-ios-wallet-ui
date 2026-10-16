@@ -27,23 +27,28 @@ final class TestQuickPinInteractor: EudiTest {
   var pinThrottleController: MockPinThrottleController!
   var authenticationConfig: MockAuthenticationConfig!
   var sessionController: MockSessionController!
+  var deviceLockController: MockDeviceLockController!
 
   override func setUp() {
     self.pinStorageController = MockPinStorageController()
     self.pinThrottleController = MockPinThrottleController()
     self.authenticationConfig = MockAuthenticationConfig()
     self.sessionController = MockSessionController()
+    self.deviceLockController = MockDeviceLockController()
     
     stub(authenticationConfig) { mock in
       when(mock.maxFailedPinAttempts.get).thenReturn(3)
       when(mock.pinLockoutDurations.get).thenReturn([30, 90, 300])
+      when(mock.commonPins.get).thenReturn(["2580"])
+      when(mock.requireDeviceSecure.get).thenReturn(false)
     }
     
     self.interactor = QuickPinInteractorImpl(
       pinStorageController: pinStorageController,
       pinThrottleController: pinThrottleController,
       authenticationConfig: authenticationConfig,
-      sessionController: sessionController
+      sessionController: sessionController,
+      deviceLockController: deviceLockController
     )
   }
 
@@ -68,7 +73,7 @@ final class TestQuickPinInteractor: EudiTest {
   func testSetPin_WhenNewPinIsSet_ThenVerifyAtLeastOnce() async {
     
     // Given
-    let pin = "1234"
+    let pin = "1357"
     stub(pinStorageController) { mock in
       when(mock.setPin(with: any())).thenDoNothing()
     }
@@ -88,7 +93,7 @@ final class TestQuickPinInteractor: EudiTest {
       when(mock.setPin(with: any())).thenThrow(KeyChainError.writeFailed(status: errSecNotAvailable))
     }
 
-    let state = await interactor.setPin(newPin: "1234")
+    let state = await interactor.setPin(newPin: "1357")
 
     guard case .failure(let error) = state else {
       return XCTFail("Wrong state \(state)")
@@ -102,7 +107,7 @@ final class TestQuickPinInteractor: EudiTest {
       when(mock.setPin(with: any())).thenThrow(KeyChainError.writeFailed(status: errSecNotAvailable))
     }
 
-    let state = await interactor.changePin(currentPin: "1234", newPin: "4321")
+    let state = await interactor.changePin(currentPin: "1234", newPin: "2468")
 
     guard case .failure(let error) = state else {
       return XCTFail("Wrong state \(state)")
@@ -194,7 +199,7 @@ final class TestQuickPinInteractor: EudiTest {
   func testChangePin_WhenCurrentPinIsValid_ThenReturnPartialStateSuccess() async {
     
     // Given
-    let newPin = "4321"
+    let newPin = "2468"
     let currentPin = "1234"
     stub(pinStorageController) { mock in
       when(mock.isPinValid(with: any())).thenReturn(true)
@@ -220,7 +225,7 @@ final class TestQuickPinInteractor: EudiTest {
   func testChangePin_WhenCurrentPinIsNotValid_ThenReturnPartialStateFailure() async {
 
     // Given
-    let newPin = "4321"
+    let newPin = "2468"
     stub(pinStorageController) { mock in
       when(mock.isPinValid(with: any())).thenReturn(false)
     }
@@ -297,5 +302,46 @@ final class TestQuickPinInteractor: EudiTest {
 
     // Then
     verify(pinThrottleController).recordSuccess()
+  }
+
+  func testSetPin_WhenThePinIsEasyToGuess_ThenRefusesItWithoutStoringIt() async {
+    for pin in ["1111", "1234", "9876", "2580"] {
+      let state = await interactor.setPin(newPin: pin)
+
+      guard case .failure(let error) = state else {
+        return XCTFail("\(pin) was accepted")
+      }
+      XCTAssertEqual(error.localizedDescription, AuthenticationError.quickPinWeak.localizedDescription)
+    }
+    verify(pinStorageController, never()).setPin(with: any())
+  }
+
+  func testCheckNewPin_WhenThePinIsEasyToGuess_ThenFailsAndOtherwiseSucceeds() async {
+    guard case .failure = await interactor.checkNewPin("0000") else {
+      return XCTFail("0000 was accepted")
+    }
+    guard case .success = await interactor.checkNewPin("1357") else {
+      return XCTFail("1357 was refused")
+    }
+  }
+
+  func testGetDeviceLockState_FollowsThePasscodeAndTheConfiguration() async {
+    stub(deviceLockController) { mock in
+      when(mock.isDeviceSecure()).thenReturn(true)
+    }
+    let secure = await interactor.getDeviceLockState()
+    XCTAssertEqual(secure, .secure)
+
+    stub(deviceLockController) { mock in
+      when(mock.isDeviceSecure()).thenReturn(false)
+    }
+    let missing = await interactor.getDeviceLockState()
+    XCTAssertEqual(missing, .missing)
+
+    stub(authenticationConfig) { mock in
+      when(mock.requireDeviceSecure.get).thenReturn(true)
+    }
+    let required = await interactor.getDeviceLockState()
+    XCTAssertEqual(required, .required)
   }
 }

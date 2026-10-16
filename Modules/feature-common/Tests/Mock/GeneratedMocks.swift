@@ -656,6 +656,26 @@ public class MockQuickPinInteractor: QuickPinInteractor, Cuckoo.ProtocolMock, @u
         )
     }
 
+    public func checkNewPin(_ p0: String) async -> QuickPinPartialState {
+        return await cuckoo_manager.call(
+            "checkNewPin(_ p0: String) async -> QuickPinPartialState",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.checkNewPin(p0)
+        )
+    }
+
+    public func getDeviceLockState() async -> DeviceLockState {
+        return await cuckoo_manager.call(
+            "getDeviceLockState() async -> DeviceLockState",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.getDeviceLockState()
+        )
+    }
+
     public func isPinValid(pin p0: String) async -> QuickPinPartialState {
         return await cuckoo_manager.call(
             "isPinValid(pin p0: String) async -> QuickPinPartialState",
@@ -746,6 +766,22 @@ public class MockQuickPinInteractor: QuickPinInteractor, Cuckoo.ProtocolMock, @u
             ))
         }
         
+        func checkNewPin<M1: Cuckoo.Matchable>(_ p0: M1) -> Cuckoo.ProtocolStubFunction<(String), QuickPinPartialState> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockQuickPinInteractor.self,
+                method: "checkNewPin(_ p0: String) async -> QuickPinPartialState",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func getDeviceLockState() -> Cuckoo.ProtocolStubFunction<(), DeviceLockState> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockQuickPinInteractor.self,
+                method: "getDeviceLockState() async -> DeviceLockState",
+                parameterMatchers: matchers
+            ))
+        }
+        
         func isPinValid<M1: Cuckoo.Matchable>(pin p0: M1) -> Cuckoo.ProtocolStubFunction<(String), QuickPinPartialState> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockQuickPinInteractor.self,
@@ -824,6 +860,30 @@ public class MockQuickPinInteractor: QuickPinInteractor, Cuckoo.ProtocolMock, @u
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
                 "setPin(newPin p0: String) async -> QuickPinPartialState",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func checkNewPin<M1: Cuckoo.Matchable>(_ p0: M1) -> Cuckoo.__DoNotUse<(String), QuickPinPartialState> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "checkNewPin(_ p0: String) async -> QuickPinPartialState",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func getDeviceLockState() -> Cuckoo.__DoNotUse<(), DeviceLockState> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "getDeviceLockState() async -> DeviceLockState",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -928,6 +988,14 @@ public class QuickPinInteractorStub:QuickPinInteractor, @unchecked Sendable {
     
     public func setPin(newPin p0: String) async -> QuickPinPartialState {
         return DefaultValueRegistry.defaultValue(for: (QuickPinPartialState).self)
+    }
+    
+    public func checkNewPin(_ p0: String) async -> QuickPinPartialState {
+        return DefaultValueRegistry.defaultValue(for: (QuickPinPartialState).self)
+    }
+    
+    public func getDeviceLockState() async -> DeviceLockState {
+        return DefaultValueRegistry.defaultValue(for: (DeviceLockState).self)
     }
     
     public func isPinValid(pin p0: String) async -> QuickPinPartialState {
@@ -2761,6 +2829,26 @@ public class MockAuthenticationConfig: AuthenticationConfig, Cuckoo.ProtocolMock
         }
     }
 
+    public var commonPins: Set<String> {
+        get {
+            return cuckoo_manager.getter(
+                "commonPins",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.commonPins
+            )
+        }
+    }
+
+    public var requireDeviceSecure: Bool {
+        get {
+            return cuckoo_manager.getter(
+                "requireDeviceSecure",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.requireDeviceSecure
+            )
+        }
+    }
+
 
     public struct __StubbingProxy_AuthenticationConfig: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
@@ -2787,6 +2875,14 @@ public class MockAuthenticationConfig: AuthenticationConfig, Cuckoo.ProtocolMock
         
         var protectedFlowLockTimeout: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockAuthenticationConfig,TimeInterval> {
             return .init(manager: cuckoo_manager, name: "protectedFlowLockTimeout")
+        }
+        
+        var commonPins: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockAuthenticationConfig,Set<String>> {
+            return .init(manager: cuckoo_manager, name: "commonPins")
+        }
+        
+        var requireDeviceSecure: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockAuthenticationConfig,Bool> {
+            return .init(manager: cuckoo_manager, name: "requireDeviceSecure")
         }
     }
 
@@ -2819,6 +2915,14 @@ public class MockAuthenticationConfig: AuthenticationConfig, Cuckoo.ProtocolMock
         
         var protectedFlowLockTimeout: Cuckoo.VerifyReadOnlyProperty<TimeInterval> {
             return .init(manager: cuckoo_manager, name: "protectedFlowLockTimeout", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        var commonPins: Cuckoo.VerifyReadOnlyProperty<Set<String>> {
+            return .init(manager: cuckoo_manager, name: "commonPins", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        var requireDeviceSecure: Cuckoo.VerifyReadOnlyProperty<Bool> {
+            return .init(manager: cuckoo_manager, name: "requireDeviceSecure", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
     }
 }
@@ -2854,8 +2958,112 @@ public class AuthenticationConfigStub:AuthenticationConfig, @unchecked Sendable 
             return DefaultValueRegistry.defaultValue(for: (TimeInterval).self)
         }
     }
+    
+    public var commonPins: Set<String> {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (Set<String>).self)
+        }
+    }
+    
+    public var requireDeviceSecure: Bool {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (Bool).self)
+        }
+    }
 
 
+}
+
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-authentication/Sources/Controller/DeviceLockController.swift'
+
+import Cuckoo
+import LocalAuthentication
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+
+public class MockDeviceLockController: DeviceLockController, Cuckoo.ProtocolMock, @unchecked Sendable {
+    public typealias MocksType = any DeviceLockController
+    public typealias Stubbing = __StubbingProxy_DeviceLockController
+    public typealias Verification = __VerificationProxy_DeviceLockController
+
+    // Original typealiases
+
+    public let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+
+    private var __defaultImplStub: (any DeviceLockController)?
+
+    public func enableDefaultImplementation(_ stub: any DeviceLockController) {
+        __defaultImplStub = stub
+        cuckoo_manager.enableDefaultStubImplementation()
+    }
+
+
+    public func isDeviceSecure() -> Bool {
+        return cuckoo_manager.call(
+            "isDeviceSecure() -> Bool",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.isDeviceSecure()
+        )
+    }
+
+    public struct __StubbingProxy_DeviceLockController: Cuckoo.StubbingProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+    
+        public init(manager: Cuckoo.MockManager) {
+            self.cuckoo_manager = manager
+        }
+        
+        func isDeviceSecure() -> Cuckoo.ProtocolStubFunction<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockDeviceLockController.self,
+                method: "isDeviceSecure() -> Bool",
+                parameterMatchers: matchers
+            ))
+        }
+    }
+
+    public struct __VerificationProxy_DeviceLockController: Cuckoo.VerificationProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+        private let callMatcher: Cuckoo.CallMatcher
+        private let sourceLocation: Cuckoo.SourceLocation
+    
+        public init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+            self.cuckoo_manager = manager
+            self.callMatcher = callMatcher
+            self.sourceLocation = sourceLocation
+        }
+        
+        
+        @discardableResult
+        func isDeviceSecure() -> Cuckoo.__DoNotUse<(), Bool> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "isDeviceSecure() -> Bool",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+    }
+}
+
+public class DeviceLockControllerStub:DeviceLockController, @unchecked Sendable {
+
+
+    
+    public func isDeviceSecure() -> Bool {
+        return DefaultValueRegistry.defaultValue(for: (Bool).self)
+    }
 }
 
 

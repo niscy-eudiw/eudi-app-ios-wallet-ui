@@ -41,6 +41,10 @@ struct QuickPinState: ViewState {
   let quickPinSize: Int
   let isLockedOut: Bool
   let lockoutMessage: LocalizableStringKey?
+  /// The notice for setup on a device without a passcode; with `isDeviceLockRequired` no PIN is accepted until one
+  /// is set.
+  let deviceLockNotice: LocalizableStringKey?
+  let isDeviceLockRequired: Bool
 }
 
 @Observable
@@ -132,7 +136,9 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
         step: config.isSetFlow ? .firstInput : .validate,
         quickPinSize: 6,
         isLockedOut: false,
-        lockoutMessage: nil
+        lockoutMessage: nil,
+        deviceLockNotice: nil,
+        isDeviceLockRequired: false
       )
     )
 
@@ -144,6 +150,10 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
   }
 
   func initialize() async {
+    if viewState.config.isSetFlow {
+      await refreshDeviceLockState()
+      return
+    }
     guard case .validate = viewState.step else { return }
     let state = await interactor.getPinLockoutState()
     if case .active(let remaining, _) = state {
@@ -227,7 +237,7 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
       case .validate:
         await onValidate()
       case .firstInput:
-        advanceToRetryInput()
+        await onFirstInput()
       case .retryInput(let previousPin):
         await confirmRetry(previousPin: previousPin)
       }
@@ -259,6 +269,34 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
         uiPinInputField = ""
       }
     }
+  }
+
+  /// Setup checks the passcode again, so a passcode set meanwhile in the device settings counts; a new PIN that is
+  /// easy to guess is refused when it is entered, as on Android.
+  private func onFirstInput() async {
+    if viewState.config.isSetFlow {
+      await refreshDeviceLockState()
+      guard !viewState.isDeviceLockRequired else {
+        uiPinInputField = ""
+        return
+      }
+    }
+    if case .failure(let error) = await interactor.checkNewPin(uiPinInputField) {
+      setState { $0.copy(pinError: .custom(error.errorMessage)) }
+      uiPinInputField = ""
+      return
+    }
+    advanceToRetryInput()
+  }
+
+  private func refreshDeviceLockState() async {
+    let notice: LocalizableStringKey? = switch await interactor.getDeviceLockState() {
+    case .secure: nil
+    case .missing: .quickPinDeviceLockMissing
+    case .required: .quickPinDeviceLockRequired
+    }
+    let isRequired = notice == .quickPinDeviceLockRequired
+    setState { $0.copy(deviceLockNotice: notice).copy(isDeviceLockRequired: isRequired) }
   }
 
   private func advanceToRetryInput() {
