@@ -20,6 +20,9 @@ public struct Prefs {}
 public extension Prefs {
   enum Key: String, CaseIterable {
     case biometryEnabled
+    /// Set when biometric unlock is bound to the enrolment of the moment it was turned on; unset on installs from
+    /// before the binding.
+    case biometricUnlockBound
     /// Where builds before the session lock kept a link for after login; now only removed at start.
     case cachedDeepLink
     case runAtLeastOnce

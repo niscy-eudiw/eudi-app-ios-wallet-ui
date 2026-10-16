@@ -31,7 +31,8 @@ public protocol BiometryInteractor: Sendable {
   func getBiometricsMethod() async -> String
   func getBiometryType() async -> LABiometryType
   func isBiometryEnabled() async -> Bool
-  func setBiometrySelection(isEnabled: Bool) async
+  /// Turns biometric unlock on or off after a biometric check, and keeps the choice only when the check passes.
+  func setBiometrySelection(isEnabled: Bool) async -> BiometricsState
   func isPinValid(with pin: String) async -> QuickPinPartialState
 
   func getPinLockoutState() async -> PinLockoutState
@@ -96,14 +97,18 @@ final actor BiometryInteractorImpl: BiometryInteractor {
     }
   }
 
+  /// An install from before the enrolment binding has biometric unlock on but not bound; its first biometric login
+  /// binds it, as Android binds its key at the first biometric success.
   public func authenticate() async -> BiometricsState {
     do {
-      try await biometryController.requestBiometricUnlock()
+      if isBiometryEnabled() && !prefsController.getBool(forKey: .biometricUnlockBound) {
+        try await bindBiometricUnlock()
+      } else {
+        try await biometryController.requestBiometricUnlock()
+      }
       return .authenticated
-    } catch let error as SystemBiometryError {
-      return .failure(error)
     } catch {
-      return .failure(.biometricError)
+      return Self.biometricFailure(for: error)
     }
   }
 
@@ -115,8 +120,19 @@ final actor BiometryInteractorImpl: BiometryInteractor {
     prefsController.getBool(forKey: .biometryEnabled)
   }
 
-  public func setBiometrySelection(isEnabled: Bool) {
-    prefsController.setValue(isEnabled, forKey: .biometryEnabled)
+  public func setBiometrySelection(isEnabled: Bool) async -> BiometricsState {
+    do {
+      if isEnabled {
+        try await bindBiometricUnlock()
+      } else {
+        try await biometryController.disableBiometricUnlock()
+        prefsController.setValue(false, forKey: .biometricUnlockBound)
+      }
+      prefsController.setValue(isEnabled, forKey: .biometryEnabled)
+      return .authenticated
+    } catch {
+      return Self.biometricFailure(for: error)
+    }
   }
 
   public func isPinValid(with pin: String) async -> QuickPinPartialState {
@@ -133,5 +149,14 @@ final actor BiometryInteractorImpl: BiometryInteractor {
 
   public func resetPinThrottle() {
     pinThrottleController.recordSuccess()
+  }
+
+  private func bindBiometricUnlock() async throws {
+    try await biometryController.enableBiometricUnlock()
+    prefsController.setValue(true, forKey: .biometricUnlockBound)
+  }
+
+  private static func biometricFailure(for error: Error) -> BiometricsState {
+    .failure(error as? SystemBiometryError ?? .biometricError)
   }
 }

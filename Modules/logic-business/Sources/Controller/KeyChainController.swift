@@ -38,9 +38,12 @@ public protocol KeyChainController: Sendable {
   /// Writes data; a failed write, which `storeValue` ignores, throws `KeyChainError.writeFailed`.
   func saveValue(key: KeyChainWrapper, value: Data) throws
   func removeObject(key: KeyChainWrapper)
-  /// Writes the biometry probe with a fresh value and reads it back with `context`, which has already
-  /// evaluated the biometric policy, so the read does not prompt again. A missing item or another value
-  /// throws `KeyChainError.itemNotFound`.
+  /// Writes the biometric probe, bound to the biometric enrolment of this moment (`.biometryCurrentSet`), when the
+  /// user turns biometric unlock on; a probe already there is replaced.
+  func storeBiometricProbe() throws
+  /// Reads the probe with `context`, which has already evaluated the biometric policy, so the read does not prompt
+  /// again. After a new enrolment the probe can no longer be read, as Android's key is invalidated by enrolment; a
+  /// missing or unreadable probe throws `KeyChainError.itemNotFound`, and the PIN is needed.
   func validateKeyChainBiometry(with context: LAContext) throws
   func clearKeyChainBiometry()
   @discardableResult func clear() -> Bool
@@ -115,10 +118,16 @@ final class KeyChainControllerImpl: KeyChainController {
     try? keyChain.remove(key.value)
   }
 
+  public func storeBiometricProbe() throws {
+    clearKeyChainBiometry()
+    try setBiometricKey(value: UUID().uuidString)
+  }
+
   public func validateKeyChainBiometry(with context: LAContext) throws {
-    let value = UUID().uuidString
-    try setBiometricKey(value: value)
-    try isBiometricKeyValid(value: value, context: context)
+    let item = try self.keyChain
+      .authenticationContext(context)
+      .get(self.biometryKey)
+    try Self.validateBiometricItem(item)
   }
 
   public func clearKeyChainBiometry() {
@@ -172,31 +181,19 @@ private extension KeyChainControllerImpl {
     try self.keyChain
       .accessibility(
         .whenPasscodeSetThisDeviceOnly,
-        authenticationPolicy: [.biometryAny]
+        authenticationPolicy: [.biometryCurrentSet]
       )
       .set(value, key: self.biometryKey)
   }
 
-  func isBiometricKeyValid(value: String, context: LAContext) throws {
-
-    let item = try self.keyChain
-      .authenticationContext(context)
-      .get(self.biometryKey)
-
-    if item != nil {
-      clearKeyChainBiometry()
-    }
-
-    try Self.validateBiometricItem(item, value: value)
-  }
 }
 
 extension KeyChainControllerImpl {
 
-  /// Accepts the biometry probe only when the keychain returned the value just written; a missing
-  /// item fails. Internal so that unit tests can check the rule without a biometry-protected item.
-  static func validateBiometricItem(_ item: String?, value: String) throws {
-    guard let item, item == value else {
+  /// Accepts the biometric probe only when the keychain returned it; a missing item fails. Internal so that unit
+  /// tests can check the rule without a biometry-protected item.
+  static func validateBiometricItem(_ item: String?) throws {
+    guard let item, !item.isEmpty else {
       throw KeyChainError.itemNotFound
     }
   }

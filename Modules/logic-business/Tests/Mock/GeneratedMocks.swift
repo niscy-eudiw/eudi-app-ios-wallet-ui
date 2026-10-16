@@ -422,6 +422,17 @@ public class MockKeyChainController: KeyChainController, Cuckoo.ProtocolMock, @u
         )
     }
 
+    public func storeBiometricProbe() throws {
+        return try cuckoo_manager.callThrows(
+            "storeBiometricProbe() throws",
+            parameters: (),
+            escapingParameters: (),
+            errorType: Swift.Error.self,
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.storeBiometricProbe()
+        )
+    }
+
     public func validateKeyChainBiometry(with p0: LAContext) throws {
         return try cuckoo_manager.callThrows(
             "validateKeyChainBiometry(with p0: LAContext) throws",
@@ -528,6 +539,14 @@ public class MockKeyChainController: KeyChainController, Cuckoo.ProtocolMock, @u
             let matchers: [Cuckoo.ParameterMatcher<(KeyChainWrapper)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockKeyChainController.self,
                 method: "removeObject(key p0: KeyChainWrapper)",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func storeBiometricProbe() -> Cuckoo.ProtocolStubNoReturnThrowingFunction<(),Swift.Error> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockKeyChainController.self,
+                method: "storeBiometricProbe() throws",
                 parameterMatchers: matchers
             ))
         }
@@ -678,6 +697,18 @@ public class MockKeyChainController: KeyChainController, Cuckoo.ProtocolMock, @u
         
         
         @discardableResult
+        func storeBiometricProbe() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "storeBiometricProbe() throws",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
         func validateKeyChainBiometry<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(LAContext), Void> where M1.MatchedType == LAContext {
             let matchers: [Cuckoo.ParameterMatcher<(LAContext)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
@@ -751,6 +782,10 @@ public class KeyChainControllerStub:KeyChainController, @unchecked Sendable {
     }
     
     public func removeObject(key p0: KeyChainWrapper) {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func storeBiometricProbe() throws {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
@@ -1520,6 +1555,14 @@ import Foundation
 
 
 // MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/NSNotification+Extensions.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_business
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Extension/PrefsController+WalletReset.swift'
 
 import Cuckoo
 import Foundation

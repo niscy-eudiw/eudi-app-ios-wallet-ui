@@ -69,24 +69,18 @@ final class TestKeyChainController: EudiTest {
   }
 
   func testValidateBiometricItem_WhenItemIsMissing_ThenThrowsItemNotFound() {
-    XCTAssertThrowsError(
-      try KeyChainControllerImpl.validateBiometricItem(nil, value: "written")
-    ) { error in
+    XCTAssertThrowsError(try KeyChainControllerImpl.validateBiometricItem(nil)) { error in
       XCTAssertEqual(error as? KeyChainError, .itemNotFound)
     }
   }
 
-  func testValidateBiometricItem_WhenItemDiffersFromWrittenValue_ThenThrowsItemNotFound() {
-    XCTAssertThrowsError(
-      try KeyChainControllerImpl.validateBiometricItem("other", value: "written")
-    ) { error in
+  func testValidateBiometricItem_WhenItemIsEmpty_ThenThrowsItemNotFound() {
+    XCTAssertThrowsError(try KeyChainControllerImpl.validateBiometricItem("")) { error in
       XCTAssertEqual(error as? KeyChainError, .itemNotFound)
     }
   }
 
-  func testValidateBiometricItem_WhenItemMatchesWrittenValue_ThenSucceeds() {
-    XCTAssertNoThrow(
-      try KeyChainControllerImpl.validateBiometricItem("written", value: "written")
-    )
+  func testValidateBiometricItem_WhenItemIsPresent_ThenSucceeds() {
+    XCTAssertNoThrow(try KeyChainControllerImpl.validateBiometricItem("probe"))
   }
 }

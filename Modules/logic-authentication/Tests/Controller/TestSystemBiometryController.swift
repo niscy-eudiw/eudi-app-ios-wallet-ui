@@ -313,7 +313,7 @@ final class TestSystemBiometryController: EudiTest {
     await assertUnlockFails(with: .biometricError)
 
     verify(keyChainController, never()).validateKeyChainBiometry(with: any())
-    verify(keyChainController).clearKeyChainBiometry()
+    verify(keyChainController, never()).clearKeyChainBiometry()
     XCTAssertEqual(contextProvider.contexts.map(\.isInvalidated), [true])
   }
 
@@ -329,7 +329,7 @@ final class TestSystemBiometryController: EudiTest {
     verify(keyChainController, never()).validateKeyChainBiometry(with: any())
   }
 
-  func testRequestBiometricUnlock_WhenProbeItemIsMissing_ThenBiometricError() async {
+  func testRequestBiometricUnlock_WhenTheProbeCannotBeRead_ThenBiometricErrorAndTheProbeStays() async {
     stubCanEvaluateBiometrics()
     stub(keyChainController) { stub in
       when(stub.validateKeyChainBiometry(with: any())).thenThrow(KeyChainError.itemNotFound)
@@ -338,7 +338,55 @@ final class TestSystemBiometryController: EudiTest {
 
     await assertUnlockFails(with: .biometricError)
 
+    verify(keyChainController, never()).clearKeyChainBiometry()
+  }
+
+  func testEnableBiometricUnlock_WhenThePolicyIsEvaluated_ThenWritesTheProbe() async throws {
+    stubCanEvaluateBiometrics()
+    stub(keyChainController) { stub in
+      when(stub.storeBiometricProbe()).thenDoNothing()
+    }
+
+    try await biometryController.enableBiometricUnlock()
+
+    verify(keyChainController).storeBiometricProbe()
+    XCTAssertEqual(contextProvider.contexts.map(\.isInvalidated), [true])
+  }
+
+  func testEnableBiometricUnlock_WhenThePolicyFails_ThenBiometricErrorWithoutAProbe() async {
+    stubCanEvaluateBiometrics()
+    contextProvider.evaluatePolicyResult = (false, nil)
+
+    do {
+      try await biometryController.enableBiometricUnlock()
+      XCTFail("Expected enableBiometricUnlock to throw")
+    } catch {
+      XCTAssertEqual(error as? SystemBiometryError, .biometricError)
+    }
+
+    verify(keyChainController, never()).storeBiometricProbe()
+  }
+
+  func testDisableBiometricUnlock_WhenThePolicyIsEvaluated_ThenRemovesTheProbe() async throws {
+    stubCanEvaluateBiometrics()
+
+    try await biometryController.disableBiometricUnlock()
+
     verify(keyChainController).clearKeyChainBiometry()
+  }
+
+  func testDisableBiometricUnlock_WhenThePolicyFails_ThenBiometricErrorAndTheProbeStays() async {
+    stubCanEvaluateBiometrics()
+    contextProvider.evaluatePolicyResult = (false, nil)
+
+    do {
+      try await biometryController.disableBiometricUnlock()
+      XCTFail("Expected disableBiometricUnlock to throw")
+    } catch {
+      XCTAssertEqual(error as? SystemBiometryError, .biometricError)
+    }
+
+    verify(keyChainController, never()).clearKeyChainBiometry()
   }
 
   func testRequestBiometricUnlock_WhenPolicyEvaluated_ThenProbeReadsWithTheEvaluatedContext() async throws {

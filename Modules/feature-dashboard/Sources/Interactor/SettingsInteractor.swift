@@ -31,8 +31,7 @@ public protocol SettingsInteractor: Sendable {
   func retrieveChangeLogUrl() async -> URL?
   func isBiometryAvailable() async -> Bool
   func isBiometryEnabled() async -> Bool
-  func authenticateBiometry() async -> BiometricsState
-  func setBiometrySelection(isEnabled: Bool) async
+  func setBiometrySelection(isEnabled: Bool) async -> BiometricsState
   func openBiometrySettings(action: @escaping @Sendable () -> Void) async
   func setBatchCounter(isEnabled: Bool) async
   func isBatchCounterEnabled() async -> Bool
@@ -93,11 +92,7 @@ final actor SettingsInteractorImpl: SettingsInteractor {
     await biometryInteractor.isBiometryEnabled()
   }
 
-  func authenticateBiometry() async -> BiometricsState {
-    await biometryInteractor.authenticate()
-  }
-
-  func setBiometrySelection(isEnabled: Bool) async {
+  func setBiometrySelection(isEnabled: Bool) async -> BiometricsState {
     await biometryInteractor.setBiometrySelection(isEnabled: isEnabled)
   }
 

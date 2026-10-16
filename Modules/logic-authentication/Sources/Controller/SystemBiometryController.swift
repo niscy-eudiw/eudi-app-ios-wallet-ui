@@ -22,6 +22,12 @@ import UIKit
 public protocol SystemBiometryController: Sendable {
   func getBiometryType() async -> LABiometryType
   func requestBiometricUnlock() async throws
+  /// Turns biometric unlock on once the system has evaluated the biometric policy, binding it to the enrolment of
+  /// that moment.
+  func enableBiometricUnlock() async throws
+  /// Turns biometric unlock off once the system has evaluated the biometric policy; this works after a new
+  /// enrolment too, since only the unlock is bound.
+  func disableBiometricUnlock() async throws
   func openSettings(action: @escaping @Sendable () -> Void) async
 }
 
@@ -55,6 +61,35 @@ final actor SystemBiometryControllerImpl: SystemBiometryController {
   /// keychain probe has been read with that context. The system's passcode fallback is hidden, as
   /// on the keychain prompt this replaces; the wallet PIN is the fallback.
   public func requestBiometricUnlock() async throws {
+    try await evaluateBiometricPolicy { evaluationContext in
+      try keyChainController.validateKeyChainBiometry(with: evaluationContext)
+    }
+  }
+
+  public func enableBiometricUnlock() async throws {
+    try await evaluateBiometricPolicy { _ in
+      try keyChainController.storeBiometricProbe()
+    }
+  }
+
+  public func disableBiometricUnlock() async throws {
+    try await evaluateBiometricPolicy { _ in
+      keyChainController.clearKeyChainBiometry()
+    }
+  }
+
+  @MainActor
+  public func openSettings(action: @escaping @Sendable () -> Void) {
+    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+    UIApplication.shared.open(url, options: [:]) { success in
+      guard success else { return }
+      action()
+    }
+  }
+
+  /// Evaluates the biometric policy on a new context, then runs `onSuccess` with that context. The system's passcode
+  /// fallback is hidden, as on the keychain prompt this replaces; the wallet PIN is the fallback.
+  private func evaluateBiometricPolicy(then onSuccess: (LAContext) throws -> Void) async throws {
 
     try canEvaluateForBiometrics()
 
@@ -70,19 +105,9 @@ final actor SystemBiometryControllerImpl: SystemBiometryController {
       guard isAuthenticated else {
         throw SystemBiometryError.biometricError
       }
-      try keyChainController.validateKeyChainBiometry(with: evaluationContext)
+      try onSuccess(evaluationContext)
     } catch {
-      keyChainController.clearKeyChainBiometry()
       throw SystemBiometryError.biometricError
-    }
-  }
-
-  @MainActor
-  public func openSettings(action: @escaping @Sendable () -> Void) {
-    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-    UIApplication.shared.open(url, options: [:]) { success in
-      guard success else { return }
-      action()
     }
   }
 
