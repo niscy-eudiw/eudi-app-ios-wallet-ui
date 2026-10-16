@@ -103,8 +103,10 @@ public protocol WalletKitController: Sendable {
   /// The revocation record of every document that has one. A record without a status, or with one this
   /// build does not know, counts as unrecognised. An empty store gives an empty result; a failed read throws.
   func fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus]
-  /// Stores or replaces the revocation record of each document.
+  /// Stores or replaces the revocation record of each document, and takes the documents out of the Digital
+  /// Credential API registrations.
   func storeRevokedDocuments(with statuses: [String: DocumentRevocationStatus]) async throws
+  /// Removes a document's revocation record, and offers it through the Digital Credential API again.
   func removeRevokedDocument(with id: String) async throws
   /// The revocation record of one document, or `nil` if it has none.
   func getDocumentRevocationStatus(with id: String) async -> DocumentRevocationStatus?
@@ -840,10 +842,12 @@ final actor WalletKitControllerImpl: WalletKitController {
     try await revokedDocumentStorageController.store(
       statuses.map { .init(identifier: $0.key, status: $0.value.rawValue) }
     )
+    await reconcileRegistrations()
   }
 
   func removeRevokedDocument(with id: String) async throws {
     try await revokedDocumentStorageController.delete(id)
+    await reconcileRegistrations()
   }
 
   func isDocumentRevoked(with id: String) async -> Bool {
@@ -896,10 +900,14 @@ final actor WalletKitControllerImpl: WalletKitController {
 
 private extension WalletKitControllerImpl {
 
+  /// Registers the issued CBOR documents for the Digital Credential API, leaving out every document with a
+  /// revocation record (revoked, suspended or unrecognised), as the Android wallet does. When the records cannot be
+  /// read, nothing is registered.
   func reconcileRegistrations() async {
+    let blocked = try? await fetchRevokedDocumentStatuses()
     await documentRegistrationManager.reconcile(
       desired: fetchIssuedDocuments()
-        .filter { $0.docDataFormat == .cbor }
+        .filter { $0.docDataFormat == .cbor && blocked != nil && blocked?[$0.id] == nil }
         .map {
           RegistrationDescriptor(
             documentIdentifier: $0.id,

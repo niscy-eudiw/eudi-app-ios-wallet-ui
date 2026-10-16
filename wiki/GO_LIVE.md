@@ -950,7 +950,10 @@ Current registration behavior:
 * Registration is only attempted on iOS 26 and later where the Digital Credentials API is available.
 * Only CBOR documents are registered (`document.docDataFormat == .cbor`).
 * Registrations are reconciled against storage rather than tracked incrementally, so a document deleted in the app is deregistered, and a registration left behind by an earlier build is removed when the documents are next loaded, after login.
-* Revoked, suspended and unrecognised documents stay registered, and the extension can present them; see [Revocation And Status Checking](#revocation-and-status-checking).
+* A document with a revocation record (revoked, suspended or unrecognised) is not registered, and the registrations are
+  updated whenever a revocation check stores or clears a record; when the records cannot be read nothing is
+  registered, as on Android. The extension also declines a request that would include such a document
+  (`RequestAuthorizationInteractor.loadRequestData`). See [Revocation And Status Checking](#revocation-and-status-checking).
 
 Current request handling:
 

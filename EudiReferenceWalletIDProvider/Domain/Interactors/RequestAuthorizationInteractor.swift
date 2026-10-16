@@ -44,6 +44,8 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
     self.dcApiHandler = dcApiHandler
   }
 
+  /// A request that would include a document with a revocation record (revoked, suspended or unrecognised) is
+  /// declined, as the in-app flows refuse one; when the records cannot be read, the request is declined too.
   /// `DcApiHandler` validates no reader certificate chain and returns no trust verdict, so the relying
   /// party is never reported as verified. The authority key identifier is kept for a later lookup. Without
   /// a website origin the requester gets the generic name, not the one in its unvalidated certificate, as
@@ -52,6 +54,10 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
     context: ISO18013MobileDocumentRequestContext
   ) async throws -> AuthorizationUIModel {
     let (docClaimsModels, _, authorityKeyIdentifier, _) = try await dcApiHandler.validateRequest(context.request)
+    let blocked = try await interactor.fetchRevokedDocumentStatuses()
+    guard !docClaimsModels.contains(where: { blocked[$0.id] != nil }) else {
+      throw WalletCoreError.documentBlocked
+    }
     let websiteName = context.requestingWebsiteOrigin?.absoluteString ?? LocalizableStringKey.unknownVerifier.toString
     let documents = docClaimsModels.compactMap {
       $0.transformToDocumentUi(isSensitive: false)
