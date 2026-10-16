@@ -1165,7 +1165,9 @@ need it.
 
 When an issuer issues only some of the documents of an offer, the success screen names the ones not added
 (`DocumentSuccessUIConfig.notIssuedDocumentNames`), as on Android; the cause wallet-kit reports is not shown. The
-"Add document" flow asks for one document type, and a format the issuer did not issue there is not named.
+"Add document" flow does the same for its combined PID entry, which asks for every PID format at once: a format the
+issuer did not issue is named, found by the configuration identifier each issued document records
+(`AddDocumentInteractorImpl.notIssuedConfigIds`).
 
 Current demo/dev code contains issuer URLs such as (two per build variant — a primary at `order: 1`
 and a backend at `order: 0`):

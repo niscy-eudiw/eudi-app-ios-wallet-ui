@@ -246,6 +246,81 @@ final class TestAddDocumentInteractor: EudiTest {
     }
   }
   
+  func testIssueDocument_WhenOneOfTheRequestedFormatsIsNotIssued_ThenNamesIt() async {
+    let metadata = DocMetadata(
+      credentialIssuerIdentifier: "https://issuer.dev",
+      configurationIdentifier: "pid_mdoc",
+      docType: "eu.europa.ec.eudi.pid.1",
+      display: nil,
+      issuerDisplay: nil,
+      claims: nil,
+      authorizedRequestData: nil,
+      keyOptions: nil,
+      credentialOptions: nil
+    )
+    let document = WalletStorage.Document(
+      id: "pid-id",
+      docType: "eu.europa.ec.eudi.pid.1",
+      docDataFormat: .cbor,
+      data: Data(),
+      docKeyInfo: nil,
+      createdAt: nil,
+      metadata: metadata.toData(),
+      displayName: "PID",
+      status: .issued
+    )
+    stub(walletKitController) { stub in
+      when(stub.issueDocuments(issuerId: any(), identifiers: any(), docTypeIdentifier: any()))
+        .thenReturn(IssuanceResult(documents: [document], issuerRegistration: nil))
+      when(stub.getScopedDocuments()).thenReturn(
+        ScopedDocumentsResult(
+          documents: [
+            ScopedDocument(
+              name: "PID (SD-JWT VC)",
+              issuer: "issuer.dev",
+              order: 0,
+              configId: "pid_sdjwt",
+              isPid: true,
+              docTypeIdentifier: .sdJwtPid
+            )
+          ],
+          errors: [],
+          totalIssuers: 1
+        )
+      )
+    }
+
+    let result = await interactor.issueDocument(
+      issuerId: "issuer.dev",
+      configIds: ["pid_mdoc", "pid_sdjwt"],
+      docTypeIdentifier: .mDocPid
+    )
+
+    guard case .success(let ids, let notIssuedDocumentNames) = result else {
+      return XCTFail("Expected a success, got \(result)")
+    }
+    XCTAssertEqual(ids, ["pid-id"])
+    XCTAssertEqual(notIssuedDocumentNames, ["PID (SD-JWT VC)"])
+  }
+
+  func testNotIssuedConfigIds_WhenEveryReturnedDocumentNamesItsConfiguration_ThenListsTheMissingOnes() {
+    XCTAssertEqual(
+      AddDocumentInteractorImpl.notIssuedConfigIds(requested: ["mdoc", "sdjwt"], returned: ["mdoc"]),
+      ["sdjwt"]
+    )
+    XCTAssertEqual(
+      AddDocumentInteractorImpl.notIssuedConfigIds(requested: ["mdoc", "sdjwt"], returned: ["sdjwt", "mdoc"]),
+      []
+    )
+  }
+
+  func testNotIssuedConfigIds_WhenAReturnedDocumentDoesNotNameItsConfiguration_ThenNamesNothing() {
+    XCTAssertEqual(
+      AddDocumentInteractorImpl.notIssuedConfigIds(requested: ["mdoc", "sdjwt"], returned: [nil]),
+      []
+    )
+  }
+
   func testIssueDocument_WhenIssuedDocument_ThenReturnSuccess() async {
     // Given
     let issuerId = "issuer.dev"
