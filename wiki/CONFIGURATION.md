@@ -79,8 +79,7 @@ struct WalletKitConfigImpl: WalletKitConfig {
                 allowPlainJwtProof: should_allow_plain_jwt_proof_bool,
                 requireDpop: should_use_dpop_bool,
                 issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
-                validateRegistrationCertificate: validateIssuerRegistrationCertificate,
-                cacheIssuerMetadata: false
+                validateRegistrationCertificate: validateIssuerRegistrationCertificate
             ),
             order: issuer_order_int
           )
@@ -104,8 +103,7 @@ struct WalletKitConfigImpl: WalletKitConfig {
                   allowPlainJwtProof: should_allow_plain_jwt_proof_bool,
                   requireDpop: should_use_dpop_bool,
                   issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
-                  validateRegistrationCertificate: validateIssuerRegistrationCertificate,
-                  cacheIssuerMetadata: false
+                  validateRegistrationCertificate: validateIssuerRegistrationCertificate
               ),
               order: issuer_order_int
             )
@@ -125,8 +123,7 @@ signed issuer metadata whose signer chains to the trusted lists, since `requireS
 passes the "Check Registration Certificates" setting through (see
 `validateIssuerRegistrationCertificate` below); the default is `false`. `popKeyOptions` keeps the
 client-attestation proof-of-possession key in the Secure Enclave; without it WalletKit creates a
-software key in the Keychain. `cacheIssuerMetadata` is accepted and ignored by WalletKit 0.54.8; the
-app passes `false`.
+software key in the Keychain.
 
 `allowPlainJwtProof` selects the credential proof policy for that issuer. Leave it `false` (the default) to stay HAIP-compliant: the wallet sends only attested proofs, either the `attestation` proof type or a `jwt` proof carrying a key attestation from the Wallet Provider. Set it to `true` only for an issuer that does not support key attestation and requires a plain JWT proof; the wallet then also accepts plain `jwt` proofs signed with ES256, ES384 or ES512, and the proof key is no longer attested. The reference issuers require attested proofs, so every issuer in this repo sets it to `false`.
 
@@ -215,6 +212,7 @@ The primary trust source is an ETSI LoTE (List of Trusted Entities) source that 
       ],
       requireSignedMetadata: true,
       statusTrustPolicy: .warning,
+      readerTrustPolicy: .enforce,
       wrprcVpTrustPolicy: .warning,
       wrprcVciTrustPolicy: .enforce
     )
@@ -304,7 +302,14 @@ the first governs presentation as well:
 the flow. A single policy governed both directions until wallet-kit 0.40.2, which could not express
 that asymmetry.
 
-Note what neither policy changes: WalletKit reports a WRPRC status list that cannot be retrieved only
+`readerTrustPolicy` decides what an untrusted access certificate (WRPAC) does to an OpenID4VP
+request, independently of both. The app keeps it at `.enforce`, as `enforceIfPresent()` does on
+Android: a signed request whose reader certificate chain is not trusted is refused. Under
+`.warning` (wallet-kit 0.56.0 and later) such a request proceeds and reports
+`ReaderAuthenticationStatus.authenticatedWithUntrustedCertificate`; the app treats only
+`.authenticated` as a trusted reader, so it is not shown as trusted.
+
+Note what none of these policies changes: WalletKit reports a WRPRC status list that cannot be retrieved only
 as a warning. The app refuses an issuance on any registration warning, so an unreachable status list
 blocks the issuance, a transient network failure included; a presentation reaches the consent screen
 behind the warning.
@@ -355,9 +360,9 @@ struct WalletKitConfigImpl: WalletKitConfig {
           [
             PreregisteredClient(
               clientId: "your_verifier_id",
-              verifierApiUri: "your_verifier_url",
               verifierLegalName: "your_verifier_legal_name",
-              webKeys: WebKeySet(keys: your_verifier_web_keys)
+              webKeys: your_verifier_web_key_set,
+              jarSigningAlg: your_verifier_signing_algorithm
             )
           ]
         )
@@ -369,13 +374,13 @@ struct WalletKitConfigImpl: WalletKitConfig {
 }
 ```
 
-`webKeys` is the verifier's public key set. The first key verifies the verifier's signed request,
-which this WalletKit initialiser expects to be signed with RS256; `WebKeySet(_:)` also parses a JWKS
-JSON string. Keep the last two arguments, as the reference app passes them. The initialiser's
-defaults are an empty `supportedTransactionDataTypes`, which rejects every request that carries
-transaction data, RQES requests included, and `validateRegistrationCertificate: true`, which turns
-WRPRC checks on whatever the "Check Registration Certificates" setting says. `verifierApiUri` is a
-required argument that WalletKit 0.54.8 accepts and ignores.
+`webKeys` is the verifier's public key set; `WebKeySet(_:)` also parses a JWKS JSON string.
+`jarSigningAlg` defaults to RS256. Set it when the verifier signs its requests with another
+algorithm, for example `JWSAlgorithm(.ES256)`. Keep the last two arguments of the configuration, as
+the reference app passes them. The initialiser's defaults are an empty
+`supportedTransactionDataTypes`, which rejects every request that carries transaction data, RQES
+requests included, and `validateRegistrationCertificate: true`, which turns WRPRC checks on whatever
+the "Check Registration Certificates" setting says.
 
 5. RQES
 
@@ -481,7 +486,7 @@ production values for every config surface listed below.
 | Configuration area | Source file | Production value to provide |
 | --- | --- | --- |
 | Build variant/type | `Wallet/Config/*.xcconfig`, `ConfigLogic.swift` | `BUILD_VARIANT = PROD`, `BUILD_TYPE = RELEASE` for production archives. |
-| Issuers | `WalletKitConfig.swift` | Production OpenID4VCI issuer URLs, client IDs, redirect URIs, PAR/DPoP policy, proof-type policy (`allowPlainJwtProof`), signed-metadata policy (`issuerMetadataPolicy`), registration check (`validateRegistrationCertificate`), PoP key options (`popKeyOptions`), and display order. `cacheIssuerMetadata` has no effect in WalletKit 0.54.8. |
+| Issuers | `WalletKitConfig.swift` | Production OpenID4VCI issuer URLs, client IDs, redirect URIs, PAR/DPoP policy, proof-type policy (`allowPlainJwtProof`), signed-metadata policy (`issuerMetadataPolicy`), registration check (`validateRegistrationCertificate`), PoP key options (`popKeyOptions`), and display order. |
 | Wallet provider attestation | `WalletProviderAttestationConfig.swift` | Production Wallet Provider host used for wallet/key attestation. |
 | Reader trust anchors | `WalletKitConfig.swift`, certificate resources | Production IACA/reader/verifier trust anchors only. |
 | OpenID4VP | `WalletKitConfig.swift` | Approved client ID schemes, preregistered verifier entries where needed, the accepted transaction data types (`supportedTransactionDataTypes`), and the registration check (`validateRegistrationCertificate`). |

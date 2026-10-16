@@ -36,7 +36,7 @@ public enum ProximityRequestPartialState: Sendable {
   /// Every document set that satisfies the request, blocked documents left out, for the user to choose from as in
   /// the remote flow.
   case success(
-    [[RequestDataUiModel]],
+    [RequestCombinationUiModel],
     relyingParty: String,
     dataRequestInfo: String,
     isTrusted: Bool,
@@ -135,6 +135,7 @@ final actor ProximityInteractorImpl: ProximityInteractor {
           )
         }
         .filter { !$0.isEmpty }
+        .map { RequestCombinationUiModel(documents: $0) }
       return .success(
         combinations,
         relyingParty: response.relyingParty,

@@ -2317,28 +2317,6 @@
         }
       }
     },
-    "request_transaction_data_hash" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hash"
-          }
-        }
-      }
-    },
-    "request_transaction_data_hash_algorithm" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hash algorithm"
-          }
-        }
-      }
-    },
     "request_transaction_data_hash_representation" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2357,6 +2335,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Number of signatures"
+          }
+        }
+      }
+    },
+    "request_transaction_data_numbered" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transaction %@"
           }
         }
       }
@@ -2405,17 +2394,6 @@
         }
       }
     },
-    "request_transaction_data_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transaction to authorize"
-          }
-        }
-      }
-    },
     "request_transaction_data_trust_framework" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2423,6 +2401,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trust framework"
+          }
+        }
+      }
+    },
+    "request_transaction_data_trust_framework_value" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "eIDAS"
           }
         }
       }
@@ -2467,6 +2456,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ hash algorithm"
+          }
+        }
+      }
+    },
+    "request_transaction_data_unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details for this transaction are unavailable."
           }
         }
       }
@@ -2577,6 +2577,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "One-time password (OTP)"
+          }
+        }
+      }
+    },
+    "request_transaction_data_open_document" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open document"
           }
         }
       }
@@ -4040,6 +4051,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Signing transaction identifier"
+          }
+        }
+      }
+    },
+    "transaction_details_signing_request" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SIGNING REQUEST"
           }
         }
       }

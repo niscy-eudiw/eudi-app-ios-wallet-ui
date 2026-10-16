@@ -169,7 +169,8 @@ final class ProximitySessionCoordinatorImpl: ProximitySessionCoordinator {
       dataRequestInfo: session.readerCertValidationMessage ?? LocalizableStringKey.requestDataInfoNotice.toString,
       isTrusted: isTrusted,
       overaskedClaims: overaskedClaims,
-      transactionDataSets: []
+      transactionDataSets: [],
+      requestNames: session.disclosedDocumentSets.map(\.requestName)
     )
   }
 }

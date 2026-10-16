@@ -762,13 +762,7 @@ var vpConfig: OpenId4VpConfiguration {
 }
 
 var supportedTransactionDataTypes: [SupportedTransactionDataType] {
-  let types = [
-    TransactionDataTypeIdentifier.qesApproval.rawValue,
-    TransactionDataTypeIdentifier.qes.rawValue
-  ]
-  return [.default()] + types.compactMap {
-    try? SupportedTransactionDataType(type: TransactionDataType(value: $0))
-  }
+  [.qesApprovalRequest, .qesRequest]
 }
 ```
 
@@ -778,8 +772,8 @@ Production meaning:
 | --- | --- | --- |
 | `.x509SanDns` | Verifier client identity is bound to a DNS name in an X.509 certificate. | Use when verifier certificates and trust anchors are managed and audited. |
 | `.x509Hash` | Verifier identity is bound to a certificate hash. | Use when the verifier ecosystem requires hash-based certificate binding. |
-| `.preregistered` | Verifiers are explicitly configured in the wallet. | Use for closed pilots or controlled ecosystems. Add the legal name, client ID and request-signing keys. The API URL is a required argument but has no effect. |
-| `supportedTransactionDataTypes` | OpenID4VP `transaction_data` types the wallet accepts. The OpenID4VP library rejects any request whose transaction data type is not listed; an empty list rejects every request that carries transaction data. The app accepts `.default()` (the library's placeholder type `transaction_data`) and the CSC `https://cloudsignatureconsortium.org/2025/qes-approval` and `https://cloudsignatureconsortium.org/2025/qes` types. | List only the types your wallet can display to the user. Drop `.default()` unless a production verifier uses it. |
+| `.preregistered` | Verifiers are explicitly configured in the wallet. | Use for closed pilots or controlled ecosystems. Add the production client ID, legal name and request-signing keys, and the request signing algorithm when it is not RS256. |
+| `supportedTransactionDataTypes` | OpenID4VP `transaction_data` types the wallet accepts. The OpenID4VP library rejects any request whose transaction data type is not listed; an empty list rejects every request that carries transaction data. The app accepts the CSC `https://cloudsignatureconsortium.org/2025/qes-approval` (`.qesApprovalRequest`) and `https://cloudsignatureconsortium.org/2025/qes` (`.qesRequest`) types. The same list is used to read the transaction data recorded in presentation logs. | Keep both QES types when supporting signing flows. Add another type only once the wallet can display it, since WalletKit exposes it as raw JSON and the app shows it as unavailable. |
 | `validateRegistrationCertificate` | Whether the verifier's WRP registration certificate is validated during OpenID4VP. Set from `validateIssuerRegistrationCertificate`. | See [Registration Certificates: The Second Trust Layer](#registration-certificates-the-second-trust-layer). |
 
 If using preregistered verifiers, add the relevant import and production entries:
@@ -796,9 +790,9 @@ var vpConfig: OpenId4VpConfiguration {
         [
           PreregisteredClient(
             clientId: "my-production-verifier-client-id",
-            verifierApiUri: "https://verifier.example.eu",
             verifierLegalName: "Example Member State Verifier",
-            webKeys: WebKeySet(keys: productionVerifierSigningKeys)
+            webKeys: productionVerifierWebKeys,
+            jarSigningAlg: JWSAlgorithm(.ES256)
           )
         ]
       )
@@ -814,24 +808,39 @@ var vpConfig: OpenId4VpConfiguration {
 
 Rules:
 
-* `webKeys` is required. This initializer, from WalletKit, checks the request signature with the
-  first key of the set and RS256. For another algorithm use
-  `PreregisteredClient(clientId:legalName:jarSigningAlg:jwkSetSource:)`.
-* WalletKit 0.54.8 accepts `verifierApiUri` and does not keep it, so the value has no effect.
+* `webKeys` must hold the verifier's production request-signing public keys.
+* `jarSigningAlg` must match the algorithm the verifier signs its requests with. It defaults to RS256.
 * `verifierLegalName` must be the official entity name shown to users.
 * `clientId` must match verifier registration and protocol profile.
 * Do not include development verifier URLs in production.
 * If a verifier is not trusted, the user interface must clearly show that status before disclosure.
 
-Transaction data is shown on the request screen under "Data to be signed", below the document it is
-bound to. A QES approval shows the trust framework, transaction type, requested credential query
-ids, signing credential ID, number of signatures, and each document's label, hash representation,
-hash and hash algorithm. A QES request shows the trust framework, transaction type, requested
-credential query ids and, for each signature request, the document's label, location, expected
-checksum and checksum algorithm, signature type, signature format, conformance level, signed
-attributes, one-time password and response URI. Any other accepted type is shown as its raw fields.
-Before release, check that every type you accept is displayed in full, since the user approves it
-by sharing.
+When a presentation request includes transaction data for signing, each applicable option on the
+request screen shows a "Data to be signed" section below its requested data. Its initially
+collapsed "Signature details" row lists the trust framework once, then each transaction, numbered
+when there is more than one:
+
+* A QES approval shows the transaction type, signature type, requested credential query ids,
+  signing credential ID, number of signatures and, for each document, its label, location, expected
+  checksum and checksum algorithm, hash representation, hash, hash algorithm, signed attributes and
+  one-time password.
+* A QES request shows the transaction type, requested credential query ids and, for each signature
+  request, the document's label, location, expected checksum and checksum algorithm, signature
+  type, signature format, conformance level, signed attributes, one-time password and response URI.
+* Any transaction WalletKit cannot read as one of these types is shown as unavailable.
+
+Where a document location is an HTTP(S) link, "Open document" opens it in the browser. These
+details are informational: sharing still uses the existing share flow, and WalletKit binds each
+transaction to the credential of the chosen option. Hashes and expected checksums are displayed as
+supplied; they are not a document-integrity verification result.
+
+The transaction data is also recorded with the presentation. Its transaction details show one
+read-only "SIGNING REQUEST / Signature details" section with the same information, without the
+transaction type and without document actions. Signing results appear in separate history entries.
+
+Before release, exercise QES approval and QES requests with transaction data: check the details under
+each applicable option, the document links where supplied, and the recorded details after
+restarting the app. Also check that requests without transaction data show no extra section.
 
 ### Relay Attack Risk In Presentation Flows
 
@@ -1036,6 +1045,9 @@ Production guidance:
   against the trusted lists.
 * Keep `requireSignedMetadata` at `true`. Set `statusTrustPolicy` to `.enforce` once the status-list
   signers of your issuers validate against the access-certificate list.
+* Keep `readerTrustPolicy` at `.enforce`, so an OpenID4VP request whose reader access certificate
+  chain is not trusted is refused. `.warning` lets such a signed request proceed with an untrusted
+  certificate.
 * Configure `wrprcProviders` as well; without it the registration certificates covered in the next
   section have no trust source, and no registration can be validated in either direction.
 * Remove demo and staging fallback trust anchors that are not part of the production trust framework.
@@ -1174,8 +1186,7 @@ case .PROD:
         allowPlainJwtProof: false,
         requireDpop: true,
         issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
-        validateRegistrationCertificate: validateIssuerRegistrationCertificate,
-        cacheIssuerMetadata: false
+        validateRegistrationCertificate: validateIssuerRegistrationCertificate
       ),
       order: 0
     )
@@ -1193,7 +1204,6 @@ case .PROD:
 | `requireDpop` | Whether DPoP is required. | Prefer `true` where the production profile requires sender-constrained tokens. |
 | `issuerMetadataPolicy` | Signed-metadata policy. `trustConfiguration.issuerMetadataPolicy` requires signed issuer metadata whose signer validates against the access-certificate list (`wrpacProviders`), since `requireSignedMetadata` is `true`. WalletKit's default, `.ignoreSigned`, accepts unsigned metadata. | Keep `trustConfiguration.issuerMetadataPolicy`. |
 | `validateRegistrationCertificate` | Whether the issuer's registration certificate is validated during issuance. WalletKit's default is `false`. | Pass `validateIssuerRegistrationCertificate`; see [Registration Certificates: The Second Trust Layer](#registration-certificates-the-second-trust-layer). |
-| `cacheIssuerMetadata` | Accepted and ignored by WalletKit 0.54.8. The app passes `false`. | No effect today. |
 | `order` | Display/order preference for scoped issuance. | Use deterministic ordering approved by product owners. |
 
 Rules:
@@ -1599,7 +1609,7 @@ Modules/logic-api/Sources/Provider/NetworkSessionProvider.swift
 ```
 
 A cookie one relying party sets is therefore never sent to another, and nothing links the wallet's sessions across
-launches. WalletKit 0.54.8 fetches SD-JWT issuer keys with its own `URLSession.shared`, which the app cannot change.
+launches. WalletKit 0.56.0 fetches SD-JWT issuer keys with its own `URLSession.shared`, which the app cannot change.
 
 iOS App Transport Security applies to `URLSession` connections by default. Production must keep TLS
 validation strict.

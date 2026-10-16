@@ -70,10 +70,10 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "request_requested_data_title")
     case .requestTransactionDataSectionTitle:
       bundle.localizedString(forKey: "request_transaction_data_section_title")
-    case .requestTransactionDataTitle:
-      bundle.localizedString(forKey: "request_transaction_data_title")
     case .requestTransactionDataSignatureDetails:
       bundle.localizedString(forKey: "request_transaction_data_signature_details")
+    case .requestTransactionDataNumbered(let args):
+      bundle.localizedStringWithArguments(forKey: "request_transaction_data_numbered", arguments: args)
     case .requestTransactionDataType:
       bundle.localizedString(forKey: "request_transaction_data_type")
     case .requestTransactionDataTypeQes:
@@ -82,6 +82,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "request_transaction_data_type_qes_request")
     case .requestTransactionDataTrustFramework:
       bundle.localizedString(forKey: "request_transaction_data_trust_framework")
+    case .requestTransactionDataTrustFrameworkValue:
+      bundle.localizedString(forKey: "request_transaction_data_trust_framework_value")
     case .requestTransactionDataRequestedCredentials:
       bundle.localizedString(forKey: "request_transaction_data_requested_credentials")
     case .requestTransactionDataSigningCredentialId:
@@ -90,12 +92,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "request_transaction_data_document")
     case .requestTransactionDataHashRepresentation:
       bundle.localizedString(forKey: "request_transaction_data_hash_representation")
-    case .requestTransactionDataHash:
-      bundle.localizedString(forKey: "request_transaction_data_hash")
     case .requestTransactionDataTypedHash(let args):
       bundle.localizedStringWithArguments(forKey: "request_transaction_data_typed_hash", arguments: args)
-    case .requestTransactionDataHashAlgorithm:
-      bundle.localizedString(forKey: "request_transaction_data_hash_algorithm")
     case .requestTransactionDataTypedHashAlgorithm(let args):
       bundle.localizedStringWithArguments(forKey: "request_transaction_data_typed_hash_algorithm", arguments: args)
     case .requestTransactionDataNumberOfSignatures:
@@ -104,6 +102,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedStringWithArguments(forKey: "request_transaction_data_document_numbered", arguments: args)
     case .requestTransactionDataDocumentLocation:
       bundle.localizedString(forKey: "request_transaction_data_document_location")
+    case .requestTransactionDataOpenDocument:
+      bundle.localizedString(forKey: "request_transaction_data_open_document")
     case .requestTransactionDataExpectedChecksum:
       bundle.localizedString(forKey: "request_transaction_data_expected_checksum")
     case .requestTransactionDataChecksumAlgorithm:
@@ -120,6 +120,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "request_transaction_data_one_time_password")
     case .requestTransactionDataResponseUri:
       bundle.localizedString(forKey: "request_transaction_data_response_uri")
+    case .requestTransactionDataUnavailable:
+      bundle.localizedString(forKey: "request_transaction_data_unavailable")
     case .requestTransactionDataSignatureQes:
       bundle.localizedString(forKey: "request_transaction_data_signature_qes")
     case .requestTransactionDataSignatureQeseal:
@@ -508,6 +510,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "transaction_information")
     case .transactionDetailsDataSigned:
       bundle.localizedString(forKey: "transaction_details_data_signed")
+    case .transactionDetailsSigningRequest:
+      bundle.localizedString(forKey: "transaction_details_signing_request")
     case .transactionDetailsDataShare:
       bundle.localizedString(forKey: "transaction_details_data_shared")
     case .transactionDetailsScreenCardDateLabel:

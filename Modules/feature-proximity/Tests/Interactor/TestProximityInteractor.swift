@@ -276,7 +276,7 @@ final class TestProximityInteractor: EudiTest {
     // Then
     switch state {
     case .success(let uimodels, let relyingParty, let dataRequestInfo, let isTrusted, let registration):
-      XCTAssertEqual(uimodels, [expectedUiModels])
+      XCTAssertEqual(uimodels, [RequestCombinationUiModel(documents: expectedUiModels)])
       XCTAssertEqual(relyingParty, request.relyingParty)
       XCTAssertEqual(dataRequestInfo, request.dataRequestInfo)
       XCTAssertEqual(isTrusted, request.isTrusted)
@@ -296,7 +296,8 @@ final class TestProximityInteractor: EudiTest {
       dataRequestInfo: single.dataRequestInfo,
       isTrusted: single.isTrusted,
       overaskedClaims: single.overaskedClaims,
-      transactionDataSets: single.transactionDataSets
+      transactionDataSets: single.transactionDataSets,
+      requestNames: single.requestNames + single.requestNames
     )
     
     let expectedUiModels = Self.mockUiModels()
@@ -338,7 +339,7 @@ final class TestProximityInteractor: EudiTest {
     // Then
     switch state {
     case .success(let uimodels, let relyingParty, let dataRequestInfo, let isTrusted, let registration):
-      XCTAssertEqual(uimodels, [expectedUiModels, expectedUiModels])
+      XCTAssertEqual(uimodels, [RequestCombinationUiModel(documents: expectedUiModels), RequestCombinationUiModel(documents: expectedUiModels)])
       XCTAssertEqual(relyingParty, request.relyingParty)
       XCTAssertEqual(dataRequestInfo, request.dataRequestInfo)
       XCTAssertEqual(isTrusted, request.isTrusted)
@@ -357,7 +358,8 @@ final class TestProximityInteractor: EudiTest {
       dataRequestInfo: trusted.dataRequestInfo,
       isTrusted: false,
       overaskedClaims: trusted.overaskedClaims,
-      transactionDataSets: trusted.transactionDataSets
+      transactionDataSets: trusted.transactionDataSets,
+      requestNames: trusted.requestNames
     )
     stub(presentationSessionCoordinator) { mock in
       when(mock.requestReceived()).thenReturn(request)

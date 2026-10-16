@@ -1475,6 +1475,21 @@ import Copyable
 
 
 
+// MARK: - Mocks generated from file: '../Modules/feature-common/Sources/UI/Request/Model/RequestTransactionDataUiModel.swift'
+
+import Cuckoo
+import SwiftUI
+import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+
+
+
 // MARK: - Mocks generated from file: '../Modules/feature-common/Sources/UI/Scanner/ScannerView.swift'
 
 import Cuckoo
@@ -7328,7 +7343,6 @@ import EudiWalletKit
 import EudiEtsi1196x2
 import MdocDataModel18013
 import struct OpenID4VP.SupportedTransactionDataType
-import struct OpenID4VP.TransactionDataType
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -11585,6 +11599,23 @@ import struct OpenID4VP.ClaimPath
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/PresentationTransactionData+Domain.swift'
+
+import Cuckoo
+import Foundation
+import EudiWalletKit
+import MdocDataModel18013
+import struct OpenID4VP.SupportedTransactionDataType
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/RevokedDocument+Extensions.swift'
 
 import Cuckoo
@@ -11646,6 +11677,7 @@ import Cuckoo
 import Foundation
 import MdocDataModel18013
 import logic_storage
+import struct OpenID4VP.SupportedTransactionDataType
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -11690,24 +11722,6 @@ import MdocDataModel18013
 
 import Cuckoo
 import Foundation
-@testable import logic_core
-@testable import logic_business
-@testable import logic_analytics
-@testable import logic_ui
-@testable import logic_api
-@testable import logic_authentication
-@testable import feature_common
-
-
-
-// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/UserRequestInfo+TransactionData.swift'
-
-import Cuckoo
-import Foundation
-import EudiWalletKit
-import MdocDataTransfer18013
-import SwiftyJSON
-import struct OpenID4VP.OpenId4VPSpec
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -11857,7 +11871,7 @@ import Foundation
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/PresentationTransactionData.swift'
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/PresentationTransactionDataDomain.swift'
 
 import Cuckoo
 import Foundation
@@ -11925,6 +11939,16 @@ public class MockRequestItemConvertible: RequestItemConvertible, Cuckoo.Protocol
         }
     }
 
+    public var requestName: String? {
+        get {
+            return cuckoo_manager.getter(
+                "requestName",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.requestName
+            )
+        }
+    }
+
 
     public struct __StubbingProxy_RequestItemConvertible: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
@@ -11935,6 +11959,10 @@ public class MockRequestItemConvertible: RequestItemConvertible, Cuckoo.Protocol
         
         var items: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockRequestItemConvertible,RequestConvertibleItems> {
             return .init(manager: cuckoo_manager, name: "items")
+        }
+        
+        var requestName: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockRequestItemConvertible,String?> {
+            return .init(manager: cuckoo_manager, name: "requestName")
         }
     }
 
@@ -11952,6 +11980,10 @@ public class MockRequestItemConvertible: RequestItemConvertible, Cuckoo.Protocol
         var items: Cuckoo.VerifyReadOnlyProperty<RequestConvertibleItems> {
             return .init(manager: cuckoo_manager, name: "items", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
+        
+        var requestName: Cuckoo.VerifyReadOnlyProperty<String?> {
+            return .init(manager: cuckoo_manager, name: "requestName", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
     }
 }
 
@@ -11960,6 +11992,12 @@ public class RequestItemConvertibleStub:RequestItemConvertible, @unchecked Senda
     public var items: RequestConvertibleItems {
         get {
             return DefaultValueRegistry.defaultValue(for: (RequestConvertibleItems).self)
+        }
+    }
+    
+    public var requestName: String? {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (String?).self)
         }
     }
 

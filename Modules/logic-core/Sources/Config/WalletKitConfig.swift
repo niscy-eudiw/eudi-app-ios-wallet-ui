@@ -19,7 +19,6 @@ import EudiWalletKit
 import EudiEtsi1196x2
 import MdocDataModel18013
 import struct OpenID4VP.SupportedTransactionDataType
-import struct OpenID4VP.TransactionDataType
 
 protocol WalletKitConfig: Sendable {
 
@@ -166,8 +165,7 @@ struct WalletKitConfigImpl: WalletKitConfig {
               allowPlainJwtProof: false,
               requireDpop: true,
               issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
-              validateRegistrationCertificate: validateIssuerRegistrationCertificate,
-              cacheIssuerMetadata: false
+              validateRegistrationCertificate: validateIssuerRegistrationCertificate
             ),
             order: 1
           ),
@@ -187,8 +185,7 @@ struct WalletKitConfigImpl: WalletKitConfig {
               allowPlainJwtProof: false,
               requireDpop: true,
               issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
-              validateRegistrationCertificate: validateIssuerRegistrationCertificate,
-              cacheIssuerMetadata: false
+              validateRegistrationCertificate: validateIssuerRegistrationCertificate
             ),
             order: 0
           )
@@ -211,8 +208,7 @@ struct WalletKitConfigImpl: WalletKitConfig {
               allowPlainJwtProof: false,
               requireDpop: true,
               issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
-              validateRegistrationCertificate: validateIssuerRegistrationCertificate,
-              cacheIssuerMetadata: false
+              validateRegistrationCertificate: validateIssuerRegistrationCertificate
             ),
             order: 1
           ),
@@ -232,8 +228,7 @@ struct WalletKitConfigImpl: WalletKitConfig {
               allowPlainJwtProof: false,
               requireDpop: true,
               issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
-              validateRegistrationCertificate: validateIssuerRegistrationCertificate,
-              cacheIssuerMetadata: false
+              validateRegistrationCertificate: validateIssuerRegistrationCertificate
             ),
             order: 0
           )
@@ -264,13 +259,7 @@ struct WalletKitConfigImpl: WalletKitConfig {
   }
 
   var supportedTransactionDataTypes: [SupportedTransactionDataType] {
-    let types = [
-      TransactionDataTypeIdentifier.qesApproval.rawValue,
-      TransactionDataTypeIdentifier.qes.rawValue
-    ]
-    return [.default()] + types.compactMap {
-      try? SupportedTransactionDataType(type: TransactionDataType(value: $0))
-    }
+    [.qesApprovalRequest, .qesRequest]
   }
 
   var trustConfiguration: TrustConfiguration {
@@ -307,6 +296,7 @@ struct WalletKitConfigImpl: WalletKitConfig {
       ],
       requireSignedMetadata: true,
       statusTrustPolicy: .warning,
+      readerTrustPolicy: .enforce,
       wrprcVpTrustPolicy: .warning,
       wrprcVciTrustPolicy: .enforce
     )
