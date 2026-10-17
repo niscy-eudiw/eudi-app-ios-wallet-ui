@@ -116,6 +116,44 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "request_transaction_data_one_time_password")
     case .requestTransactionDataResponseUri:
       bundle.localizedString(forKey: "request_transaction_data_response_uri")
+    case .requestTransactionDataLocation:
+      bundle.localizedString(forKey: "request_transaction_data_location")
+    case .requestTransactionDataHashAlgorithms:
+      bundle.localizedString(forKey: "request_transaction_data_hash_algorithms")
+    case .requestTransactionDataCircumstantialData:
+      bundle.localizedString(forKey: "request_transaction_data_circumstantial_data")
+    case .requestTransactionDataSignedEnvelopeProperty:
+      bundle.localizedString(forKey: "request_transaction_data_signed_envelope_property")
+    case .requestTransactionDataReferenceUri:
+      bundle.localizedString(forKey: "request_transaction_data_reference_uri")
+    case .requestTransactionDataSignatureAlgorithm:
+      bundle.localizedString(forKey: "request_transaction_data_signature_algorithm")
+    case .requestTransactionDataSignatureAlgorithmParameters:
+      bundle.localizedString(forKey: "request_transaction_data_signature_algorithm_parameters")
+    case .requestTransactionDataDocumentAccess:
+      bundle.localizedString(forKey: "request_transaction_data_document_access")
+    case .requestTransactionDataDocumentAccessPublic:
+      bundle.localizedString(forKey: "request_transaction_data_document_access_public")
+    case .requestTransactionDataDocumentAccessOtp:
+      bundle.localizedString(forKey: "request_transaction_data_document_access_otp")
+    case .requestTransactionDataDocumentAccessBasic:
+      bundle.localizedString(forKey: "request_transaction_data_document_access_basic")
+    case .requestTransactionDataDocumentAccessDigest:
+      bundle.localizedString(forKey: "request_transaction_data_document_access_digest")
+    case .requestTransactionDataDocumentAccessOauth:
+      bundle.localizedString(forKey: "request_transaction_data_document_access_oauth")
+    case .requestTransactionDataDocumentContent:
+      bundle.localizedString(forKey: "request_transaction_data_document_content")
+    case .requestTransactionDataDocumentContentInline:
+      bundle.localizedString(forKey: "request_transaction_data_document_content_inline")
+    case .requestTransactionDataDocumentType:
+      bundle.localizedString(forKey: "request_transaction_data_document_type")
+    case .requestTransactionDataDocumentTypeOriginal:
+      bundle.localizedString(forKey: "request_transaction_data_document_type_original")
+    case .requestTransactionDataDocumentTypeFormatted:
+      bundle.localizedString(forKey: "request_transaction_data_document_type_formatted")
+    case .requestTransactionDataDocumentSize:
+      bundle.localizedString(forKey: "request_transaction_data_document_size")
     case .requestTransactionDataUnavailable:
       bundle.localizedString(forKey: "request_transaction_data_unavailable")
     case .requestTransactionDataSignatureQes:
@@ -657,23 +695,23 @@ final class LocalizableManager: LocalizableManagerType {
     case .offerDocumentsToAppsTitle:
       bundle.localizedString(forKey: "offer_documents_to_apps")
     case .quickPinWeakError:
-      bundle.localizedString(forKey: "quick_pin_weak")
+      bundle.localizedString(forKey: "quick_pin_weak_error")
     case .issuanceOfferIssuerNotConfiguredError:
-      bundle.localizedString(forKey: "issuance_offer_issuer_not_configured")
+      bundle.localizedString(forKey: "issuance_offer_issuer_not_configured_error")
     case .requestTransactionDataChosenByRelyingPartyWarning:
-      bundle.localizedString(forKey: "request_transaction_data_chosen_by_relying_party")
+      bundle.localizedString(forKey: "request_transaction_data_chosen_by_relying_party_warning")
     case .requestTransactionDataNotShownError:
       bundle.localizedString(forKey: "request_transaction_data_not_shown_error")
     case .transactionDetailsRegistrationNotVerifiedWarning:
-      bundle.localizedString(forKey: "transaction_details_registration_not_verified")
+      bundle.localizedString(forKey: "transaction_details_registration_not_verified_warning")
     case .transactionDetailsRegistrationNotBoundWarning:
-      bundle.localizedString(forKey: "transaction_details_registration_not_bound")
+      bundle.localizedString(forKey: "transaction_details_registration_not_bound_warning")
     case .issuanceSuccessNotIssuedWarning(let args):
-      bundle.localizedStringWithArguments(forKey: "issuance_success_not_issued", arguments: args)
+      bundle.localizedStringWithArguments(forKey: "issuance_success_not_issued_warning", arguments: args)
     case .quickPinDeviceLockMissingWarning:
-      bundle.localizedString(forKey: "quick_pin_device_lock_missing")
+      bundle.localizedString(forKey: "quick_pin_device_lock_missing_warning")
     case .quickPinDeviceLockRequiredWarning:
-      bundle.localizedString(forKey: "quick_pin_device_lock_required")
+      bundle.localizedString(forKey: "quick_pin_device_lock_required_warning")
     case .documentOfferingDisabledMessage:
       bundle.localizedString(forKey: "document_offering_disabled_message")
     case .requestUserImageConfirmationTitle:

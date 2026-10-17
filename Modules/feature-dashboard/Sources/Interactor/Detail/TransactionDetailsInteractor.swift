@@ -35,7 +35,7 @@ public enum TransactionDataProtectionPartialState: Sendable {
 
 /// Whether a data-protection request was recorded in history after its hand-off.
 public enum TransactionDataProtectionRecordPartialState: Sendable {
-  case recorded
+  case success
   case unavailable
   case failure(error: Error)
 }
@@ -184,7 +184,7 @@ final actor TransactionDetailsInteractorImpl: TransactionDetailsInteractor {
       case .reportSuspiciousTransaction:
         try await walletController.recordDpaReport(for: presentation, contactUrl: contactUrl)
       }
-      return .recorded
+      return .success
     } catch {
       return .failure(error: error)
     }

@@ -33,7 +33,7 @@ final class TestSystemBiometryController: EudiTest {
     var evaluatedPolicies: [LAPolicy] = []
     var isInvalidated = false
     /// Set for the contexts the recorder hands out, which report to it instead of being kept.
-    var recorder: ContextRecorder?
+    var recorder: RecordingLAContextProvider?
     var recordId = 0
     
     override var biometryType: LABiometryType { stubBiometryType }
@@ -75,7 +75,7 @@ final class TestSystemBiometryController: EudiTest {
   }
 
   /// Hands out stub contexts that report what happens to them, and keeps only those reports.
-  final class ContextRecorder: Sendable {
+  final class RecordingLAContextProvider: Sendable {
 
     private struct State: Sendable {
       var evaluatePolicyResult: (success: Bool, error: Error?) = (true, nil)
@@ -127,14 +127,14 @@ final class TestSystemBiometryController: EudiTest {
   var biometryController: SystemBiometryController!
   var keyChainController: MockKeyChainController!
   var context: StubLAContext!
-  var contextProvider: ContextRecorder!
+  var contextProvider: RecordingLAContextProvider!
   
   // MARK: - Lifecycle
   override func setUp() {
     super.setUp()
     self.keyChainController = MockKeyChainController()
     self.context = StubLAContext()
-    let contextProvider = ContextRecorder()
+    let contextProvider = RecordingLAContextProvider()
     self.contextProvider = contextProvider
     self.biometryController = SystemBiometryControllerImpl(
       context: context,
@@ -419,7 +419,7 @@ final class TestSystemBiometryController: EudiTest {
 
   func testRequestBiometricUnlock_WhenPolicyEvaluated_ThenProbeReadsWithTheEvaluatedContext() async throws {
     stubCanEvaluateBiometrics()
-    let recorder: ContextRecorder = contextProvider
+    let recorder: RecordingLAContextProvider = contextProvider
     stub(keyChainController) { stub in
       when(stub.validateKeyChainBiometry(with: any())).then { context in
         recorder.recordProbe(with: context)

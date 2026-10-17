@@ -5,8 +5,6 @@
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-enabled-007AFF.svg?logo=swift)](https://developer.apple.com/xcode/swiftui/)
 [![iOS](https://img.shields.io/badge/iOS-17%2B-000000.svg?logo=apple)](https://developer.apple.com/ios/)
 [![SonarCloud](https://img.shields.io/badge/SonarCloud-enabled-F3702A.svg?logo=sonarcloud)](https://sonarcloud.io)
-[![Dependency Check](https://img.shields.io/badge/Dependency--Check-enabled-005A9C.svg)](https://owasp.org/www-project-dependency-check/)
-[![Gitleaks](https://img.shields.io/badge/Gitleaks-enabled-orange.svg)](https://github.com/gitleaks/gitleaks)
 
 :heavy_exclamation_mark: **Important!** Before you proceed, please read
 the [EUDI Wallet Reference Implementation project description](https://github.com/eu-digital-identity-wallet/.github/blob/main/profile/reference-implementation.md)
@@ -323,6 +321,7 @@ graph TD;
   logic-test -.-> logic-core
   logic-test -.-> logic-ui
   logic-test -.-> logic-authentication
+  logic-test -.-> logic-storage
 
   feature-test -.-> feature-common
   feature-test -.-> feature-startup

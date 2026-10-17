@@ -226,7 +226,7 @@ Keep these files under strict review:
 | `Modules/logic-storage/Sources/Config/StorageConfig.swift` | Defines SwiftData store location, App Group container selection, and local storage schema. |
 | `Modules/logic-api/Sources/Provider/NetworkSessionProvider.swift` | Defines the shared network session used by app network calls. |
 | `Modules/logic-analytics/Sources/Config/AnalyticsConfig.swift` | Defines analytics provider configuration. |
-| `.github/workflows/*.yml` | Defines SAST, SCA, and secret scanning workflows. |
+| `.github/workflows/*.yml` | Defines the SAST workflow (`sonar.yml`, SonarCloud). No SCA or secret-scanning workflow is included; `security/gitleaks/gitleaks.toml` holds secret-scanning rules for a pipeline that adds one. |
 | `security/gitleaks/gitleaks.toml` | Defines local secret scanning rules. |
 | `fastlane/Fastfile` | Defines iOS test, versioning, archive, upload, tag, and release lanes. |
 | `Modules/logic-resources/Sources/Resources/Color.xcassets` | Brand color palette (light and dark appearances) and system/semantic color overrides. See [THEMING.md](THEMING.md). |
@@ -773,7 +773,7 @@ Production meaning:
 | `.x509SanDns` | Verifier client identity is bound to a DNS name in an X.509 certificate. | Use when verifier certificates and trust anchors are managed and audited. |
 | `.x509Hash` | Verifier identity is bound to a certificate hash. | Use when the verifier ecosystem requires hash-based certificate binding. |
 | `.preregistered` | Verifiers are explicitly configured in the wallet. | Use for closed pilots or controlled ecosystems. Add the production client ID, legal name and request-signing keys, and the request signing algorithm when it is not RS256. |
-| `supportedTransactionDataTypes` | OpenID4VP `transaction_data` types the wallet accepts. The OpenID4VP library rejects any request whose transaction data type is not listed; an empty list rejects every request that carries transaction data. The app accepts the CSC `https://cloudsignatureconsortium.org/2025/qes-approval` (`.qesApprovalRequest`) and `https://cloudsignatureconsortium.org/2025/qes` (`.qesRequest`) types. The same list is used to read the transaction data recorded in presentation logs. | Keep both QES types when supporting signing flows. Add another type only once the wallet can display it, since WalletKit exposes it as raw JSON and the app shows it as unavailable. |
+| `supportedTransactionDataTypes` | OpenID4VP `transaction_data` types the wallet accepts. The OpenID4VP library rejects any request whose transaction data type is not listed; an empty list rejects every request that carries transaction data. The app accepts the CSC `https://cloudsignatureconsortium.org/2025/qes-approval` (`.qesApprovalRequest`) and `https://cloudsignatureconsortium.org/2025/qes` (`.qesRequest`) types. The same list is used to read the transaction data recorded in presentation logs. | Keep both QES types when supporting signing flows. Add another type only once the wallet can display it, since WalletKit exposes it as raw JSON, which the wallet cannot show, so the app declines the request (`WalletCoreError.transactionDataNotShown`). |
 | `validateRegistrationCertificate` | Whether the verifier's WRP registration certificate is validated during OpenID4VP. Set from `validateIssuerRegistrationCertificate`. | See [Registration Certificates: The Second Trust Layer](#registration-certificates-the-second-trust-layer). |
 
 If using preregistered verifiers, add the relevant import and production entries:
@@ -820,18 +820,24 @@ request screen shows a "Data to be signed" section below its requested data. Its
 open when the screen appears and lists each transaction, numbered when there is more than one, as on Android:
 
 * A QES approval shows the transaction type, signature type, requested credential query ids,
-  signing credential ID, number of signatures and, for each document, its label, location, expected
-  checksum and checksum algorithm, hash representation, hash, hash algorithm, signed attributes and
-  one-time password.
-* A QES request shows the transaction type, requested credential query ids and, for each signature
-  request, the document's label, location, expected checksum and checksum algorithm, signature
-  type, signature format, conformance level, signed attributes, one-time password and response URI.
+  signing credential ID, number of signatures, locations, transaction-data hash algorithms and, for each document,
+  its label, location, expected checksum and checksum algorithm, hash representation, hash, hash algorithm, signed
+  attributes, circumstantial data, access mode and one-time password.
+* A QES request shows the transaction type, requested credential query ids, transaction-data hash algorithms and,
+  for each signature request, the document's label, location, expected checksum and checksum algorithm, signature
+  type, signature format, conformance level, signed envelope property, reference URI, circumstantial data,
+  signature algorithm and its parameters, signed attributes, access mode, one-time password and response URI. A
+  document carried in the request itself is shown as included, with its type and size; its content is not
+  rendered.
+* Every field WalletKit binds into the response is shown. History shows the same fields without one-time
+  passwords.
 * The signed attributes carry the line "Chosen by the relying party; not checked by the wallet" in the warning
   colour.
 * A request whose transaction data cannot be shown in full is declined with an explanation, never shown in part
   (`PresentationInteractorImpl.canShowTransactionData`): an entry WalletKit cannot read, or an entry bound to a
-  document the consent screen does not show. WalletKit 0.56.0 binds transaction data to SD-JWT and mdoc documents
-  alike.
+  document the consent screen does not show. Each option is checked against its own transaction data; an option
+  that is not offered, because its documents are blocked, is not checked. WalletKit 0.56.0 binds transaction data
+  to SD-JWT and mdoc documents alike.
 
 Where a document location is an HTTP(S) link, "Open document" opens it in the browser. These
 details are informational: sharing still uses the existing share flow, and WalletKit binds each
@@ -1227,6 +1233,7 @@ case .PROD:
 | `issuerMetadataPolicy` | Signed-metadata policy. `trustConfiguration.issuerMetadataPolicy` requires signed issuer metadata whose signer validates against the access-certificate list (`wrpacProviders`), since `requireSignedMetadata` is `true`. WalletKit's default, `.ignoreSigned`, accepts unsigned metadata. | Keep `trustConfiguration.issuerMetadataPolicy`. |
 | `validateRegistrationCertificate` | Whether the issuer's registration certificate is validated during issuance. WalletKit's default is `false`. | Pass `validateIssuerRegistrationCertificate`; see [Registration Certificates: The Second Trust Layer](#registration-certificates-the-second-trust-layer). |
 | `order` | Display/order preference for scoped issuance. | Use deterministic ordering approved by product owners. |
+| `logoOrigins` | Origins, besides the issuer's own, that this issuer's logo may load from (`IssuerLogoOrigins`); default none. | List only the origins your issuer serves its logo from. See [CONFIGURATION.md](CONFIGURATION.md). |
 
 Rules:
 
@@ -1672,7 +1679,7 @@ Production storage includes:
 * SwiftData local store.
 * UserDefaults values.
 * App Group container data.
-* WalletKit log file.
+* WalletKit log file (debug builds only).
 * Transaction records, bookmarks, revocation records (revoked, suspended, unrecognised), status refresh failures and
   failed re-issuance records.
 
@@ -1844,6 +1851,7 @@ Production tasks:
 Current preferences include:
 
 * `biometryEnabled`
+* `biometricUnlockBound`
 * `runAtLeastOnce`
 * `language`
 * `batchCounter`
@@ -1851,6 +1859,7 @@ Current preferences include:
 * `trustMarkIntroductionCompleted`
 * `transactionLogRevision`
 * `walletResetGeneration`
+* `offerDocumentsToApps`
 
 Production rules:
 
@@ -1905,12 +1914,16 @@ Logging appears in several areas:
   tokens and issued credentials.
 * Transaction logging through `TransactionLogger`.
 * Each presentation's history entry keeps the outcome of the relying party's registration check
-  (`RecordedRegistrationCheck`, stored beside the entry). When the registration was not verified, or no outcome
-  was recorded, history warns that its contacts may not be the party's; when the certificate was issued to another
-  party than the one that asked, no deletion request is offered, as on Android.
+  (`RecordedRegistrationCheck`, stored beside the entry). Unless the registration was verified (it was not verified,
+  not checked, or no outcome was recorded), history warns that its contacts may not be the party's; when the
+  certificate was issued to another party than the one that asked, no deletion request is offered, as on Android.
+  WalletKit first writes a presentation's entry when the request arrives, before the outcome is recorded, so an
+  outcome recorded by then belongs to an earlier presentation and is dropped
+  (`WalletKitTransactionLogControllerImpl.presentationRegistrationCheck`).
 * Data-protection requests from history (a data deletion request, a report to the DPA) are recorded only after
   the system has handed them to the mail, phone or browser app (`TransactionDetailsInteractor.recordDataProtectionAction`),
-  as on Android, so a failed attempt and its retry leave one record.
+  as on Android, so a failed attempt and its retry leave one record. A request handed off but not recorded offers to
+  record it again, never to send it again.
 * Analytics providers through `logic-analytics`.
 * Debug logs from SDKs where enabled.
 * RQES `printLogs`.
@@ -2307,7 +2320,7 @@ Project-specific actions:
 * Review SwiftData store location and file protection.
 * Review App Group container contents.
 * Confirm the shipped PIN lockout / rate limiting (`PinThrottleController`) meets policy; tune `maxFailedPinAttempts` / `pinLockoutDurations` as needed.
-* Redact or remove file logging.
+* Confirm that release builds write no log file (`WalletKitConfig.logFileName` is `nil` outside debug builds).
 * Add tests that inspect app data after flows.
 
 ### MASVS-CRYPTO

@@ -65,6 +65,8 @@ private struct RequestCombination {
   let uiModels: [RequestDataUiModel]
   let transactionData: RequestTransactionDataUiModel?
   let requestName: String?
+  /// `PresentationInteractorImpl.canShowTransactionData` for this option's own transaction data.
+  let showsTransactionData: Bool
 }
 
 /// Works on the session its route carries, never on another one started later.
@@ -122,21 +124,18 @@ final actor PresentationInteractorImpl: PresentationInteractor {
           let transactionData = transactionDataSets.indices.contains(index) ? transactionDataSets[index] : [:]
           let transactions = uiModels.flatMap { transactionData[$0.section.id] ?? [] }
           let shownDocumentIds = Set(uiModels.map(\.section.id))
+          let shownDocuments = documentSet.filter { shownDocumentIds.contains($0.docId) }
           return RequestCombination(
-            elements: documentSet.filter { shownDocumentIds.contains($0.docId) },
+            elements: shownDocuments,
             uiModels: uiModels,
             transactionData: transactions.toRequestTransactionDataUiModel(sectionId: "transaction-data:\(index)"),
-            requestName: requestNames.indices.contains(index) ? requestNames[index] : nil
+            requestName: requestNames.indices.contains(index) ? requestNames[index] : nil,
+            showsTransactionData: Self.canShowTransactionData(transactionData, shownDocuments: shownDocuments)
           )
         }
         .filter { !$0.uiModels.isEmpty }
 
-      let shownTransactionData = presentable.indices.map { combinationIndex in
-        transactionDataSets.indices.contains(combinationIndex) ? transactionDataSets[combinationIndex] : [:]
-      }
-      guard zip(shownTransactionData, presentable).allSatisfy({ transactionData, combination in
-        Self.canShowTransactionData(transactionData, shownDocuments: combination.elements)
-      }) else {
+      guard presentable.allSatisfy(\.showsTransactionData) else {
         return .failure(WalletCoreError.transactionDataNotShown)
       }
 

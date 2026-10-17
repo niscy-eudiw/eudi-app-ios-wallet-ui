@@ -380,18 +380,6 @@ final class TestTransactionLogUi: EudiTest {
     XCTAssertNil(sharedPresentation(registrationCheck: .verified).registrationWarning)
   }
 
-  private func sharedPresentation(registrationCheck: RecordedRegistrationCheck?) -> TransactionLogDomain.Presentation {
-    TransactionLogDomain.Presentation(
-      id: "1", time: time, result: .completed,
-      party: .init(name: "Verifier", identifier: nil, contacts: ["support@verifier.example"]),
-      intermediary: nil,
-      registration: .init(registrarUrl: nil, purpose: nil, privacyPolicyUrls: [], dpa: .init(name: "DPA", country: nil, contacts: ["https://dpa.example"])),
-      claimsRequested: [],
-      claimsPresented: [.init(credential: .init(identifier: .mDocPid), claims: [])],
-      registrationCheck: registrationCheck
-    )
-  }
-
   func testContacts_WhenNothingWasPresented_ThenDeletionCannotBeRequested() {
     let presentation = TransactionLogDomain.Presentation(
       id: "1", time: time, result: .notCompleted(reason: nil),
@@ -628,5 +616,19 @@ final class TestTransactionLogUi: EudiTest {
     XCTAssertEqual(groups[3][0].listItem.overlineText, .transactionDetailsIntermediaryNameLabel)
     XCTAssertEqual(ui.sections[0].groups.first?.listItems.first?.title, LocalizableStringKey.transactionDetailsNoClaims.toString)
     XCTAssertTrue(ui.sections[1].isEmpty)
+  }
+}
+
+private extension TestTransactionLogUi {
+  func sharedPresentation(registrationCheck: RecordedRegistrationCheck?) -> TransactionLogDomain.Presentation {
+    TransactionLogDomain.Presentation(
+      id: "1", time: time, result: .completed,
+      party: .init(name: "Verifier", identifier: nil, contacts: ["support@verifier.example"]),
+      intermediary: nil,
+      registration: .init(registrarUrl: nil, purpose: nil, privacyPolicyUrls: [], dpa: .init(name: "DPA", country: nil, contacts: ["https://dpa.example"])),
+      claimsRequested: [],
+      claimsPresented: [.init(credential: .init(identifier: .mDocPid), claims: [])],
+      registrationCheck: registrationCheck
+    )
   }
 }

@@ -57,7 +57,7 @@ public final class LogicCoreAssembly: Assembly {
         networkSessionProvider: r.force((any NetworkSessionProvider).self),
         documentRegistrationManager: r.force((any DocumentRegistrationManager).self),
         prefsController: r.force(PrefsController.self),
-        registrationCheckRecorder: r.force(RegistrationCheckRecorder.self)
+        registrationCheckProvider: r.force(RegistrationCheckProvider.self)
       )
     }
     .inObjectScope(ObjectScope.container)
@@ -76,15 +76,15 @@ public final class LogicCoreAssembly: Assembly {
     }
     .inObjectScope(ObjectScope.container)
 
-    container.register(RegistrationCheckRecorder.self) { _ in
-      RegistrationCheckRecorderImpl()
+    container.register(RegistrationCheckProvider.self) { _ in
+      RegistrationCheckProviderImpl()
     }
     .inObjectScope(ObjectScope.container)
 
     container.register(TransactionLogger.self) { r in
       WalletKitTransactionLogControllerImpl(
         transactionLogStorageController: r.force((any TransactionLogStorageController).self),
-        registrationCheckRecorder: r.force(RegistrationCheckRecorder.self)
+        registrationCheckProvider: r.force(RegistrationCheckProvider.self)
       )
     }
     .inObjectScope(ObjectScope.graph)

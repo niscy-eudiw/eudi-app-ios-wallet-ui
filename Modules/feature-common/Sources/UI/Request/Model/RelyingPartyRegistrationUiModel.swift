@@ -50,7 +50,7 @@ public extension RelyingPartyRegistration {
         isVerified: isFullyVerified,
         logoUrl: logoUrl
       ),
-      privacyPolicyUrl: details?.privacyPolicyUrl.flatMap(\.httpsPrivacyPolicyUrl),
+      privacyPolicyUrl: details?.privacyPolicyUrl.flatMap { $0.isHttpsWebLink ? $0 : nil },
       intendedUse: details?.intendedUse.map { LocalizableStringKey.custom($0) }
     )
   }
@@ -82,17 +82,8 @@ public extension Optional where Wrapped == IssuerRegistration {
         isVerified: details != nil,
         logoUrl: details?.logoUrl ?? issuerLogo
       ),
-      privacyPolicyUrl: details?.privacyPolicyUrl.flatMap(\.httpsPrivacyPolicyUrl),
+      privacyPolicyUrl: details?.privacyPolicyUrl.flatMap { $0.isHttpsWebLink ? $0 : nil },
       intendedUse: details?.intendedUse.map { LocalizableStringKey.custom($0) }
     )
-  }
-}
-
-private extension URL {
-
-  /// The privacy-policy link only when it is `https` with a host, as on Android; any other scheme is not shown,
-  /// even when Core or Kit pass it (owner, 16 October 2026).
-  var httpsPrivacyPolicyUrl: URL? {
-    isHttpsWebLink ? self : nil
   }
 }

@@ -135,7 +135,7 @@ public extension DocumentOfferUIModel {
 }
 
 extension OfferedIssuanceModel {
-  /// - Parameter issuerLogoOrigins: Where the issuer's logo may load from; the offer's issuer is a configured one.
+  /// - Parameter issuerLogoOrigins: Where the offer's issuer's logo may load from (`IssuerLogoOrigins.origins(ofOffer:)`).
   func transformToDocumentOfferUi(issuerLogoOrigins: [String]) -> DocumentOfferUIModel {
     return self.docModels.transformToDocumentOfferUi(
       issuerName: self.issuerName,

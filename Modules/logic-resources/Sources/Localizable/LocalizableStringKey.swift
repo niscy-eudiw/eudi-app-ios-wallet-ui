@@ -60,6 +60,25 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case requestTransactionDataSignedAttributes
   case requestTransactionDataOneTimePassword
   case requestTransactionDataResponseUri
+  case requestTransactionDataLocation
+  case requestTransactionDataHashAlgorithms
+  case requestTransactionDataCircumstantialData
+  case requestTransactionDataSignedEnvelopeProperty
+  case requestTransactionDataReferenceUri
+  case requestTransactionDataSignatureAlgorithm
+  case requestTransactionDataSignatureAlgorithmParameters
+  case requestTransactionDataDocumentAccess
+  case requestTransactionDataDocumentAccessPublic
+  case requestTransactionDataDocumentAccessOtp
+  case requestTransactionDataDocumentAccessBasic
+  case requestTransactionDataDocumentAccessDigest
+  case requestTransactionDataDocumentAccessOauth
+  case requestTransactionDataDocumentContent
+  case requestTransactionDataDocumentContentInline
+  case requestTransactionDataDocumentType
+  case requestTransactionDataDocumentTypeOriginal
+  case requestTransactionDataDocumentTypeFormatted
+  case requestTransactionDataDocumentSize
   case requestTransactionDataUnavailable
   case requestTransactionDataSignatureQes
   case requestTransactionDataSignatureQeseal

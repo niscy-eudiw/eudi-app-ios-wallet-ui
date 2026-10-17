@@ -16,13 +16,13 @@
 import Foundation
 
 /// Holds the registration outcome of the presentation in progress until wallet-kit writes its history entry.
-public protocol RegistrationCheckRecorder: Sendable {
+public protocol RegistrationCheckProvider: Sendable {
   func record(_ check: RecordedRegistrationCheck) async
   /// The outcome recorded since the last call, which it clears.
   func take() async -> RecordedRegistrationCheck?
 }
 
-final actor RegistrationCheckRecorderImpl: RegistrationCheckRecorder {
+final actor RegistrationCheckProviderImpl: RegistrationCheckProvider {
 
   private var check: RecordedRegistrationCheck?
 

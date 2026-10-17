@@ -55,7 +55,9 @@ private extension QesApprovalRequest {
       signatureQualifier: signatureQualifier,
       numSignatures: numSignatures,
       hashAlgorithmOid: hashAlgorithmOID,
-      documentDigests: documentDigests.map { $0.toQesDocumentDigestDomain() }
+      documentDigests: documentDigests.map { $0.toQesDocumentDigestDomain() },
+      locations: locations ?? [],
+      transactionDataHashAlgorithms: hashAlgorithms ?? []
     )
   }
 }
@@ -64,7 +66,8 @@ private extension QesRequest {
   func toQesTransactionDomain() -> QesTransactionDomain {
     QesTransactionDomain(
       credentialIds: credentialIds,
-      signatureRequests: signatureRequests.map { $0.toQesSignatureRequestDomain() }
+      signatureRequests: signatureRequests.map { $0.toQesSignatureRequestDomain() },
+      transactionDataHashAlgorithms: hashAlgorithms ?? []
     )
   }
 }
@@ -78,7 +81,9 @@ private extension QesDocumentDigest {
       signedProperties: signedProperties?.map { $0.toSigningAttributeDomain() },
       href: href,
       checksum: checksum?.toDocumentChecksumDomain(),
-      oneTimePassword: access?.oneTimePassword
+      oneTimePassword: access?.oneTimePassword,
+      circumstantialData: circumstantialData,
+      accessMode: access?.type
     )
   }
 }
@@ -94,8 +99,41 @@ private extension QesSignatureRequest {
       signedProperties: signedProperties?.map { $0.toSigningAttributeDomain() },
       href: href,
       checksum: checksum?.toDocumentChecksumDomain(),
-      oneTimePassword: access?.oneTimePassword
+      oneTimePassword: access?.oneTimePassword,
+      signedEnvelopeProperty: signedEnvelopeProperty,
+      referenceUri: referenceURI,
+      circumstantialData: circumstantialData,
+      signatureAlgorithm: signAlgo,
+      signatureAlgorithmParameters: signAlgoParams,
+      accessMode: access?.type,
+      inlineDocument: document.map {
+        QesInlineDocumentDomain(documentType: documentType, sizeInBytes: $0.decodedBase64ByteCount)
+      }
     )
+  }
+}
+
+extension String {
+
+  /// The size of this Base64 content once decoded, in either alphabet, or nil when it is not Base64; worked out from
+  /// the length, as on Android, so that reading the history does not decode every document again.
+  var decodedBase64ByteCount: Int? {
+    let content = filter { !$0.isWhitespace }
+    let data = content.prefix { $0 != "=" }
+    let padding = content.count - data.count
+    let isBase64Digit: (Character) -> Bool = { $0.isASCII && ($0.isLetter || $0.isNumber) }
+    let isStandard = data.allSatisfy { isBase64Digit($0) || $0 == "+" || $0 == "/" }
+    let isUrlSafe = data.allSatisfy { isBase64Digit($0) || $0 == "-" || $0 == "_" }
+    guard
+      isStandard || isUrlSafe,
+      data.count % 4 != 1,
+      padding <= 2,
+      padding == 0 || content.count % 4 == 0,
+      content.dropFirst(data.count).allSatisfy({ $0 == "=" })
+    else {
+      return nil
+    }
+    return data.count * 3 / 4
   }
 }
 

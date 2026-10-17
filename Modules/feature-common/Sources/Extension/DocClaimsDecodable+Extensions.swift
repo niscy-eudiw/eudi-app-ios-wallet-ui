@@ -21,7 +21,7 @@ public extension DocClaimsDecodable {
   /// - Parameter issuerLogoOrigins: Where the issuer's logo may load from (`WalletKitController.issuerLogoOrigins()`).
   func transformToDocumentUi(
     isSensitive: Bool = true,
-    issuerLogoOrigins: [String]
+    issuerLogoOrigins: IssuerLogoOrigins
   ) -> DocumentUIModel {
 
     var issuer: DocumentUIModel.IssuerField? {
@@ -31,7 +31,9 @@ public extension DocClaimsDecodable {
 
       return .init(
         issuersName: self.issuerName,
-        logoUrl: self.issuerLogo?.allowedIssuerLogo(allowedOrigins: issuerLogoOrigins),
+        logoUrl: self.issuerLogo?.allowedIssuerLogo(
+          allowedOrigins: issuerLogoOrigins.origins(ofIssuer: self.credentialIssuerIdentifier)
+        ),
         isVerified: true
       )
     }

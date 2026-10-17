@@ -32,7 +32,7 @@ final class TestAddDocumentInteractor: EudiTest {
     super.setUp()
     self.walletKitController = MockWalletKitController()
     stub(walletKitController) { mock in
-      when(mock.issuerLogoOrigins()).thenReturn([])
+      when(mock.issuerLogoOrigins()).thenReturn(IssuerLogoOrigins(logoOriginsByIssuer: [:]))
     }
 
     stub(walletKitController) { mock in
@@ -564,8 +564,8 @@ final class TestAddDocumentInteractor: EudiTest {
     let pidDocument = Constants.createEuPidModel()
     let mdlDocument = Constants.createIsoMdlModel()
     
-    let transformedPidDocument = pidDocument.transformToDocumentUi(isSensitive: false, issuerLogoOrigins: [])
-    let transformedMdlDocument = mdlDocument.transformToDocumentUi(isSensitive: false, issuerLogoOrigins: [])
+    let transformedPidDocument = pidDocument.transformToDocumentUi(isSensitive: false, issuerLogoOrigins: .init(logoOriginsByIssuer: [:]))
+    let transformedMdlDocument = mdlDocument.transformToDocumentUi(isSensitive: false, issuerLogoOrigins: .init(logoOriginsByIssuer: [:]))
     
     stub(walletKitController) { stub in
       when(stub.fetchDocuments(with: equal(to: documentIds)))

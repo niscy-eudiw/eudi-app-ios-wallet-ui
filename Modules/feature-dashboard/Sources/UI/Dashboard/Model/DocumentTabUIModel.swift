@@ -70,7 +70,7 @@ extension DocClaimsDecodable {
     revocationStatus: DocumentRevocationStatus?,
     documentIsLowOnCredentials: Bool = false,
     usageCount: (remaining: Int?, total: Int?)? = nil,
-    issuerLogoOrigins: [String]
+    issuerLogoOrigins: IssuerLogoOrigins
   ) -> DocumentTabUIModel {
     let state: DocumentTabUIModel.Value.State = failedDocuments.contains(where: { $0 == self.id })
     ? .failed
@@ -101,7 +101,9 @@ extension DocClaimsDecodable {
         hasExpired: self.hasExpired,
         state: state,
         image: .init(
-          url: self.issuerLogo?.allowedIssuerLogo(allowedOrigins: issuerLogoOrigins),
+          url: self.issuerLogo?.allowedIssuerLogo(
+            allowedOrigins: issuerLogoOrigins.origins(ofIssuer: self.credentialIssuerIdentifier)
+          ),
           placeholder: Theme.shared.image.id
         ),
         documentCategory: categories.first(where: { $1.contains(self.documentTypeIdentifier) })?.key ?? .Other

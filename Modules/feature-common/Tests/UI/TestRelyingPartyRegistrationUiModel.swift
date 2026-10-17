@@ -176,6 +176,16 @@ final class TestRelyingPartyRegistrationUiModel: EudiTest {
     }
   }
 
+  func testToRegistrationData_WhenTheIssuersPrivacyPolicyIsNotHttps_ThenItIsNotShown() {
+    let registration: IssuerRegistration? = .verified(details: details(privacyPolicyUrl: URL(string: "http://issuer.example/privacy")))
+
+    XCTAssertNil(registration.toRegistrationData(issuerName: "Issuer").privacyPolicyUrl)
+    XCTAssertEqual(
+      Optional(IssuerRegistration.verified(details: details())).toRegistrationData(issuerName: "Issuer").privacyPolicyUrl,
+      URL(string: "https://nordicbank.example/privacy")
+    )
+  }
+
   func testToRegistrationData_WhenNotVerifiedAndUndecodable_ThenOnlyTheNameSurvives() {
     let registration = relyingParty(status: .notVerified(details: nil))
 

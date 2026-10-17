@@ -1346,7 +1346,7 @@
         }
       }
     },
-    "issuance_offer_issuer_not_configured" : {
+    "issuance_offer_issuer_not_configured_error" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -1423,7 +1423,7 @@
         }
       }
     },
-    "issuance_success_not_issued" : {
+    "issuance_success_not_issued_warning" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -1910,7 +1910,7 @@
         }
       }
     },
-    "quick_pin_device_lock_missing" : {
+    "quick_pin_device_lock_missing_warning" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -1921,7 +1921,7 @@
         }
       }
     },
-    "quick_pin_device_lock_required" : {
+    "quick_pin_device_lock_required_warning" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -2163,7 +2163,7 @@
         }
       }
     },
-    "quick_pin_weak" : {
+    "quick_pin_weak_error" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -2383,13 +2383,24 @@
         }
       }
     },
-    "request_transaction_data_chosen_by_relying_party" : {
+    "request_transaction_data_chosen_by_relying_party_warning" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chosen by the relying party; not checked by the wallet"
+          }
+        }
+      }
+    },
+    "request_transaction_data_circumstantial_data" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Circumstantial data"
           }
         }
       }
@@ -2405,6 +2416,149 @@
         }
       }
     },
+    "request_transaction_data_document_access" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document access"
+          }
+        }
+      }
+    },
+    "request_transaction_data_document_access_basic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic authentication"
+          }
+        }
+      }
+    },
+    "request_transaction_data_document_access_digest" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digest authentication"
+          }
+        }
+      }
+    },
+    "request_transaction_data_document_access_oauth" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OAuth 2.0"
+          }
+        }
+      }
+    },
+    "request_transaction_data_document_access_otp" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One-time password"
+          }
+        }
+      }
+    },
+    "request_transaction_data_document_access_public" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Public"
+          }
+        }
+      }
+    },
+    "request_transaction_data_document_content" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document content"
+          }
+        }
+      }
+    },
+    "request_transaction_data_document_content_inline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Included in the request"
+          }
+        }
+      }
+    },
+    "request_transaction_data_document_size" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document size"
+          }
+        }
+      }
+    },
+    "request_transaction_data_document_type" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document type"
+          }
+        }
+      }
+    },
+    "request_transaction_data_document_type_formatted" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formatted document"
+          }
+        }
+      }
+    },
+    "request_transaction_data_document_type_original" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Original document"
+          }
+        }
+      }
+    },
+    "request_transaction_data_hash_algorithms" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transaction data hash algorithm"
+          }
+        }
+      }
+    },
     "request_transaction_data_hash_representation" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2412,6 +2566,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hash representation"
+          }
+        }
+      }
+    },
+    "request_transaction_data_location" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
           }
         }
       }
@@ -2449,6 +2614,17 @@
         }
       }
     },
+    "request_transaction_data_reference_uri" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reference URI"
+          }
+        }
+      }
+    },
     "request_transaction_data_requested_credentials" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2471,6 +2647,28 @@
         }
       }
     },
+    "request_transaction_data_signature_algorithm" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signature algorithm"
+          }
+        }
+      }
+    },
+    "request_transaction_data_signature_algorithm_parameters" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signature algorithm parameters"
+          }
+        }
+      }
+    },
     "request_transaction_data_signature_details" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2478,6 +2676,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Signature details"
+          }
+        }
+      }
+    },
+    "request_transaction_data_signed_envelope_property" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signed envelope property"
           }
         }
       }
@@ -4044,7 +4253,7 @@
         }
       }
     },
-    "transaction_details_registration_not_bound" : {
+    "transaction_details_registration_not_bound_warning" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -4055,7 +4264,7 @@
         }
       }
     },
-    "transaction_details_registration_not_verified" : {
+    "transaction_details_registration_not_verified_warning" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {

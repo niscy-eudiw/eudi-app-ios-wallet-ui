@@ -34,7 +34,7 @@ final class TestDocumentOfferInteractor: EudiTest {
     super.setUp()
     self.walletKitController = MockWalletKitController()
     stub(walletKitController) { mock in
-      when(mock.issuerLogoOrigins()).thenReturn([])
+      when(mock.issuerLogoOrigins()).thenReturn(IssuerLogoOrigins(logoOriginsByIssuer: [:]))
     }
     self.configLogic = MockConfigLogic()
     stub(walletKitController) { mock in

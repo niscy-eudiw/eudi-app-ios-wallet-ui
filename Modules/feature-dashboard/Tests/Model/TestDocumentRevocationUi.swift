@@ -26,7 +26,7 @@ final class TestDocumentRevocationUi: EudiTest {
     let model = Constants.createEuPidModel().transformToDocumentTabUi(
       categories: [:],
       revocationStatus: .suspended,
-      issuerLogoOrigins: []
+      issuerLogoOrigins: IssuerLogoOrigins(logoOriginsByIssuer: [:])
     )
 
     XCTAssertEqual(model.value.state, .suspended)
@@ -37,7 +37,7 @@ final class TestDocumentRevocationUi: EudiTest {
     let model = Constants.createEuPidModel().transformToDocumentTabUi(
       categories: [:],
       revocationStatus: .revoked,
-      issuerLogoOrigins: []
+      issuerLogoOrigins: IssuerLogoOrigins(logoOriginsByIssuer: [:])
     )
 
     XCTAssertEqual(model.value.state, .revoked)
@@ -48,7 +48,7 @@ final class TestDocumentRevocationUi: EudiTest {
     let model = Constants.createEuPidModel().transformToDocumentTabUi(
       categories: [:],
       revocationStatus: .unrecognised,
-      issuerLogoOrigins: []
+      issuerLogoOrigins: IssuerLogoOrigins(logoOriginsByIssuer: [:])
     )
 
     XCTAssertEqual(model.value.state, .revoked)
@@ -59,7 +59,7 @@ final class TestDocumentRevocationUi: EudiTest {
     let model = Constants.createEuPidModel().transformToDocumentTabUi(
       categories: [:],
       revocationStatus: nil,
-      issuerLogoOrigins: []
+      issuerLogoOrigins: IssuerLogoOrigins(logoOriginsByIssuer: [:])
     )
 
     XCTAssertEqual(model.value.state, .issued)

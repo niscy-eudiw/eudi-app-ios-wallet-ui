@@ -134,8 +134,8 @@ public protocol WalletKitController: Sendable {
   /// Registers the documents for the Digital Credential API, or withdraws every registration while the user has
   /// turned the offering off (`Prefs.Key.offerDocumentsToApps`).
   func reconcileRegistrations() async
-  /// The origins issuer logos may load from: the configured issuers' own and their `VciConfig.logoOrigins`.
-  func issuerLogoOrigins() async -> [String]
+  /// Where each issuer's logo may load from: its own origin and its `VciConfig.logoOrigins`.
+  func issuerLogoOrigins() async -> IssuerLogoOrigins
   /// The issuer's registration for the issuer-list flow and re-issuance, resolved before the issuer is contacted. A
   /// lookup that fails refuses for a trust failure and throws any other error, so a failure never reads as "no
   /// registration"; with the check off nothing is looked up.
@@ -169,7 +169,7 @@ final actor WalletKitControllerImpl: WalletKitController {
   private let storageEraseController: StorageEraseController
   private let documentRegistrationManager: DocumentRegistrationManager
   private let prefsController: PrefsController
-  private let registrationCheckRecorder: RegistrationCheckRecorder
+  private let registrationCheckProvider: RegistrationCheckProvider
   /// "Check Registration Certificates" as WalletKit was configured with it at launch; the setting applies after a
   /// restart, so the app's own decisions follow the same value.
   private let isRegistrationChecked: Bool
@@ -188,7 +188,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     networkSessionProvider: NetworkSessionProvider,
     documentRegistrationManager: DocumentRegistrationManager,
     prefsController: PrefsController,
-    registrationCheckRecorder: RegistrationCheckRecorder
+    registrationCheckProvider: RegistrationCheckProvider
   ) {
     self.walletKitConfig = walletKitConfig
     self.configLogic = configLogic
@@ -202,7 +202,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     self.storageEraseController = storageEraseController
     self.documentRegistrationManager = documentRegistrationManager
     self.prefsController = prefsController
-    self.registrationCheckRecorder = registrationCheckRecorder
+    self.registrationCheckProvider = registrationCheckProvider
     if walletKitConfig.logFileName == nil {
       Self.removeLogFileOfAnEarlierBuild()
     }
@@ -705,8 +705,8 @@ final actor WalletKitControllerImpl: WalletKitController {
       verifierName: verifierName,
       verifierIsTrusted: verifierIsTrusted
     )
-    await registrationCheckRecorder.record(
-      .of(registration.registration, isNotBoundToRequester: isNotBoundToRequester)
+    await registrationCheckProvider.record(
+      RecordedRegistrationCheck(status: registration.registration, isNotBoundToRequester: isNotBoundToRequester)
     )
     return registration
   }
@@ -953,10 +953,15 @@ final actor WalletKitControllerImpl: WalletKitController {
 
 extension WalletKitControllerImpl {
 
-  func issuerLogoOrigins() -> [String] {
-    walletKitConfig.issuersConfig.values.flatMap { vciConfig in
-      [vciConfig.config.credentialIssuerURL].compactMap { $0 } + vciConfig.logoOrigins
-    }
+  func issuerLogoOrigins() -> IssuerLogoOrigins {
+    IssuerLogoOrigins(
+      logoOriginsByIssuer: Dictionary(
+        walletKitConfig.issuersConfig.values.compactMap { vciConfig in
+          vciConfig.config.credentialIssuerURL.map { ($0, vciConfig.logoOrigins) }
+        },
+        uniquingKeysWith: +
+      )
+    )
   }
 
   /// Deletes the log file a debug build or an earlier build left, as the Android wallet does.

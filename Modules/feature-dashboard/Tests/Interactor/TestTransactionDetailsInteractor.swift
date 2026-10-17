@@ -350,7 +350,7 @@ extension TestTransactionDetailsInteractor {
       contactUrl: URL(string: "mailto:support@verifier.example")!
     )
 
-    guard case .recorded = result else {
+    guard case .success = result else {
       return XCTFail("Expected recorded, but got \(result).")
     }
     verify(walletKitController).recordDataDeletionRequest(
@@ -371,7 +371,7 @@ extension TestTransactionDetailsInteractor {
       contactUrl: URL(string: "https://dpa.example/report")!
     )
 
-    guard case .recorded = result else {
+    guard case .success = result else {
       return XCTFail("Expected recorded, but got \(result).")
     }
     verify(walletKitController).recordDpaReport(for: any(), contactUrl: any())

@@ -24,25 +24,50 @@ final class TestRecordedRegistrationCheck: EudiTest {
       tradeName: "RP", uniqueId: "rp", logoUrl: nil, intendedUse: nil, privacyPolicyUrl: nil, serviceDescription: nil
     )
     XCTAssertEqual(
-      RecordedRegistrationCheck.of(.verified(details: details, overaskedClaims: []), isNotBoundToRequester: false),
+      RecordedRegistrationCheck(status: .verified(details: details, overaskedClaims: []), isNotBoundToRequester: false),
       .verified
     )
-    XCTAssertEqual(RecordedRegistrationCheck.of(.notVerified(details: nil), isNotBoundToRequester: false), .notVerified)
+    XCTAssertEqual(RecordedRegistrationCheck(status: .notVerified(details: nil), isNotBoundToRequester: false), .notVerified)
     XCTAssertEqual(
-      RecordedRegistrationCheck.of(.notVerified(details: details), isNotBoundToRequester: true),
+      RecordedRegistrationCheck(status: .notVerified(details: details), isNotBoundToRequester: true),
       .notBoundToRequester
     )
-    XCTAssertEqual(RecordedRegistrationCheck.of(.notSupported, isNotBoundToRequester: false), .notEvaluated)
+    XCTAssertEqual(RecordedRegistrationCheck(status: .notSupported, isNotBoundToRequester: false), .notEvaluated)
   }
 
-  func testRecorder_WhenTheOutcomeIsTaken_ThenItIsCleared() async {
-    let recorder = RegistrationCheckRecorderImpl()
-    await recorder.record(.notBoundToRequester)
+  func testProvider_WhenTheOutcomeIsTaken_ThenItIsCleared() async {
+    let provider = RegistrationCheckProviderImpl()
+    await provider.record(.notBoundToRequester)
 
-    let first = await recorder.take()
-    let second = await recorder.take()
+    let first = await provider.take()
+    let second = await provider.take()
 
     XCTAssertEqual(first, .notBoundToRequester)
     XCTAssertNil(second)
+  }
+
+  func testPresentationRegistrationCheck_WhenTheEntryIsFirstWritten_ThenAnEarlierPresentationsOutcomeIsDropped() {
+    XCTAssertNil(
+      WalletKitTransactionLogControllerImpl.presentationRegistrationCheck(
+        stored: nil,
+        isFirstWrite: true,
+        recorded: .verified
+      )
+    )
+  }
+
+  func testPresentationRegistrationCheck_WhenTheEntryIsWrittenAgain_ThenTakesTheRecordedOutcomeOrKeepsTheStoredOne() {
+    XCTAssertEqual(
+      WalletKitTransactionLogControllerImpl.presentationRegistrationCheck(
+        stored: .notEvaluated,
+        isFirstWrite: false,
+        recorded: .notBoundToRequester
+      ),
+      .notBoundToRequester
+    )
+    XCTAssertEqual(
+      WalletKitTransactionLogControllerImpl.presentationRegistrationCheck(stored: .verified, isFirstWrite: false, recorded: nil),
+      .verified
+    )
   }
 }

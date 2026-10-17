@@ -27,11 +27,11 @@ public enum RecordedRegistrationCheck: String, Sendable, Equatable {
   case notEvaluated
 
   /// The outcome `status` shows, with `isNotBoundToRequester` from wallet-kit's registration violations.
-  public static func of(_ status: RegistrationStatus, isNotBoundToRequester: Bool) -> RecordedRegistrationCheck {
+  public init(status: RegistrationStatus, isNotBoundToRequester: Bool) {
     switch status {
-    case .verified: .verified
-    case .notVerified: isNotBoundToRequester ? .notBoundToRequester : .notVerified
-    case .notSupported: .notEvaluated
+    case .verified: self = .verified
+    case .notVerified: self = isNotBoundToRequester ? .notBoundToRequester : .notVerified
+    case .notSupported: self = .notEvaluated
     }
   }
 }

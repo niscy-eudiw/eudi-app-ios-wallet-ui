@@ -6499,9 +6499,9 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func issuerLogoOrigins() async -> [String] {
+    public func issuerLogoOrigins() async -> IssuerLogoOrigins {
         return await cuckoo_manager.call(
-            "issuerLogoOrigins() async -> [String]",
+            "issuerLogoOrigins() async -> IssuerLogoOrigins",
             parameters: (),
             escapingParameters: (),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
@@ -7015,10 +7015,10 @@ return await cuckoo_manager.call(
             ))
         }
         
-        func issuerLogoOrigins() -> Cuckoo.ProtocolStubFunction<(), [String]> {
+        func issuerLogoOrigins() -> Cuckoo.ProtocolStubFunction<(), IssuerLogoOrigins> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "issuerLogoOrigins() async -> [String]",
+                method: "issuerLogoOrigins() async -> IssuerLogoOrigins",
                 parameterMatchers: matchers
             ))
         }
@@ -7761,10 +7761,10 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func issuerLogoOrigins() -> Cuckoo.__DoNotUse<(), [String]> {
+        func issuerLogoOrigins() -> Cuckoo.__DoNotUse<(), IssuerLogoOrigins> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "issuerLogoOrigins() async -> [String]",
+                "issuerLogoOrigins() async -> IssuerLogoOrigins",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -8051,8 +8051,8 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
-    public func issuerLogoOrigins() async -> [String] {
-        return DefaultValueRegistry.defaultValue(for: ([String]).self)
+    public func issuerLogoOrigins() async -> IssuerLogoOrigins {
+        return DefaultValueRegistry.defaultValue(for: (IssuerLogoOrigins).self)
     }
     
     public func getIssuerRegistration(issuerId p0: String, configIds p1: [String]) async throws -> IssuerRegistration? {
@@ -9603,7 +9603,6 @@ import logic_resources
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/DocDataValue+BoundedImage.swift'
 
 import Cuckoo
-import ImageIO
 import UIKit
 import MdocDataModel18013
 @testable import logic_core
@@ -10017,6 +10016,33 @@ import Foundation
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/ImageDecodeLimits.swift'
+
+import Cuckoo
+import ImageIO
+import UIKit
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_authentication
+@testable import logic_assembly
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/IssuerLogoOrigins.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_authentication
+@testable import logic_assembly
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/OfferIssuer.swift'
 
 import Cuckoo
@@ -10266,7 +10292,7 @@ import Foundation
 
 
 
-// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Provider/RegistrationCheckRecorder.swift'
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Provider/RegistrationCheckProvider.swift'
 
 import Cuckoo
 import Foundation
@@ -10277,18 +10303,18 @@ import Foundation
 @testable import logic_authentication
 @testable import logic_assembly
 
-public class MockRegistrationCheckRecorder: RegistrationCheckRecorder, Cuckoo.ProtocolMock, @unchecked Sendable {
-    public typealias MocksType = any RegistrationCheckRecorder
-    public typealias Stubbing = __StubbingProxy_RegistrationCheckRecorder
-    public typealias Verification = __VerificationProxy_RegistrationCheckRecorder
+public class MockRegistrationCheckProvider: RegistrationCheckProvider, Cuckoo.ProtocolMock, @unchecked Sendable {
+    public typealias MocksType = any RegistrationCheckProvider
+    public typealias Stubbing = __StubbingProxy_RegistrationCheckProvider
+    public typealias Verification = __VerificationProxy_RegistrationCheckProvider
 
     // Original typealiases
 
     public let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
 
-    private var __defaultImplStub: (any RegistrationCheckRecorder)?
+    private var __defaultImplStub: (any RegistrationCheckProvider)?
 
-    public func enableDefaultImplementation(_ stub: any RegistrationCheckRecorder) {
+    public func enableDefaultImplementation(_ stub: any RegistrationCheckProvider) {
         __defaultImplStub = stub
         cuckoo_manager.enableDefaultStubImplementation()
     }
@@ -10314,7 +10340,7 @@ public class MockRegistrationCheckRecorder: RegistrationCheckRecorder, Cuckoo.Pr
         )
     }
 
-    public struct __StubbingProxy_RegistrationCheckRecorder: Cuckoo.StubbingProxy {
+    public struct __StubbingProxy_RegistrationCheckProvider: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
         public init(manager: Cuckoo.MockManager) {
@@ -10323,7 +10349,7 @@ public class MockRegistrationCheckRecorder: RegistrationCheckRecorder, Cuckoo.Pr
         
         func record<M1: Cuckoo.Matchable>(_ p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(RecordedRegistrationCheck)> where M1.MatchedType == RecordedRegistrationCheck {
             let matchers: [Cuckoo.ParameterMatcher<(RecordedRegistrationCheck)>] = [wrap(matchable: p0) { $0 }]
-            return .init(stub: cuckoo_manager.createStub(for: MockRegistrationCheckRecorder.self,
+            return .init(stub: cuckoo_manager.createStub(for: MockRegistrationCheckProvider.self,
                 method: "record(_ p0: RecordedRegistrationCheck) async",
                 parameterMatchers: matchers
             ))
@@ -10331,14 +10357,14 @@ public class MockRegistrationCheckRecorder: RegistrationCheckRecorder, Cuckoo.Pr
         
         func take() -> Cuckoo.ProtocolStubFunction<(), RecordedRegistrationCheck?> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return .init(stub: cuckoo_manager.createStub(for: MockRegistrationCheckRecorder.self,
+            return .init(stub: cuckoo_manager.createStub(for: MockRegistrationCheckProvider.self,
                 method: "take() async -> RecordedRegistrationCheck?",
                 parameterMatchers: matchers
             ))
         }
     }
 
-    public struct __VerificationProxy_RegistrationCheckRecorder: Cuckoo.VerificationProxy {
+    public struct __VerificationProxy_RegistrationCheckProvider: Cuckoo.VerificationProxy {
         private let cuckoo_manager: Cuckoo.MockManager
         private let callMatcher: Cuckoo.CallMatcher
         private let sourceLocation: Cuckoo.SourceLocation
@@ -10375,7 +10401,7 @@ public class MockRegistrationCheckRecorder: RegistrationCheckRecorder, Cuckoo.Pr
     }
 }
 
-public class RegistrationCheckRecorderStub:RegistrationCheckRecorder, @unchecked Sendable {
+public class RegistrationCheckProviderStub:RegistrationCheckProvider, @unchecked Sendable {
 
 
     
@@ -12791,6 +12817,19 @@ import Shimmer
 
 
 // MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/Model/DeepLink.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_authentication
+@testable import logic_assembly
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/Model/RemoteImagePolicy.swift'
 
 import Cuckoo
 import Foundation

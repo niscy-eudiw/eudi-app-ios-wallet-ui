@@ -19,22 +19,26 @@ import Foundation
 final actor WalletKitTransactionLogControllerImpl: TransactionLogger {
 
   private let transactionLogStorageController: any TransactionLogStorageController
-  private let registrationCheckRecorder: RegistrationCheckRecorder
+  private let registrationCheckProvider: RegistrationCheckProvider
 
   init(
     transactionLogStorageController: any TransactionLogStorageController,
-    registrationCheckRecorder: RegistrationCheckRecorder
+    registrationCheckProvider: RegistrationCheckProvider
   ) {
     self.transactionLogStorageController = transactionLogStorageController
-    self.registrationCheckRecorder = registrationCheckRecorder
+    self.registrationCheckProvider = registrationCheckProvider
   }
 
-  /// A presentation's entry keeps the registration outcome recorded while it was shown (`RegistrationCheckRecorder`).
+  /// A presentation's entry keeps the registration outcome recorded while it was shown (`RegistrationCheckProvider`).
   func log(transaction: TransactionEntry) async throws {
     let stored = try? await transactionLogStorageController.retrieve(transaction.transactionIdentifier)
     var registrationCheck = stored?.registrationCheck.flatMap { RecordedRegistrationCheck(rawValue: $0) }
-    if case .presentation = transaction, let recorded = await registrationCheckRecorder.take() {
-      registrationCheck = recorded
+    if case .presentation = transaction {
+      registrationCheck = Self.presentationRegistrationCheck(
+        stored: registrationCheck,
+        isFirstWrite: stored == nil,
+        recorded: await registrationCheckProvider.take()
+      )
     }
     try await transactionLogStorageController.store(
       transaction.toTransactionLogStorage(
@@ -43,5 +47,16 @@ final actor WalletKitTransactionLogControllerImpl: TransactionLogger {
         registrationCheck: registrationCheck
       )
     )
+  }
+
+  /// The outcome a presentation's entry keeps. wallet-kit writes the entry first when the request arrives, before
+  /// the outcome is recorded, so an outcome recorded by then belongs to an earlier presentation and is dropped; a
+  /// later write takes the outcome recorded since, or keeps the stored one.
+  static func presentationRegistrationCheck(
+    stored: RecordedRegistrationCheck?,
+    isFirstWrite: Bool,
+    recorded: RecordedRegistrationCheck?
+  ) -> RecordedRegistrationCheck? {
+    isFirstWrite ? nil : recorded ?? stored
   }
 }

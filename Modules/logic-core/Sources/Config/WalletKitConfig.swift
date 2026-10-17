@@ -72,11 +72,9 @@ protocol WalletKitConfig: Sendable {
    */
   var keyOptions: KeyOptions? { get }
 
-  /**
-   * The name of the file to be created to store logs
-   */
-  /// The wallet-kit log file, written only by debug builds: wallet-kit logs authorization codes, access tokens and
-  /// issued credentials to it, as the Android wallet's release builds write no log file.
+  /// The name of the file wallet-kit stores its logs in, written only by debug builds: wallet-kit logs
+  /// authorization codes, access tokens and issued credentials to it, as the Android wallet's release builds write
+  /// no log file.
   var logFileName: String? { get }
 
   /**

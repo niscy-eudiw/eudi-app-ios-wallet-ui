@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import XCTest
+import SDWebImageSwiftUI
 @testable import logic_ui
 @testable import logic_test
 
@@ -22,38 +23,15 @@ final class TestRemoteImageView: EudiTest {
   private let logo = URL(string: "https://issuer.example/logo.png")!
 
   @MainActor
-  func testLoadableUrl_WhenTheImageIsNotHttps_ThenIsNotLoaded() {
-    for address in ["http://issuer.example/logo.png", "file:///etc/passwd", "data:image/png;base64,AA=="] {
-      XCTAssertNil(RemoteImageView.loadableUrl(URL(string: address)), address)
-    }
-    XCTAssertEqual(RemoteImageView.loadableUrl(logo), logo)
+  func testLoadingContext_WhenTheImageIsHttps_ThenLoadsThroughTheBoundedOperation() {
+    let context = RemoteImageView.loadingContext(for: logo)
+    let downloader = context?[.imageLoader] as? SDWebImageDownloader
+    XCTAssertTrue(downloader?.config.operationClass == RemoteImageDownloadOperation.self)
+    XCTAssertEqual(context?[.imageScaleDownLimitBytes] as? UInt, RemoteImagePolicy.maxDecodedByteCount)
   }
 
   @MainActor
-  func testAcceptsResponse_WhenARedirectLeftTheOrigin_ThenRefusesIt() {
-    XCTAssertFalse(
-      RemoteImageView.acceptsResponse(
-        requestedUrl: logo,
-        responseUrl: URL(string: "https://elsewhere.example/logo.png"),
-        expectedContentLength: 100
-      )
-    )
-  }
-
-  @MainActor
-  func testAcceptsResponse_WhenTheImageIsTooLarge_ThenRefusesIt() {
-    XCTAssertFalse(
-      RemoteImageView.acceptsResponse(
-        requestedUrl: logo,
-        responseUrl: logo,
-        expectedContentLength: RemoteImageView.Constants.maxImageByteCount + 1
-      )
-    )
-  }
-
-  @MainActor
-  func testAcceptsResponse_WhenOnTheOriginAndSmallEnough_ThenAcceptsIt() {
-    XCTAssertTrue(RemoteImageView.acceptsResponse(requestedUrl: logo, responseUrl: logo, expectedContentLength: 1_024))
-    XCTAssertTrue(RemoteImageView.acceptsResponse(requestedUrl: logo, responseUrl: logo, expectedContentLength: -1))
+  func testLoadingContext_WhenTheImageIsNotHttps_ThenIsNil() {
+    XCTAssertNil(RemoteImageView.loadingContext(for: URL(string: "http://issuer.example/logo.png")))
   }
 }

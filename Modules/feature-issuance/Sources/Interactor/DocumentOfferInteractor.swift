@@ -88,7 +88,9 @@ final actor DocumentOfferInteractorImpl: DocumentOfferInteractor {
       }
 
       return .success(
-        offer.transformToDocumentOfferUi(issuerLogoOrigins: await walletController.issuerLogoOrigins()),
+        offer.transformToDocumentOfferUi(
+          issuerLogoOrigins: await walletController.issuerLogoOrigins().origins(ofOffer: uri)
+        ),
         issuerRegistration
       )
     } catch {
