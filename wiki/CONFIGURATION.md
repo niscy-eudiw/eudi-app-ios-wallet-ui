@@ -1072,6 +1072,8 @@ In `Modules/logic-core/Sources/Controller/WalletKitController.swift`, documents 
 
 Only CBOR documents are registered (`document.docDataFormat == .cbor`), which controls what the extension can serve for Identity Document requests.
 
+The wallet registers while iOS reports its authorisation as `authorized` or `notDetermined`: iOS stays at `notDetermined` until the app's first registration, which is what authorises it. A user who turns the wallet off as a document provider (`notAuthorized`) gets no registrations.
+
 Registrations are reconciled against wallet storage after every operation that adds or removes a document, and when the dashboard first opens after login or PIN creation and loads the documents (start-up loads none): a registration whose document is no longer held is removed.
 
 ### Validation checklist

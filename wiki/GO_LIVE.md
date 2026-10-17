@@ -967,6 +967,12 @@ Current registration behavior:
 
 * `WalletKitController` registers documents through `DocumentRegistrationManager`.
 * Registration is only attempted on iOS 26 and later where the Digital Credentials API is available.
+* iOS reports the app's authorisation as `notDetermined` until its first registration, even when "Allow on websites"
+  is on in Settings, and that first registration authorises it. The wallet therefore registers while the status is
+  `authorized` or `notDetermined`, and stops only on `notAuthorized` (the user turned it off) or `notSupported`
+  (`DocumentRegistrationManagerImpl.mayRegister(with:)`). Waiting for `authorized` meant a new install never
+  registered, and websites reported "no eligible IDs". While `notDetermined` the store is touched only to register a
+  document: reading its registrations in that state did not return on the simulator.
 * Only CBOR documents are registered (`document.docDataFormat == .cbor`).
 * Registrations are reconciled against storage rather than tracked incrementally, so a document deleted in the app is deregistered, and a registration left behind by an earlier build is removed when the documents are next loaded, after login.
 * A document with a revocation record (revoked, suspended or unrecognised) is not registered, and the registrations are
