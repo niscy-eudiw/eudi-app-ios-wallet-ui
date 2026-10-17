@@ -33,24 +33,44 @@ protocol RequestAuthorizationInteractor: Sendable {
 final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
 
   private let dcApiHandler: DcApiHandler
+  private let configUiLogic: ConfigUiLogic
+  private let prefsController: PrefsController
 
   private let interactor: WalletKitController = DIGraph.shared.resolver.force(
     WalletKitController.self
   )
 
   init(
-    dcApiHandler: DcApiHandler
+    dcApiHandler: DcApiHandler,
+    configUiLogic: ConfigUiLogic,
+    prefsController: PrefsController
   ) {
     self.dcApiHandler = dcApiHandler
+    self.configUiLogic = configUiLogic
+    self.prefsController = prefsController
   }
 
+  /// A request is declined while the user has turned off offering documents to apps and websites, since one may
+  /// still arrive through a registration the system has not yet withdrawn.
+  /// A request that would include a document with a revocation record (revoked, suspended or unrecognised) is
+  /// declined, as the in-app flows refuse one; when the records cannot be read, the request is declined too.
+  /// `DcApiHandler` validates no reader certificate chain and returns no trust verdict, so the relying
+  /// party is never reported as verified. The authority key identifier is kept for a later lookup. Without
+  /// a website origin the requester gets the generic name, not the one in its unvalidated certificate, as
+  /// on Android.
   func loadRequestData(
     context: ISO18013MobileDocumentRequestContext
   ) async throws -> AuthorizationUIModel {
-    let (docClaimsModels, _, _, rn) = try await dcApiHandler.validateRequest(context.request)
-    let websiteName = context.requestingWebsiteOrigin?.absoluteString ?? rn ?? "Website name not available"
+    let (docClaimsModels, _, authorityKeyIdentifier, _) = try await dcApiHandler.validateRequest(context.request)
+    try await checkRequest(documentIds: docClaimsModels.map(\.id))
+    let websiteName = context.requestingWebsiteOrigin?.absoluteString ?? LocalizableStringKey.unknownVerifier.toString
+    let requestsUserImage = DocumentProviderPolicy.requestsUserImage(
+      claimNames: docClaimsModels.flatMap { $0.docClaims.map(\.name) },
+      userImageClaimKeys: configUiLogic.userImageClaimKeys
+    )
+    let issuerLogoOrigins = await interactor.issuerLogoOrigins()
     let documents = docClaimsModels.compactMap {
-      $0.transformToDocumentUi(isSensitive: false)
+      $0.transformToDocumentUi(isSensitive: false, issuerLogoOrigins: issuerLogoOrigins)
     }
 
     return AuthorizationUIModel(
@@ -61,13 +81,18 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
           name: document.documentName,
           requestedElements: document.documentFields
         )
-      }
+      },
+      isRelyingPartyVerified: false,
+      requestsUserImage: requestsUserImage,
+      authorityKeyIdentifier: authorityKeyIdentifier
     )
   }
 
   func acceptVerification(
     context: ISO18013MobileDocumentRequestContext
   ) async throws {
+    let (docClaimsModels, _, _, _) = try await dcApiHandler.validateRequest(context.request)
+    try await checkRequest(documentIds: docClaimsModels.map(\.id))
     try await context.sendResponse { rawRequest in
 
       try await self.dcApiHandler.validateConsistency(
@@ -82,5 +107,16 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
 
       return ISO18013MobileDocumentResponse(responseData: responseData)
     }
+  }
+
+  /// Checks the setting and the revocation records again on every step, since either may change while the sheet is
+  /// open (`DocumentProviderPolicy.checkRequest`); records that cannot be read decline the request.
+  private func checkRequest(documentIds: [String]) async throws {
+    let blocked = try await interactor.fetchRevokedDocumentStatuses()
+    try DocumentProviderPolicy.checkRequest(
+      isOffering: prefsController.getBool(forKey: .offerDocumentsToApps),
+      requestedDocumentIds: documentIds,
+      blockedDocumentIds: Set(blocked.keys)
+    )
   }
 }

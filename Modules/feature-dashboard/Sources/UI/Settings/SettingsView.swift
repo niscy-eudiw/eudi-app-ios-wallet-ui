@@ -46,6 +46,17 @@ struct SettingsView<Router: RouterHost>: View {
         Button(.okButton) { viewModel.isRestartRequiredAlertShowing = false }
       }
     )
+    .alertView(
+      isPresented: $viewModel.isResetConfirmationShowing,
+      title: .resetWalletConfirmTitle,
+      message: .resetWalletConfirmMessage,
+      actions: {
+        Button(.resetWalletConfirmButton, role: .destructive) { viewModel.onResetConfirmed() }
+          .accessibilityIdentifier(SettingsLocators.confirmDialogResetButton.id)
+        Button(.cancelButton, role: .cancel) { viewModel.isResetConfirmationShowing = false }
+          .accessibilityIdentifier(SettingsLocators.confirmDialogCancelButton.id)
+      }
+    )
     .alert(item: $viewModel.biometryError) { error in
       Alert(
         title: Text(.genericErrorTitle),

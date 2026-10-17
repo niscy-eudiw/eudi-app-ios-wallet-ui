@@ -135,10 +135,11 @@ public extension DocumentOfferUIModel {
 }
 
 extension OfferedIssuanceModel {
-  func transformToDocumentOfferUi() -> DocumentOfferUIModel {
+  /// - Parameter issuerLogoOrigins: Where the offer's issuer's logo may load from (`IssuerLogoOrigins.origins(ofOffer:)`).
+  func transformToDocumentOfferUi(issuerLogoOrigins: [String]) -> DocumentOfferUIModel {
     return self.docModels.transformToDocumentOfferUi(
       issuerName: self.issuerName,
-      issuerLogo: self.issuerLogoUrl,
+      issuerLogo: self.issuerLogoUrl.flatMap(URL.init(string:))?.allowedIssuerLogo(allowedOrigins: issuerLogoOrigins)?.absoluteString,
       codeRequired: self.isTxCodeRequired,
       codeLength: self.txCodeSpec?.length ?? 0
     )

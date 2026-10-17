@@ -57,7 +57,7 @@ struct DashboardView<Router: RouterHost>: View {
             viewModel.viewState.historyTab.eraseToAnyView()
           }
         },
-        revokedDocuments: viewModel.viewState.revokedDocuments,
+        blockedDocuments: viewModel.viewState.blockedDocuments,
         onDocumentDetails: { viewModel.onDocumentDetails(documentId: $0) }
       )
     }
@@ -78,20 +78,19 @@ private struct DashboardViewContainer: View {
   @Binding var selectedTab: SelectedTab
   @Binding var isRevokedModalShowing: Bool
   let tabView: (SelectedTab) -> AnyView
-  let revokedDocuments: [String: String]
+  let blockedDocuments: [String: String]
   let onDocumentDetails: (String) -> Void
 
   var body: some View {
     content()
       .sheetDialog(isPresented: $isRevokedModalShowing) {
         VStack(spacing: .zero) {
-
           ContentTitleView(
             title: .revokedModalTitle,
             caption: .revokedModalDescription
           )
 
-          revokedNotificationList()
+          notificationList(for: blockedDocuments)
         }
       }
   }
@@ -142,11 +141,12 @@ private struct DashboardViewContainer: View {
     }
   }
 
+  /// One row per document, keyed by display name; a tap opens its details.
   @MainActor
   @ViewBuilder
-  private func revokedNotificationList() -> some View {
+  private func notificationList(for documents: [String: String]) -> some View {
     VStack(spacing: SPACING_SMALL) {
-      ForEach(revokedDocuments.sorted(by: >), id: \.key) { key, value in
+      ForEach(documents.sorted(by: >), id: \.key) { key, value in
 
         HStack {
           Text(.custom(key))
@@ -181,7 +181,7 @@ private struct DashboardViewContainer: View {
       selectedTab: .constant(.home),
       isRevokedModalShowing: .constant(false),
       tabView: { _ in EmptyView().eraseToAnyView() },
-      revokedDocuments: [:],
+      blockedDocuments: [:],
       onDocumentDetails: { _ in }
     )
   }

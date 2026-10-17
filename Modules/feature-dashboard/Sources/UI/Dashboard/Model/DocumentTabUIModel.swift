@@ -59,6 +59,7 @@ public extension DocumentTabUIModel.Value {
     case pending
     case failed
     case revoked
+    case suspended
   }
 }
 
@@ -66,15 +67,18 @@ extension DocClaimsDecodable {
   func transformToDocumentTabUi(
     with failedDocuments: [String] = [],
     categories: DocumentCategories,
-    isRevoked: Bool,
+    revocationStatus: DocumentRevocationStatus?,
     documentIsLowOnCredentials: Bool = false,
-    usageCount: (remaining: Int?, total: Int?)? = nil
+    usageCount: (remaining: Int?, total: Int?)? = nil,
+    issuerLogoOrigins: IssuerLogoOrigins
   ) -> DocumentTabUIModel {
     let state: DocumentTabUIModel.Value.State = failedDocuments.contains(where: { $0 == self.id })
     ? .failed
     : (self is DeferrredDocument)
     ? .pending
-    : isRevoked
+    : revocationStatus == .suspended
+    ? .suspended
+    : revocationStatus != nil
     ? .revoked
     : .issued
 
@@ -97,7 +101,9 @@ extension DocClaimsDecodable {
         hasExpired: self.hasExpired,
         state: state,
         image: .init(
-          url: self.issuerLogo,
+          url: self.issuerLogo?.allowedIssuerLogo(
+            allowedOrigins: issuerLogoOrigins.origins(ofIssuer: self.credentialIssuerIdentifier)
+          ),
           placeholder: Theme.shared.image.id
         ),
         documentCategory: categories.first(where: { $1.contains(self.documentTypeIdentifier) })?.key ?? .Other
@@ -138,6 +144,8 @@ extension DocClaimsDecodable {
         return .issuanceFailed
       case .revoked:
         return .revoked
+      case .suspended:
+        return .suspended
       }
     }
   }
@@ -161,7 +169,7 @@ extension DocClaimsDecodable {
       return Theme.shared.color.secondaryLabel
     case .pending:
       return Theme.shared.color.warning
-    case .failed, .revoked:
+    case .failed, .revoked, .suspended:
       return Theme.shared.color.red
     }
   }
@@ -183,7 +191,7 @@ extension DocClaimsDecodable {
       return Theme.shared.color.accent
     case .pending:
       return Theme.shared.color.warning
-    case .failed, .revoked:
+    case .failed, .revoked, .suspended:
       return Theme.shared.color.red
     }
   }
@@ -205,7 +213,7 @@ extension DocClaimsDecodable {
       return Theme.shared.image.chevronRight
     case .pending:
       return Theme.shared.image.clockIndicator
-    case .failed, .revoked:
+    case .failed, .revoked, .suspended:
       return Theme.shared.image.errorIndicator
     }
   }

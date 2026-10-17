@@ -25,15 +25,72 @@ public protocol ConfigUiLogic: Sendable {
 
   var backgroundColorForScreenDictionary: [AppRouteKey: UIConfig.ToolBar] { get }
 
+  /// The screens of an issuance, presentation or signing in progress, by `AppRoute.info.key`. On them the
+  /// session lock waits `AuthenticationConfig.protectedFlowLockTimeout` in the background instead of
+  /// `backgroundLockTimeout`, as the Android wallet's `protectedFlowScreens` do.
+  var protectedFlowRouteKeys: [AppRouteKey] { get }
+
+  /// The screens a locked wallet may show, by `AppRoute.info.key`: start-up and its login, PIN creation and
+  /// the Trust Mark introduction, as the Android wallet's `loginScreens`. While locked, the navigation
+  /// opens no other screen, and one already on the path sends the wallet back to start-up.
+  var loginRouteKeys: [AppRouteKey] { get }
+
+  /// The claims that hold a picture of the holder, by the last element of their path. A request for one of them
+  /// shows a biometric-data notice, and Share asks for confirmation while it would be disclosed, as the Android
+  /// wallet's `userImageClaimKeys`; add the claims your credentials use.
+  var userImageClaimKeys: Set<String> { get }
+
   init(themeConfiguration: ThemeConfiguration)
+}
+
+public extension ConfigUiLogic {
+  /// True when `route` is one of the `protectedFlowRouteKeys`.
+  func isProtectedFlow(_ route: AppRoute?) -> Bool {
+    guard let key = route?.info.key else { return false }
+    return protectedFlowRouteKeys.contains(key)
+  }
+
+  /// True when `route` is one of the `loginRouteKeys`.
+  func isLoginRoute(_ route: AppRoute) -> Bool {
+    loginRouteKeys.contains(route.info.key)
+  }
 }
 
 struct ConfigUiLogicImpl: ConfigUiLogic {
 
-  public var backgroundColorForScreenDictionary: [AppRouteKey: UIConfig.ToolBar] = [
-    AppRoute.featureDashboardModule(.dashboard).info.key: .init(Theme.shared.color.background),
-    AppRoute.featureDashboardModule(.documentDetails(id: "")).info.key: .init(Theme.shared.color.background)
+  /// Read on each use, so the toolbars follow the theme `Theme.config` sets, also when an integrator applies one
+  /// after this configuration is created.
+  public var backgroundColorForScreenDictionary: [AppRouteKey: UIConfig.ToolBar] {
+    [
+      AppRoute.featureDashboardModule(.dashboard).info.key: .init(Theme.shared.color.background),
+      AppRoute.featureDashboardModule(.documentDetails(id: "")).info.key: .init(Theme.shared.color.background)
+    ]
+  }
+
+  public var loginRouteKeys: [AppRouteKey] = [
+    AppRoute.featureStartupModule(.startup).info.key,
+    AppRoute.featureCommonModule(.biometry(config: NoConfig())).info.key,
+    AppRoute.featureCommonModule(.quickPin(config: NoConfig())).info.key,
+    AppRoute.featureCommonModule(.trustMark(config: NoConfig())).info.key
   ]
+
+  /// The presentation and proximity routes carry a session coordinator, so their keys are written out;
+  /// `TestConfigUiLogic` checks them against `AppRoute.info.key`.
+  public var protectedFlowRouteKeys: [AppRouteKey] = [
+    AppRoute.featureIssuanceModule(.issuanceAddDocument(config: NoConfig())).info.key,
+    AppRoute.featureIssuanceModule(.credentialOfferRequest(config: NoConfig())).info.key,
+    AppRoute.featureIssuanceModule(.issuanceCode(config: NoConfig())).info.key,
+    "PresentationRequest",
+    "PresentationLoader",
+    "ProximityConnection",
+    "ProximityRequest",
+    "ProximityLoader",
+    AppRoute.featureDashboardModule(.signDocument).info.key,
+    AppRoute.featureDashboardModule(.walletReset).info.key,
+    AppRoute.featureCommonModule(.biometry(config: NoConfig())).info.key
+  ]
+
+  public var userImageClaimKeys: Set<String> = ["portrait", "picture"]
 
   public var dashboardRoute: AppRoute {
     return .featureDashboardModule(.dashboard)

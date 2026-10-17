@@ -75,6 +75,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
   private let prefsController: PrefsController
   private let filterValidator: FilterValidator
   private let configLogic: ConfigLogic
+  private let walletWorkScheduler: WalletWorkScheduler
 
   private var filtersStateAsync: AsyncStream<DocumentFiltersPartialState>.Continuation?
 
@@ -82,12 +83,14 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     walletKitController: WalletKitController,
     prefsController: PrefsController,
     filterValidator: FilterValidator,
-    configLogic: ConfigLogic
+    configLogic: ConfigLogic,
+    walletWorkScheduler: WalletWorkScheduler
   ) {
     self.walletKitController = walletKitController
     self.prefsController = prefsController
     self.filterValidator = filterValidator
     self.configLogic = configLogic
+    self.walletWorkScheduler = walletWorkScheduler
   }
 
   deinit {
@@ -207,7 +210,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     var failed: [String] = []
 
     let categories = await self.walletKitController.getDocumentCategories()
-    let revokedDocuments = try? await self.walletKitController.fetchRevokedDocuments()
+    let revocationStatuses = (try? await self.walletKitController.fetchRevokedDocumentStatuses()) ?? [:]
 
     for deferred in await walletKitController.fetchDeferredDocuments() {
 
@@ -215,18 +218,19 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
 
       do {
         let document = try await walletKitController.requestDeferredIssuance(with: deferred)
+        let issuerLogoOrigins = await walletKitController.issuerLogoOrigins()
         if (document is DeferrredDocument) == false {
-          let isRevoked = revokedDocuments?.first { $0 == deferred.id } != nil
           issued.append(
             document.transformToDocumentTabUi(
               categories: categories,
-              isRevoked: isRevoked,
+              revocationStatus: revocationStatuses[deferred.id],
               usageCount: isBatchCounterEnabled()
               ? getCredentialsUsageCount(
                 credentialsUsageCounts: document.credentialsUsageCounts,
                 isDeferred: (document is DeferrredDocument) == true
               )
-              : nil
+              : nil,
+              issuerLogoOrigins: issuerLogoOrigins
             )
           )
         }
@@ -235,7 +239,22 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
       }
     }
 
+    if !issued.isEmpty {
+      await checkRevocationAfterDeferredReIssue(revocationStatuses: revocationStatuses)
+    }
+
     return .completion(issued: issued, failed: failed)
+  }
+
+  /// Wallet-kit deletes the original of a deferred re-issue when its credential arrives. If a document that had
+  /// a revocation record is gone, the revocation check runs at once, as the Android wallet does, so the new copy's
+  /// status is read without waiting for the interval.
+  private func checkRevocationAfterDeferredReIssue(
+    revocationStatuses: [String: DocumentRevocationStatus]
+  ) async {
+    let remainingIds = Set(await walletKitController.fetchAllDocuments().map(\.id))
+    guard let goneId = revocationStatuses.keys.first(where: { !remainingIds.contains($0) }) else { return }
+    await walletWorkScheduler.scheduleRevocationCheck(afterReIssueOf: goneId)
   }
 
   private func createFiltersGroup() -> Filters {
@@ -415,7 +434,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     }
 
     let documents = await self.walletKitController.fetchAllDocuments()
-    let revokedDocuments = try? await self.walletKitController.fetchRevokedDocuments()
+    let revocationStatuses = (try? await self.walletKitController.fetchRevokedDocumentStatuses()) ?? [:]
 
     guard !documents.isEmpty else {
       return nil
@@ -423,19 +442,21 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
 
     var filterableItems: [FilterableItem] = []
     for document in documents {
-      let isRevoked = revokedDocuments?.first { $0 == document.id } != nil
+      let revocationStatus = revocationStatuses[document.id]
 
       let documentIsLowOnCredentials = await walletKitController.isDocumentLowOnCredentials(document: document)
+      let issuerLogoOrigins = await walletKitController.issuerLogoOrigins()
       let documentPayload = await document.transformToDocumentTabUi(
         categories: self.walletKitController.getDocumentCategories(),
-        isRevoked: isRevoked,
+        revocationStatus: revocationStatus,
         documentIsLowOnCredentials: documentIsLowOnCredentials,
         usageCount: isBatchCounterEnabled()
         ? getCredentialsUsageCount(
           credentialsUsageCounts: document.credentialsUsageCounts,
           isDeferred: (document is DeferrredDocument) == true
         )
-        : nil
+        : nil,
+        issuerLogoOrigins: issuerLogoOrigins
       )
 
       let documentSearchTags: [String] = {
@@ -457,7 +478,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
           issuer: document.issuerName,
           name: document.displayName,
           category: documentPayload.value.documentCategory.filterAttribute.capitalizedFirst(),
-          isRevoked: isRevoked
+          isRevoked: revocationStatus != nil
         )
       )
       filterableItems.append(item)

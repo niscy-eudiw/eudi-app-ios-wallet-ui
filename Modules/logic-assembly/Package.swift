@@ -18,7 +18,8 @@ let package = Package(
     .package(name: "feature-dashboard", path: "./feature-dashboard"),
     .package(name: "feature-presentation", path: "./feature-presentation"),
     .package(name: "feature-issuance", path: "./feature-issuance"),
-    .package(name: "feature-proximity", path: "./feature-proximity")
+    .package(name: "feature-proximity", path: "./feature-proximity"),
+    .package(name: "feature-test", path: "./feature-test")
   ],
   targets: [
     .target(
@@ -32,6 +33,15 @@ let package = Package(
         "feature-proximity"
       ],
       path: "./Sources"
+    ),
+    .testTarget(
+      name: "logic-assembly-tests",
+      dependencies: [
+        "logic-assembly",
+        "feature-common",
+        "feature-test"
+      ],
+      path: "./Tests"
     )
   ]
 )

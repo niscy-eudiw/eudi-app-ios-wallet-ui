@@ -19,6 +19,12 @@ import logic_resources
 struct AuthorizationUIModel: Sendable {
   let issuerName: String
   let documents: [AuthorizationUIDocument]
+  /// Whether the relying party was found trusted. Only a real trust verdict may set it.
+  let isRelyingPartyVerified: Bool
+  /// Whether the request includes a picture of the holder (`ConfigUiLogic.userImageClaimKeys`).
+  let requestsUserImage: Bool
+  /// The authority key identifier of the reader certificate's root, kept for a trust-list lookup.
+  let authorityKeyIdentifier: [UInt8]
 }
 
 struct AuthorizationUIDocument: Sendable, Identifiable {
