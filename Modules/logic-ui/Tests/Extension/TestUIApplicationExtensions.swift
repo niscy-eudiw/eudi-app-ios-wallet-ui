@@ -66,4 +66,17 @@ class StubPresentingController: UIViewController {
   override var presentedViewController: UIViewController? {
     presented
   }
+
+  @MainActor
+  func testKeepRunningInBackground_WhenTheOperationEnds_ThenReturnsItsValue() async {
+    var ran = false
+
+    let value = await UIApplication.shared.keepRunningInBackground(named: "test") { () async -> Int in
+      ran = true
+      return 42
+    }
+
+    XCTAssertTrue(ran)
+    XCTAssertEqual(value, 42)
+  }
 }

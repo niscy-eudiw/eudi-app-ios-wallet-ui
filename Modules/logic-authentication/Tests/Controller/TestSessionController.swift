@@ -165,13 +165,13 @@ final class TestSessionController: EudiTest {
   func testExternalFlow_WhenInProgress_ThenCoversTheWalletUntilItsLastEnd() {
     let (controller, clock) = makeController()
     controller.unlock()
-    controller.beginExternalFlow()
-    controller.beginExternalFlow()
+    let first = controller.beginExternalFlow()
+    let second = controller.beginExternalFlow()
     clock.now += 400
 
-    controller.endExternalFlow()
+    controller.endExternalFlow(startedIn: first)
     XCTAssertFalse(controller.lockIfExpired())
-    controller.endExternalFlow()
+    controller.endExternalFlow(startedIn: second)
     clock.now += 300
 
     XCTAssertTrue(controller.lockIfExpired())
@@ -222,13 +222,29 @@ final class TestSessionController: EudiTest {
     XCTAssertTrue(controller.lockIfExpired())
   }
 
+  /// The sign-in the lock interrupted ends late, after a new one began: the new one still covers the wallet.
+  @MainActor
+  func testEndExternalFlow_WhenAFlowFromBeforeTheLockEnds_ThenALaterFlowStillCovers() {
+    let (controller, clock) = makeController()
+    controller.unlock()
+    let interrupted = controller.beginExternalFlow()
+    controller.lock()
+    controller.unlock()
+    _ = controller.beginExternalFlow()
+
+    controller.endExternalFlow(startedIn: interrupted)
+    clock.now += 400
+
+    XCTAssertFalse(controller.lockIfExpired())
+  }
+
   @MainActor
   func testLockIfExpired_WhenTheCoverEndedWhileAway_ThenTheBackgroundLimitApplies() {
     let (controller, clock) = makeController()
     controller.unlock()
-    controller.beginExternalFlow()
+    let lockPeriod = controller.beginExternalFlow()
     controller.recordBackground(isProtectedFlow: false)
-    controller.endExternalFlow()
+    controller.endExternalFlow(startedIn: lockPeriod)
 
     clock.now += 60
 

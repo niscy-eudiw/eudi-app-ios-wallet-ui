@@ -142,7 +142,8 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
   }
 
   /// The first appearance loads the documents, then builds the tabs and starts the workers, so the tabs
-  /// read loaded documents and a kept link finds them.
+  /// read loaded documents and a kept link finds them. The Digital Credential API registration pass runs in a task
+  /// of its own, so a slow or hung registration store holds up neither the tabs nor a kept link.
   func onCreate() async {
     onResume()
     if viewState.homeTab == nil {
@@ -153,6 +154,7 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
         documentTabInteractor: documentTabInteractor,
         transactionTabInteractor: transactionTabInteractor
       )
+      Task { [interactor] in await interactor.reconcileRegistrations() }
       await interactor.startWorkers()
     }
     await handleDeepLink()

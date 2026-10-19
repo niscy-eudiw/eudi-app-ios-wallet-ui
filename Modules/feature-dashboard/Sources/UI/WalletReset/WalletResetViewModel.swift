@@ -45,11 +45,15 @@ final class WalletResetViewModel<Router: RouterHost>: ViewModel<Router, WalletRe
   }
 
   /// Runs the reset; the screen calls it when it appears, and the error's Try again calls it again. The link kept for
-  /// after login is forgotten as the reset starts, as on Android, whatever its outcome.
+  /// after login is forgotten as the reset starts, as on Android, whatever its outcome. The app asks iOS to keep it
+  /// running while the reset runs, so leaving the app does not suspend it halfway.
   func reset() async {
     setState { $0.copy(isLoading: true, error: nil) }
     deepLinkController.removeCachedDeepLinkURL()
-    switch await interactor.resetWallet() {
+    let result = await UIApplication.shared.keepRunningInBackground(named: "WalletReset") {
+      await self.interactor.resetWallet()
+    }
+    switch result {
     case .success:
       router.restartAtStartup()
     case .failure:

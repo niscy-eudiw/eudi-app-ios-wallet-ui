@@ -4021,9 +4021,9 @@ public class MockSessionController: SessionController, Cuckoo.ProtocolMock, @unc
         )
     }
 
-    public func beginExternalFlow() {
+    public func beginExternalFlow() -> Int {
         return cuckoo_manager.call(
-            "beginExternalFlow()",
+            "beginExternalFlow() -> Int",
             parameters: (),
             escapingParameters: (),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
@@ -4031,13 +4031,13 @@ public class MockSessionController: SessionController, Cuckoo.ProtocolMock, @unc
         )
     }
 
-    public func endExternalFlow() {
+    public func endExternalFlow(startedIn p0: Int) {
         return cuckoo_manager.call(
-            "endExternalFlow()",
-            parameters: (),
-            escapingParameters: (),
+            "endExternalFlow(startedIn p0: Int)",
+            parameters: (p0),
+            escapingParameters: (p0),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: __defaultImplStub!.endExternalFlow()
+            defaultCall: __defaultImplStub!.endExternalFlow(startedIn: p0)
         )
     }
 
@@ -4100,18 +4100,18 @@ public class MockSessionController: SessionController, Cuckoo.ProtocolMock, @unc
             ))
         }
         
-        func beginExternalFlow() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+        func beginExternalFlow() -> Cuckoo.ProtocolStubFunction<(), Int> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockSessionController.self,
-                method: "beginExternalFlow()",
+                method: "beginExternalFlow() -> Int",
                 parameterMatchers: matchers
             ))
         }
         
-        func endExternalFlow() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+        func endExternalFlow<M1: Cuckoo.Matchable>(startedIn p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(Int)> where M1.MatchedType == Int {
+            let matchers: [Cuckoo.ParameterMatcher<(Int)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockSessionController.self,
-                method: "endExternalFlow()",
+                method: "endExternalFlow(startedIn p0: Int)",
                 parameterMatchers: matchers
             ))
         }
@@ -4206,10 +4206,10 @@ public class MockSessionController: SessionController, Cuckoo.ProtocolMock, @unc
         
         
         @discardableResult
-        func beginExternalFlow() -> Cuckoo.__DoNotUse<(), Void> {
+        func beginExternalFlow() -> Cuckoo.__DoNotUse<(), Int> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "beginExternalFlow()",
+                "beginExternalFlow() -> Int",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -4218,10 +4218,10 @@ public class MockSessionController: SessionController, Cuckoo.ProtocolMock, @unc
         
         
         @discardableResult
-        func endExternalFlow() -> Cuckoo.__DoNotUse<(), Void> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+        func endExternalFlow<M1: Cuckoo.Matchable>(startedIn p0: M1) -> Cuckoo.__DoNotUse<(Int), Void> where M1.MatchedType == Int {
+            let matchers: [Cuckoo.ParameterMatcher<(Int)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
-                "endExternalFlow()",
+                "endExternalFlow(startedIn p0: Int)",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -4264,11 +4264,11 @@ public class SessionControllerStub:SessionController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
-    public func beginExternalFlow() {
-        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    public func beginExternalFlow() -> Int {
+        return DefaultValueRegistry.defaultValue(for: (Int).self)
     }
     
-    public func endExternalFlow() {
+    public func endExternalFlow(startedIn p0: Int) {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
 }
@@ -15830,6 +15830,7 @@ import logic_resources
 
 import Cuckoo
 import UIKit
+import os
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics

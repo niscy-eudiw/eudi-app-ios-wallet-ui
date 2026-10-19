@@ -44,6 +44,8 @@ public protocol WalletKitController: Sendable {
   func fetchDocuments(with ids: [String]) async -> [any DocClaimsDecodable]
   func clearAllDocuments() async throws
   func deleteDocument(with id: String, status: DocumentStatus) async throws
+  /// Loads the documents into WalletKit. It leaves the Digital Credential API registrations to the caller's
+  /// `reconcileRegistrations()`, so that a slow registration store does not hold up the documents.
   func loadDocuments() async throws
   /// Whether the wallet holds any document, read from the Keychain without loading one: the query asks
   /// for no attributes and no data. A read error throws `KeyChainError.readFailed`.
@@ -315,7 +317,6 @@ final actor WalletKitControllerImpl: WalletKitController {
 
   func loadDocuments() async throws {
     _ = try await wallet.loadAllDocuments()
-    await reconcileRegistrations()
   }
 
   func hasStoredDocuments() throws -> Bool {

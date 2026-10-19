@@ -64,27 +64,28 @@ public protocol SessionController: Sendable {
   @MainActor func setCovered(_ isCovered: Bool)
 
   /// Marks a flow that leaves the wallet's screens, such as the issuer's sign-in, as covering them until
-  /// the matching `endExternalFlow()` or the next lock.
-  @MainActor func beginExternalFlow()
+  /// the matching `endExternalFlow(startedIn:)` or the next lock. Returns the lock period the flow began in.
+  @discardableResult @MainActor func beginExternalFlow() -> Int
 
-  /// Ends a flow marked by `beginExternalFlow()`.
-  @MainActor func endExternalFlow()
+  /// Ends a flow that `beginExternalFlow()` marked in `lockPeriod`. A flow that began before the last lock is already
+  /// over and is ignored, so its late end cannot end a flow begun since.
+  @MainActor func endExternalFlow(startedIn lockPeriod: Int)
 }
 
 public extension SessionController {
   /// Runs `operation`, which may leave the wallet's screens (the issuer's sign-in), between
-  /// `beginExternalFlow()` and `endExternalFlow()`, whether it succeeds or throws.
+  /// `beginExternalFlow()` and `endExternalFlow(startedIn:)`, whether it succeeds or throws.
   func duringExternalFlow<T>(
     isolation: isolated (any Actor)? = #isolation,
     _ operation: () async throws -> T
   ) async rethrows -> T {
-    await beginExternalFlow()
+    let lockPeriod = await beginExternalFlow()
     do {
       let value = try await operation()
-      await endExternalFlow()
+      await endExternalFlow(startedIn: lockPeriod)
       return value
     } catch {
-      await endExternalFlow()
+      await endExternalFlow(startedIn: lockPeriod)
       throw error
     }
   }
@@ -103,6 +104,7 @@ final class SessionControllerImpl: SessionController {
   private var wasProtectedFlowWhenHidden: Bool = false
   private var isCoveredByScreen: Bool = false
   private var externalFlows: Int = 0
+  private var currentLockPeriod: Int = 0
   private var externalFlowSince: TimeInterval?
   private var coveredSince: TimeInterval?
 
@@ -131,6 +133,7 @@ final class SessionControllerImpl: SessionController {
     backgroundSince = nil
     isCoveredByScreen = false
     externalFlows = 0
+    currentLockPeriod += 1
     externalFlowSince = nil
     coveredSince = nil
   }
@@ -177,7 +180,8 @@ final class SessionControllerImpl: SessionController {
     updateCover { isCoveredByScreen = isCovered }
   }
 
-  func beginExternalFlow() {
+  @discardableResult
+  func beginExternalFlow() -> Int {
     let current = now()
     updateCover {
       externalFlows += 1
@@ -185,9 +189,11 @@ final class SessionControllerImpl: SessionController {
         externalFlowSince = current
       }
     }
+    return currentLockPeriod
   }
 
-  func endExternalFlow() {
+  func endExternalFlow(startedIn lockPeriod: Int) {
+    guard lockPeriod == currentLockPeriod else { return }
     updateCover {
       externalFlows = max(0, externalFlows - 1)
       if externalFlows == 0 {

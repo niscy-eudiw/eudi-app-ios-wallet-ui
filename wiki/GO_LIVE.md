@@ -1927,7 +1927,8 @@ confirm it, and a screen runs the reset (`WalletResetControllerImpl`, `logic-aut
    onboarding.
 
 Once started, the reset runs to the end even if its screen goes away, and its screen is a protected flow, so the
-background lock waits 10 minutes. Links that arrive meanwhile are dropped, and a link kept for after login is
+background lock waits 10 minutes. The app asks iOS to keep it running while the reset runs
+(`UIApplication.keepRunningInBackground`), so leaving the app does not suspend it halfway, as far as iOS allows. Links that arrive meanwhile are dropped, and a link kept for after login is
 forgotten, so none opens after onboarding. A failed step shows an error with "Try again"; every step can run
 again. After a failure the background checks restart at once; after a reset they start with the dashboard, after
 the next login.

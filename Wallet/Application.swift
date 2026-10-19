@@ -68,7 +68,10 @@ struct Application: App {
         sessionLockController.start()
       }
       .onOpenURL { url in
-        guard !resetStatusProvider.isResetting else { return }
+        guard
+          !resetStatusProvider.isResetting,
+          !routerHost.isScreenOnBackStack(with: .featureDashboardModule(.walletReset))
+        else { return }
         sessionLockController.willHandleLink()
         if let deepLink = deepLinkController.hasDeepLink(url: url) {
           deepLinkController.handleDeepLinkAction(

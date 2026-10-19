@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import UIKit
+import os
 
 public extension UIApplication {
   var currentUIWindow: UIWindow? {
@@ -55,5 +56,27 @@ public extension UIApplication {
   func openAppSettings() {
     guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
     self.open(url, options: [:])
+  }
+
+  /// Runs `operation` while iOS lets the app go on in the background, so that a step started before the user leaves
+  /// the app is not suspended halfway. The time is iOS's to give; when it runs out the task is ended and `operation`
+  /// goes on only while the app is still running.
+  func keepRunningInBackground<T>(named name: String, while operation: () async -> T) async -> T {
+    let identifier = OSAllocatedUnfairLock(initialState: UIBackgroundTaskIdentifier.invalid)
+    let end: @MainActor @Sendable () -> Void = {
+      let current = identifier.withLock { stored in
+        let value = stored
+        stored = .invalid
+        return value
+      }
+      if current != .invalid {
+        UIApplication.shared.endBackgroundTask(current)
+      }
+    }
+    let started = beginBackgroundTask(withName: name, expirationHandler: end)
+    identifier.withLock { $0 = started }
+    let value = await operation()
+    end()
+    return value
   }
 }

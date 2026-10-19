@@ -141,10 +141,10 @@ private struct DashboardViewContainer: View {
     }
   }
 
-  /// One row per document, keyed by display name; a tap opens its details.
+  /// One row per document, keyed by its identifier and sorted by name, so two documents with the same name are both
+  /// listed; a tap opens its details. `documents` maps each document's identifier to its name.
   @MainActor
   @ViewBuilder
-  /// `documents` maps each document's identifier to its name; two documents with the same name are both listed.
   private func notificationList(for documents: [String: String]) -> some View {
     VStack(spacing: SPACING_SMALL) {
       ForEach(documents.sorted { ($0.value, $0.key) < ($1.value, $1.key) }, id: \.key) { documentId, name in

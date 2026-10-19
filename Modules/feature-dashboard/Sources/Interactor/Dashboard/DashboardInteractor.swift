@@ -18,6 +18,8 @@ import logic_core
 public protocol DashboardInteractor: Sendable {
   /// Loads the wallet's documents. Start-up loads none, so this is the first load after login.
   func loadDocuments() async
+  /// Brings the Digital Credential API registrations in line with the loaded documents.
+  func reconcileRegistrations() async
   /// Starts the revocation and re-issuance workers, which run only once the wallet is open.
   func startWorkers() async
 }
@@ -38,6 +40,10 @@ final actor DashboardInteractorImpl: DashboardInteractor {
   /// A load error is ignored: the tabs show the documents that did load.
   func loadDocuments() async {
     try? await walletKitController.loadDocuments()
+  }
+
+  func reconcileRegistrations() async {
+    await walletKitController.reconcileRegistrations()
   }
 
   func startWorkers() async {

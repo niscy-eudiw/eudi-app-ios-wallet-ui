@@ -56,8 +56,8 @@ final class TestDocumentOfferInteractor: EudiTest {
 
     self.sessionController = MockSessionController()
     stub(sessionController) { mock in
-      when(mock.beginExternalFlow()).thenDoNothing()
-      when(mock.endExternalFlow()).thenDoNothing()
+      when(mock.beginExternalFlow()).thenReturn(0)
+      when(mock.endExternalFlow(startedIn: any())).thenDoNothing()
     }
     self.interactor = DocumentOfferInteractorImpl(
       walletController: walletKitController,
@@ -397,7 +397,7 @@ final class TestDocumentOfferInteractor: EudiTest {
     }
 
     verify(sessionController).beginExternalFlow()
-    verify(sessionController).endExternalFlow()
+    verify(sessionController).endExternalFlow(startedIn: any())
   }
 
   func testResumeDynamicIssuance_WhenWalletThrowsTrustError_ThenReturnsIssuerNotTrusted() async {

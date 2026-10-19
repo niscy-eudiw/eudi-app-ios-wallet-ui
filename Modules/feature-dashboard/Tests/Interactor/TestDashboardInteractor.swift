@@ -62,6 +62,16 @@ final class TestDashboardInteractor: EudiTest {
     verify(walletKitController).loadDocuments()
   }
 
+  func testReconcileRegistrations_WhenCalled_ThenTheControllerReconcilesThem() async {
+    stub(walletKitController) { mock in
+      when(mock.reconcileRegistrations()).thenDoNothing()
+    }
+
+    await interactor.reconcileRegistrations()
+
+    verify(walletKitController).reconcileRegistrations()
+  }
+
   func testStartWorkers_WhenCalled_ThenSchedulesTheBackgroundChecks() async {
     stub(walletWorkScheduler) { mock in
       when(mock.schedule()).thenDoNothing()

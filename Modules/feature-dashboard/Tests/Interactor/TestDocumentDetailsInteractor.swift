@@ -43,8 +43,8 @@ final class TestDocumentDetailsInteractor: EudiTest {
       when(mock.scheduleRevocationCheck(afterReIssueOf: any())).thenDoNothing()
     }
     stub(sessionController) { mock in
-      when(mock.beginExternalFlow()).thenDoNothing()
-      when(mock.endExternalFlow()).thenDoNothing()
+      when(mock.beginExternalFlow()).thenReturn(0)
+      when(mock.endExternalFlow(startedIn: any())).thenDoNothing()
     }
     stub(walletKitController) { mock in
       when(mock.fetchRevokedDocumentStatuses()).thenReturn([:])
@@ -519,7 +519,7 @@ final class TestDocumentDetailsInteractor: EudiTest {
     }
 
     verify(sessionController).beginExternalFlow()
-    verify(sessionController).endExternalFlow()
+    verify(sessionController).endExternalFlow(startedIn: any())
     verify(walletWorkScheduler).scheduleRevocationCheck(afterReIssueOf: equal(to: identifier))
   }
 
@@ -605,7 +605,7 @@ final class TestDocumentDetailsInteractor: EudiTest {
     }
 
     verify(sessionController).beginExternalFlow()
-    verify(sessionController).endExternalFlow()
+    verify(sessionController).endExternalFlow(startedIn: any())
   }
 
   func testDeleteDocument_WhenForcePidActivationDisabled_ThenSkipsClearAllAndPerformsDelete() async {
