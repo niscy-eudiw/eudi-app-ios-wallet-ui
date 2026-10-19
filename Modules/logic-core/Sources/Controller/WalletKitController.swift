@@ -171,6 +171,7 @@ final actor WalletKitControllerImpl: WalletKitController {
   private let documentRegistrationManager: DocumentRegistrationManager
   private let prefsController: PrefsController
   private let registrationCheckProvider: RegistrationCheckProvider
+  private let registrationRunner = SerialCheckRunner()
   /// "Check Registration Certificates" as WalletKit was configured with it at launch; the setting applies after a
   /// restart, so the app's own decisions follow the same value.
   private let isRegistrationChecked: Bool
@@ -980,9 +981,14 @@ extension WalletKitControllerImpl {
   /// Registers the issued CBOR documents for the Digital Credential API, leaving out every document with a
   /// revocation record (revoked, suspended or unrecognised), as the Android wallet does. When the records cannot be
   /// read, or the user has turned the offering off, nothing is registered.
-  /// The setting is read after the last suspension point, so a pass that started before the user turned the
-  /// offering off cannot register documents after the pass that withdrew them.
+  /// Passes run one at a time (`SerialCheckRunner`): a call during a pass makes it run once more, and the call
+  /// returns when no pass is left, so an earlier pass cannot register documents after the one that withdrew them.
   func reconcileRegistrations() async {
+    await registrationRunner.run { await self.reconcileRegistrationsOnce() }
+    await registrationRunner.waitUntilIdle()
+  }
+
+  private func reconcileRegistrationsOnce() async {
     let blocked = try? await fetchRevokedDocumentStatuses()
     let candidates = fetchIssuedDocuments()
       .filter { $0.docDataFormat == .cbor }
