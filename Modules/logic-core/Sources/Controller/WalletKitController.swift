@@ -175,6 +175,9 @@ final actor WalletKitControllerImpl: WalletKitController {
   /// "Check Registration Certificates" as WalletKit was configured with it at launch; the setting applies after a
   /// restart, so the app's own decisions follow the same value.
   private let isRegistrationChecked: Bool
+  /// The OpenID4VP configuration built at launch, so every remote presentation applies the registration-check setting
+  /// read then, as the app's own decisions do (`isRegistrationChecked`), until the app restarts.
+  private let openID4VpConfig: OpenId4VpConfiguration
 
   init(
     walletKitConfig: WalletKitConfig,
@@ -209,6 +212,8 @@ final actor WalletKitControllerImpl: WalletKitController {
       Self.removeLogFileOfAnEarlierBuild()
     }
     self.isRegistrationChecked = walletKitConfig.validateIssuerRegistrationCertificate
+    let openID4VpConfig = walletKitConfig.vpConfig
+    self.openID4VpConfig = openID4VpConfig
 
     guard let walletKit = try? EudiWallet(
       eudiWalletConfig: EudiWalletConfiguration(
@@ -220,7 +225,7 @@ final actor WalletKitControllerImpl: WalletKitController {
         logFileName: walletKitConfig.logFileName
       ),
       trustConfig: walletKitConfig.trustConfiguration,
-      openID4VpConfig: walletKitConfig.vpConfig,
+      openID4VpConfig: openID4VpConfig,
       openID4VciConfigurations: walletKitConfig.issuersConfig.mapValues { $0.config },
       networking: networkSessionProvider.urlSession,
       transactionLogger: walletKitConfig.transactionLogger,
@@ -1052,7 +1057,7 @@ private extension WalletKitControllerImpl {
 
     let data = urlString.data(using: .utf8) ?? Data()
 
-    wallet.openID4VpConfig = walletKitConfig.vpConfig
+    wallet.openID4VpConfig = openID4VpConfig
 
     let session = await wallet.beginPresentation(flow: .openid4vp(qrCode: data))
     let remoteSessionCoordinator = DIGraph.shared.resolver.force(
