@@ -110,10 +110,12 @@ public struct IssuerDocumentDetailsCardUIModel: Equatable, Sendable {
 
 public extension DocClaimsDecodable {
   /// An unrecognised status is shown as revoked, as on Android.
+  /// - Parameter issuerLogoOrigins: Where the issuer's logo may load from (`WalletKitController.issuerLogoOrigins()`).
   func transformToIssuerDetailsCardDataUi(
     revocationStatus: DocumentRevocationStatus?,
     hasStatusRefreshFailed: Bool = false,
-    hasReIssuanceFailed: Bool = false
+    hasReIssuanceFailed: Bool = false,
+    issuerLogoOrigins: IssuerLogoOrigins
   ) -> IssuerDocumentDetailsCardUIModel {
     let documentState: IssuerDocumentDetailsCardUIModel.DocumentState
     let issuanceDate = self.createdAt.formattedForDocumentDetails()
@@ -138,7 +140,9 @@ public extension DocClaimsDecodable {
 
     return .init(
       issuerName: .custom(self.issuerName),
-      issuerLogo: self.issuerLogo,
+      issuerLogo: self.issuerLogo?.allowedIssuerLogo(
+        allowedOrigins: issuerLogoOrigins.origins(ofIssuer: self.credentialIssuerIdentifier)
+      ),
       documentState: documentState,
       hasStatusRefreshFailed: hasStatusRefreshFailed,
       hasReIssuanceFailed: hasReIssuanceFailed

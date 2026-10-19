@@ -66,7 +66,7 @@ final class TestDocumentRevocationUi: EudiTest {
   }
 
   func testTransformToIssuerDetailsCardDataUi_WhenSuspended_ThenShowsSuspendedTexts() {
-    let card = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(revocationStatus: .suspended)
+    let card = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(revocationStatus: .suspended, issuerLogoOrigins: Self.noOrigins)
 
     XCTAssertEqual(card.documentState, .suspended)
     XCTAssertEqual(card.dateText, .documentDetailsSuspendedDocument)
@@ -75,14 +75,14 @@ final class TestDocumentRevocationUi: EudiTest {
   }
 
   func testTransformToIssuerDetailsCardDataUi_WhenNoRecord_ThenIsNotRevokedOrSuspended() {
-    let card = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(revocationStatus: nil)
+    let card = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(revocationStatus: nil, issuerLogoOrigins: Self.noOrigins)
 
     XCTAssertNotEqual(card.documentState, .revoked)
     XCTAssertNotEqual(card.documentState, .suspended)
   }
 
   func testTransformToIssuerDetailsCardDataUi_WhenRevoked_ThenShowsRevokedTexts() {
-    let card = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(revocationStatus: .revoked)
+    let card = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(revocationStatus: .revoked, issuerLogoOrigins: Self.noOrigins)
 
     XCTAssertEqual(card.documentState, .revoked)
     XCTAssertEqual(card.dateText, .documentDetailsRevokedDocument)
@@ -90,7 +90,7 @@ final class TestDocumentRevocationUi: EudiTest {
   }
 
   func testTransformToIssuerDetailsCardDataUi_WhenUnrecognised_ThenShowsRevokedTexts() {
-    let card = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(revocationStatus: .unrecognised)
+    let card = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(revocationStatus: .unrecognised, issuerLogoOrigins: Self.noOrigins)
 
     XCTAssertEqual(card.documentState, .revoked)
     XCTAssertEqual(card.dateText, .documentDetailsRevokedDocument)
@@ -100,11 +100,54 @@ final class TestDocumentRevocationUi: EudiTest {
   func testTransformToIssuerDetailsCardDataUi_WhenTheStatusCouldNotBeRefreshed_ThenFlagsTheCard() {
     let failed = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(
       revocationStatus: nil,
-      hasStatusRefreshFailed: true
+      hasStatusRefreshFailed: true,
+      issuerLogoOrigins: Self.noOrigins
     )
-    let refreshed = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(revocationStatus: nil)
+    let refreshed = Constants.createEuPidModel().transformToIssuerDetailsCardDataUi(revocationStatus: nil, issuerLogoOrigins: Self.noOrigins)
 
     XCTAssertTrue(failed.hasStatusRefreshFailed)
     XCTAssertFalse(refreshed.hasStatusRefreshFailed)
+  }
+
+  func testTransformToDocumentTabUi_WhenTheLogoIsOffTheIssuersOrigins_ThenTheListRowShowsThePlaceholder() {
+    let model = Constants.createEuPidModel(
+      issuerLogo: "https://tracker.example/p.png",
+      credentialIssuerIdentifier: "https://issuer.example"
+    ).transformToDocumentTabUi(categories: [:], revocationStatus: nil, issuerLogoOrigins: Self.noOrigins)
+
+    XCTAssertNil(model.value.image?.url)
+    XCTAssertNil(Self.listRowLogo(model))
+  }
+
+  func testTransformToDocumentTabUi_WhenTheLogoIsOnTheIssuersOrigin_ThenTheListRowShowsIt() {
+    let logo = URL(string: "https://issuer.example/logo.png")!
+    let model = Constants.createEuPidModel(
+      issuerLogo: logo.absoluteString,
+      credentialIssuerIdentifier: "https://issuer.example"
+    ).transformToDocumentTabUi(categories: [:], revocationStatus: nil, issuerLogoOrigins: Self.noOrigins)
+
+    XCTAssertEqual(Self.listRowLogo(model), logo)
+  }
+
+  func testTransformToIssuerDetailsCardDataUi_WhenTheLogoIsOffTheIssuersOrigins_ThenTheCardHasNoLogo() {
+    let issuer = "https://issuer.example"
+    let offOrigin = Constants.createEuPidModel(issuerLogo: "https://tracker.example/p.png", credentialIssuerIdentifier: issuer)
+    let onOrigin = Constants.createEuPidModel(issuerLogo: "https://issuer.example/logo.png", credentialIssuerIdentifier: issuer)
+
+    XCTAssertNil(offOrigin.transformToIssuerDetailsCardDataUi(revocationStatus: nil, issuerLogoOrigins: Self.noOrigins).issuerLogo)
+    XCTAssertEqual(
+      onOrigin.transformToIssuerDetailsCardDataUi(revocationStatus: nil, issuerLogoOrigins: Self.noOrigins).issuerLogo,
+      URL(string: "https://issuer.example/logo.png")
+    )
+  }
+}
+
+private extension TestDocumentRevocationUi {
+
+  static let noOrigins = IssuerLogoOrigins(logoOriginsByIssuer: [:])
+
+  static func listRowLogo(_ model: DocumentTabUIModel) -> URL? {
+    guard case .remoteImage(let url, _) = model.listItem.leadingContent else { return nil }
+    return url
   }
 }

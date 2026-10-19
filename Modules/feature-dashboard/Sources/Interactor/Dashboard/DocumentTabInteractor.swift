@@ -211,6 +211,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
 
     let categories = await self.walletKitController.getDocumentCategories()
     let revocationStatuses = (try? await self.walletKitController.fetchRevokedDocumentStatuses()) ?? [:]
+    let issuerLogoOrigins = await walletKitController.issuerLogoOrigins()
 
     for deferred in await walletKitController.fetchDeferredDocuments() {
 
@@ -218,7 +219,6 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
 
       do {
         let document = try await walletKitController.requestDeferredIssuance(with: deferred)
-        let issuerLogoOrigins = await walletKitController.issuerLogoOrigins()
         if (document is DeferrredDocument) == false {
           issued.append(
             document.transformToDocumentTabUi(
@@ -441,11 +441,11 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     }
 
     var filterableItems: [FilterableItem] = []
+    let issuerLogoOrigins = await walletKitController.issuerLogoOrigins()
     for document in documents {
       let revocationStatus = revocationStatuses[document.id]
 
       let documentIsLowOnCredentials = await walletKitController.isDocumentLowOnCredentials(document: document)
-      let issuerLogoOrigins = await walletKitController.issuerLogoOrigins()
       let documentPayload = await document.transformToDocumentTabUi(
         categories: self.walletKitController.getDocumentCategories(),
         revocationStatus: revocationStatus,

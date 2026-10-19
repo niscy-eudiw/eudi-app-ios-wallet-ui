@@ -62,7 +62,8 @@ final actor DocumentDetailsInteractorImpl: DocumentDetailsInteractor {
     let issuerDetailsCard = document?.transformToIssuerDetailsCardDataUi(
       revocationStatus: revocationStatus,
       hasStatusRefreshFailed: hasStatusRefreshFailed,
-      hasReIssuanceFailed: hasReIssuanceFailed
+      hasReIssuanceFailed: hasReIssuanceFailed,
+      issuerLogoOrigins: issuerLogoOrigins
     )
 
     if isBatchCounterEnabled() {
