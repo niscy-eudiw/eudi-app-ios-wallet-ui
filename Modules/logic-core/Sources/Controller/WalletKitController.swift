@@ -92,7 +92,7 @@ public protocol WalletKitController: Sendable {
   /// no deleted row stays readable on disk.
   func deleteAllRecords() async throws
   /// Changes whenever the transaction history is written or deleted, so a reader can tell whether it changed.
-  func fetchTransactionLogRevision() async -> Int
+  func fetchTransactionLogRevision() async -> String
   func deleteTransactionLog(with id: String) async throws
   func fetchPresentationActions(parentPresentationId: String) async throws -> [TransactionLogDomain]
   func recordDataDeletionRequest(for presentation: TransactionLogDomain.Presentation, contactUrl: URL) async throws
@@ -838,7 +838,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     try await storageEraseController.eraseStore()
   }
 
-  func fetchTransactionLogRevision() async -> Int {
+  func fetchTransactionLogRevision() async -> String {
     await transactionLogStorageController.retrieveRevision()
   }
 

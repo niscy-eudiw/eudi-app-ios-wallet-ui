@@ -35,7 +35,7 @@ final class TestTransactionTabInteractor: EudiTest {
       walletKitController: walletKitController,
       filterValidator: filterValidator
     )
-    stubTransactionLogRevision(0)
+    stubTransactionLogRevision("revision-0")
   }
   
   override func tearDown() {
@@ -119,7 +119,7 @@ final class TestTransactionTabInteractor: EudiTest {
     stubFetchTransactions(with: [Constants.eudiRemoteVerifierMock])
 
     _ = try await interactor.fetchTransactions()
-    stubTransactionLogRevision(1)
+    stubTransactionLogRevision("revision-1")
     _ = try await interactor.fetchTransactions()
 
     verify(walletKitController, times(2)).fetchTransactionLogs()
@@ -458,7 +458,7 @@ private extension TestTransactionTabInteractor {
     ]
   )
   
-  func stubTransactionLogRevision(_ revision: Int) {
+  func stubTransactionLogRevision(_ revision: String) {
     stub(walletKitController) { mock in
       when(mock.fetchTransactionLogRevision()).thenReturn(revision)
     }

@@ -1845,7 +1845,7 @@ removing a document leaves its entries in place. Entries go only through the per
 confirms, through the factory reset, and through the cleanup that drops an entry the app can no longer
 decode (`WalletKitController.fetchTransactionLogs`), as on Android. The store is read in batches of 100
 (`SwiftDataServiceImpl`), and the transactions tab reads it again only when the history changed: every write
-or deletion, by the app or the ID Provider extension, advances `Prefs.Key.transactionLogRevision`
+or deletion, by the app or the ID Provider extension, stores a fresh token in `Prefs.Key.transactionLogRevision`
 (`TransactionLogStorageController.retrieveRevision()`), and `TransactionTabInteractorImpl.fetchTransactions()` reuses
 its last read while that value is unchanged. The tab still holds the whole history in memory, because its
 filters, search and date range work over all entries.
@@ -1855,7 +1855,11 @@ Production tasks:
 * Confirm which data is stored in SwiftData.
 * Confirm whether the store is in the shared App Group container.
 * Apply file protection where required.
-* Exclude sensitive files from backup if policy requires it.
+* The store's folder is excluded from iCloud backup and device-to-device transfer (`isExcludedFromBackup`, set by
+  `StorageConfigImpl.storeURL`), as the Android wallet's backup rules exclude its data. A restore to the same device
+  brings the documents back from the Keychain without their revocation records, so a blocked document is not
+  refused until the first check after login (about 30 seconds); a deployment that cannot accept this must keep the
+  records in the Keychain or block sharing until that check has run.
 * Define migration behavior before release.
 * Test upgrade from previous production builds.
 * Test extension access to shared data.

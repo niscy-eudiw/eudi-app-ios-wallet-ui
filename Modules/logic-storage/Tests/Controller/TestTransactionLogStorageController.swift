@@ -150,25 +150,27 @@ private struct StubStorageConfig: StorageConfig {
 }
 
 private final class StubPrefsController: PrefsController {
-  private let values = OSAllocatedUnfairLock<[String: Int]>(initialState: [:])
+  private let values = OSAllocatedUnfairLock<[String: String]>(initialState: [:])
 
   func setValue(_ value: Any?, forKey: Prefs.Key) {
-    let number = value as? Int
+    let text = value.map { "\($0)" }
     let name = forKey.rawValue
-    values.withLock { $0[name] = number }
+    values.withLock { $0[name] = text }
   }
 
-  func getString(forKey: Prefs.Key) -> String? { nil }
+  func getString(forKey: Prefs.Key) -> String? {
+    let name = forKey.rawValue
+    return values.withLock { $0[name] }
+  }
 
-  func getOptionalString(forKey: Prefs.Key) -> String { "" }
+  func getOptionalString(forKey: Prefs.Key) -> String { getString(forKey: forKey) ?? "" }
 
   func getBool(forKey: Prefs.Key) -> Bool { false }
 
   func getFloat(forKey: Prefs.Key) -> Float { 0 }
 
   func getInt(forKey: Prefs.Key) -> Int {
-    let name = forKey.rawValue
-    return values.withLock { $0[name] ?? 0 }
+    getString(forKey: forKey).flatMap { Int($0) } ?? 0
   }
 
   func remove(forKey: Prefs.Key) {

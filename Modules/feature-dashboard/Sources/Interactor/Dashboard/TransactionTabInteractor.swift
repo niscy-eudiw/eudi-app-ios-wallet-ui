@@ -62,7 +62,7 @@ final actor TransactionTabInteractorImpl: TransactionTabInteractor {
   private let filterValidator: FilterValidator
 
   private var filtersStateAsync: AsyncStream<TransactionFiltersPartialState>.Continuation?
-  private var lastRead: (revision: Int, state: TransactionsPartialState)?
+  private var lastRead: (revision: String, state: TransactionsPartialState)?
 
   init(
     walletKitController: WalletKitController,

@@ -9163,9 +9163,9 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func fetchTransactionLogRevision() async -> Int {
+    public func fetchTransactionLogRevision() async -> String {
         return await cuckoo_manager.call(
-            "fetchTransactionLogRevision() async -> Int",
+            "fetchTransactionLogRevision() async -> String",
             parameters: (),
             escapingParameters: (),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
@@ -9719,10 +9719,10 @@ return await cuckoo_manager.call(
             ))
         }
         
-        func fetchTransactionLogRevision() -> Cuckoo.ProtocolStubFunction<(), Int> {
+        func fetchTransactionLogRevision() -> Cuckoo.ProtocolStubFunction<(), String> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "fetchTransactionLogRevision() async -> Int",
+                method: "fetchTransactionLogRevision() async -> String",
                 parameterMatchers: matchers
             ))
         }
@@ -10357,10 +10357,10 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func fetchTransactionLogRevision() -> Cuckoo.__DoNotUse<(), Int> {
+        func fetchTransactionLogRevision() -> Cuckoo.__DoNotUse<(), String> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
-                "fetchTransactionLogRevision() async -> Int",
+                "fetchTransactionLogRevision() async -> String",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -10807,8 +10807,8 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
     
-    public func fetchTransactionLogRevision() async -> Int {
-        return DefaultValueRegistry.defaultValue(for: (Int).self)
+    public func fetchTransactionLogRevision() async -> String {
+        return DefaultValueRegistry.defaultValue(for: (String).self)
     }
     
     public func deleteTransactionLog(with p0: String) async throws {

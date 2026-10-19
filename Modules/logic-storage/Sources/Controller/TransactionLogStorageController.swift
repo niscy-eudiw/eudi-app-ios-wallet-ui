@@ -20,7 +20,7 @@ public protocol TransactionLogStorageController: StorageController where Value =
   func retrieve(parentPresentationId: String) async throws -> [TransactionLog]
   /// Changes whenever the history is written or deleted, here or in the ID Provider extension; equal values mean
   /// the history did not change between two reads.
-  func retrieveRevision() async -> Int
+  func retrieveRevision() async -> String
 }
 
 final actor TransactionLogStorageControllerImpl: TransactionLogStorageController {
@@ -33,8 +33,8 @@ final actor TransactionLogStorageControllerImpl: TransactionLogStorageController
     self.prefsController = prefsController
   }
 
-  func retrieveRevision() async -> Int {
-    prefsController.getInt(forKey: .transactionLogRevision)
+  func retrieveRevision() async -> String {
+    prefsController.getOptionalString(forKey: .transactionLogRevision)
   }
 
   func store(_ value: TransactionLog) async throws {
@@ -97,8 +97,9 @@ private extension TransactionLogStorageControllerImpl {
 
   /// Marks the history as changed, also after a write that failed part way, so the next read does not trust a
   /// stale copy.
+  /// A fresh token, not a count: the app and the ID Provider extension both write the history, and two processes that
+  /// each add one to the same count could store the same value.
   func recordChange() {
-    let revision = prefsController.getInt(forKey: .transactionLogRevision)
-    prefsController.setValue(revision &+ 1, forKey: .transactionLogRevision)
+    prefsController.setValue(UUID().uuidString, forKey: .transactionLogRevision)
   }
 }
