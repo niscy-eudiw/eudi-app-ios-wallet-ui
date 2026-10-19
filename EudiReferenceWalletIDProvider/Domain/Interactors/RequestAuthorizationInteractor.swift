@@ -26,7 +26,8 @@ protocol RequestAuthorizationInteractor: Sendable {
   ) async throws -> AuthorizationUIModel
 
   func acceptVerification(
-    context: ISO18013MobileDocumentRequestContext
+    context: ISO18013MobileDocumentRequestContext,
+    selection: DocumentProviderSelection
   ) async throws
 }
 
@@ -84,28 +85,40 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
       },
       isRelyingPartyVerified: false,
       requestsUserImage: requestsUserImage,
-      authorityKeyIdentifier: authorityKeyIdentifier
+      authorityKeyIdentifier: authorityKeyIdentifier,
+      selection: DocumentProviderSelection(documents: docClaimsModels)
     )
   }
 
+  /// Sends only what the sheet showed (`selection`), after checking those documents' records again. The request is
+  /// not validated a second time, since each validation starts a new history entry; the entry written when the
+  /// request was loaded is completed once the system has taken the response, or given the reason it was not.
   func acceptVerification(
-    context: ISO18013MobileDocumentRequestContext
+    context: ISO18013MobileDocumentRequestContext,
+    selection: DocumentProviderSelection
   ) async throws {
-    let (docClaimsModels, _, _, _) = try await dcApiHandler.validateRequest(context.request)
-    try await checkRequest(documentIds: docClaimsModels.map(\.id))
-    try await context.sendResponse { rawRequest in
+    do {
+      try await checkRequest(documentIds: Array(selection.documentIds))
+      try await context.sendResponse { rawRequest in
 
-      try await self.dcApiHandler.validateConsistency(
-        request: context.request,
-        rawRequest: rawRequest
-      )
+        try await self.dcApiHandler.validateConsistency(
+          request: context.request,
+          rawRequest: rawRequest
+        )
 
-      let responseData = try await self.dcApiHandler.buildAndEncryptResponse(
-        rawRequest: rawRequest,
-        originUrl: context.requestingWebsiteOrigin?.absoluteString
-      )
+        let responseData = try await self.dcApiHandler.buildAndEncryptResponse(
+          rawRequest: rawRequest,
+          originUrl: context.requestingWebsiteOrigin?.absoluteString,
+          selectedDocumentIds: selection.documentIds,
+          selectedClaimsByDocumentId: selection.claimsByDocumentId
+        )
 
-      return ISO18013MobileDocumentResponse(responseData: responseData)
+        return ISO18013MobileDocumentResponse(responseData: responseData)
+      }
+      await dcApiHandler.completeTransaction()
+    } catch {
+      await dcApiHandler.completeTransaction(reasonOfNoncompletion: error.localizedDescription)
+      throw error
     }
   }
 

@@ -15,6 +15,7 @@
  */
 import logic_ui
 import logic_resources
+import logic_core
 
 struct AuthorizationUIModel: Sendable {
   let issuerName: String
@@ -25,6 +26,8 @@ struct AuthorizationUIModel: Sendable {
   let requestsUserImage: Bool
   /// The authority key identifier of the reader certificate's root, kept for a trust-list lookup.
   let authorityKeyIdentifier: [UInt8]
+  /// What the sheet shows, which is all the response may contain.
+  let selection: DocumentProviderSelection
 }
 
 struct AuthorizationUIDocument: Sendable, Identifiable {

@@ -16,6 +16,7 @@
 import IdentityDocumentServices
 import IdentityDocumentServicesUI
 import feature_common
+import logic_core
 import Observation
 
 @Copyable
@@ -39,6 +40,7 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
   var isUserImageConfirmationShowing: Bool = false
 
   private var isRequestAuthorized: Bool = false
+  private var selection: DocumentProviderSelection?
 
   private var context: ISO18013MobileDocumentRequestContext?
   private var interactor: RequestAuthorizationInteractor = DIGraph.shared.resolver.force(
@@ -102,6 +104,7 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
       }
 
       let uiModel = try await interactor.loadRequestData(context: context)
+      selection = uiModel.selection
 
       setState {
         $0.copy(
@@ -143,11 +146,11 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
     }
 
     do {
-      guard let context else {
+      guard let context, let selection else {
         return
       }
 
-      try await interactor.acceptVerification(context: context)
+      try await interactor.acceptVerification(context: context, selection: selection)
     } catch {
       setState {
         $0.copy(
