@@ -18,7 +18,8 @@ import logic_business
 
 /// The PIN lockout, kept in the Keychain. Its time is the monotonic clock and the boot it was read in
 /// (`MonotonicClock`), not the wall clock, so moving the device's date forward does not end a lockout early, and a
-/// restart begins the lockout again in full. A counter that cannot be read counts as a lockout of the longest
+/// restart begins the lockout again in full. A lockout that has run its course is cleared, keeping its level, so a
+/// later restart does not begin it again. A counter that cannot be read counts as a lockout of the longest
 /// configured duration, so a failed read never gives extra attempts.
 final class KeychainPinThrottleProvider: PinThrottleProvider {
 
@@ -59,7 +60,11 @@ final class KeychainPinThrottleProvider: PinThrottleProvider {
     }
 
     let elapsed = current - startedAt
-    return elapsed >= duration ? .idle : .active(remaining: duration - elapsed, total: duration)
+    guard elapsed < duration else {
+      clearLockout()
+      return .idle
+    }
+    return .active(remaining: duration - elapsed, total: duration)
   }
 
   func recordFailure() -> PinLockoutState {
@@ -95,9 +100,7 @@ final class KeychainPinThrottleProvider: PinThrottleProvider {
   func recordSuccess() {
     setInt(0, forKey: .pinFailedAttempts)
     setInt(0, forKey: .pinLockoutLevel)
-    setDouble(0, forKey: .pinLockoutStartedAtUptime)
-    setDouble(0, forKey: .pinLockoutDuration)
-    keyChainController.removeObject(key: KeyIdentifier.pinLockoutBootSession)
+    clearLockout()
     keyChainController.removeObject(key: KeyIdentifier.pinLockoutStartedAt)
     keyChainController.removeObject(key: KeyIdentifier.pinLockoutEndsAt)
   }
@@ -126,6 +129,12 @@ private extension KeychainPinThrottleProvider {
     setDouble(now(), forKey: .pinLockoutStartedAtUptime)
     setDouble(duration, forKey: .pinLockoutDuration)
     keyChainController.storeValue(key: KeyIdentifier.pinLockoutBootSession, value: bootSessionIdentifier())
+  }
+
+  func clearLockout() {
+    setDouble(0, forKey: .pinLockoutStartedAtUptime)
+    setDouble(0, forKey: .pinLockoutDuration)
+    keyChainController.removeObject(key: KeyIdentifier.pinLockoutBootSession)
   }
 
   func unreadableStateLockout() -> PinLockoutState {

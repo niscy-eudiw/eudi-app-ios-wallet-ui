@@ -1827,6 +1827,8 @@ Default policy (`AuthenticationConfigImpl`):
 | Device reboot | The lockout begins again in full: the monotonic clock restarts at boot. |
 | Device date or time changed | No effect: the lockout runs on the monotonic clock, so moving the date forward does not end it early. |
 | Keychain read fails | Counts as a lockout of the longest configured duration, never as extra attempts. |
+| Lockout over, then device reboot | No new lockout: an ended lockout is cleared, its level kept. |
+| App update during a lockout | Ends it: the wall-clock values of earlier builds are not read; the level is kept. |
 | App reinstall | The state survives the uninstall, as the Keychain does; the first launch after a reinstall deletes it with the PIN and every document (`StartupInteractor.manageStorageForFirstRun()`). Require re-enrollment unless secure backup/recovery is explicitly implemented. |
 
 Lockout counters are persisted, not just held in UI state. The PIN input is disabled in both the login screen (`BiometryViewModel`) and the change-PIN validation step (`QuickPinViewModel`) while locked. The biometric icon on the login screen stays enabled during PIN lockout and acts as an escape hatch — a successful biometric authentication clears the throttle.

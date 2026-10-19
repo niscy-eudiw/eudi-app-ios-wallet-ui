@@ -73,15 +73,27 @@ final class TestKeychainPinThrottleProvider: EudiTest {
     XCTAssertEqual(provider.getState(), .idle)
   }
 
+  /// The clock stays past the lockout's start, so that only the change of boot can restart it.
   func testGetState_WhenTheDeviceRestartedDuringALockout_ThenTheLockoutBeginsAgainInFull() {
     for _ in 0..<3 { _ = provider.recordFailure() }
     advance(by: 20)
     bootSession.withLock { $0 = "boot-2" }
-    clock.withLock { $0 = 5 }
 
     XCTAssertEqual(provider.getState(), .active(remaining: 30, total: 30))
     advance(by: 10)
     XCTAssertEqual(provider.getState(), .active(remaining: 20, total: 30))
+  }
+
+  func testGetState_WhenTheDeviceRestartsAfterTheLockoutRanItsCourse_ThenNoLockoutBegins() {
+    for _ in 0..<3 { _ = provider.recordFailure() }
+    advance(by: 30)
+    XCTAssertEqual(provider.getState(), .idle)
+
+    bootSession.withLock { $0 = "boot-2" }
+    clock.withLock { $0 = 5 }
+
+    XCTAssertEqual(provider.getState(), .idle)
+    XCTAssertEqual(storedValues[KeychainPinThrottleProvider.KeyIdentifier.pinLockoutLevel.rawValue], "1")
   }
 
   func testGetState_WhenTheClockIsBeforeTheLockoutStarted_ThenTheLockoutBeginsAgainInFull() {
