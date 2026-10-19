@@ -47,6 +47,7 @@ final class TestDeepLinkController: EudiTest {
       walletKitController: walletKitController,
       rqesCallbackUris: ["rqes://oauth/callback"]
     )
+    controller.setDocumentsLoaded()
   }
   
   override func tearDown() {
@@ -444,6 +445,26 @@ final class TestDeepLinkController: EudiTest {
 
     // Then: the function reached the .rqes case and dispatched the resume Task
     XCTAssertNil(controller.getPendingDeepLinkAction())
+  }
+
+  func testHandleDeepLinkAction_WhenTheDashboardHasNotLoadedTheDocuments_ThenKeepsTheLinkForIt() async {
+    let controller = DeepLinkControllerImpl(
+      prefsController: prefsController,
+      urlSchemaController: urlSchemaController,
+      walletKitController: walletKitController,
+      rqesCallbackUris: ["rqes://oauth/callback"]
+    )
+    stub(routerHost) { mock in
+      when(mock.userIsLoggedInWithDocuments()).thenReturn(true)
+      when(mock.userIsLoggedInWithNoDocuments()).thenReturn(false)
+      when(mock.isScreenForeground(with: any())).thenReturn(true)
+    }
+
+    await controller.handleDeepLinkAction(routerHost: routerHost, deepLinkExecutable: Self.mockedOpenId4VPDeepLinkAction)
+
+    XCTAssertNotNil(controller.getPendingDeepLinkAction())
+    verify(walletKitController, never()).startSameDevicePresentation(deepLink: any())
+    verify(routerHost, never()).push(with: any())
   }
 
   func testRemoveCachedDeepLinkURL_WhenALinkIsKept_ThenForgetsIt() {

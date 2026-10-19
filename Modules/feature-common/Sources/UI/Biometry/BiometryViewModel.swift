@@ -154,11 +154,13 @@ final class BiometryViewModel<Router: RouterHost>: ViewModel<Router, BiometrySta
     Task { await interactor.openSettings {} }
   }
 
+  /// A navigation held while the scene was not active runs once when it becomes active, then is cleared, so a later
+  /// phase change cannot repeat a success, as the ID Provider extension's two-step login would read it.
   func setPhase(with phase: ScenePhase) {
     setState { $0.copy(scenePhase: phase) }
-    if let pending = viewState.pendingNavigation {
-      doNavigation(navigationType: pending)
-    }
+    guard phase == .active, let pending = viewState.pendingNavigation else { return }
+    setState { $0.copy(pendingNavigation: nil) }
+    doNavigation(navigationType: pending)
   }
 
   private func subscribeToPinInput() {

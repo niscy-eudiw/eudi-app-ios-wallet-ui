@@ -148,10 +148,15 @@ final class RouterHostImpl: RouterHost {
     restartAtStartup()
   }
 
+  /// The path is cleared without animation, so the last screen does not slide away over start-up in view, unblurred.
   public func restartAtStartup() {
     UIApplication.shared.currentUIWindow?.rootViewController?.dismiss(animated: false)
-    queueNavigation.removeAll()
-    pathElements.removeAll()
+    var transaction = Transaction()
+    transaction.disablesAnimations = true
+    withTransaction(transaction) {
+      queueNavigation.removeAll()
+      pathElements.removeAll()
+    }
     onNavigationFollowUp(with: rootRoute)
   }
 

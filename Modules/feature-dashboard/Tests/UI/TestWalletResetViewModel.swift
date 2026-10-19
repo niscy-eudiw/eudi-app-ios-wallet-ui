@@ -43,7 +43,7 @@ final class TestWalletResetViewModel: EudiTest {
     let error = fixture.viewModel.viewState.error
     XCTAssertNotNil(error?.action)
     XCTAssertFalse(fixture.viewModel.viewState.isLoading)
-    verify(fixture.deepLinkController, never()).removeCachedDeepLinkURL()
+    verify(fixture.deepLinkController).removeCachedDeepLinkURL()
     verify(fixture.router, never()).restartAtStartup()
     error?.cancelAction()
     verify(fixture.router).popTo(with: any())

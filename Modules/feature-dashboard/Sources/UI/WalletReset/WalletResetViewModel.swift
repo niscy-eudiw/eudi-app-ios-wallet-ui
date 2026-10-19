@@ -44,12 +44,13 @@ final class WalletResetViewModel<Router: RouterHost>: ViewModel<Router, WalletRe
     super.init(router: router, initialState: .init(isLoading: true, error: nil))
   }
 
-  /// Runs the reset; the screen calls it when it appears, and the error's Try again calls it again.
+  /// Runs the reset; the screen calls it when it appears, and the error's Try again calls it again. The link kept for
+  /// after login is forgotten as the reset starts, as on Android, whatever its outcome.
   func reset() async {
     setState { $0.copy(isLoading: true, error: nil) }
+    deepLinkController.removeCachedDeepLinkURL()
     switch await interactor.resetWallet() {
     case .success:
-      deepLinkController.removeCachedDeepLinkURL()
       router.restartAtStartup()
     case .failure:
       setState {

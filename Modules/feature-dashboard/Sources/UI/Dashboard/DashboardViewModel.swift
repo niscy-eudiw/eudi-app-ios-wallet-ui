@@ -147,6 +147,7 @@ final class DashboardViewModel<Router: RouterHost>: ViewModel<Router, DashboardS
     onResume()
     if viewState.homeTab == nil {
       await interactor.loadDocuments()
+      deepLinkController.setDocumentsLoaded()
       createTabs(
         homeTabInteractor: homeTabInteractor,
         documentTabInteractor: documentTabInteractor,

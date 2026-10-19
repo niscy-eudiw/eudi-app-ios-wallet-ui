@@ -34,6 +34,9 @@ public protocol DeepLinkController: Sendable {
   func getPendingDeepLinkAction() -> DeepLink.Executable?
   func cacheDeepLinkURL(url: URL)
   func removeCachedDeepLinkURL()
+  /// Called by the dashboard once its first load of the documents in this process has finished. Until then a link
+  /// for the dashboard is kept, so a request does not open against documents not yet loaded.
+  func setDocumentsLoaded()
 }
 
 final class DeepLinkControllerImpl: DeepLinkController {
@@ -41,6 +44,7 @@ final class DeepLinkControllerImpl: DeepLinkController {
   private let urlSchemaController: UrlSchemaController
   private let walletKitController: WalletKitController
   private let pendingLink = OSAllocatedUnfairLock<URL?>(initialState: nil)
+  private let areDocumentsLoaded = OSAllocatedUnfairLock(initialState: false)
   private let rqesCallbacks: [URLComponents]
 
   /// Removes a link an earlier build kept in `UserDefaults`, so that it does not outlive its process.
@@ -103,7 +107,8 @@ final class DeepLinkControllerImpl: DeepLinkController {
     let returnScreen = screenToReturnTo
 
     guard
-      returnScreen == nil && (routerHost.userIsLoggedInWithDocuments() || isVciExecutable)
+      returnScreen == nil && (routerHost.userIsLoggedInWithDocuments() || isVciExecutable),
+      areDocumentsLoaded.withLock({ $0 }) || isVciExecutable
     else {
       if let url = deepLinkExecutable.link.url {
         cacheDeepLinkURL(url: url)
@@ -174,5 +179,9 @@ final class DeepLinkControllerImpl: DeepLinkController {
 
   public func removeCachedDeepLinkURL() {
     pendingLink.withLock { $0 = nil }
+  }
+
+  public func setDocumentsLoaded() {
+    areDocumentsLoaded.withLock { $0 = true }
   }
 }

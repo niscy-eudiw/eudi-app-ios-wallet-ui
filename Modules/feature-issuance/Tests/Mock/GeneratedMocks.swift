@@ -14681,6 +14681,16 @@ public class MockDeepLinkController: DeepLinkController, Cuckoo.ProtocolMock, @u
         )
     }
 
+    public func setDocumentsLoaded() {
+        return cuckoo_manager.call(
+            "setDocumentsLoaded()",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.setDocumentsLoaded()
+        )
+    }
+
     public struct __StubbingProxy_DeepLinkController: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
@@ -14724,6 +14734,14 @@ public class MockDeepLinkController: DeepLinkController, Cuckoo.ProtocolMock, @u
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockDeepLinkController.self,
                 method: "removeCachedDeepLinkURL()",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func setDocumentsLoaded() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockDeepLinkController.self,
+                method: "setDocumentsLoaded()",
                 parameterMatchers: matchers
             ))
         }
@@ -14799,6 +14817,18 @@ public class MockDeepLinkController: DeepLinkController, Cuckoo.ProtocolMock, @u
                 sourceLocation: sourceLocation
             )
         }
+        
+        
+        @discardableResult
+        func setDocumentsLoaded() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "setDocumentsLoaded()",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
     }
 }
 
@@ -14823,6 +14853,10 @@ public class DeepLinkControllerStub:DeepLinkController, @unchecked Sendable {
     }
     
     public func removeCachedDeepLinkURL() {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func setDocumentsLoaded() {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
     }
 }
