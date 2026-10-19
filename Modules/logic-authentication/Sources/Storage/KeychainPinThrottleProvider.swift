@@ -79,6 +79,7 @@ final class KeychainPinThrottleProvider: PinThrottleProvider {
 
     if newAttempts < maxAttempts {
       setInt(newAttempts, forKey: .pinFailedAttempts)
+      clearLockoutIfEnded()
       return .idle
     }
 
@@ -129,6 +130,21 @@ private extension KeychainPinThrottleProvider {
     setDouble(now(), forKey: .pinLockoutStartedAtUptime)
     setDouble(duration, forKey: .pinLockoutDuration)
     keyChainController.storeValue(key: KeyIdentifier.pinLockoutBootSession, value: bootSessionIdentifier())
+  }
+
+  /// Clears a lockout that has run its course in this boot, so that a later restart does not begin it again.
+  func clearLockoutIfEnded() {
+    guard
+      let startedAt = try? readDouble(forKey: .pinLockoutStartedAtUptime),
+      let duration = try? readDouble(forKey: .pinLockoutDuration),
+      let bootSession = try? readString(forKey: .pinLockoutBootSession),
+      startedAt > 0,
+      bootSession == bootSessionIdentifier()
+    else { return }
+    let current = now()
+    if current >= startedAt, current - startedAt >= duration {
+      clearLockout()
+    }
   }
 
   func clearLockout() {

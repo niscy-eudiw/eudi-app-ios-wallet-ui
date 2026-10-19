@@ -96,6 +96,18 @@ final class TestKeychainPinThrottleProvider: EudiTest {
     XCTAssertEqual(storedValues[KeychainPinThrottleProvider.KeyIdentifier.pinLockoutLevel.rawValue], "1")
   }
 
+  /// No screen read the state after the countdown; the next wrong PIN clears it.
+  func testRecordFailure_WhenALockoutEndedUnseen_ThenARestartBeginsNoLockout() {
+    for _ in 0..<3 { _ = provider.recordFailure() }
+    advance(by: 30)
+
+    XCTAssertEqual(provider.recordFailure(), .idle)
+    bootSession.withLock { $0 = "boot-2" }
+    clock.withLock { $0 = 5 }
+
+    XCTAssertEqual(provider.getState(), .idle)
+  }
+
   func testGetState_WhenTheClockIsBeforeTheLockoutStarted_ThenTheLockoutBeginsAgainInFull() {
     for _ in 0..<3 { _ = provider.recordFailure() }
     clock.withLock { $0 = 10 }
