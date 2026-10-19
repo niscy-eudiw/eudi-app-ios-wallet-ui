@@ -378,6 +378,34 @@ final class TestQuickPinInteractor: EudiTest {
     }
   }
 
+  func testUpdatePin_WhenAPasscodeIsRequiredAndMissing_ThenStillStoresTheNewPin() async {
+    stubDeviceLock(isSecure: false, isRequired: true)
+    stub(pinStorageController) { mock in
+      when(mock.setPin(with: any())).thenDoNothing()
+    }
+
+    let state = await interactor.updatePin(newPin: "2468")
+
+    guard case .success = state else {
+      return XCTFail("Wrong state \(state)")
+    }
+    verify(pinStorageController).setPin(with: "2468")
+  }
+
+  func testUpdatePin_WhenTheNewPinIsEasyToGuess_ThenRefusesIt() async {
+    stub(pinStorageController) { mock in
+      when(mock.setPin(with: any())).thenDoNothing()
+    }
+
+    let state = await interactor.updatePin(newPin: "111111")
+
+    guard case .failure(let error) = state else {
+      return XCTFail("Wrong state \(state)")
+    }
+    XCTAssertEqual(error.localizedDescription, AuthenticationError.quickPinWeak.localizedDescription)
+    verify(pinStorageController, never()).setPin(with: any())
+  }
+
   private func stubDeviceLock(isSecure: Bool, isRequired: Bool) {
     stub(deviceLockController) { mock in
       when(mock.isDeviceSecure()).thenReturn(isSecure)

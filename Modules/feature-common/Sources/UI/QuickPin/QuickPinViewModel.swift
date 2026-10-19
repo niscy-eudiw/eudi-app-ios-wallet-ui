@@ -149,6 +149,13 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
     lockoutTickTask?.cancel()
   }
 
+  /// Checks the passcode again when the user comes back, for example from the device settings, as Android does on
+  /// every resume, so the notice goes once a passcode is set.
+  func setPhase(with phase: ScenePhase) async {
+    guard phase == .active, viewState.config.isSetFlow else { return }
+    await refreshDeviceLockState()
+  }
+
   func initialize() async {
     if viewState.config.isSetFlow {
       await refreshDeviceLockState()
@@ -334,8 +341,12 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
     await onSuccess()
   }
 
+  /// Setting a PIN needs the passcode when `requireDeviceSecure` is on; changing it does not, as on Android.
   private func onSuccess() async {
-    switch await interactor.setPin(newPin: uiPinInputField) {
+    let result = viewState.config.isUpdateFlow
+    ? await interactor.updatePin(newPin: uiPinInputField)
+    : await interactor.setPin(newPin: uiPinInputField)
+    switch result {
     case .success:
       break
     case .failure(let error):

@@ -51,10 +51,11 @@ final class KeychainPinStorageProvider: PinStorageProvider {
   /// Writes the salt, hash and iteration count together. If a write fails, the previous record is
   /// put back, or the partial one removed, and the error is thrown. The record left behind is the
   /// previous one or none, never a mix of the two.
-  /// - Throws: `KeyChainError.readFailed` before anything is written, or `KeyChainError.writeFailed`.
+  /// - Throws: `AuthenticationError.quickPinInvalid` for an empty PIN, which is never stored;
+  ///   `KeyChainError.readFailed` before anything is written, or `KeyChainError.writeFailed`.
   func setPin(with pin: String) throws {
 
-    guard !pin.isEmpty else { return }
+    guard !pin.isEmpty else { throw AuthenticationError.quickPinInvalid }
 
     let previousSalt = try keyChainController.fetchData(key: KeyIdentifier.devicePinSalt)
     let previousHash = try keyChainController.fetchData(key: KeyIdentifier.devicePinHash)

@@ -1774,8 +1774,11 @@ The start-up gate fails closed:
 Production tasks:
 
 * Confirm PIN length, complexity, and retry UX. PINs that are easy to guess are refused (one digit repeated,
-  ascending or descending runs, `AuthenticationConfig.commonPins`); decide whether setup needs a device passcode
-  (`requireDeviceSecure`, off by default, which only warns). See CONFIGURATION.
+  ascending or descending runs, `AuthenticationConfig.commonPins`), and an empty PIN is never stored; decide whether
+  setup needs a device passcode (`requireDeviceSecure`, off by default, which only warns). Changing the PIN of a
+  set-up wallet does not need the passcode, as on Android (`QuickPinInteractor.updatePin`). The setup screen checks
+  the passcode again whenever the app comes back, and PIN entry stays disabled while a passcode is required. See
+  CONFIGURATION.
 * Consider binding PIN verification to a hardware-backed key operation (Secure Enclave) for additional defense in depth.
 * Benchmark PBKDF2 iterations on the slowest supported device.
 * Consider memory-hard KDF options if supported by your platform/security policy.
@@ -1793,10 +1796,14 @@ Persisted state keys (`KeychainPinThrottleProvider.KeyIdentifier`):
 
 * `pinFailedAttempts` — current consecutive failure counter (`Int`, stored as `String`).
 * `pinLockoutLevel` — monotonic counter indexing `AuthenticationConfig.pinLockoutDurations` (`Int`, stored as `String`).
-* `pinLockoutStartedAt` — wall-clock timestamp (`Date().timeIntervalSince1970`) when the current lockout began. Used for clock-rollback detection.
-* `pinLockoutEndsAt` — wall-clock timestamp when the current lockout ends.
+* `pinLockoutStartedAtUptime` — the monotonic clock (`MonotonicClock.now()`, which counts sleep and ignores the date
+  and time settings) when the current lockout began.
+* `pinLockoutDuration` — the length of the current lockout, in seconds.
+* `pinLockoutBootSession` — the boot the lockout began in (`MonotonicClock.bootSessionIdentifier`).
+* `pinLockoutStartedAt`, `pinLockoutEndsAt` — wall-clock values of earlier builds, removed when the attempts are
+  cleared.
 
-The values are stored as Strings in the Keychain (e.g. `"3"`, `"1762345678.123"`). The Keychain item accessibility class follows `KeyChainController`'s default (`.whenUnlockedThisDeviceOnly`): the values are readable only while the device is unlocked, and a backup can restore them only to the same device; see [Keychain](#keychain).
+The values are stored as Strings in the Keychain (e.g. `"3"`, `"812345.123"`). The Keychain item accessibility class follows `KeyChainController`'s default (`.whenUnlockedThisDeviceOnly`): the values are readable only while the device is unlocked, and a backup can restore them only to the same device; see [Keychain](#keychain).
 
 Default policy (`AuthenticationConfigImpl`):
 
@@ -1807,8 +1814,10 @@ Default policy (`AuthenticationConfigImpl`):
 | 3 more failures after that | Third lockout: 5 minutes. |
 | Each subsequent batch of 3 failures | 5 minutes (last list entry reused). |
 | Successful PIN or biometric authentication | Counters and lockout level reset. |
-| App kill or device reboot | Lockout window persists (wall-clock based). |
-| Device clock rolled back | Detected via stored start timestamp; user remains locked for the full duration. |
+| App kill | Lockout window persists. |
+| Device reboot | The lockout begins again in full: the monotonic clock restarts at boot. |
+| Device date or time changed | No effect: the lockout runs on the monotonic clock, so moving the date forward does not end it early. |
+| Keychain read fails | Counts as a lockout of the longest configured duration, never as extra attempts. |
 | App reinstall | The state survives the uninstall, as the Keychain does; the first launch after a reinstall deletes it with the PIN and every document (`StartupInteractor.manageStorageForFirstRun()`). Require re-enrollment unless secure backup/recovery is explicitly implemented. |
 
 Lockout counters are persisted, not just held in UI state. The PIN input is disabled in both the login screen (`BiometryViewModel`) and the change-PIN validation step (`QuickPinViewModel`) while locked. The biometric icon on the login screen stays enabled during PIN lockout and acts as an escape hatch — a successful biometric authentication clears the throttle.
@@ -1820,7 +1829,6 @@ Production gaps to address:
 * Add server-side risk signals; the current lockout is purely client-side and is wiped by reinstall.
 * Add telemetry for lockout events without logging PIN values.
 * Combine with App Attest / DeviceCheck / RASP and server-side risk checks where applicable (see [App Attest, DeviceCheck, And App Hardening](#app-attest-devicecheck-and-app-hardening)).
-* Clock-rollback mitigation is best-effort; a fully tampered device with reset clock could still bypass parts of the wall-clock window.
 
 ### SwiftData Store
 

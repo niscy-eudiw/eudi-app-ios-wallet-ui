@@ -103,8 +103,12 @@ final class TestKeychainPinStorageProvider: EudiTest {
     XCTAssertFalse(try provider.hasPin())
   }
 
-  func testSetPin_WhenEmptyString_ThenNothingStored() throws {
-    try provider.setPin(with: "")
+  func testSetPin_WhenEmptyString_ThenThrowsAndStoresNothing() {
+    XCTAssertThrowsError(try provider.setPin(with: "")) { error in
+      guard case .quickPinInvalid? = error as? AuthenticationError else {
+        return XCTFail("Wrong error \(error)")
+      }
+    }
 
     XCTAssertNil(storedData[KeychainPinStorageProvider.KeyIdentifier.devicePinSalt.rawValue])
     XCTAssertNil(storedData[KeychainPinStorageProvider.KeyIdentifier.devicePinHash.rawValue])

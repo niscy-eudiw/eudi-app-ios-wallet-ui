@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
+import logic_business
 
 /// Whether the wallet is unlocked, and when it must lock again, with the Android wallet's rules.
 ///
@@ -86,13 +87,6 @@ public extension SessionController {
       await endExternalFlow()
       throw error
     }
-  }
-}
-
-/// Seconds on a monotonic clock that keeps counting while the device sleeps (`CLOCK_MONOTONIC`).
-enum MonotonicClock {
-  static func now() -> TimeInterval {
-    TimeInterval(clock_gettime_nsec_np(CLOCK_MONOTONIC)) / 1_000_000_000
   }
 }
 

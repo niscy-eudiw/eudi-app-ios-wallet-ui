@@ -2091,6 +2091,17 @@ import UIKit
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Model/MonotonicClock.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Model/Prefs.swift'
 
 import Cuckoo

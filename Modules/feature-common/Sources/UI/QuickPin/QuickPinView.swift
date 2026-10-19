@@ -19,6 +19,7 @@ import logic_resources
 
 struct QuickPinView<Router: RouterHost>: View {
 
+  @Environment(\.scenePhase) var scenePhase
   @State private var viewModel: QuickPinViewModel<Router>
 
   init(with viewModel: QuickPinViewModel<Router>) {
@@ -54,6 +55,9 @@ struct QuickPinView<Router: RouterHost>: View {
     )
     .task {
       await viewModel.initialize()
+    }
+    .onChange(of: scenePhase) {
+      Task { await viewModel.setPhase(with: scenePhase) }
     }
   }
 }
@@ -121,7 +125,7 @@ private struct QuickPinViewContainer: View {
         canFocus: .constant(!viewState.isLockedOut),
         shouldUseFullScreen: false,
         hasError: hasError,
-        isDisabled: viewState.isLockedOut
+        isDisabled: viewState.isLockedOut || viewState.isDeviceLockRequired
       )
 
       VSpacer.mediumSmall()

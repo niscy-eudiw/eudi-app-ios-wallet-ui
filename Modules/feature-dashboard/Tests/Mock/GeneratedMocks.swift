@@ -667,6 +667,16 @@ public class MockQuickPinInteractor: QuickPinInteractor, Cuckoo.ProtocolMock, @u
         )
     }
 
+    public func updatePin(newPin p0: String) async -> QuickPinPartialState {
+        return await cuckoo_manager.call(
+            "updatePin(newPin p0: String) async -> QuickPinPartialState",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.updatePin(newPin: p0)
+        )
+    }
+
     public func checkNewPin(_ p0: String) async -> QuickPinPartialState {
         return await cuckoo_manager.call(
             "checkNewPin(_ p0: String) async -> QuickPinPartialState",
@@ -777,6 +787,14 @@ public class MockQuickPinInteractor: QuickPinInteractor, Cuckoo.ProtocolMock, @u
             ))
         }
         
+        func updatePin<M1: Cuckoo.Matchable>(newPin p0: M1) -> Cuckoo.ProtocolStubFunction<(String), QuickPinPartialState> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockQuickPinInteractor.self,
+                method: "updatePin(newPin p0: String) async -> QuickPinPartialState",
+                parameterMatchers: matchers
+            ))
+        }
+        
         func checkNewPin<M1: Cuckoo.Matchable>(_ p0: M1) -> Cuckoo.ProtocolStubFunction<(String), QuickPinPartialState> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockQuickPinInteractor.self,
@@ -871,6 +889,18 @@ public class MockQuickPinInteractor: QuickPinInteractor, Cuckoo.ProtocolMock, @u
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
                 "setPin(newPin p0: String) async -> QuickPinPartialState",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func updatePin<M1: Cuckoo.Matchable>(newPin p0: M1) -> Cuckoo.__DoNotUse<(String), QuickPinPartialState> where M1.MatchedType == String {
+            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "updatePin(newPin p0: String) async -> QuickPinPartialState",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -998,6 +1028,10 @@ public class QuickPinInteractorStub:QuickPinInteractor, @unchecked Sendable {
 
     
     public func setPin(newPin p0: String) async -> QuickPinPartialState {
+        return DefaultValueRegistry.defaultValue(for: (QuickPinPartialState).self)
+    }
+    
+    public func updatePin(newPin p0: String) async -> QuickPinPartialState {
         return DefaultValueRegistry.defaultValue(for: (QuickPinPartialState).self)
     }
     
@@ -9532,6 +9566,21 @@ import Foundation
 
 import Cuckoo
 import UIKit
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-business/Sources/Model/MonotonicClock.swift'
+
+import Cuckoo
+import Foundation
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics

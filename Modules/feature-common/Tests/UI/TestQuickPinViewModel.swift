@@ -77,12 +77,12 @@ final class TestQuickPinViewModel: EudiTest {
   }
 
   @MainActor
-  func testPinChange_WhenTheNewPinIsSet_ThenDoesNotUnlock() async throws {
+  func testPinChange_WhenTheNewPinIsSet_ThenStoresItWithoutThePasscodeCheckAndDoesNotUnlock() async throws {
     let shown = expectation(description: "success screen")
     stub(interactor) { mock in
       when(mock.isPinValid(pin: any())).thenReturn(.success)
       when(mock.resetPinThrottle()).thenDoNothing()
-      when(mock.setPin(newPin: any())).thenReturn(.success)
+      when(mock.updatePin(newPin: any())).thenReturn(.success)
     }
     stub(router) { mock in
       when(mock.push(with: any())).then { _ in shown.fulfill() }
@@ -93,7 +93,27 @@ final class TestQuickPinViewModel: EudiTest {
     try await enterTwice("246813", in: viewModel)
 
     await fulfillment(of: [shown], timeout: 3)
+    verify(interactor).updatePin(newPin: "246813")
+    verify(interactor, never()).setPin(newPin: any())
     verify(interactor, never()).unlockSession()
+  }
+
+  @MainActor
+  func testSetPhase_WhenAPasscodeWasSetInTheDeviceSettings_ThenTheNoticeGoesAndEntryIsAllowed() async {
+    stub(interactor) { mock in
+      when(mock.getDeviceLockState()).thenReturn(.required)
+    }
+    let viewModel = makeViewModel(flow: .setWithoutActivation)
+    await viewModel.initialize()
+    XCTAssertTrue(viewModel.viewState.isDeviceLockRequired)
+
+    stub(interactor) { mock in
+      when(mock.getDeviceLockState()).thenReturn(.secure)
+    }
+    await viewModel.setPhase(with: .active)
+
+    XCTAssertNil(viewModel.viewState.deviceLockNotice)
+    XCTAssertFalse(viewModel.viewState.isDeviceLockRequired)
   }
 
   @MainActor

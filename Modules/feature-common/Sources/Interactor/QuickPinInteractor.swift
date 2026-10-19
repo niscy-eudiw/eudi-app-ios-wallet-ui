@@ -34,6 +34,9 @@ public protocol QuickPinInteractor: Sendable {
   /// Refuses a PIN that is easy to guess (`AuthenticationConfig.isWeakPin`), as `checkNewPin` does, and any PIN while
   /// a passcode is required and missing (`AuthenticationConfig.requireDeviceSecure`).
   func setPin(newPin: String) async -> QuickPinPartialState
+  /// Stores the new PIN of a set-up wallet, whose current PIN the update flow has checked (`isPinValid`). It refuses
+  /// a PIN that is easy to guess but not a missing passcode, as on Android.
+  func updatePin(newPin: String) async -> QuickPinPartialState
   /// Refuses a new PIN that is easy to guess with `AuthenticationError.quickPinWeak`, when it is entered.
   func checkNewPin(_ pin: String) async -> QuickPinPartialState
   func getDeviceLockState() async -> DeviceLockState
@@ -83,6 +86,10 @@ final actor QuickPinInteractorImpl: QuickPinInteractor {
       return .failure(AuthenticationError.deviceLockRequired)
     }
     return storePin(newPin)
+  }
+
+  public func updatePin(newPin: String) -> QuickPinPartialState {
+    storePin(newPin)
   }
 
   public func checkNewPin(_ pin: String) -> QuickPinPartialState {
