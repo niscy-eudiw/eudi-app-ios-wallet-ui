@@ -20,6 +20,7 @@ public protocol DeviceLockController: Sendable {
   func isDeviceSecure() -> Bool
 }
 
+/// Reads whether the device has a passcode from LocalAuthentication, with a new context for each check.
 final class DeviceLockControllerImpl: DeviceLockController {
 
   private let contextProvider: @Sendable () -> LAContext

@@ -107,6 +107,8 @@ final class SessionLockControllerImpl: SessionLockController {
     routerHost.requireLoginIfLocked()
   }
 
+  /// Checks the idle limit every `idleCheckInterval` while the app is active; the check is cancelled in the
+  /// background.
   @MainActor
   private func startIdleCheck() {
     idleCheck?.cancel()

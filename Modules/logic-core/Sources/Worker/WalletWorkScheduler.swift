@@ -32,6 +32,7 @@ public protocol WalletWorkScheduler: Sendable {
   func stop() async -> Bool
 }
 
+/// Starts and stops the revocation and re-issuance checks for the app, once per process (`.container`).
 final actor WalletWorkSchedulerImpl: WalletWorkScheduler {
 
   private let revocationWorkManager: RevocationWorkManager

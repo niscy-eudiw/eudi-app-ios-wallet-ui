@@ -24,6 +24,7 @@ public protocol RegistrationCheckProvider: Sendable {
   func removeCheck(for transactionIdentifier: String) async -> RecordedRegistrationCheck?
 }
 
+/// Keeps the outcomes in memory, one per transaction, for this process.
 final actor RegistrationCheckProviderImpl: RegistrationCheckProvider {
 
   private var checks: [String: RecordedRegistrationCheck] = [:]

@@ -167,6 +167,7 @@ final class DocumentDetailsViewModel<Router: RouterHost>: ViewModel<Router, Docu
     }
   }
 
+  /// Closes the refusal of a blocked document's re-issue and reads the document again, so its state is current.
   private func onReIssueBlockedClosed() {
     setState { $0.copy(error: nil) }
     Task { await fetchDocumentDetails() }

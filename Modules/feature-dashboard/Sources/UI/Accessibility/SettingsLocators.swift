@@ -15,6 +15,7 @@
  */
 import logic_ui
 
+/// Accessibility identifiers of the settings screen's reset confirmation, for UI tests.
 public enum SettingsLocators: String, LocatorType {
   case confirmDialogResetButton
   case confirmDialogCancelButton

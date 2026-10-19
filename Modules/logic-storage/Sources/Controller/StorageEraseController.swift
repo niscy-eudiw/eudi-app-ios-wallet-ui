@@ -20,6 +20,7 @@ public protocol StorageEraseController: Sendable {
   func eraseStore() async throws
 }
 
+/// Deletes all the data in the store through `SwiftDataService`, which then opens it again, empty.
 final actor StorageEraseControllerImpl: StorageEraseController {
 
   private let swiftDataService: SwiftDataService

@@ -231,6 +231,7 @@ private struct TransactionDataRowsBuilder<T: Sendable> {
     )
   }
 
+  /// One row for each value, all under `label`, with the index in each row's identifier.
   private mutating func addFields(itemId: String, label: LocalizableStringKey, values: [String]) {
     for (index, value) in values.enumerated() {
       addField(itemId: "\(itemId)-\(index)", label: label, value: value)

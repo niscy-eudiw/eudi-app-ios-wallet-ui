@@ -112,6 +112,7 @@ private extension WalletResetControllerImpl {
     }
   }
 
+  /// The reset's steps in order; it throws before deleting anything when the background checks are still running.
   func runSteps() async throws {
     guard await walletWorkScheduler.stop() else { throw WalletResetError.backgroundWorkStillRunning }
     try await deleteDocuments()

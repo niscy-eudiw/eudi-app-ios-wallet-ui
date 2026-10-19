@@ -196,6 +196,7 @@ final class SessionControllerImpl: SessionController {
     }
   }
 
+  /// Applies `change` to the covers and notes when the wallet first became covered, or how long it was covered.
   private func updateCover(_ change: () -> Void) {
     let wasCovered = isCovered
     change()

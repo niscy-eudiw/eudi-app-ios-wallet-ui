@@ -24,6 +24,7 @@ final actor SerialCheckRunner {
   private var runAgain = false
   private var idleWaiters: [CheckedContinuation<Void, Never>] = []
 
+  /// Runs `check`, or, while one runs, makes it run once more when it ends; returns at once in that case.
   func run(_ check: @Sendable () async -> Void) async {
     guard !isRunning else {
       runAgain = true

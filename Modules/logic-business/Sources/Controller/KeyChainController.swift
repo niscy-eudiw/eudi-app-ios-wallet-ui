@@ -171,6 +171,8 @@ private extension KeyChainControllerImpl {
     (error as? Status)?.rawValue ?? errSecInternalError
   }
 
+  /// Deletes every key item in the wallet's access group, WalletKit's DPoP keys among them; true when the delete
+  /// succeeded or found none.
   func clearKeys() -> Bool {
     var query: [String: Any] = [
       kSecClass as String: kSecClassKey,

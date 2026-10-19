@@ -62,6 +62,7 @@ final class UserInteractionControllerImpl: UserInteractionController {
     .store(in: &cancellables)
   }
 
+  /// Adds an `InteractionGestureRecognizer` to every window of the app's scenes that has none yet.
   private func attachToWindows() {
     let windows = UIApplication.shared.connectedScenes
       .compactMap { $0 as? UIWindowScene }
