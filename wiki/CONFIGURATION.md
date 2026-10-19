@@ -486,13 +486,13 @@ production values for every config surface listed below.
 | Configuration area | Source file | Production value to provide |
 | --- | --- | --- |
 | Build variant/type | `Wallet/Config/*.xcconfig`, `ConfigLogic.swift` | `BUILD_VARIANT = PROD`, `BUILD_TYPE = RELEASE` for production archives. |
-| Issuers | `WalletKitConfig.swift` | Production OpenID4VCI issuer URLs, client IDs, redirect URIs, PAR/DPoP policy, proof-type policy (`allowPlainJwtProof`), signed-metadata policy (`issuerMetadataPolicy`), registration check (`validateRegistrationCertificate`), PoP key options (`popKeyOptions`), and display order. |
+| Issuers | `WalletKitConfig.swift` | Production OpenID4VCI issuer URLs, client IDs, redirect URIs, PAR/DPoP policy, proof-type policy (`allowPlainJwtProof`), signed-metadata policy (`issuerMetadataPolicy`), registration check (`validateRegistrationCertificate`), PoP key options (`popKeyOptions`),, logo origins (`logoOrigins`) and display order. |
 | Wallet provider attestation | `WalletProviderAttestationConfig.swift` | Production Wallet Provider host used for wallet/key attestation. |
 | Reader trust anchors | `WalletKitConfig.swift`, certificate resources | Production IACA/reader/verifier trust anchors only. |
 | OpenID4VP | `WalletKitConfig.swift` | Approved client ID schemes, preregistered verifier entries where needed, the accepted transaction data types (`supportedTransactionDataTypes`), and the registration check (`validateRegistrationCertificate`). |
 | WalletKit storage/auth | `WalletKitConfig.swift`, `ConfigLogic.swift` | Production Keychain service/access group and `userAuthenticationRequired` decision. For LoA High PID and other high-assurance EAA/QEAA credentials, require strong local authentication and Keychain/Secure Enclave-backed protection unless an approved remote high-assurance key protection design replaces local key use. |
 | WalletKit attestation key options | `WalletKitConfig.swift` (`keyOptions`) | Curve, secure area, access protection, access control, and key purposes used when creating attestation/proof keys during issuance, reissuance, deferred issuance, and resume. For LoA High PID and other high-assurance EAA/QEAA credentials, require Secure Enclave (with `.P256`) plus appropriate `accessProtection`/`accessControl`, or an approved remote high-assurance key protection design. |
-| Session lock | `AuthenticationConfig.swift` in `logic-authentication`, `ConfigUiLogic.swift` in `logic-ui` | Confirm `backgroundLockTimeout`, `idleLockTimeout`, `protectedFlowLockTimeout` and the `protectedFlowRouteKeys` meet policy; see [Session lock configuration](#session-lock-configuration). |
+| Session lock | `AuthenticationConfig.swift` in `logic-authentication`, `ConfigUiLogic.swift` in `logic-ui` | Confirm `backgroundLockTimeout`, `idleLockTimeout` and `protectedFlowLockTimeout`, and keep `protectedFlowRouteKeys`, `loginRouteKeys` and `coveringScreenModules` in step with your screens; see [Session lock configuration](#session-lock-configuration). |
 | Pictures of the holder | `ConfigUiLogic.swift` in `logic-ui` | `userImageClaimKeys` lists the claims, by the last element of their path, that hold a picture of the holder (`portrait`, `picture`). A request for one shows a biometric-data notice, and Share (Accept in the ID Provider extension) asks for confirmation while it would be disclosed. Add the claims your credentials use. |
 | PIN rules | `AuthenticationConfig.swift` in `logic-authentication` | Confirm `commonPins` and whether setup needs a device passcode (`requireDeviceSecure`, off by default). |
 | PIN throttle policy | `AuthenticationConfig.swift` in `logic-authentication` | Confirm `maxFailedPinAttempts` and `pinLockoutDurations` meet policy. Decide what happens once the final lockout tier is reached (e.g. wipe, support flow, device-credential step-up). |
@@ -634,6 +634,9 @@ public extension DeepLink {
 }
 ```
 
+An `rqes` link opens only when its scheme, host and path match a signing service's `authFlowRedirectionURI` in
+`RQESConfig` (`DeepLinkControllerImpl.hasDeepLink(url:)`); change both together.
+
 A scheme belongs to an action when it contains the action's name with `_` written as `-`, so
 `custom_my_offer` finds `custom-my-offer`. `DeepLinkControllerImpl.handleDeepLinkAction` in
 `Modules/logic-ui/Sources/Controller/DeepLinkController.swift` switches over every `Action` case, so
@@ -736,8 +739,8 @@ public final class LogicAuthAssembly: Assembly {
     }
     .inObjectScope(ObjectScope.graph)
 
-    // PinStorageController, PinThrottleProvider, PinThrottleController, SessionController and
-    // SystemBiometryController are also registered here.
+    // PinStorageController, PinThrottleProvider, PinThrottleController, SessionController,
+    // WalletResetController, DeviceLockController and SystemBiometryController are also registered here.
   }
 }
 ```
@@ -792,7 +795,7 @@ The PIN storage layer handles hashing, persistence, and validation. Brute-force 
 
 ## PIN throttle configuration
 
-The application protects against brute-force PIN attempts via an escalating lockout mechanism. After a configurable number of consecutive failed attempts the PIN input is disabled for an increasing duration. Lockout state is persisted in the iOS Keychain via `KeyChainController` (using the shared keychain access group, so the main app and the document-provider extension share state), so it survives process death and app updates. It runs on the monotonic clock, not the wall clock (`MonotonicClock`), so a device restart begins it again in full and a change of the date does not end it early; a Keychain read that fails counts as the longest lockout. State is reset on any successful PIN or biometric authentication.
+The application protects against brute-force PIN attempts via an escalating lockout mechanism. After a configurable number of consecutive failed attempts the PIN input is disabled for an increasing duration. Lockout state is persisted in the iOS Keychain via `KeyChainController` (using the shared keychain access group, so the main app and the document-provider extension share state), so the state survives process death and app updates. It runs on the monotonic clock and the boot it began in, not the wall clock (`MonotonicClock`), so a restart during a lockout begins it again in full and a change of the date does not end it early; a lockout that has run its course is cleared, keeping its level, once the app has seen it end, and a Keychain read that fails counts as the longest lockout. An update from a build before the monotonic lockout ends a lockout under way, keeping its level. State is reset on any successful PIN or biometric authentication.
 
 The policy is configurable via the `AuthenticationConfig` protocol inside the `logic-authentication` module:
 
@@ -863,9 +866,11 @@ Resulting behavior with the defaults:
 | Each subsequent batch of 3 wrong attempts | 5 minutes (last list entry reused). |
 | Successful PIN or biometric authentication | Failure counter and lockout level reset. |
 | App kill | Active lockout window persists. |
-| Device reboot | The lockout begins again in full: the monotonic clock restarts at boot. |
+| Device reboot during a lockout | The lockout begins again in full: the monotonic clock restarts at boot. |
+| Lockout over, then device reboot | No new lockout once the app has seen it end, which clears it and keeps its level. |
 | Device date or time changed | No effect: the lockout runs on the monotonic clock. |
 | Keychain read fails | Counts as a lockout of the longest configured duration. |
+| Update from a build with the wall-clock lockout | Ends a lockout in progress; the level is kept. |
 
 You can change the policy by providing your own `AuthenticationConfig` conformance and wiring it through `LogicAuthAssembly`:
 
@@ -891,14 +896,16 @@ The wallet starts locked. Login (the PIN or biometric screen at start-up) and PI
 | Situation | Locks after | Setting |
 | --- | --- | --- |
 | In the background | 60 seconds | `AuthenticationConfig.backgroundLockTimeout` |
-| In the background from an issuance, presentation or signing screen, or while another screen covers the wallet's own on return | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout`, screens in `ConfigUiLogic.protectedFlowRouteKeys` |
+| In the background from an issuance, presentation, signing or reset screen or a PIN or biometric confirmation, or while another screen covers the wallet's own on return | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout`, screens in `ConfigUiLogic.protectedFlowRouteKeys` |
 | No interaction, on any screen | 5 minutes | `AuthenticationConfig.idleLockTimeout` |
 | Covered by another screen (the RQES SDK's, the issuer's sign-in) for this long, when the wallet's screen returns | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout` |
 | The issuer's sign-in lasting this long, while it is still open | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout` |
 
 While another screen covers the wallet's own, the idle timeout pauses, since the wallet cannot see
 interaction there; when the cover goes after less than 10 minutes, the idle timeout restarts. The RQES
-SDK's screens are recognised by their controllers (`UIApplication.isWalletCoveredByAnotherScreen`); the
+SDK's screens are recognised by their module: a screen covers the wallet when a controller presented over it
+belongs to a module in `ConfigUiLogic.coveringScreenModules` (`UIApplication.isWalletCovered(byModules:)`). The
+default lists only the RQES SDK, `EudiRQESUi`; add the module of any other SDK your build presents the same way. The
 issuance interactors mark the calls that can show the issuer's sign-in
 (`SessionController.duringExternalFlow`). The background limit is chosen when the app returns, from the
 screen it left and what covers the wallet then, as on Android. A lock ends every cover.
@@ -1025,7 +1032,7 @@ The keychain access group for the extension is defined in `EudiReferenceWalletID
 
 `SHARED_APP_GROUP_IDENTIFIER` must match the main app's effective keychain group for the same build configuration (Dev or Demo), otherwise the extension cannot access the same keychain-backed wallet context.
 
-The extension also asks for the wallet PIN or biometrics before it shows a request. It reads the PIN record and the PIN lockout state from the same shared keychain group, and the biometry setting from the App Group (`com.apple.security.application-groups`, `group.$(SHARED_APP_GROUP_IDENTIFIER)`), so both entitlements must match the main app's.
+The extension also asks for the wallet PIN or biometrics before it shows a request. It reads the PIN record and the PIN lockout state from the same shared keychain group, and the biometry and "Offer documents to apps and websites" settings from the App Group (`com.apple.security.application-groups`, `group.$(SHARED_APP_GROUP_IDENTIFIER)`), so both entitlements must match the main app's.
 
 ### Step-by-step setup
 
@@ -1074,11 +1081,11 @@ At startup it initializes `DocumentProviderDIContainer`, which assembles `LogicI
 
 In `Modules/logic-core/Sources/Controller/WalletKitController.swift`, documents are registered to `IdentityDocumentProviderRegistrationStore` (iOS 26+) through `DocumentRegistrationManager`.
 
-Only CBOR documents are registered (`document.docDataFormat == .cbor`), which controls what the extension can serve for Identity Document requests.
+Only CBOR documents without a revocation record are registered (`document.docDataFormat == .cbor`), which controls what the extension can serve for Identity Document requests. While "Offer documents to apps and websites" is off in Settings (`Prefs.Key.offerDocumentsToApps`, on by default), nothing is registered.
 
 The wallet registers while iOS reports its authorisation as `authorized` or `notDetermined`: iOS stays at `notDetermined` until the app's first registration, which is what authorises it. A user who turns the wallet off as a document provider (`notAuthorized`) gets no registrations.
 
-Registrations are reconciled against wallet storage after every operation that adds or removes a document, and when the dashboard first opens after login or PIN creation and loads the documents (start-up loads none): a registration whose document is no longer held is removed.
+Registrations are reconciled against wallet storage after every operation that adds or removes a document, when a revocation check stores or clears a record, when that setting changes, and, in a task of its own, once the dashboard has first loaded the documents after login or PIN creation (start-up loads none): a registration whose document is no longer held is removed.
 
 ### Validation checklist
 

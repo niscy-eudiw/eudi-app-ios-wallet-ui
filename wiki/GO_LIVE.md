@@ -217,13 +217,13 @@ Keep these files under strict review:
 | `Modules/feature-startup/Sources/Interactor/StartupInteractor.swift` | The start-up gate: login, PIN creation only for a wallet without documents, or an error. |
 | `Modules/logic-core/Sources/Storage/StoredDocumentPresence.swift` | Start-up's document check: queries wallet-storage's `pdoc` Keychain items; must change with the storage service. |
 | `EudiReferenceWalletIDProvider/UI/Authorization/RequestAuthorizationViewModel.swift` | The extension's PIN or biometric check before a request is shown and again on Accept. |
-| `Modules/logic-authentication/Sources/Config/AuthenticationConfig.swift` | PIN lockout policy (max failed attempts, escalating lockout durations) and the session lock's timeouts. |
+| `Modules/logic-authentication/Sources/Config/AuthenticationConfig.swift` | PIN lockout policy (max failed attempts, escalating lockout durations), the session lock's timeouts, the weak-PIN list (`commonPins`) and whether a device passcode is required (`requireDeviceSecure`). |
 | `Modules/logic-authentication/Sources/Controller/SessionController.swift` | The session lock: unlocked by login or PIN creation, locked again after time in the background or idle. |
 | `Modules/logic-assembly/Sources/Controller/SessionLockController.swift` | Drives the lock from the scene: background, return, links, the idle check, and login after a lock. A lock, whatever caused it, also ends a running presentation, so a proximity session does not outlive its screens. |
 | `Modules/logic-ui/Sources/Controller/UserInteractionController.swift` | What counts as interaction for the idle lock: touches in the app's windows, text input, VoiceOver focus. |
 | `Modules/logic-authentication/Sources/Storage/KeychainPinThrottleProvider.swift` | Keychain-persisted PIN failure counter, lockout level, and the lockout on the monotonic clock and boot session. |
-| `Modules/logic-business/Sources/Controller/KeyChainController.swift` | Defines Keychain service, access group, accessibility class, and biometric Keychain validation. |
-| `Modules/logic-storage/Sources/Config/StorageConfig.swift` | Defines SwiftData store location, App Group container selection, and local storage schema. |
+| `Modules/logic-business/Sources/Controller/KeyChainController.swift` | Keychain access with its accessibility class, and the biometric probe. The service name and access group come from `Bundle+Extensions.swift` and are worked out once in `ConfigLogicImpl.keyChainConfig`. |
+| `Modules/logic-storage/Sources/Config/StorageConfig.swift` | Defines SwiftData store location, App Group container selection, and local storage schema, and excludes the store's folder from backup (`StorageConfigImpl.storeURL`). |
 | `Modules/logic-api/Sources/Provider/NetworkSessionProvider.swift` | Defines the shared network session used by app network calls. |
 | `Modules/logic-analytics/Sources/Config/AnalyticsConfig.swift` | Defines analytics provider configuration. |
 | `.github/workflows/*.yml` | Defines the SAST workflow (`sonar.yml`, SonarCloud). No SCA or secret-scanning workflow is included; `security/gitleaks/gitleaks.toml` holds secret-scanning rules for a pipeline that adds one. |
@@ -803,8 +803,8 @@ var vpConfig: OpenId4VpConfiguration {
 }
 ```
 
-`productionVerifierSigningKeys` stands for the verifier's public request-signing keys, an array of
-`WebKeySet.Key` that you define.
+`productionVerifierWebKeys` stands for the verifier's public request-signing keys, a `WebKeySet` that
+you define.
 
 Rules:
 
@@ -974,7 +974,7 @@ Current registration behavior:
   registered, and websites reported "no eligible IDs". While `notDetermined` the store is touched only to register a
   document: reading its registrations in that state did not return on the simulator.
 * Only CBOR documents are registered (`document.docDataFormat == .cbor`).
-* Registrations are reconciled against storage rather than tracked incrementally, so a document deleted in the app is deregistered, and a registration left behind by an earlier build is removed when the documents are next loaded, after login.
+* Registrations are reconciled against storage rather than tracked incrementally, so a document deleted in the app is deregistered, and a registration left behind by an earlier build is removed after login by a pass that runs in a task of its own once the dashboard has loaded the documents, so a slow registration store holds up neither the tabs nor the background checks. Passes run one at a time (`SerialCheckRunner`).
 * A document with a revocation record (revoked, suspended or unrecognised) is not registered, and the registrations are
   updated whenever a revocation check stores or clears a record; when the records cannot be read nothing is
   registered, as on Android. The extension also declines a request that would include such a document
@@ -990,6 +990,10 @@ Current request handling:
   asks for the wallet PIN or biometrics first, with the same screen as the app's login, and reads the
   request's documents only after that. No requested value is shown before the user has authenticated.
 * Accept asks for the PIN or biometrics again before the response is sent.
+* The request is validated once, when it is loaded, so each request writes one history entry. Accept sends only the
+  documents and claims the sheet showed (`DocumentProviderSelection`), after reading their revocation records
+  again, and then completes that entry. A request declined after loading, or one the user closes, is recorded as
+  not completed, with the reason.
 * The requester is shown without the verified badge and behind the warning "The identity of this
   relying party could not be verified"; Accept stays disabled until the user acknowledges it, as on
   Android. Without a website origin the requester gets the generic name, not the one in its
@@ -1134,7 +1138,8 @@ Production requirements:
   `issuer_info`. An issuer that publishes none never reaches the validation hook, so no
   registration is established and the app refuses; enabling this against such an issuer fails every
   issuance. The value is the user switch "Check Registration Certificates" in Settings, kept in
-  UserDefaults and off by default (`WalletKitConfigImpl` reads it from `PrefsController`). It
+  UserDefaults and off by default (`WalletKitConfigImpl` reads it from `PrefsController`); a change takes effect after
+  the app restarts, as the app and WalletKit's presentations both use the value read at launch. It
   governs presentation too, so leaving it off ships a wallet that neither refuses an unregistered
   issuer nor shows a verifier's registration. Decide whether the switch stays reachable: any user
   can turn the check off. Returning `true` from
@@ -1177,7 +1182,8 @@ exactly as its `credentialIssuerURL`; an offer passed by address must be fetched
 issuer's origin. Any other offer is refused with "This offer comes from an issuer that this wallet is not set up to
 use", as on Android, because wallet-kit would otherwise give an unknown issuer the first configured issuer's client
 settings. To accept an issuer's offers, add a `VciConfig` entry for it to `issuersConfig` in the build variants that
-need it.
+need it. For an offer passed by address, the issuer the fetched offer names is not compared with that address, and
+redirects are followed; the Android wallet has the same limitation (owner, 16 October 2026).
 
 When an issuer issues only some of the documents of an offer, the success screen names the ones not added
 (`DocumentSuccessUIConfig.notIssuedDocumentNames`), as on Android; the cause wallet-kit reports is not shown. The
@@ -1397,11 +1403,12 @@ The rules are the Android wallet's (`RevocationRecordUpdate`, Android's `revocat
   next check that reads the document's status replaces or clears it.
 * Every record blocks the document. A revoked, suspended or unrecognised document is left out of
   remote and proximity presentations; if the records cannot be read, the request fails rather than
-  offer a blocked document. The DC-API extension leaves them out of its registrations, declines a request that
-  would include one, and declines when the records cannot be read (`WalletKitController.reconcileRegistrations`,
-  `DocumentProviderPolicy.checkRequest`). The documents list,
+  offer a blocked document. The Digital Credentials API registrations leave them out; the extension declines a
+  request that would include one, when it loads and again on Accept, and declines when the records cannot be read
+  (`WalletKitController.reconcileRegistrations`, `DocumentProviderPolicy.checkRequest`). The documents list,
   the details screen and the issuer card show a suspended document as suspended and the others as
   revoked; the list's "Revoked" filter lists all of them.
+* When the records cannot be read, the documents tab shows every document as revoked, as the sharing flows refuse.
 * The dashboard notice, "Revoked or suspended documents", lists only the documents a check blocks for
   the first time. A change from one blocked status to another (suspended to revoked) refreshes the
   screens without a new notice.
@@ -1421,6 +1428,10 @@ The rules are the Android wallet's (`RevocationRecordUpdate`, Android's `revocat
   deferred re-issuance delivers its credential. The check runs only if the original had a record, and not while the
   checks are stopped. The Android wallet applies the same rules.
 * A renewed document, manual or background, keeps the original's bookmark, as on Android.
+* Deleting a document deletes its revocation record, refresh failure, bookmark and failed re-issuance record
+  (`WalletKitControllerImpl.deleteRecords(of:)`, as Android's `deleteDocumentRecords`); its history stays. A
+  re-issued or deferred original loses its records too, but a re-issued original keeps its revocation record until
+  the check after the re-issue has read it.
 * A background re-issuance that cannot renew a document leaves a failed re-issuance record
   (`FailedReIssuedDocument`): the document's issuer card opens by itself and says "The wallet could not
   renew this document automatically. Use Reissue document to try again." Each background round replaces
@@ -1612,7 +1623,8 @@ Files to review:
 
 * `Wallet/Wallet.plist`
 * `Modules/logic-ui/Sources/Model/DeepLink.swift` (the `DeepLink.Action` enum and its `parseType(with:and:)` scheme parsing) and `Modules/logic-ui/Sources/Controller/DeepLinkController.swift` (what each link does before and after login)
-* `Modules/logic-ui/Sources/Extension/URL+Extensions.swift` (`isHttpsWebLink`, `openInBrowser`)
+* `Modules/logic-ui/Sources/Extension/URL+Extensions.swift` (`openInBrowser`) and
+  `Modules/logic-business/Sources/Extension/URL+Extensions.swift` (`isHttpsWebLink`)
 * `Modules/logic-assembly/Sources/Controller/SessionLockController.swift` (the timeout applied before a link is handled)
 * Issuance and presentation interactors that consume parsed deep links.
 
@@ -1809,8 +1821,8 @@ Persisted state keys (`KeychainPinThrottleProvider.KeyIdentifier`):
   and time settings) when the current lockout began.
 * `pinLockoutDuration` — the length of the current lockout, in seconds.
 * `pinLockoutBootSession` — the boot the lockout began in (`MonotonicClock.bootSessionIdentifier`).
-* `pinLockoutStartedAt`, `pinLockoutEndsAt` — wall-clock values of earlier builds, removed when the attempts are
-  cleared.
+* `pinLockoutStartedAt`, `pinLockoutEndsAt` — wall-clock values of earlier builds, removed at the next successful PIN
+  or biometric authentication (`recordSuccess()`).
 
 The values are stored as Strings in the Keychain (e.g. `"3"`, `"812345.123"`). The Keychain item accessibility class follows `KeyChainController`'s default (`.whenUnlockedThisDeviceOnly`): the values are readable only while the device is unlocked, and a backup can restore them only to the same device; see [Keychain](#keychain).
 
@@ -1824,14 +1836,14 @@ Default policy (`AuthenticationConfigImpl`):
 | Each subsequent batch of 3 failures | 5 minutes (last list entry reused). |
 | Successful PIN or biometric authentication | Counters and lockout level reset. |
 | App kill | Lockout window persists. |
-| Device reboot | The lockout begins again in full: the monotonic clock restarts at boot. |
+| Device reboot during a lockout | The lockout begins again in full: the monotonic clock restarts at boot. |
 | Device date or time changed | No effect: the lockout runs on the monotonic clock, so moving the date forward does not end it early. |
 | Keychain read fails | Counts as a lockout of the longest configured duration, never as extra attempts. |
-| Lockout over, then device reboot | No new lockout: an ended lockout is cleared, its level kept. |
-| App update during a lockout | Ends it: the wall-clock values of earlier builds are not read; the level is kept. |
+| Lockout over, then device reboot | No new lockout once the wallet has seen it end (the PIN screen counting down to it, or a PIN entered after it), which clears it and keeps its level; otherwise the reboot begins it again in full. |
+| Update from a build with the wall-clock lockout | Ends a lockout in progress: those values are not read; the level is kept. An update between builds that use the monotonic clock keeps the lockout running. |
 | App reinstall | The state survives the uninstall, as the Keychain does; the first launch after a reinstall deletes it with the PIN and every document (`StartupInteractor.manageStorageForFirstRun()`). Require re-enrollment unless secure backup/recovery is explicitly implemented. |
 
-Lockout counters are persisted, not just held in UI state. The PIN input is disabled in both the login screen (`BiometryViewModel`) and the change-PIN validation step (`QuickPinViewModel`) while locked. The biometric icon on the login screen stays enabled during PIN lockout and acts as an escape hatch — a successful biometric authentication clears the throttle.
+Lockout counters are persisted, not just held in UI state. While locked, the PIN input is disabled wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, and the Document Provider extension) and in the change-PIN validation step (`QuickPinViewModel`). The biometric icon on the login screen stays enabled during PIN lockout and acts as an escape hatch — a successful biometric authentication clears the throttle.
 
 Production gaps to address:
 
@@ -1867,10 +1879,11 @@ Production tasks:
 * Confirm whether the store is in the shared App Group container.
 * Apply file protection where required.
 * The store's folder is excluded from iCloud backup and device-to-device transfer (`isExcludedFromBackup`, set by
-  `StorageConfigImpl.storeURL`), as the Android wallet's backup rules exclude its data. A restore to the same device
-  brings the documents back from the Keychain without their revocation records, so a blocked document is not
-  refused until the first check after login (about 30 seconds); a deployment that cannot accept this must keep the
-  records in the Keychain or block sharing until that check has run.
+  `StorageConfigImpl.storeURL`), as the Android wallet's backup rules exclude its data. A restore is expected to
+  bring back no document: wallet-storage keeps documents and their keys as `.whenPasscodeSetThisDeviceOnly`, a class
+  iOS leaves out of backups. On the same device the PIN record returns, so the user logs in to an empty wallet
+  without history and issues the documents again. Confirm this with an encrypted backup and restore on a device
+  before release.
 * Define migration behavior before release.
 * Test upgrade from previous production builds.
 * Test extension access to shared data.
@@ -1934,8 +1947,11 @@ again. After a failure the background checks restart at once; after a reset they
 the next login.
 
 The reset does not reach: files the app or an integrator writes outside Caches and the temporary directory; the
-cookies of WalletKit's sign-in sheet, which are Safari's (see [Network Security](#network-security)); and a request
-the ID Provider extension answers while the reset runs, since the extension runs in its own process. Data already shared with relying parties is outside the wallet.
+cookies of WalletKit's sign-in sheet, which are Safari's (see [Network Security](#network-security)); the RQES SDK's
+signing session, which `EudiRQESUi` (0.4.7) keeps in memory and the app cannot clear, so a matching `rqes://` callback
+can reopen it at its last step until the app restarts, which also holds after a lock (reported to the SDK's owner);
+and a request the ID Provider extension answers while the reset runs, since the extension runs in its own process.
+Data already shared with relying parties is outside the wallet.
 
 ## Logging And Audit
 
@@ -2609,7 +2625,9 @@ Before release candidate approval, test:
   the document check failing: an error with "Try again", never PIN creation.
 * PIN creation.
 * PIN change.
-* Incorrect PIN attempts and lockout.
+* Incorrect PIN attempts and lockout; a change of the device date during a lockout (no effect) and a restart during
+  one (it begins again).
+* A request with transaction data: every entry is shown before Share; one that cannot be shown in full is declined.
 * Biometric enablement.
 * Biometric enrollment change.
 * A weak PIN refused at setup and on change; setup on a device without a passcode shows the warning.
@@ -2636,7 +2654,8 @@ Before release candidate approval, test:
   disabled until acknowledged.
 * Relayed proximity engagement where feasible.
 * Identity Document Provider extension presentment on supported iOS versions, with the PIN or
-  biometric check before the request is shown and again on Accept.
+  biometric check before the request is shown and again on Accept; the response carries only the documents and
+  claims the screen showed, and the history entry is completed.
 * Relayed or socially engineered Identity Document Provider extension presentment where feasible.
 * RQES signing.
 * RQES cancellation.

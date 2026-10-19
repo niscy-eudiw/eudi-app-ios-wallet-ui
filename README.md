@@ -329,7 +329,7 @@ graph TD;
   feature-test -.-> feature-presentation
   feature-test -.-> feature-issuance
   feature-test -.-> feature-proximity
-  feature-test -.-> logic-assembly
+  logic-test -.-> logic-assembly
 
 ```
 

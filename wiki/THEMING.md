@@ -527,10 +527,11 @@ container.register(ConfigUiLogic.self) { _ in
 first frame. `ThemeConfiguration.init` is `public` for exactly this purpose. This is the iOS analog of
 Android's `ThemeManager.Builder`, and is intentionally left at `.default` in the reference app.
 
-The ID Provider extension never resolves `ConfigUiLogic`, so it never runs `Theme.config` and keeps
-the reference managers. Asset-catalog edits reach it; a programmatic theme does not, unless you also
-call `Theme.config(themeConfiguration:)` in the extension, for example in `DocumentProviderExtension`'s
-`init()`.
+The ID Provider extension creates `ConfigUiLogicImpl` too, when its request screen resolves
+`RequestAuthorizationInteractor` (`LogicIDPModule`, for `userImageClaimKeys`), so a theme passed in the
+`ConfigUiLogic` registration of `LogicUiAssembly` reaches it. Asset-catalog edits reach it as well. A theme applied
+any other way, such as assigning `Theme.shared`, does not; apply it in the extension too, for example in
+`DocumentProviderExtension`'s `init()`.
 
 > For a fully dynamic swap you can also assign `Theme.shared` directly — it is a `public` settable var
 > of the public `ThemeProtocol`. Note that `Application`'s `toolbarConfig` **stored-property
