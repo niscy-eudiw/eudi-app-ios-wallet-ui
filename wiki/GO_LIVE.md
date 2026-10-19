@@ -992,8 +992,10 @@ Current request handling:
 * Accept asks for the PIN or biometrics again before the response is sent.
 * The request is validated once, when it is loaded, so each request writes one history entry. Accept sends only the
   documents and claims the sheet showed (`DocumentProviderSelection`), after reading their revocation records
-  again, and then completes that entry. A request declined after loading, or one the user closes, is recorded as
-  not completed, with the reason.
+  again, and then completes that entry. A request declined while it loads, after its validation, or one the user
+  rejects with the Reject button, is recorded as not completed, with the reason; once Accept or a decline has
+  recorded the outcome, Reject only closes the sheet. A sheet dismissed another way leaves the entry not completed,
+  without a reason.
 * The requester is shown without the verified badge and behind the warning "The identity of this
   relying party could not be verified"; Accept stays disabled until the user acknowledges it, as on
   Android. Without a website origin the requester gets the generic name, not the one in its

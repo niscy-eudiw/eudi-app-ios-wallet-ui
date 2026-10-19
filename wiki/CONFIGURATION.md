@@ -486,7 +486,7 @@ production values for every config surface listed below.
 | Configuration area | Source file | Production value to provide |
 | --- | --- | --- |
 | Build variant/type | `Wallet/Config/*.xcconfig`, `ConfigLogic.swift` | `BUILD_VARIANT = PROD`, `BUILD_TYPE = RELEASE` for production archives. |
-| Issuers | `WalletKitConfig.swift` | Production OpenID4VCI issuer URLs, client IDs, redirect URIs, PAR/DPoP policy, proof-type policy (`allowPlainJwtProof`), signed-metadata policy (`issuerMetadataPolicy`), registration check (`validateRegistrationCertificate`), PoP key options (`popKeyOptions`),, logo origins (`logoOrigins`) and display order. |
+| Issuers | `WalletKitConfig.swift` | Production OpenID4VCI issuer URLs, client IDs, redirect URIs, PAR/DPoP policy, proof-type policy (`allowPlainJwtProof`), signed-metadata policy (`issuerMetadataPolicy`), registration check (`validateRegistrationCertificate`), PoP key options (`popKeyOptions`), logo origins (`logoOrigins`) and display order. |
 | Wallet provider attestation | `WalletProviderAttestationConfig.swift` | Production Wallet Provider host used for wallet/key attestation. |
 | Reader trust anchors | `WalletKitConfig.swift`, certificate resources | Production IACA/reader/verifier trust anchors only. |
 | OpenID4VP | `WalletKitConfig.swift` | Approved client ID schemes, preregistered verifier entries where needed, the accepted transaction data types (`supportedTransactionDataTypes`), and the registration check (`validateRegistrationCertificate`). |

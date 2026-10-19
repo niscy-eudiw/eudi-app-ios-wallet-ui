@@ -39,6 +39,9 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
   private let dcApiHandler: DcApiHandler
   private let configUiLogic: ConfigUiLogic
   private let prefsController: PrefsController
+  /// Set once the request's outcome is being recorded, by Accept, a decline or a cancel, so that a later Cancel cannot
+  /// rewrite the history entry.
+  private var isOutcomeRecorded = false
 
   private let interactor: WalletKitController = DIGraph.shared.resolver.force(
     WalletKitController.self
@@ -67,10 +70,12 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
   func loadRequestData(
     context: ISO18013MobileDocumentRequestContext
   ) async throws -> AuthorizationUIModel {
+    isOutcomeRecorded = false
     let (docClaimsModels, _, authorityKeyIdentifier, _) = try await dcApiHandler.validateRequest(context.request)
     do {
       try await checkRequest(documentIds: docClaimsModels.map(\.id))
     } catch {
+      isOutcomeRecorded = true
       await dcApiHandler.completeTransaction(reasonOfNoncompletion: error.localizedDescription)
       throw error
     }
@@ -107,6 +112,7 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
     context: ISO18013MobileDocumentRequestContext,
     selection: DocumentProviderSelection
   ) async throws {
+    isOutcomeRecorded = true
     do {
       try await checkRequest(documentIds: Array(selection.documentIds))
       try await context.sendResponse { rawRequest in
@@ -132,8 +138,12 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
     }
   }
 
+  /// After Accept, a decline or an earlier cancel the outcome is already recorded, so only the sheet is closed.
   func cancelRequest(context: ISO18013MobileDocumentRequestContext) async {
-    await dcApiHandler.completeTransaction(reasonOfNoncompletion: Constants.cancelledByUser)
+    if !isOutcomeRecorded {
+      isOutcomeRecorded = true
+      await dcApiHandler.completeTransaction(reasonOfNoncompletion: Constants.cancelledByUser)
+    }
     context.cancel()
   }
 
