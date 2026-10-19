@@ -45,6 +45,7 @@ final class TestPresentationInteractor: EudiTest {
       when(mock.relyingPartyRegistration.get).thenReturn(nil)
       when(mock.relyingPartyWarningViolations.get).thenReturn([])
       when(mock.isRelyingPartyNotBoundToRequester.get).thenReturn(false)
+      when(mock.transactionIdentifier.get).thenReturn("transaction")
     }
 
     stub(walletKitController) { mock in
@@ -56,7 +57,8 @@ final class TestPresentationInteractor: EudiTest {
           overaskedClaims: any(),
           verifierName: any(),
           verifierIsTrusted: any(),
-          isNotBoundToRequester: any()
+          isNotBoundToRequester: any(),
+          transactionIdentifier: any()
         )
       ).thenReturn(
         RelyingPartyRegistration(

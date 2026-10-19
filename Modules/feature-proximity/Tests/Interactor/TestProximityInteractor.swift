@@ -47,6 +47,7 @@ final class TestProximityInteractor: EudiTest {
       when(mock.relyingPartyRegistration.get).thenReturn(nil)
       when(mock.relyingPartyWarningViolations.get).thenReturn([])
       when(mock.isRelyingPartyNotBoundToRequester.get).thenReturn(false)
+      when(mock.transactionIdentifier.get).thenReturn("transaction")
     }
 
     stub(walletKitController) { mock in
@@ -58,7 +59,8 @@ final class TestProximityInteractor: EudiTest {
           overaskedClaims: any(),
           verifierName: any(),
           verifierIsTrusted: any(),
-          isNotBoundToRequester: any()
+          isNotBoundToRequester: any(),
+          transactionIdentifier: any()
         )
       ).thenReturn(
         RelyingPartyRegistration(
@@ -380,7 +382,8 @@ final class TestProximityInteractor: EudiTest {
           overaskedClaims: any(),
           verifierName: any(),
           verifierIsTrusted: equal(to: false),
-          isNotBoundToRequester: any()
+          isNotBoundToRequester: any(),
+          transactionIdentifier: any()
         )
       ).thenReturn(
         RelyingPartyRegistration(
@@ -409,7 +412,8 @@ final class TestProximityInteractor: EudiTest {
       overaskedClaims: any(),
       verifierName: any(),
       verifierIsTrusted: equal(to: false),
-      isNotBoundToRequester: any()
+      isNotBoundToRequester: any(),
+      transactionIdentifier: any()
     )
   }
 

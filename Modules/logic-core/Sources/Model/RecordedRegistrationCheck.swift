@@ -26,10 +26,13 @@ public enum RecordedRegistrationCheck: String, Sendable, Equatable {
   /// The registration was not checked, because checking is turned off or the request carried none.
   case notEvaluated
 
-  /// The outcome `status` shows, with `isNotBoundToRequester` from wallet-kit's registration violations.
-  public init(status: RegistrationStatus, isNotBoundToRequester: Bool) {
+  /// The outcome `status` shows, with `isNotBoundToRequester` from wallet-kit's registration violations. A
+  /// registration counts as verified only for a requester that authenticated (`isRequesterAuthenticated`): wallet-kit
+  /// binds a registration to the reader certificate even when that certificate failed validation, and the subject it
+  /// compares is the reader's own choice.
+  public init(status: RegistrationStatus, isNotBoundToRequester: Bool, isRequesterAuthenticated: Bool) {
     switch status {
-    case .verified: self = .verified
+    case .verified: self = isRequesterAuthenticated ? .verified : .notVerified
     case .notVerified: self = isNotBoundToRequester ? .notBoundToRequester : .notVerified
     case .notSupported: self = .notEvaluated
     }

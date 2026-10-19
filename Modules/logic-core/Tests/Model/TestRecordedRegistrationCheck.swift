@@ -19,55 +19,49 @@ import XCTest
 
 final class TestRecordedRegistrationCheck: EudiTest {
 
-  func testOf_WhenTheRegistrationWasChecked_ThenRecordsItsOutcome() {
-    let details = RegistrationDetails(
-      tradeName: "RP", uniqueId: "rp", logoUrl: nil, intendedUse: nil, privacyPolicyUrl: nil, serviceDescription: nil
-    )
-    XCTAssertEqual(
-      RecordedRegistrationCheck(status: .verified(details: details, overaskedClaims: []), isNotBoundToRequester: false),
-      .verified
-    )
-    XCTAssertEqual(RecordedRegistrationCheck(status: .notVerified(details: nil), isNotBoundToRequester: false), .notVerified)
-    XCTAssertEqual(
-      RecordedRegistrationCheck(status: .notVerified(details: details), isNotBoundToRequester: true),
-      .notBoundToRequester
-    )
-    XCTAssertEqual(RecordedRegistrationCheck(status: .notSupported, isNotBoundToRequester: false), .notEvaluated)
+  private let details = RegistrationDetails(
+    tradeName: "RP", uniqueId: "rp", logoUrl: nil, intendedUse: nil, privacyPolicyUrl: nil, serviceDescription: nil
+  )
+
+  func testInit_WhenTheRegistrationWasChecked_ThenRecordsItsOutcome() {
+    XCTAssertEqual(Self.check(.verified(details: details, overaskedClaims: [])), .verified)
+    XCTAssertEqual(Self.check(.notVerified(details: nil)), .notVerified)
+    XCTAssertEqual(Self.check(.notVerified(details: details), isNotBoundToRequester: true), .notBoundToRequester)
+    XCTAssertEqual(Self.check(.notSupported), .notEvaluated)
   }
 
-  func testProvider_WhenTheOutcomeIsTaken_ThenItIsCleared() async {
+  func testInit_WhenTheRequesterDidNotAuthenticate_ThenAVerifiedRegistrationIsNotRecordedAsVerified() {
+    XCTAssertEqual(
+      Self.check(.verified(details: details, overaskedClaims: []), isRequesterAuthenticated: false),
+      .notVerified
+    )
+  }
+
+  func testProvider_WhenTheOutcomeIsRemoved_ThenOnlyItsOwnPresentationGetsIt() async {
     let provider = RegistrationCheckProviderImpl()
-    await provider.record(.notBoundToRequester)
+    await provider.record(.notBoundToRequester, for: "presentation-a")
 
-    let first = await provider.take()
-    let second = await provider.take()
+    let other = await provider.removeCheck(for: "presentation-b")
+    let own = await provider.removeCheck(for: "presentation-a")
+    let again = await provider.removeCheck(for: "presentation-a")
 
-    XCTAssertEqual(first, .notBoundToRequester)
-    XCTAssertNil(second)
+    XCTAssertNil(other)
+    XCTAssertEqual(own, .notBoundToRequester)
+    XCTAssertNil(again)
   }
+}
 
-  func testPresentationRegistrationCheck_WhenTheEntryIsFirstWritten_ThenAnEarlierPresentationsOutcomeIsDropped() {
-    XCTAssertNil(
-      WalletKitTransactionLogControllerImpl.presentationRegistrationCheck(
-        stored: nil,
-        isFirstWrite: true,
-        recorded: .verified
-      )
-    )
-  }
+private extension TestRecordedRegistrationCheck {
 
-  func testPresentationRegistrationCheck_WhenTheEntryIsWrittenAgain_ThenTakesTheRecordedOutcomeOrKeepsTheStoredOne() {
-    XCTAssertEqual(
-      WalletKitTransactionLogControllerImpl.presentationRegistrationCheck(
-        stored: .notEvaluated,
-        isFirstWrite: false,
-        recorded: .notBoundToRequester
-      ),
-      .notBoundToRequester
-    )
-    XCTAssertEqual(
-      WalletKitTransactionLogControllerImpl.presentationRegistrationCheck(stored: .verified, isFirstWrite: false, recorded: nil),
-      .verified
+  static func check(
+    _ status: RegistrationStatus,
+    isNotBoundToRequester: Bool = false,
+    isRequesterAuthenticated: Bool = true
+  ) -> RecordedRegistrationCheck {
+    RecordedRegistrationCheck(
+      status: status,
+      isNotBoundToRequester: isNotBoundToRequester,
+      isRequesterAuthenticated: isRequesterAuthenticated
     )
   }
 }

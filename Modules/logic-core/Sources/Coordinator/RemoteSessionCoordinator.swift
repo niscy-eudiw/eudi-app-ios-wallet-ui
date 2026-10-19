@@ -24,6 +24,8 @@ public protocol RemoteSessionCoordinator: Sendable {
   var relyingPartyWarningViolations: [String] { get }
   /// True when wallet-kit found the registration certificate issued to another party than the one that asked.
   var isRelyingPartyNotBoundToRequester: Bool { get }
+  /// The transaction identifier of the history entry wallet-kit writes for this presentation.
+  var transactionIdentifier: String { get }
 
   init(session: PresentationSession)
 
@@ -50,6 +52,7 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
   var isRelyingPartyNotBoundToRequester: Bool {
     (session.wrpVerifierWarnings?[""] ?? []).contains { $0.reason == .notBoundToAccessCertificate }
   }
+  var transactionIdentifier: String { session.presentationService.transactionLog.transactionIdentifier }
 
   private var overaskedClaims: [OveraskedClaim] {
     (session.wrpVerifierWarnings?.values.flatMap { $0 } ?? []).toOveraskedClaims()

@@ -151,7 +151,8 @@ final actor ProximityInteractorImpl: ProximityInteractor {
           overaskedClaims: overaskedClaims,
           verifierName: response.relyingParty,
           verifierIsTrusted: response.isTrusted,
-          isNotBoundToRequester: coordinator.isRelyingPartyNotBoundToRequester
+          isNotBoundToRequester: coordinator.isRelyingPartyNotBoundToRequester,
+          transactionIdentifier: coordinator.transactionIdentifier
         )
       )
     } catch {

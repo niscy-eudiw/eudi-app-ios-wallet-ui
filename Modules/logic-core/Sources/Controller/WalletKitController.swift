@@ -147,7 +147,8 @@ public protocol WalletKitController: Sendable {
     overaskedClaims: [logic_core.OveraskedClaim],
     verifierName: String?,
     verifierIsTrusted: Bool,
-    isNotBoundToRequester: Bool
+    isNotBoundToRequester: Bool,
+    transactionIdentifier: String
   ) async -> RelyingPartyRegistration
 
   func getVerifierRegistrationForFailedRequest() async -> RelyingPartyRegistration?
@@ -696,7 +697,8 @@ final actor WalletKitControllerImpl: WalletKitController {
     overaskedClaims: [OveraskedClaim],
     verifierName: String?,
     verifierIsTrusted: Bool,
-    isNotBoundToRequester: Bool
+    isNotBoundToRequester: Bool,
+    transactionIdentifier: String
   ) async -> RelyingPartyRegistration {
     let registration = makeVerifierRegistration(
       policy: policy,
@@ -706,7 +708,12 @@ final actor WalletKitControllerImpl: WalletKitController {
       verifierIsTrusted: verifierIsTrusted
     )
     await registrationCheckProvider.record(
-      RecordedRegistrationCheck(status: registration.registration, isNotBoundToRequester: isNotBoundToRequester)
+      RecordedRegistrationCheck(
+        status: registration.registration,
+        isNotBoundToRequester: isNotBoundToRequester,
+        isRequesterAuthenticated: verifierIsTrusted
+      ),
+      for: transactionIdentifier
     )
     return registration
   }

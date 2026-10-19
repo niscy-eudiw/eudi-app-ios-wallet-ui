@@ -1923,9 +1923,10 @@ Logging appears in several areas:
   (`RecordedRegistrationCheck`, stored beside the entry). Unless the registration was verified (it was not verified,
   not checked, or no outcome was recorded), history warns that its contacts may not be the party's; when the
   certificate was issued to another party than the one that asked, no deletion request is offered, as on Android.
-  WalletKit first writes a presentation's entry when the request arrives, before the outcome is recorded, so an
-  outcome recorded by then belongs to an earlier presentation and is dropped
-  (`WalletKitTransactionLogControllerImpl.presentationRegistrationCheck`).
+  The outcome is recorded by WalletKit's transaction identifier (`RegistrationCheckProvider`), as on Android, so it
+  reaches only its own presentation's entry. A registration counts as verified only for a requester that
+  authenticated: WalletKit binds a registration to the reader certificate even when that certificate failed
+  validation, so an unauthenticated requester's registration is recorded as not verified.
 * Data-protection requests from history (a data deletion request, a report to the DPA) are recorded only after
   the system has handed them to the mail, phone or browser app (`TransactionDetailsInteractor.recordDataProtectionAction`),
   as on Android, so a failed attempt and its retry leave one record. A request handed off but not recorded offers to

@@ -15,23 +15,24 @@
  */
 import Foundation
 
-/// Holds the registration outcome of the presentation in progress until wallet-kit writes its history entry.
+/// Holds each presentation's registration outcome, by wallet-kit's transaction identifier, until wallet-kit writes
+/// that presentation's history entry, as the Android wallet keys it; an outcome never reaches another presentation's
+/// entry.
 public protocol RegistrationCheckProvider: Sendable {
-  func record(_ check: RecordedRegistrationCheck) async
-  /// The outcome recorded since the last call, which it clears.
-  func take() async -> RecordedRegistrationCheck?
+  func record(_ check: RecordedRegistrationCheck, for transactionIdentifier: String) async
+  /// The outcome recorded for `transactionIdentifier`, which it removes.
+  func removeCheck(for transactionIdentifier: String) async -> RecordedRegistrationCheck?
 }
 
 final actor RegistrationCheckProviderImpl: RegistrationCheckProvider {
 
-  private var check: RecordedRegistrationCheck?
+  private var checks: [String: RecordedRegistrationCheck] = [:]
 
-  func record(_ check: RecordedRegistrationCheck) {
-    self.check = check
+  func record(_ check: RecordedRegistrationCheck, for transactionIdentifier: String) {
+    checks[transactionIdentifier] = check
   }
 
-  func take() -> RecordedRegistrationCheck? {
-    defer { check = nil }
-    return check
+  func removeCheck(for transactionIdentifier: String) -> RecordedRegistrationCheck? {
+    checks.removeValue(forKey: transactionIdentifier)
   }
 }
