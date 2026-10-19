@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
+import logic_business
 
 /// What `RemoteImageView` loads, as the Android wallet's image client: `https` only, within the origin of the image
 /// first requested, and no more than `maxImageByteCount`, whether the response declares its size or not.
@@ -26,14 +27,13 @@ public enum RemoteImagePolicy {
 
   /// The image's address if the wallet may load it: `https` with a host only, as on Android, whatever passed it.
   public static func loadableUrl(_ url: URL?) -> URL? {
-    url?.isHttpsWebLink == true ? url : nil
+    url?.httpsWebLink
   }
 
   /// True for a redirect to follow: `https`, on the origin of the image first requested.
   public static func followsRedirect(from requestedUrl: URL?, to redirectUrl: URL?) -> Bool {
-    guard let requestedUrl, let redirectUrl, redirectUrl.isHttpsWebLink else { return false }
-    return redirectUrl.host?.lowercased() == requestedUrl.host?.lowercased()
-      && (redirectUrl.port ?? 443) == (requestedUrl.port ?? 443)
+    guard let requestedUrl, let redirectUrl else { return false }
+    return redirectUrl.isHttpsWebLink && redirectUrl.hasSameOrigin(as: requestedUrl)
   }
 
   /// True while a download stays within `maxImageByteCount`: neither the bytes received so far nor the size the

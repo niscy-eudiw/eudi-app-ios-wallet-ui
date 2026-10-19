@@ -286,7 +286,7 @@ extension TransactionDetailsFieldUi {
         id: "party:privacy:\(index)",
         label: .transactionDetailsPrivacyPolicyLabel,
         value: policy,
-        url: policy.webUrl.flatMap { $0.isHttpsWebLink ? $0 : nil }
+        url: policy.webUrl.flatMap(\.httpsWebLink)
       )
     }
   }

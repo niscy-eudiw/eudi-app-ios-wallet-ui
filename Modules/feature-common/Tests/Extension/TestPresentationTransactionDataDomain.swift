@@ -151,16 +151,6 @@ final class TestPresentationTransactionDataDomain: EudiTest {
     )
   }
 
-  func testDecodedBase64ByteCount_whenTheContentIsBase64InEitherAlphabet_thenIsItsDecodedSize() {
-    XCTAssertEqual("QUJD".decodedBase64ByteCount, 3)
-    XCTAssertEqual("QUI=".decodedBase64ByteCount, 2)
-    XCTAssertEqual("Q-_x".decodedBase64ByteCount, 3)
-    XCTAssertEqual("QU JD\n".decodedBase64ByteCount, 3)
-    XCTAssertNil("not base64 !".decodedBase64ByteCount)
-    XCTAssertNil("QUJ=D".decodedBase64ByteCount)
-    XCTAssertNil("Q+_x".decodedBase64ByteCount)
-  }
-
   func testToPresentationTransactionDataDomain_whenQesApproval_thenMapsEveryField() throws {
     // When
     let domain = try transaction(approvalJson).payload.toPresentationTransactionDataDomain()

@@ -50,7 +50,7 @@ public extension RelyingPartyRegistration {
         isVerified: isFullyVerified,
         logoUrl: logoUrl
       ),
-      privacyPolicyUrl: details?.privacyPolicyUrl.flatMap { $0.isHttpsWebLink ? $0 : nil },
+      privacyPolicyUrl: details?.privacyPolicyUrl.flatMap(\.httpsWebLink),
       intendedUse: details?.intendedUse.map { LocalizableStringKey.custom($0) }
     )
   }
@@ -82,7 +82,7 @@ public extension Optional where Wrapped == IssuerRegistration {
         isVerified: details != nil,
         logoUrl: details?.logoUrl ?? issuerLogo
       ),
-      privacyPolicyUrl: details?.privacyPolicyUrl.flatMap { $0.isHttpsWebLink ? $0 : nil },
+      privacyPolicyUrl: details?.privacyPolicyUrl.flatMap(\.httpsWebLink),
       intendedUse: details?.intendedUse.map { LocalizableStringKey.custom($0) }
     )
   }

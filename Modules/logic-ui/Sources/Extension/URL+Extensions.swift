@@ -14,19 +14,14 @@
  * governing permissions and limitations under the Licence.
  */
 import UIKit
+import logic_business
 
 public extension URL {
 
-  /// True for an `https` link with a host, the only kind of address a relying party or an issuer may
-  /// send the user to. As Android's `isOpenableExternalLink`.
-  var isHttpsWebLink: Bool {
-    scheme?.lowercased() == "https" && !(host ?? "").isEmpty
-  }
-
-  /// Opens the link with the system, the default opener of `openInBrowser(using:)` and of the screens that open
-  /// a verifier's redirect.
+  /// Opens the link with the system (`open()`), the default opener of `openInBrowser(using:)` and of the screens
+  /// that open a verifier's redirect.
   @MainActor static func openWithSystem(_ url: URL) {
-    UIApplication.shared.open(url)
+    url.open()
   }
 
   /// Opens the link in the browser if it is an `https` link with a host, and does nothing otherwise. It

@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
+import logic_business
 
 /// The issuer a credential offer link comes from, read from the link alone before anything is fetched, so that the
 /// wallet contacts no host other than a configured issuer's and never gives one issuer's client settings to another;
@@ -44,11 +45,11 @@ public enum OfferIssuer: Equatable, Sendable {
       }
       return configuredIssuers.contains(issuer) ? .configured(issuer) : .notConfigured
     }
-    guard let reference = URLComponents(string: value), reference.isHttpsWithHost else {
+    guard let reference = URL(string: value), reference.isHttpsWebLink else {
       return .notConfigured
     }
     let issuer = configuredIssuers.first { issuer in
-      URLComponents(string: issuer).map { $0.isHttpsWithHost && $0.hasSameOrigin(as: reference) } ?? false
+      URL(string: issuer).map { $0.isHttpsWebLink && $0.hasSameOrigin(as: reference) } ?? false
     }
     return issuer.map(OfferIssuer.configured) ?? .notConfigured
   }
@@ -58,16 +59,5 @@ public enum OfferIssuer: Equatable, Sendable {
     guard case .configured = of(offerUri: offerUri, configuredIssuers: configuredIssuers) else {
       throw WalletCoreError.issuerNotConfigured
     }
-  }
-}
-
-private extension URLComponents {
-
-  var isHttpsWithHost: Bool {
-    scheme?.lowercased() == "https" && !(host ?? "").isEmpty
-  }
-
-  func hasSameOrigin(as other: URLComponents) -> Bool {
-    host?.lowercased() == other.host?.lowercased() && (port ?? 443) == (other.port ?? 443)
   }
 }

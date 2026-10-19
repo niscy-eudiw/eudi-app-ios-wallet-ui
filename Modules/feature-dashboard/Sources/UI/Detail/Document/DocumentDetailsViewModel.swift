@@ -159,7 +159,7 @@ final class DocumentDetailsViewModel<Router: RouterHost>: ViewModel<Router, Docu
       $0.copy(
         isLoading: false,
         error: .init(
-          description: .custom(WalletCoreError.documentBlocked.errorMessage),
+          description: .documentDetailsReIssueBlockedText,
           cancelAction: self.onReIssueBlockedClosed(),
           action: nil
         )

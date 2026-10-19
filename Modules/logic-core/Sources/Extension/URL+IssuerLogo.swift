@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
+import logic_business
 
 public extension URL {
 
@@ -21,11 +22,9 @@ public extension URL {
   /// and their `VciConfig.logoOrigins`), as the Android wallet's `issuerLogoOrNull`. The address comes from the
   /// issuer's metadata, so without this rule an issuer could have the wallet contact any host.
   func isAllowedIssuerLogo(allowedOrigins: [String]) -> Bool {
-    guard scheme?.lowercased() == "https", let host = host?.lowercased(), !host.isEmpty else { return false }
-    let port = port ?? 443
+    guard isHttpsWebLink else { return false }
     return allowedOrigins.contains { origin in
-      guard let origin = URL(string: origin), origin.scheme?.lowercased() == "https" else { return false }
-      return origin.host?.lowercased() == host && (origin.port ?? 443) == port
+      URL(string: origin).map { $0.isHttpsWebLink && $0.hasSameOrigin(as: self) } ?? false
     }
   }
 
