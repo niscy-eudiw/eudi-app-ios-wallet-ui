@@ -366,6 +366,36 @@ final class TestRevocationWorkManager: EudiTest {
 
     verify(walletKitController, never()).fetchIssuedDocuments()
   }
+
+  func testStop_WhenACheckIsUnderWay_ThenReturnsOnceItHasFinished() async {
+    let runner = SerialCheckRunner()
+    let manager = RevocationWorkManagerImpl(
+      configLogic: walletKitConfig,
+      walletKitController: walletKitController,
+      checkRunner: runner
+    )
+    let gate = AsyncGate()
+    let started = expectation(description: "started")
+    let underWay = Task {
+      await runner.run {
+        started.fulfill()
+        await gate.wait()
+      }
+    }
+    await fulfillment(of: [started], timeout: 5)
+    let stoppedEarly = expectation(description: "stopped while it ran")
+    stoppedEarly.isInverted = true
+
+    let stopping = Task {
+      await manager.stop()
+      stoppedEarly.fulfill()
+    }
+
+    await fulfillment(of: [stoppedEarly], timeout: 0.5)
+    await gate.open()
+    await stopping.value
+    await underWay.value
+  }
 }
 
 private extension TestRevocationWorkManager {

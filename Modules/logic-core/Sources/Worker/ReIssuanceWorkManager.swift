@@ -38,16 +38,19 @@ final actor ReIssuanceWorkManagerImpl: ReIssuanceWorkManager {
   private let initialDelay: TimeInterval = 30
   private var reIssuanceTask: Task<Void, Never>?
   private var isRunning = false
-  private let checkRunner = SerialCheckRunner()
+  private let checkRunner: SerialCheckRunner
 
+  /// - Parameter checkRunner: Runs the rounds one at a time; `stop()` waits on it.
   init(
     configLogic: WalletKitConfig,
     walletKitController: WalletKitController,
-    revocationWorkManager: RevocationWorkManager
+    revocationWorkManager: RevocationWorkManager,
+    checkRunner: SerialCheckRunner = SerialCheckRunner()
   ) {
     self.revocationWorkManager = revocationWorkManager
     self.documentIssuanceConfig = configLogic.documentIssuanceConfig
     self.walletKitController = walletKitController
+    self.checkRunner = checkRunner
   }
 
   func start() async {

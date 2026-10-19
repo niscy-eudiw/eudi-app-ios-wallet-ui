@@ -166,14 +166,41 @@ final class TestWalletResetController: EudiTest {
     let first = Task { [controller] in try await controller?.resetWallet() }
     await scheduler.waitForFirstStop()
 
-    let second = Task { [controller] in try await controller?.resetWallet() }
-    try await Task.sleep(seconds: 1)
+    let secondEnded = expectation(description: "second call ended before the first")
+    secondEnded.isInverted = true
+    let second = Task { [controller] in
+      try await controller?.resetWallet()
+      secondEnded.fulfill()
+    }
+    await fulfillment(of: [secondEnded], timeout: 0.5)
     await gate.open()
     try await first.value
     try await second.value
 
     let stops = await scheduler.stops
     XCTAssertEqual(stops, 1)
+  }
+
+  func testRemoveCachedData_WhenRun_ThenTheCachedFilesCookiesAndResponsesAreGone() throws {
+    let fileManager = FileManager.default
+    let files = fileManager.cachesAndTemporaryDirectories.map { $0.appendingPathComponent("reset-test") }
+    try files.forEach { try Data("cached".utf8).write(to: $0) }
+    let site = try XCTUnwrap(URL(string: "https://issuer.example/"))
+    let cookie = try XCTUnwrap(
+      HTTPCookie(properties: [.domain: "issuer.example", .path: "/", .name: "session", .value: "1"])
+    )
+    HTTPCookieStorage.shared.setCookie(cookie)
+    let request = URLRequest(url: site)
+    let response = try XCTUnwrap(HTTPURLResponse(url: site, statusCode: 200, httpVersion: nil, headerFields: nil))
+    URLCache.shared.storeCachedResponse(CachedURLResponse(response: response, data: Data("page".utf8)), for: request)
+    XCTAssertEqual(HTTPCookieStorage.shared.cookies(for: site), [cookie])
+    XCTAssertNotNil(URLCache.shared.cachedResponse(for: request))
+
+    WalletResetControllerImpl.removeCachedData()
+
+    XCTAssertTrue(files.allSatisfy { !fileManager.fileExists(atPath: $0.path) })
+    XCTAssertEqual(HTTPCookieStorage.shared.cookies(for: site) ?? [], [])
+    XCTAssertNil(URLCache.shared.cachedResponse(for: request))
   }
 
 }

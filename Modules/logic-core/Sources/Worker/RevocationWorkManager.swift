@@ -35,11 +35,17 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
   private var revocationTask: Task<Void, Never>?
   private var isRunning = false
   private var didRunInitialCheck = false
-  private let checkRunner = SerialCheckRunner()
+  private let checkRunner: SerialCheckRunner
 
-  init(configLogic: WalletKitConfig, walletKitController: WalletKitController) {
+  /// - Parameter checkRunner: Runs the checks one at a time; `stop()` waits on it.
+  init(
+    configLogic: WalletKitConfig,
+    walletKitController: WalletKitController,
+    checkRunner: SerialCheckRunner = SerialCheckRunner()
+  ) {
     self.configLogic = configLogic
     self.walletKitController = walletKitController
+    self.checkRunner = checkRunner
   }
 
   func start() async {

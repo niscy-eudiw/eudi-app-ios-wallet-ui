@@ -125,4 +125,35 @@ final class TestReIssuanceWorkManager: EudiTest {
       verify(walletKitController, never()).reIssueDocument(identifier: any(), isBackgroundOperation: any())
     }
   }
+
+  func testStop_WhenARoundIsUnderWay_ThenReturnsOnceItHasFinished() async {
+    let runner = SerialCheckRunner()
+    let manager = ReIssuanceWorkManagerImpl(
+      configLogic: walletKitConfig,
+      walletKitController: walletKitController,
+      revocationWorkManager: revocationWorkManager,
+      checkRunner: runner
+    )
+    let gate = AsyncGate()
+    let started = expectation(description: "started")
+    let underWay = Task {
+      await runner.run {
+        started.fulfill()
+        await gate.wait()
+      }
+    }
+    await fulfillment(of: [started], timeout: 5)
+    let stoppedEarly = expectation(description: "stopped while it ran")
+    stoppedEarly.isInverted = true
+
+    let stopping = Task {
+      await manager.stop()
+      stoppedEarly.fulfill()
+    }
+
+    await fulfillment(of: [stoppedEarly], timeout: 0.5)
+    await gate.open()
+    await stopping.value
+    await underWay.value
+  }
 }

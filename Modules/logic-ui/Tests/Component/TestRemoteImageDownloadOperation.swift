@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import XCTest
+import os
 import SDWebImageSwiftUI
 @testable import logic_ui
 @testable import logic_test
@@ -50,6 +51,23 @@ final class TestRemoteImageDownloadOperation: EudiTest {
     let reported = expectation(description: "progress")
     receive(byteCount: 1) { reported.fulfill() }
     wait(for: [reported], timeout: 1)
+  }
+
+  func testDownload_WhenTheDeclaredSizeExceedsTheLimit_ThenTheTaskIsCancelled() throws {
+    let body = Data(count: RemoteImagePolicy.maxImageByteCount + 1).base64EncodedString()
+    let image = try XCTUnwrap(URL(string: "data:application/octet-stream;base64,\(body)"))
+    let operation = RemoteImageDownloadOperation(request: URLRequest(url: image), in: nil, options: [])
+    let failure = OSAllocatedUnfairLock<URLError.Code?>(initialState: nil)
+    let completed = expectation(description: "completed")
+    _ = operation.addHandlers(forProgress: nil) { _, _, error, _ in
+      failure.withLock { $0 = (error as? URLError)?.code }
+      completed.fulfill()
+    }
+
+    operation.start()
+
+    wait(for: [completed], timeout: 5)
+    XCTAssertEqual(failure.withLock { $0 }, .cancelled)
   }
 }
 
