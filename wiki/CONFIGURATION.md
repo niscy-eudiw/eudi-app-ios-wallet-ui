@@ -661,7 +661,9 @@ Every remote image, relying-party and Trust Mark logos included, loads only over
 redirect is followed only within the image's origin and over `https`, a download stops once it exceeds
 `RemoteImagePolicy.maxImageByteCount` (2 MiB) whether or not the response declares its size
 (`RemoteImageDownloadOperation`), and a large image is scaled down while it is decoded. The placeholder icon shows
-otherwise. The rule applies even when Core or Kit pass an `http` address.
+otherwise. The rule applies even when Core or Kit pass an `http` address. An SVG within 2 MiB is still parsed and
+drawn (`SDWebImageSVGCoder`), whatever size it declares, so a hostile but allowed source can slow the screen down;
+Android has the same residual.
 Images inside credentials, such as the portrait, are decoded within Android's limits (`ImageDecodeLimits`): an
 image above 40 megapixels is not decoded, and a side above 2048 px is scaled down while decoding.
 

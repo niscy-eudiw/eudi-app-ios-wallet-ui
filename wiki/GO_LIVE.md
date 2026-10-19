@@ -1647,9 +1647,18 @@ The app uses one ephemeral `URLSession` that keeps no cookies and no response ca
 Modules/logic-api/Sources/Provider/NetworkSessionProvider.swift
 ```
 
-A cookie one relying party sets is therefore never sent to another, and nothing links the wallet's sessions across
-launches. WalletKit 0.56.0 fetches an SD-JWT issuer's keys, when the credential carries no `x5c` chain, with its own
-`URLSession.shared`, which the app cannot change.
+A cookie one relying party sets is therefore never sent to another through that session. Three paths sit outside it,
+and the app cannot change them:
+
+* WalletKit 0.56.0 fetches an SD-JWT issuer's keys, when the credential carries no `x5c` chain, with
+  `URLSession.shared`.
+* WalletKit's sign-in sheet for issuers (`ASWebAuthenticationSession` in `OpenId4VciService`) is not ephemeral, so
+  it shares Safari's cookies: an issuer can recognise the browser across issuances, and the wallet's reset does not
+  clear them.
+* The RQES library (`rqes-csc-swift` 0.10.0, `HTTPService`) calls the QTSP with `URLSession.shared`, whose cookies
+  and response cache the app shares; the reset clears both.
+
+These are residuals for the WalletKit and RQES library teams.
 
 iOS App Transport Security applies to `URLSession` connections by default. Production must keep TLS
 validation strict.
@@ -1902,8 +1911,10 @@ confirm it, and a screen runs the reset (`WalletResetControllerImpl`, `logic-aut
    failures; then the SwiftData store is erased and opened empty, so no deleted row stays readable in its
    write-ahead log.
 4. The keychain: the app's keychain service, with the PIN salt, hash and lockout state and the biometric key, and
-   every generic-password and key item in the wallet's access group: document storage, and WalletKit's DPoP
-   keys, so an issuer cannot link the wallet before and after the reset (`KeyChainController.clear()`).
+   every generic-password and key item in the wallet's access group: document storage, the documents' keys that
+   WalletKit's secure areas keep there (`KeyChainSecureKeyStorage`), those of deferred documents included, and
+   WalletKit's DPoP keys, so an issuer cannot link the wallet before and after the reset
+   (`KeyChainController.clear()`).
 5. Every preference except `language`, `transactionLogRevision` and `walletResetGeneration`, so that onboarding
    runs again; the two counters never go back. "Check Registration Certificates" returns to off, which WalletKit
    applies at the next start.
@@ -1919,10 +1930,9 @@ forgotten, so none opens after onboarding. A failed step shows an error with "Tr
 again. After a failure the background checks restart at once; after a reset they start with the dashboard, after
 the next login.
 
-The reset does not reach: the keys WalletKit keeps for deferred documents it no longer lists, which
-`deleteAllDocuments()` does not delete; files the app or an integrator writes outside Caches and the temporary
-directory; and a request the ID Provider extension answers while the reset runs, since the extension runs in its
-own process. Data already shared with relying parties is outside the wallet.
+The reset does not reach: files the app or an integrator writes outside Caches and the temporary directory; the
+cookies of WalletKit's sign-in sheet, which are Safari's (see [Network Security](#network-security)); and a request
+the ID Provider extension answers while the reset runs, since the extension runs in its own process. Data already shared with relying parties is outside the wallet.
 
 ## Logging And Audit
 
