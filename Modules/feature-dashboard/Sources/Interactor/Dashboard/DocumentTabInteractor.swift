@@ -210,10 +210,11 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     var failed: [String] = []
 
     let categories = await self.walletKitController.getDocumentCategories()
-    let revocationStatuses = (try? await self.walletKitController.fetchRevokedDocumentStatuses()) ?? [:]
+    let deferredDocuments = await walletKitController.fetchDeferredDocuments()
+    let revocationStatuses = await revocationStatuses(for: deferredDocuments.map(\.id))
     let issuerLogoOrigins = await walletKitController.issuerLogoOrigins()
 
-    for deferred in await walletKitController.fetchDeferredDocuments() {
+    for deferred in deferredDocuments {
 
       if Task.isCancelled { return .cancelled }
 
@@ -427,6 +428,16 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     )
   }
 
+  /// The documents' revocation records. When they cannot be read, every document counts as unrecognised, shown as
+  /// revoked, so the tab never shows a blocked document as valid; the sharing flows refuse in the same case.
+  private func revocationStatuses(for documentIds: [String]) async -> [String: DocumentRevocationStatus] {
+    do {
+      return try await walletKitController.fetchRevokedDocumentStatuses()
+    } catch {
+      return Dictionary(documentIds.map { ($0, .unrecognised) }, uniquingKeysWith: { first, _ in first })
+    }
+  }
+
   private func fetchFilteredDocuments(failedDocuments: [String], shouldRefreshCounters: Bool) async -> FilterableList? {
 
     if shouldRefreshCounters {
@@ -434,7 +445,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     }
 
     let documents = await self.walletKitController.fetchAllDocuments()
-    let revocationStatuses = (try? await self.walletKitController.fetchRevokedDocumentStatuses()) ?? [:]
+    let revocationStatuses = await revocationStatuses(for: documents.map(\.id))
 
     guard !documents.isEmpty else {
       return nil

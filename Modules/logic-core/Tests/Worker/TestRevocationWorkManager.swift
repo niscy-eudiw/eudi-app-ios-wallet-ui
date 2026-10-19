@@ -99,11 +99,29 @@ final class TestRevocationWorkManager: EudiTest {
     verify(walletKitController, never()).removeRevokedDocument(with: any())
   }
 
+  func testCheckRevocation_WhenTwoDocumentsWithTheSameNameAreRevoked_ThenTheNoticeListsBoth() async throws {
+    stubSweep(stored: [:], statuses: ["a": .invalid, "b": .invalid])
+    stub(walletKitController) { mock in
+      when(mock.fetchIssuedDocuments()).thenReturn([
+        StubDocument.make(id: "a", displayName: "PID"),
+        StubDocument.make(id: "b", displayName: "PID")
+      ])
+    }
+    let notified = expectation(forNotification: NSNotification.RevocationDashboard, object: nil) { notification in
+      RevocationDashboardPayload(userInfo: notification.userInfo)
+        == RevocationDashboardPayload(revoked: ["a": "PID", "b": "PID"], suspended: [:])
+    }
+
+    try await workManager.checkRevocation()
+
+    await fulfillment(of: [notified], timeout: 2)
+  }
+
   func testCheckRevocation_WhenAStatusCannotBeInterpreted_ThenBlocksTheDocumentAsUnrecognised() async throws {
     stubSweep(stored: [:], statuses: ["a": .applicationSpecific(3), "c": .reserved(3)])
     let notified = expectation(forNotification: NSNotification.RevocationDashboard, object: nil) { notification in
       RevocationDashboardPayload(userInfo: notification.userInfo)
-        == RevocationDashboardPayload(revoked: ["Document a": "a", "Document c": "c"], suspended: [:])
+        == RevocationDashboardPayload(revoked: ["a": "Document a", "c": "Document c"], suspended: [:])
     }
 
     try await workManager.checkRevocation()
@@ -229,7 +247,7 @@ final class TestRevocationWorkManager: EudiTest {
     stubSweep(stored: [:], statuses: ["a": .invalid, "c": .suspended])
     let notified = expectation(forNotification: NSNotification.RevocationDashboard, object: nil) { notification in
       RevocationDashboardPayload(userInfo: notification.userInfo)
-        == RevocationDashboardPayload(revoked: ["Document a": "a"], suspended: ["Document c": "c"])
+        == RevocationDashboardPayload(revoked: ["a": "Document a"], suspended: ["c": "Document c"])
     }
 
     try await workManager.checkRevocation()

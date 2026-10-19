@@ -144,9 +144,9 @@ final actor RevocationWorkManagerImpl: RevocationWorkManager {
         newStatuses[document.id] = newStatus
         guard storedStatus == nil else { continue }
         if newStatus == .suspended {
-          suspendedDocuments[document.displayName.orEmpty] = document.id
+          suspendedDocuments[document.id] = document.displayName.orEmpty
         } else {
-          revokedDocuments[document.displayName.orEmpty] = document.id
+          revokedDocuments[document.id] = document.displayName.orEmpty
         }
       }
     }

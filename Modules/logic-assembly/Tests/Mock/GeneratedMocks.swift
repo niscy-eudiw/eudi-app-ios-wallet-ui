@@ -6321,27 +6321,6 @@ return await cuckoo_manager.call(
         )
     }
 
-    public func isDocumentRevoked(with p0: String) async -> Bool {
-        return await cuckoo_manager.call(
-            "isDocumentRevoked(with p0: String) async -> Bool",
-            parameters: (p0),
-            escapingParameters: (p0),
-            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.isDocumentRevoked(with: p0)
-        )
-    }
-
-    public func fetchRevokedDocuments() async throws -> [String] {
-        return try await cuckoo_manager.callThrows(
-            "fetchRevokedDocuments() async throws -> [String]",
-            parameters: (),
-            escapingParameters: (),
-            errorType: Swift.Error.self,
-            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.fetchRevokedDocuments()
-        )
-    }
-
     public func fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus] {
         return try await cuckoo_manager.callThrows(
             "fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus]",
@@ -6880,22 +6859,6 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<(TransactionLogDomain.Presentation, URL)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
                 method: "recordDpaReport(for p0: TransactionLogDomain.Presentation, contactUrl p1: URL) async throws",
-                parameterMatchers: matchers
-            ))
-        }
-        
-        func isDocumentRevoked<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubFunction<(String), Bool> where M1.MatchedType == String {
-            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
-            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "isDocumentRevoked(with p0: String) async -> Bool",
-                parameterMatchers: matchers
-            ))
-        }
-        
-        func fetchRevokedDocuments() -> Cuckoo.ProtocolStubThrowingFunction<(), [String],Swift.Error> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "fetchRevokedDocuments() async throws -> [String]",
                 parameterMatchers: matchers
             ))
         }
@@ -7558,30 +7521,6 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
-        func isDocumentRevoked<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(String), Bool> where M1.MatchedType == String {
-            let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
-            return cuckoo_manager.verify(
-                "isDocumentRevoked(with p0: String) async -> Bool",
-                callMatcher: callMatcher,
-                parameterMatchers: matchers,
-                sourceLocation: sourceLocation
-            )
-        }
-        
-        
-        @discardableResult
-        func fetchRevokedDocuments() -> Cuckoo.__DoNotUse<(), [String]> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return cuckoo_manager.verify(
-                "fetchRevokedDocuments() async throws -> [String]",
-                callMatcher: callMatcher,
-                parameterMatchers: matchers,
-                sourceLocation: sourceLocation
-            )
-        }
-        
-        
-        @discardableResult
         func fetchRevokedDocumentStatuses() -> Cuckoo.__DoNotUse<(), [String: DocumentRevocationStatus]> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
@@ -7990,14 +7929,6 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
     
     public func recordDpaReport(for p0: TransactionLogDomain.Presentation, contactUrl p1: URL) async throws {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
-    }
-    
-    public func isDocumentRevoked(with p0: String) async -> Bool {
-        return DefaultValueRegistry.defaultValue(for: (Bool).self)
-    }
-    
-    public func fetchRevokedDocuments() async throws -> [String] {
-        return DefaultValueRegistry.defaultValue(for: ([String]).self)
     }
     
     public func fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus] {

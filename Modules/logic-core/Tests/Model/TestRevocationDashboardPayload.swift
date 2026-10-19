@@ -20,7 +20,7 @@ import XCTest
 final class TestRevocationDashboardPayload: EudiTest {
 
   func testInitUserInfo_WhenBuiltFromItsOwnUserInfo_ThenRoundTrips() {
-    let payload = RevocationDashboardPayload(revoked: ["PID": "a"], suspended: ["mDL": "b"])
+    let payload = RevocationDashboardPayload(revoked: ["a": "PID"], suspended: ["b": "mDL"])
 
     XCTAssertEqual(RevocationDashboardPayload(userInfo: payload.userInfo), payload)
   }

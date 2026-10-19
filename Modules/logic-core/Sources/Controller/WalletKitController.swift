@@ -98,8 +98,6 @@ public protocol WalletKitController: Sendable {
   func recordDataDeletionRequest(for presentation: TransactionLogDomain.Presentation, contactUrl: URL) async throws
   func recordDpaReport(for presentation: TransactionLogDomain.Presentation, contactUrl: URL) async throws
 
-  func isDocumentRevoked(with id: String) async -> Bool
-  func fetchRevokedDocuments() async throws -> [String]
   /// The revocation record of every document that has one. A record without a status, or with one this
   /// build does not know, counts as unrecognised. An empty store gives an empty result; a failed read throws.
   func fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus]
@@ -294,6 +292,7 @@ final actor WalletKitControllerImpl: WalletKitController {
 
   /// Deletes every document and updates the Digital Credential API registrations, also when the deletion fails
   /// part way, so a document that is gone is no longer offered.
+  /// With the documents go every document's records (`deleteRecords(of:)`); the history stays.
   func clearAllDocuments() async throws {
     do {
       try await wallet.deleteAllDocuments()
@@ -301,13 +300,16 @@ final actor WalletKitControllerImpl: WalletKitController {
       await reconcileRegistrations()
       throw error
     }
+    try? await revokedDocumentStorageController.deleteAll()
+    try? await statusRefreshFailureStorageController.deleteAll()
+    try? await bookmarkStorageController.deleteAll()
+    try? await failedReIssuedDocStorageController.deleteAll()
     await reconcileRegistrations()
   }
 
   func deleteDocument(with id: String, status: DocumentStatus) async throws {
     try await wallet.deleteDocument(id: id, status: status)
-    try await revokedDocumentStorageController.delete(id)
-    try await statusRefreshFailureStorageController.delete(id)
+    try await deleteRecords(of: id)
     await reconcileRegistrations()
   }
 
@@ -488,6 +490,9 @@ final actor WalletKitControllerImpl: WalletKitController {
       throw WalletCoreError.unableToIssueAndStore
     }
     await bookmarkStorageController.carryBookmark(wasBookmarked: isBookmarked, to: response.documents.map(\.id))
+    if !response.documents.contains(where: { $0.id == identifier }) {
+      try? await deleteRecords(of: identifier, keepingRevocationRecord: true)
+    }
     await reconcileRegistrations()
     return document
   }
@@ -510,12 +515,27 @@ final actor WalletKitControllerImpl: WalletKitController {
     )
     if result.isDeferred {
       return result.transformToDeferredDecodable()
-    } else if let doc = fetchDocument(with: result.id) {
+    } else if let issued = fetchDocument(with: result.id) {
+      if result.id != doc.id {
+        try? await deleteRecords(of: doc.id)
+      }
       await reconcileRegistrations()
-      return doc
+      return issued
     } else {
       throw WalletCoreError.unableFetchDocument
     }
+  }
+
+  /// Deletes the records the wallet keeps for a document: its revocation record, refresh failure, bookmark and failed
+  /// re-issue, as Android's `deleteDocumentRecords`; its history stays, a legal record. After a re-issue the
+  /// original's revocation record stays until the check after the re-issue has read it.
+  private func deleteRecords(of id: String, keepingRevocationRecord: Bool = false) async throws {
+    if !keepingRevocationRecord {
+      try await revokedDocumentStorageController.delete(id)
+    }
+    try await statusRefreshFailureStorageController.delete(id)
+    try await bookmarkStorageController.delete(id)
+    try await failedReIssuedDocStorageController.delete(id)
   }
 
   /// Nil in builds that write no log file, so Settings offers no "Retrieve logs".
@@ -899,12 +919,6 @@ final actor WalletKitControllerImpl: WalletKitController {
     )
   }
 
-  func fetchRevokedDocuments() async throws -> [String] {
-    return try await self.revokedDocumentStorageController.retrieveAll().map {
-      return $0.identifier
-    }
-  }
-
   func fetchRevokedDocumentStatuses() async throws -> [String: DocumentRevocationStatus] {
     try await revokedDocumentStorageController.retrieveRevocationStatuses()
   }
@@ -919,10 +933,6 @@ final actor WalletKitControllerImpl: WalletKitController {
   func removeRevokedDocument(with id: String) async throws {
     try await revokedDocumentStorageController.delete(id)
     await reconcileRegistrations()
-  }
-
-  func isDocumentRevoked(with id: String) async -> Bool {
-    return (try? await revokedDocumentStorageController.retrieve(id)) != nil
   }
 
   func fetchStatusRefreshFailures() async throws -> Set<String> {

@@ -39,11 +39,11 @@ struct StubDocument: DocClaimsDecodable {
   var ageOverXX: [Int: Bool]
 
   /// A PID named "Document `id`" whose status list URI ends with `id`.
-  static func make(id: String, hasStatusList: Bool = true) -> any DocClaimsDecodable {
+  static func make(id: String, hasStatusList: Bool = true, displayName: String? = nil) -> any DocClaimsDecodable {
     StubDocument(
       id: id,
       createdAt: Date(),
-      displayName: "Document \(id)",
+      displayName: displayName ?? "Document \(id)",
       docType: "eu.europa.ec.eudi.pid.1",
       docClaims: [],
       docDataFormat: .cbor,

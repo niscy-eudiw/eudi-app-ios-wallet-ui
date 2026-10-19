@@ -199,6 +199,32 @@ final class TestDocumentTabInteractor: EudiTest {
     XCTAssertTrue(list.items.allSatisfy { ($0.attributes as? DocumentFilterableAttributes)?.isRevoked == true })
   }
 
+  func testFetchDocuments_WhenTheRevocationRecordsCannotBeRead_ThenEveryDocumentShowsAsBlocked() async {
+    let pid = Constants.createEuPidModel()
+    let mdl = Constants.createIsoMdlModel()
+    stub(walletKitController) { mock in
+      when(mock.fetchRevokedDocumentStatuses()).thenThrow(RuntimeError.genericError)
+    }
+    stubFetchDocuments(with: [pid, mdl])
+    stubFetchIssuedDocuments(with: [pid, mdl])
+    stubFetchDocumentCategories(with: [:])
+    stubFetchDocumentsWithExclusion(with: [mdl])
+    stubFetchMainPidDocument(with: pid)
+    stubIsDocumentLowOnCredentials()
+    stubRefreshCounters()
+    stubIsBatchCounterEnabled()
+
+    let state = await interactor.fetchDocuments(failedDocuments: [], shouldRefreshCounters: false)
+
+    guard case .success(let list) = state else {
+      return XCTFail("Wrong state \(state)")
+    }
+    let states = Dictionary(uniqueKeysWithValues: list.items.compactMap { item in
+      (item.payload as? DocumentTabUIModel).map { ($0.id, $0.value.state) }
+    })
+    XCTAssertEqual(states, [pid.id: .revoked, mdl.id: .revoked])
+  }
+
   func testFetchDocuments_WhenWalletKitControllerReturnsDataWithNilUsageCount_ThenReturnsUiModels() async {
     // Given
     var documentsCategories: DocumentCategories {

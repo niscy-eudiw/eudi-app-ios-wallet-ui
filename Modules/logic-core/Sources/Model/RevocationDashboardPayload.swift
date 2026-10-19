@@ -15,7 +15,8 @@
  */
 import Foundation
 
-/// The documents a revocation check newly revoked or newly suspended, each keyed by display name, as the
+/// The documents a revocation check newly revoked or newly suspended, each keyed by its identifier with its display name
+/// as the value, so two documents with the same name are both listed, as the
 /// `RevocationDashboard` notification carries them.
 public struct RevocationDashboardPayload: Sendable, Equatable {
 
