@@ -96,6 +96,17 @@ final class TestKeychainPinThrottleProvider: EudiTest {
     XCTAssertEqual(storedValues[KeychainPinThrottleProvider.KeyIdentifier.pinLockoutLevel.rawValue], "1")
   }
 
+  /// A failure recorded while a lockout runs, such as one from the extension's PIN screen that read the state before
+  /// the lockout began, keeps the lockout running.
+  func testRecordFailure_WhenALockoutRuns_ThenItKeepsRunning() {
+    for _ in 0..<3 { _ = provider.recordFailure() }
+    advance(by: 10)
+
+    _ = provider.recordFailure()
+
+    XCTAssertEqual(provider.getState(), .active(remaining: 20, total: 30))
+  }
+
   /// No screen read the state after the countdown; the next wrong PIN clears it.
   func testRecordFailure_WhenALockoutEndedUnseen_ThenARestartBeginsNoLockout() {
     for _ in 0..<3 { _ = provider.recordFailure() }
