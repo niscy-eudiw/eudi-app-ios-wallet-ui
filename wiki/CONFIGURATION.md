@@ -792,7 +792,7 @@ The PIN storage layer handles hashing, persistence, and validation. Brute-force 
 
 ## PIN throttle configuration
 
-The application protects against brute-force PIN attempts via an escalating lockout mechanism. After a configurable number of consecutive failed attempts the PIN input is disabled for an increasing duration. Lockout state is persisted in the iOS Keychain via `KeyChainController` (using the shared keychain access group, so the main app and the document-provider extension share state), so it survives process death, device reboot, and app updates. State is reset on any successful PIN or biometric authentication.
+The application protects against brute-force PIN attempts via an escalating lockout mechanism. After a configurable number of consecutive failed attempts the PIN input is disabled for an increasing duration. Lockout state is persisted in the iOS Keychain via `KeyChainController` (using the shared keychain access group, so the main app and the document-provider extension share state), so it survives process death and app updates. It runs on the monotonic clock, not the wall clock (`MonotonicClock`), so a device restart begins it again in full and a change of the date does not end it early; a Keychain read that fails counts as the longest lockout. State is reset on any successful PIN or biometric authentication.
 
 The policy is configurable via the `AuthenticationConfig` protocol inside the `logic-authentication` module:
 
@@ -862,8 +862,10 @@ Resulting behavior with the defaults:
 | 3 more wrong attempts | Third lockout: 5 minutes. |
 | Each subsequent batch of 3 wrong attempts | 5 minutes (last list entry reused). |
 | Successful PIN or biometric authentication | Failure counter and lockout level reset. |
-| App kill or device reboot | Active lockout window persists (wall-clock). |
-| Device clock rolled back | Detected; user remains locked for the full duration. |
+| App kill | Active lockout window persists. |
+| Device reboot | The lockout begins again in full: the monotonic clock restarts at boot. |
+| Device date or time changed | No effect: the lockout runs on the monotonic clock. |
+| Keychain read fails | Counts as a lockout of the longest configured duration. |
 
 You can change the policy by providing your own `AuthenticationConfig` conformance and wiring it through `LogicAuthAssembly`:
 
