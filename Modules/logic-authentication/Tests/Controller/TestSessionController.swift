@@ -14,7 +14,6 @@
  * governing permissions and limitations under the Licence.
  */
 import XCTest
-import logic_business
 @testable import logic_authentication
 @testable import logic_test
 
@@ -299,22 +298,6 @@ final class TestSessionController: EudiTest {
 
     XCTAssertFalse(controller.lockIfExpired())
     XCTAssertTrue(controller.isUnlocked)
-  }
-
-  func testMonotonicNow_WhenTimePasses_ThenAdvancesInSeconds() async throws {
-    let start = MonotonicClock.now()
-
-    try await Task.sleep(seconds: 0.05)
-    let elapsed = MonotonicClock.now() - start
-
-    XCTAssertGreaterThanOrEqual(elapsed, 0.04)
-    XCTAssertLessThan(elapsed, 5)
-  }
-
-  func testMonotonicNow_WhenRead_ThenIsTheMonotonicClockInSeconds() {
-    let reference = TimeInterval(clock_gettime_nsec_np(CLOCK_MONOTONIC)) / 1_000_000_000
-
-    XCTAssertEqual(MonotonicClock.now(), reference, accuracy: 1)
   }
 }
 

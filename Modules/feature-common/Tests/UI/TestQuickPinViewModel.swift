@@ -63,17 +63,26 @@ final class TestQuickPinViewModel: EudiTest {
 
   @MainActor
   func testPinCreation_WhenSettingThePinFails_ThenDoesNotUnlock() async throws {
+    let pinSet = expectation(description: "PIN set")
+    let unlocked = expectation(description: "session unlocked or success screen shown")
+    unlocked.isInverted = true
+    unlocked.assertForOverFulfill = false
     stub(interactor) { mock in
-      when(mock.setPin(newPin: any())).thenReturn(.failure(RuntimeError.genericError))
+      when(mock.setPin(newPin: any())).then { _ in
+        pinSet.fulfill()
+        return .failure(RuntimeError.genericError)
+      }
+      when(mock.unlockSession()).then { unlocked.fulfill() }
+    }
+    stub(router) { mock in
+      when(mock.push(with: any())).then { _ in unlocked.fulfill() }
     }
     let viewModel = makeViewModel(flow: .setWithoutActivation)
 
     try await enterTwice("135792", in: viewModel)
-    try await Task.sleep(seconds: 0.6)
 
-    verify(interactor).setPin(newPin: any())
-    verify(interactor, never()).unlockSession()
-    verify(router, never()).push(with: any())
+    await fulfillment(of: [pinSet], timeout: 3)
+    await fulfillment(of: [unlocked], timeout: 0.5)
   }
 
   @MainActor

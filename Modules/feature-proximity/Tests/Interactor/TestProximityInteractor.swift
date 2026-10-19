@@ -337,17 +337,17 @@ final class TestProximityInteractor: EudiTest {
       transactionDataSets: single.transactionDataSets,
       requestNames: single.requestNames + single.requestNames
     )
-    
+
     let expectedUiModels = Self.mockUiModels()
-    
+
     stub(presentationSessionCoordinator) { mock in
       when(mock.requestReceived()).thenReturn(request)
     }
-    
+
     stubRevokedDocumentStatuses(with: [])
-    
+
     let state = await interactor.onRequestReceived()
-    
+
     switch state {
     case .success(let uimodels, let relyingParty, let dataRequestInfo, let isTrusted, let registration):
       XCTAssertEqual(uimodels, [RequestCombinationUiModel(documents: expectedUiModels), RequestCombinationUiModel(documents: expectedUiModels)])

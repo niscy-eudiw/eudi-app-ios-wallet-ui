@@ -67,7 +67,7 @@ private extension TestDocumentDetailsViewModel {
     in viewModel: DocumentDetailsViewModel<MockRouterHost>
   ) async -> ContentErrorView.Config? {
     for _ in 0..<100 where viewModel.viewState.error == nil {
-      try? await Task.sleep(nanoseconds: 20_000_000)
+      try? await Task.sleep(seconds: 0.02)
     }
     return viewModel.viewState.error
   }

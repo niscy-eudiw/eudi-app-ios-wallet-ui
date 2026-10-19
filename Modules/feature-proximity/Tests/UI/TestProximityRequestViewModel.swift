@@ -49,7 +49,12 @@ final class TestProximityRequestViewModel: EudiTest {
     stub(router) { mock in
       when(mock.popTo(with: any())).then { _ in wentBack.fulfill() }
     }
-    let viewModel = makeViewModel(isTrusted: true, router: router, readerLeaves: true) { stopped.fulfill() }
+    let viewModel = makeViewModel(
+      isTrusted: true,
+      router: router,
+      readerLeaves: true,
+      onStop: { stopped.fulfill() }
+    )
 
     await viewModel.doWork()
 
@@ -96,80 +101,111 @@ final class TestProximityRequestViewModel: EudiTest {
     stub(router) { mock in
       when(mock.popTo(with: any())).then { _ in wentBack.fulfill() }
     }
-    let interactor = MockProximityInteractor()
-    let viewModel = makeViewModel(isTrusted: true, router: router, readerLeaves: true, interactor: interactor)
+    let shared = expectation(description: "response prepared")
+    shared.isInverted = true
+    let viewModel = makeViewModel(
+      isTrusted: true,
+      router: router,
+      readerLeaves: true,
+      onPrepare: { shared.fulfill() }
+    )
 
     await viewModel.doWork()
     await fulfillment(of: [wentBack], timeout: 5)
     viewModel.onShare()
-    try await Task.sleep(seconds: 0.3)
 
-    verify(interactor, never()).onResponsePrepare(requestItems: any())
+    await fulfillment(of: [shared], timeout: 0.5)
   }
 
   @MainActor
-  func testOnReappear_WhenTheRequestShowsAgain_ThenTheReaderIsWatchedAgain() async throws {
-    let interactor = MockProximityInteractor()
-    let viewModel = makeViewModel(isTrusted: true, interactor: interactor)
+  func testOnReappear_WhenTheRequestShowsAgain_ThenTheReaderIsWatchedAgain() async {
+    let watched = expectation(description: "reader watched")
+    watched.expectedFulfillmentCount = 2
+    let viewModel = makeViewModel(isTrusted: true, onWatch: { watched.fulfill() })
 
     await viewModel.doWork()
     await viewModel.onReappear()
-    try await Task.sleep(seconds: 0.3)
 
-    verify(interactor, times(2)).waitForReaderDisconnect()
+    await fulfillment(of: [watched], timeout: 5)
   }
 
   @MainActor
-  func testOnReappear_WhenTheReaderHasLeft_ThenTheReaderIsNotWatchedAgain() async throws {
+  func testOnReappear_WhenTheReaderHasLeft_ThenTheReaderIsNotWatchedAgain() async {
     let router = MockRouterHost()
     let wentBack = expectation(description: "went back")
     stub(router) { mock in
       when(mock.popTo(with: any())).then { _ in wentBack.fulfill() }
     }
-    let interactor = MockProximityInteractor()
-    let viewModel = makeViewModel(isTrusted: true, router: router, readerLeaves: true, interactor: interactor)
+    let watchedAgain = Self.secondWatch(of: self)
+    let viewModel = makeViewModel(
+      isTrusted: true,
+      router: router,
+      readerLeaves: true,
+      onWatch: { watchedAgain.fulfill() }
+    )
 
     await viewModel.doWork()
     await fulfillment(of: [wentBack], timeout: 5)
     await viewModel.onReappear()
-    try await Task.sleep(seconds: 0.3)
 
-    verify(interactor, times(1)).waitForReaderDisconnect()
+    await fulfillment(of: [watchedAgain], timeout: 0.5)
   }
 
   @MainActor
-  func testOnReappear_WhenTheRequestShowsAnError_ThenTheReaderIsNotWatchedAgain() async throws {
-    let interactor = MockProximityInteractor()
+  func testOnReappear_WhenTheRequestShowsAnError_ThenTheReaderIsNotWatchedAgain() async {
     let (sessionStates, continuation) = AsyncStream.makeStream(of: PresentationState.self)
-    let viewModel = makeViewModel(isTrusted: true, interactor: interactor, sessionStates: sessionStates)
+    let watchedAgain = Self.secondWatch(of: self)
+    let viewModel = makeViewModel(
+      isTrusted: true,
+      sessionStates: sessionStates,
+      onWatch: { watchedAgain.fulfill() }
+    )
 
     await viewModel.doWork()
+    let errorShown = expectation(description: "error shown")
+    withObservationTracking { _ = viewModel.viewState } onChange: { errorShown.fulfill() }
     continuation.yield(.error(RuntimeError.genericError))
-    try await Task.sleep(seconds: 0.3)
+    await fulfillment(of: [errorShown], timeout: 5)
     await viewModel.onReappear()
-    try await Task.sleep(seconds: 0.3)
     continuation.finish()
 
     XCTAssertNotNil(viewModel.viewState.error)
-    verify(interactor, times(1)).waitForReaderDisconnect()
+    await fulfillment(of: [watchedAgain], timeout: 0.5)
   }
 }
 
 private extension TestProximityRequestViewModel {
+
+  /// Fails the test when the reader is watched a second time; the first watch, when the request shows, counts
+  /// towards it without fulfilling it.
+  static func secondWatch(of test: XCTestCase) -> XCTestExpectation {
+    let watchedAgain = test.expectation(description: "reader watched again")
+    watchedAgain.expectedFulfillmentCount = 2
+    watchedAgain.isInverted = true
+    return watchedAgain
+  }
 
   @MainActor
   func makeViewModel(
     isTrusted: Bool,
     router: MockRouterHost = MockRouterHost(),
     readerLeaves: Bool = false,
-    interactor: MockProximityInteractor = MockProximityInteractor(),
     sessionStates: AsyncStream<PresentationState> = AsyncStream { $0.finish() },
-    onStop: @escaping @Sendable () -> Void = {}
+    onWatch: @escaping @Sendable () -> Void = {},
+    onStop: @escaping @Sendable () -> Void = {},
+    onPrepare: @escaping @Sendable () -> Void = {}
   ) -> ProximityRequestViewModel<MockRouterHost> {
+    let interactor = MockProximityInteractor()
     stub(interactor) { mock in
-      when(mock.waitForReaderDisconnect()).thenReturn(readerLeaves)
+      when(mock.waitForReaderDisconnect()).then {
+        onWatch()
+        return readerLeaves
+      }
       when(mock.stopPresentation()).then { onStop() }
-      when(mock.onResponsePrepare(requestItems: any())).thenReturn(.success(RequestItems()))
+      when(mock.onResponsePrepare(requestItems: any())).then { _ in
+        onPrepare()
+        return .success(RequestItems())
+      }
       when(mock.getSessionStatePublisher()).thenReturn(.success(sessionStates))
       when(mock.getCoordinator()).thenReturn(.failure(RuntimeError.genericError))
       when(mock.onRequestReceived()).thenReturn(

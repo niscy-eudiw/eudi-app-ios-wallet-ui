@@ -23,32 +23,37 @@ final class TestGenericSuccessViewModel: EudiTest {
   @MainActor
   func testOnButtonClicked_WhenTheButtonOpensAWebPage_ThenOpensItAndReturnsToItsScreen() throws {
     let redirect = try XCTUnwrap(URL(string: "https://verifier.example/done"))
-    let (viewModel, button, router, opened) = makeViewModel(redirect: redirect)
+    let fixture = makeFixture(redirect: redirect)
 
-    viewModel.onButtonClicked(with: button)
+    fixture.viewModel.onButtonClicked(with: fixture.button)
 
-    XCTAssertEqual(opened.urls, [redirect])
-    verify(router).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)))
+    XCTAssertEqual(fixture.opened.urls, [redirect])
+    verify(fixture.router).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)))
   }
 
   @MainActor
   func testOnButtonClicked_WhenTheButtonOpensAWalletLink_ThenOpensNothingAndReturnsToItsScreen() throws {
     let redirect = try XCTUnwrap(URL(string: "rqes://callback?code=abc"))
-    let (viewModel, button, router, opened) = makeViewModel(redirect: redirect)
+    let fixture = makeFixture(redirect: redirect)
 
-    viewModel.onButtonClicked(with: button)
+    fixture.viewModel.onButtonClicked(with: fixture.button)
 
-    XCTAssertTrue(opened.urls.isEmpty)
-    verify(router).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)))
+    XCTAssertTrue(fixture.opened.urls.isEmpty)
+    verify(fixture.router).popTo(with: equal(to: AppRoute.featureDashboardModule(.dashboard)))
   }
 }
 
 private extension TestGenericSuccessViewModel {
 
+  struct Fixture {
+    let viewModel: GenericSuccessViewModel<MockRouterHost>
+    let button: UIConfig.Success.Button
+    let router: MockRouterHost
+    let opened: RecordingLinkOpener
+  }
+
   @MainActor
-  func makeViewModel(
-    redirect: URL
-  ) -> (GenericSuccessViewModel<MockRouterHost>, UIConfig.Success.Button, MockRouterHost, RecordingLinkOpener) {
+  func makeFixture(redirect: URL) -> Fixture {
     let router = MockRouterHost()
     stub(router) { mock in
       when(mock.popTo(with: any())).thenDoNothing()
@@ -69,6 +74,6 @@ private extension TestGenericSuccessViewModel {
       router: router,
       openURL: { opened.open($0) }
     )
-    return (viewModel, button, router, opened)
+    return Fixture(viewModel: viewModel, button: button, router: router, opened: opened)
   }
 }
