@@ -29,6 +29,9 @@ protocol RequestAuthorizationInteractor: Sendable {
     context: ISO18013MobileDocumentRequestContext,
     selection: DocumentProviderSelection
   ) async throws
+
+  /// Records the request's history entry as not completed, then tells the system the user cancelled.
+  func cancelRequest(context: ISO18013MobileDocumentRequestContext) async
 }
 
 final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
@@ -51,6 +54,8 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
     self.prefsController = prefsController
   }
 
+  /// When the request is declined here, the history entry its validation wrote is recorded as not completed, with
+  /// the reason.
   /// A request is declined while the user has turned off offering documents to apps and websites, since one may
   /// still arrive through a registration the system has not yet withdrawn.
   /// A request that would include a document with a revocation record (revoked, suspended or unrecognised) is
@@ -63,7 +68,12 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
     context: ISO18013MobileDocumentRequestContext
   ) async throws -> AuthorizationUIModel {
     let (docClaimsModels, _, authorityKeyIdentifier, _) = try await dcApiHandler.validateRequest(context.request)
-    try await checkRequest(documentIds: docClaimsModels.map(\.id))
+    do {
+      try await checkRequest(documentIds: docClaimsModels.map(\.id))
+    } catch {
+      await dcApiHandler.completeTransaction(reasonOfNoncompletion: error.localizedDescription)
+      throw error
+    }
     let websiteName = context.requestingWebsiteOrigin?.absoluteString ?? LocalizableStringKey.unknownVerifier.toString
     let requestsUserImage = DocumentProviderPolicy.requestsUserImage(
       claimNames: docClaimsModels.flatMap { $0.docClaims.map(\.name) },
@@ -122,6 +132,11 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
     }
   }
 
+  func cancelRequest(context: ISO18013MobileDocumentRequestContext) async {
+    await dcApiHandler.completeTransaction(reasonOfNoncompletion: Constants.cancelledByUser)
+    context.cancel()
+  }
+
   /// Checks the setting and the revocation records again on every step, since either may change while the sheet is
   /// open (`DocumentProviderPolicy.checkRequest`); records that cannot be read decline the request.
   private func checkRequest(documentIds: [String]) async throws {
@@ -131,5 +146,13 @@ final actor RequestAuthorizationInteractorImpl: RequestAuthorizationInteractor {
       requestedDocumentIds: documentIds,
       blockedDocumentIds: Set(blocked.keys)
     )
+  }
+}
+
+private extension RequestAuthorizationInteractorImpl {
+
+  enum Constants {
+    /// The reason recorded for a request the user closed without sharing.
+    static let cancelledByUser = "Cancelled by the user"
   }
 }

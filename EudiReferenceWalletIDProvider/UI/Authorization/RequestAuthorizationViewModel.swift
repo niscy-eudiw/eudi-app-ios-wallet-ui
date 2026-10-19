@@ -177,7 +177,8 @@ final class RequestAuthorizationViewModel: ViewModel<RequestAuthorizationViewSta
   }
 
   func cancelRequest() {
-    context?.cancel()
+    guard let context else { return }
+    Task { await interactor.cancelRequest(context: context) }
   }
 
   /// The login texts before the request is shown, the confirmation texts after Accept. Neither has a back
