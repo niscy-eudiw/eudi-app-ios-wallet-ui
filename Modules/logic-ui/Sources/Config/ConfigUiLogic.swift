@@ -40,6 +40,10 @@ public protocol ConfigUiLogic: Sendable {
   /// wallet's `userImageClaimKeys`; add the claims your credentials use.
   var userImageClaimKeys: Set<String> { get }
 
+  /// The Swift modules whose screens, presented over the wallet, cover it for the session lock
+  /// (`SessionController.setCovered(_:)`): the RQES SDK's. Add the module of any SDK your build presents the same way.
+  var coveringScreenModules: [String] { get }
+
   init(themeConfiguration: ThemeConfiguration)
 }
 
@@ -91,6 +95,8 @@ struct ConfigUiLogicImpl: ConfigUiLogic {
   ]
 
   public var userImageClaimKeys: Set<String> = ["portrait", "picture"]
+
+  public var coveringScreenModules: [String] = ["EudiRQESUi"]
 
   public var dashboardRoute: AppRoute {
     return .featureDashboardModule(.dashboard)

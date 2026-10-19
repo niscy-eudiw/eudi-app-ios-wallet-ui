@@ -296,13 +296,13 @@ final class QuickPinViewModel<Router: RouterHost>: ViewModel<Router, QuickPinSta
     advanceToRetryInput()
   }
 
+  /// The notice for a device without a passcode, and whether the PIN must wait until one is set.
   private func refreshDeviceLockState() async {
-    let notice: LocalizableStringKey? = switch await interactor.getDeviceLockState() {
-    case .secure: nil
-    case .missing: .quickPinDeviceLockMissingWarning
-    case .required: .quickPinDeviceLockRequiredWarning
+    let (notice, isRequired): (LocalizableStringKey?, Bool) = switch await interactor.getDeviceLockState() {
+    case .secure: (nil, false)
+    case .missing: (.quickPinDeviceLockMissingWarning, false)
+    case .required: (.quickPinDeviceLockRequiredWarning, true)
     }
-    let isRequired = notice == .quickPinDeviceLockRequiredWarning
     setState { $0.copy(deviceLockNotice: notice).copy(isDeviceLockRequired: isRequired) }
   }
 

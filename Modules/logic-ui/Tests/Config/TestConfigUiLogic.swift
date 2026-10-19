@@ -101,7 +101,7 @@ final class TestConfigUiLogic: EudiTest {
     }
   }
 
-  func testUserImageClaimKeys_ByDefault_AreThePortraitAndThePicture() {
+  func testUserImageClaimKeys_WhenNotConfigured_ThenAreThePortraitAndThePicture() {
     XCTAssertEqual(configUiLogic.userImageClaimKeys, ["portrait", "picture"])
   }
 }

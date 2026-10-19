@@ -21,8 +21,8 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
   private let interactor: ProximityInteractor
   private var publisherTask: Task<Void, Error>?
   private var disconnectTask: Task<Void, Never>?
-  private var watchesReader = false
-  private var readerLeft = false
+  private var isWatchingReader = false
+  private var hasReaderLeft = false
   private var coordinator: ProximitySessionCoordinator?
 
   init(
@@ -57,7 +57,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
         isTrusted: isTrusted
       )
       self.onReceivedRegistration(registration, isRelyingPartyTrusted: isTrusted)
-      self.watchesReader = true
+      self.isWatchingReader = true
       self.watchReaderDisconnect()
     case .notSecuredRequest:
       self.onTrustBlocked()
@@ -70,7 +70,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
   }
 
   override func onShare() {
-    guard !readerLeft else { return }
+    guard !hasReaderLeft else { return }
     disconnectTask?.cancel()
     Task {
 
@@ -93,7 +93,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
 
   /// Resumes the reader watch when the request shows again, for example after the user backed out of biometry.
   override func onReappear() async {
-    guard watchesReader, !readerLeft, viewState.error == nil else { return }
+    guard isWatchingReader, !hasReaderLeft, viewState.error == nil else { return }
     watchReaderDisconnect()
   }
 
@@ -147,7 +147,7 @@ final class ProximityRequestViewModel<Router: RouterHost>: BaseRequestViewModel<
     disconnectTask?.cancel()
     disconnectTask = Task { [weak self, interactor] in
       guard await interactor.waitForReaderDisconnect(), !Task.isCancelled, let self else { return }
-      self.readerLeft = true
+      self.hasReaderLeft = true
       await self.stopPresentation()
       self.onPop()
     }

@@ -155,13 +155,16 @@ final class KeyChainControllerImpl: KeyChainController {
 
 private extension KeyChainControllerImpl {
 
+  /// Moves the items to this device's class until a move completes. The Keychain call runs outside the lock: two
+  /// callers may both run it, which is harmless, as the update is the same.
   func moveItemsFromThePreviousClassIfNeeded() {
-    let service = configLogic.keyChainConfig.documentStorageServiceName
-    let accessGroup = configLogic.keyChainConfig.keychainAccessGroup
-    isPreviousClassMoved.withLock { isMoved in
-      guard !isMoved else { return }
-      isMoved = Self.isMoveComplete(Self.moveItemsFromThePreviousClass(service: service, accessGroup: accessGroup))
-    }
+    guard !isPreviousClassMoved.withLock({ $0 }) else { return }
+    let status = Self.moveItemsFromThePreviousClass(
+      service: configLogic.keyChainConfig.documentStorageServiceName,
+      accessGroup: configLogic.keyChainConfig.keychainAccessGroup
+    )
+    guard Self.isMoveComplete(status) else { return }
+    isPreviousClassMoved.withLock { $0 = true }
   }
   /// The keychain status a KeychainAccess error carries, or `errSecInternalError` for any other error.
   func keyChainStatus(of error: Error) -> OSStatus {

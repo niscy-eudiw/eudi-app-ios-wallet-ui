@@ -27,8 +27,8 @@ final class TestPrefsControllerWalletReset: EudiTest {
       when(mock.getInt(forKey: any())).thenReturn(3)
     }
 
-    XCTAssertTrue(prefsController.takeNewWalletReset(seenIn: defaults))
-    XCTAssertFalse(prefsController.takeNewWalletReset(seenIn: defaults))
+    XCTAssertTrue(prefsController.recordWalletResetSeen(in: defaults))
+    XCTAssertFalse(prefsController.recordWalletResetSeen(in: defaults))
   }
 
   func testTakeNewWalletReset_WhenNoResetEverHappened_ThenReportsNothing() {
@@ -38,6 +38,6 @@ final class TestPrefsControllerWalletReset: EudiTest {
       when(mock.getInt(forKey: any())).thenReturn(0)
     }
 
-    XCTAssertFalse(prefsController.takeNewWalletReset(seenIn: defaults))
+    XCTAssertFalse(prefsController.recordWalletResetSeen(in: defaults))
   }
 }

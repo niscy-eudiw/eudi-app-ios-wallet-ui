@@ -25,14 +25,14 @@ public extension UIApplication {
   /// True while the RQES SDK's screens are presented over the wallet's own, for the session lock
   /// (`SessionController.setCovered(_:)`). The issuer's sign-in is marked by the issuance interactors
   /// instead, since it is not presented from the wallet's window.
-  var isWalletCoveredByAnotherScreen: Bool {
-    Self.isCovered(presentedFrom: currentUIWindow?.rootViewController)
+  func isWalletCovered(byModules modules: [String]) -> Bool {
+    Self.isCovered(presentedFrom: currentUIWindow?.rootViewController, byModules: modules)
   }
 
   /// True when a controller presented from `root`, at any depth, is a type of one of `modules`.
   static func isCovered(
     presentedFrom root: UIViewController?,
-    byModules modules: [String] = ["EudiRQESUi"]
+    byModules modules: [String]
   ) -> Bool {
     var presented = root?.presentedViewController
     while let controller = presented {

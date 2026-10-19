@@ -17,9 +17,10 @@ import Foundation
 
 public extension PrefsController {
 
-  /// True once after each factory reset for a reader that keeps its own `defaults`, such as the ID Provider
-  /// extension: it compares `Prefs.Key.walletResetGeneration` with the value that reader saw last, and records it.
-  func takeNewWalletReset(seenIn defaults: UserDefaults) -> Bool {
+  /// Records the current factory-reset generation as seen by a reader that keeps its own `defaults`, such as the ID
+  /// Provider extension, and returns true when that reader had not seen it: once after each reset. The seen value
+  /// lives in the reader's own `defaults`, not in `Prefs.Key`, because the shared preferences are what the reset clears.
+  func recordWalletResetSeen(in defaults: UserDefaults) -> Bool {
     let generation = getInt(forKey: .walletResetGeneration)
     guard defaults.integer(forKey: WalletResetConstants.seenGenerationKey) != generation else { return false }
     defaults.set(generation, forKey: WalletResetConstants.seenGenerationKey)

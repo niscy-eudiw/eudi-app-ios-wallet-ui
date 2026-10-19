@@ -44,18 +44,18 @@ final class TransactionActionViewModel<Router: RouterHost>: ViewModel<Router, Tr
   @ObservationIgnored
   private let interactor: TransactionDetailsInteractor
   @ObservationIgnored
-  private let openUrl: @MainActor (URL) async -> Bool
+  private let openURL: @MainActor (URL) async -> Bool
 
-  /// - Parameter openUrl: Hands a contact to the system, `UIApplication.open` by default; tests record it.
+  /// - Parameter openURL: Hands a contact to the system, `UIApplication.open` by default; tests record it.
   init(
     router: Router,
     interactor: TransactionDetailsInteractor,
     transactionId: String,
     action: TransactionDataProtectionAction,
-    openUrl: @escaping @MainActor (URL) async -> Bool = { await UIApplication.shared.open($0) }
+    openURL: @escaping @MainActor (URL) async -> Bool = { await UIApplication.shared.open($0) }
   ) {
     self.interactor = interactor
-    self.openUrl = openUrl
+    self.openURL = openURL
     super.init(
       router: router,
       initialState: .init(
@@ -159,7 +159,7 @@ final class TransactionActionViewModel<Router: RouterHost>: ViewModel<Router, Tr
   /// Hands the request to the system and records it only once the hand-off succeeded, so a failed attempt and its
   /// retry leave exactly one record.
   func openActionChannel(_ url: URL, contactUrl: URL) async {
-    let opened = await openUrl(url)
+    let opened = await openURL(url)
     guard opened else {
       setState {
         $0.copy(isLoading: false, externalAction: .idle)

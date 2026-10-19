@@ -43,7 +43,7 @@ struct DocumentProviderExtension: IdentityDocumentProvider {
   /// keeps the last value it saw in its own defaults.
   private func clearCachesAfterWalletReset() {
     let prefsController = DIGraph.shared.resolver.force(PrefsController.self)
-    guard prefsController.takeNewWalletReset(seenIn: .standard) else { return }
+    guard prefsController.recordWalletResetSeen(in: .standard) else { return }
     FileManager.default.removeContents(of: FileManager.default.cachesAndTemporaryDirectories)
   }
 }

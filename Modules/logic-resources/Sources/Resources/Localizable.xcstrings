@@ -683,6 +683,17 @@
         }
       }
     },
+    "document_details_issuer_card_re_issuance_failed_text" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The wallet could not renew this document automatically. Use Reissue document to try again."
+          }
+        }
+      }
+    },
     "document_details_issuer_card_revoked_message_text" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -690,17 +701,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This document cannot be used for verification."
-          }
-        }
-      }
-    },
-    "document_details_issuer_card_reissuance_failed_text" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The wallet could not renew this document automatically. Use Reissue document to try again."
           }
         }
       }
@@ -1723,7 +1723,7 @@
         }
       }
     },
-    "offer_documents_to_apps" : {
+    "offer_documents_to_apps_title" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {

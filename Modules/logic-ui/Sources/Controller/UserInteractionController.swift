@@ -24,34 +24,6 @@ public protocol UserInteractionController: Sendable {
   @MainActor func start(onInteraction: @escaping @MainActor () -> Void)
 }
 
-/// Reports every touch that starts in its window and recognises nothing, so the window's own gestures and
-/// controls work as before.
-final class InteractionGestureRecognizer: UIGestureRecognizer, UIGestureRecognizerDelegate {
-
-  private let onTouch: @MainActor () -> Void
-
-  init(onTouch: @escaping @MainActor () -> Void) {
-    self.onTouch = onTouch
-    super.init(target: nil, action: nil)
-    cancelsTouchesInView = false
-    delaysTouchesBegan = false
-    delaysTouchesEnded = false
-    delegate = self
-  }
-
-  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
-    onTouch()
-    state = .failed
-  }
-
-  func gestureRecognizer(
-    _ gestureRecognizer: UIGestureRecognizer,
-    shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
-  ) -> Bool {
-    true
-  }
-}
-
 /// The `UserInteractionController` of the app: a recogniser on each window of the scene, and observers of
 /// text and VoiceOver focus changes.
 @MainActor

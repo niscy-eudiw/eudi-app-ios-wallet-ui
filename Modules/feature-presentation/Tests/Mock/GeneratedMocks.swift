@@ -4623,9 +4623,7 @@ import logic_resources
 // MARK: - Mocks generated from file: '../Modules/logic-authentication/Sources/Error/SystemBiometryError.swift'
 
 import Cuckoo
-import LocalAuthentication
-import logic_resources
-import UIKit
+import Foundation
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -12325,6 +12323,7 @@ import logic_resources
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/BlePresentationService+Extensions.swift'
 
 import Cuckoo
+import EudiWalletKit
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -14194,6 +14193,16 @@ public class MockConfigUiLogic: ConfigUiLogic, Cuckoo.ProtocolMock, @unchecked S
         }
     }
 
+    public var coveringScreenModules: [String] {
+        get {
+            return cuckoo_manager.getter(
+                "coveringScreenModules",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.coveringScreenModules
+            )
+        }
+    }
+
     public required init(themeConfiguration p0: ThemeConfiguration) {}
 
     public struct __StubbingProxy_ConfigUiLogic: Cuckoo.StubbingProxy {
@@ -14225,6 +14234,10 @@ public class MockConfigUiLogic: ConfigUiLogic, Cuckoo.ProtocolMock, @unchecked S
         
         var userImageClaimKeys: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockConfigUiLogic,Set<String>> {
             return .init(manager: cuckoo_manager, name: "userImageClaimKeys")
+        }
+        
+        var coveringScreenModules: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockConfigUiLogic,[String]> {
+            return .init(manager: cuckoo_manager, name: "coveringScreenModules")
         }
     }
 
@@ -14261,6 +14274,10 @@ public class MockConfigUiLogic: ConfigUiLogic, Cuckoo.ProtocolMock, @unchecked S
         
         var userImageClaimKeys: Cuckoo.VerifyReadOnlyProperty<Set<String>> {
             return .init(manager: cuckoo_manager, name: "userImageClaimKeys", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        var coveringScreenModules: Cuckoo.VerifyReadOnlyProperty<[String]> {
+            return .init(manager: cuckoo_manager, name: "coveringScreenModules", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
     }
 }
@@ -14300,6 +14317,12 @@ public class ConfigUiLogicStub:ConfigUiLogic, @unchecked Sendable {
     public var userImageClaimKeys: Set<String> {
         get {
             return DefaultValueRegistry.defaultValue(for: (Set<String>).self)
+        }
+    }
+    
+    public var coveringScreenModules: [String] {
+        get {
+            return DefaultValueRegistry.defaultValue(for: ([String]).self)
         }
     }
 

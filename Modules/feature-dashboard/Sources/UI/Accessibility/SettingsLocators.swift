@@ -22,9 +22,9 @@ public enum SettingsLocators: String, LocatorType {
   public var id: String {
     switch self {
     case .confirmDialogResetButton:
-      return "settings_dialog_reset_wallet_positive_button"
+      return "settings_screen_dialog_reset_wallet_positive_button"
     case .confirmDialogCancelButton:
-      return "settings_dialog_reset_wallet_negative_button"
+      return "settings_screen_dialog_reset_wallet_negative_button"
     }
   }
 

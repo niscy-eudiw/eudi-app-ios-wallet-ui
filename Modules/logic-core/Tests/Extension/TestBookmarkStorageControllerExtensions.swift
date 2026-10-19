@@ -19,7 +19,7 @@ import logic_storage
 @testable import logic_core
 @testable import logic_test
 
-final class TestBookmarkExtensions: EudiTest {
+final class TestBookmarkStorageControllerExtensions: EudiTest {
 
   func testCarryBookmark_WhenTheOriginalWasBookmarked_ThenEveryRenewedDocumentIsBookmarked() async {
     let storage = RecordingBookmarkStorageController()
@@ -49,7 +49,7 @@ final class TestBookmarkExtensions: EudiTest {
   }
 }
 
-private extension TestBookmarkExtensions {
+private extension TestBookmarkStorageControllerExtensions {
 
   /// A store that records the bookmarks written to it and can refuse one of them.
   actor RecordingBookmarkStorageController: BookmarkStorageController {

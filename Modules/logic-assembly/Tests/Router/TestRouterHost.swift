@@ -19,7 +19,7 @@ import XCTest
 @testable import logic_ui
 @testable import logic_test
 
-final class TestRouterHostImpl: EudiTest {
+final class TestRouterHost: EudiTest {
 
   private var configUiLogic: MockConfigUiLogic!
   private var analyticsController: MockAnalyticsController!
@@ -135,7 +135,7 @@ final class TestRouterHostImpl: EudiTest {
   }
 }
 
-private extension TestRouterHostImpl {
+private extension TestRouterHost {
 
   @MainActor
   func makeHost(isUnlocked: Bool) -> RouterHostImpl {

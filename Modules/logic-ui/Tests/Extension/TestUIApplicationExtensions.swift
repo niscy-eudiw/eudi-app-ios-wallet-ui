@@ -40,9 +40,9 @@ final class TestUIApplicationExtensions: EudiTest {
   func testIsCovered_WhenNothingIsPresentedOrOnlyOtherModules_ThenIsFalse() {
     let root = StubPresentingController(presenting: UIViewController())
 
-    XCTAssertFalse(UIApplication.isCovered(presentedFrom: root))
-    XCTAssertFalse(UIApplication.isCovered(presentedFrom: StubPresentingController(presenting: nil)))
-    XCTAssertFalse(UIApplication.isCovered(presentedFrom: nil))
+    XCTAssertFalse(UIApplication.isCovered(presentedFrom: root, byModules: ["EudiRQESUi"]))
+    XCTAssertFalse(UIApplication.isCovered(presentedFrom: StubPresentingController(presenting: nil), byModules: ["EudiRQESUi"]))
+    XCTAssertFalse(UIApplication.isCovered(presentedFrom: nil, byModules: ["EudiRQESUi"]))
   }
 }
 

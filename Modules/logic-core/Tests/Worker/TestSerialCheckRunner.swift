@@ -21,7 +21,7 @@ final class TestSerialCheckRunner: EudiTest {
 
   func testRun_WhenCalledDuringACheck_ThenTheCheckRunsOnceMoreAndNeverTwiceAtOnce() async {
     let runner = SerialCheckRunner()
-    let log = CheckLog()
+    let log = RecordingCheckLog()
     let firstStarted = expectation(description: "first check started")
     let gate = AsyncGate()
 
@@ -49,7 +49,7 @@ final class TestSerialCheckRunner: EudiTest {
 
   func testRun_WhenNothingRuns_ThenTheCheckRunsOnce() async {
     let runner = SerialCheckRunner()
-    let log = CheckLog()
+    let log = RecordingCheckLog()
 
     await runner.run {
       _ = await log.begin()
@@ -63,7 +63,7 @@ final class TestSerialCheckRunner: EudiTest {
   func testWaitUntilIdle_WhenACheckRuns_ThenReturnsOnceItEnds() async {
     let runner = SerialCheckRunner()
     let gate = AsyncGate()
-    let log = CheckLog()
+    let log = RecordingCheckLog()
     let started = expectation(description: "check started")
 
     Task {
@@ -96,7 +96,7 @@ final class TestSerialCheckRunner: EudiTest {
   }
 }
 
-private actor CheckLog {
+private actor RecordingCheckLog {
   private(set) var runs = 0
   private(set) var maxAtOnce = 0
   private var atOnce = 0

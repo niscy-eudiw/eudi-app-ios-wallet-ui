@@ -7027,6 +7027,7 @@ import logic_resources
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/BlePresentationService+Extensions.swift'
 
 import Cuckoo
+import EudiWalletKit
 @testable import logic_business
 @testable import logic_core
 

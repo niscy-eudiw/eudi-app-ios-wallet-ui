@@ -18,7 +18,7 @@ import logic_storage
 @testable import logic_core
 @testable import logic_test
 
-final class TestStatusRefreshFailureExtensions: EudiTest {
+final class TestStatusRefreshFailureStorageControllerExtensions: EudiTest {
 
   func testRetrieveIdentifiers_WhenStoreIsEmpty_ThenIsEmpty() async throws {
     let storage = StubStatusRefreshFailureStorageController(failure: logic_storage.StorageError.itemsNotFound)
@@ -51,7 +51,7 @@ final class TestStatusRefreshFailureExtensions: EudiTest {
   }
 }
 
-private extension TestStatusRefreshFailureExtensions {
+private extension TestStatusRefreshFailureStorageControllerExtensions {
 
   /// A store that returns fixed records or fails every read; it records nothing.
   actor StubStatusRefreshFailureStorageController: StatusRefreshFailureStorageController {

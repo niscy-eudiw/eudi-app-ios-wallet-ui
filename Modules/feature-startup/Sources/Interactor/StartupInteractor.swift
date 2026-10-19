@@ -56,22 +56,16 @@ final actor StartupInteractorImpl: StartupInteractor {
   /// document is loaded before login: whether any exist is read from the Keychain without them.
   public func initialize(with splashAnimationDuration: TimeInterval) async -> StartupPartialState {
     await manageStorageForFirstRun()
-    let hasDocuments: Bool
-    let documentsCheckError: Error?
+    let storedDocuments: Result<Bool, Error>
     do {
-      hasDocuments = try await walletKitController.hasStoredDocuments()
-      documentsCheckError = nil
+      storedDocuments = .success(try await walletKitController.hasStoredDocuments())
     } catch {
-      hasDocuments = false
-      documentsCheckError = error
+      storedDocuments = .failure(error)
     }
     try? await Task.sleep(seconds: splashAnimationDuration)
     let continuationRoute: AppRoute
     do {
-      continuationRoute = try await getContinuationRoute(
-        hasDocuments: hasDocuments,
-        documentsCheckError: documentsCheckError
-      )
+      continuationRoute = try await getContinuationRoute(storedDocuments: storedDocuments)
     } catch {
       return .failure(error)
     }
@@ -89,7 +83,9 @@ final actor StartupInteractorImpl: StartupInteractor {
     )
   }
 
-  private func getContinuationRoute(hasDocuments: Bool, documentsCheckError: Error?) async throws -> AppRoute {
+  /// `storedDocuments` is whether the wallet holds documents, or why that could not be read.
+  private func getContinuationRoute(storedDocuments: Result<Bool, Error>) async throws -> AppRoute {
+    let hasDocuments = (try? storedDocuments.get()) ?? false
     if try await quickPinInteractor.hasPin() {
       return .featureCommonModule(
         .biometry(
@@ -111,8 +107,8 @@ final actor StartupInteractorImpl: StartupInteractor {
         )
       )
     } else {
-      if let documentsCheckError {
-        throw documentsCheckError
+      if case .failure(let error) = storedDocuments {
+        throw error
       }
       guard !hasDocuments else {
         throw AuthenticationError.pinNotFound

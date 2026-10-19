@@ -14,10 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 
-import LocalAuthentication
-import logic_business
-import logic_resources
-import UIKit
+import Foundation
 
 public enum SystemBiometryError: Error, LocalizedError, Identifiable, Sendable {
   case deniedAccess

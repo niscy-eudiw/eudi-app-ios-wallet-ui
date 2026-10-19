@@ -49,7 +49,7 @@ final class SessionLockControllerImpl: SessionLockController {
     routerHost: RouterHost,
     userInteractionController: UserInteractionController,
     walletKitController: WalletKitController,
-    isCovered: @escaping @MainActor () -> Bool = { UIApplication.shared.isWalletCoveredByAnotherScreen },
+    isCovered: @escaping @MainActor () -> Bool,
     idleCheckInterval: TimeInterval = Constants.idleCheckInterval
   ) {
     self.sessionController = sessionController

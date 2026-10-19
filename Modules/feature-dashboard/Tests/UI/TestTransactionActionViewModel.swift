@@ -96,7 +96,7 @@ private extension TestTransactionActionViewModel {
       interactor: interactor,
       transactionId: "transaction",
       action: .requestDataDeletion,
-      openUrl: { await opener.open($0) }
+      openURL: { await opener.open($0) }
     )
     return Fixture(viewModel: viewModel, interactor: interactor, opener: opener)
   }

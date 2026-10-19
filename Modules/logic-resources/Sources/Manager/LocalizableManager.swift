@@ -657,7 +657,7 @@ final class LocalizableManager: LocalizableManagerType {
     case .documentDetailsIssuerCardStatusRefreshFailedText:
       bundle.localizedString(forKey: "document_details_issuer_card_status_refresh_failed_text")
     case .documentDetailsIssuerCardReIssuanceFailedText:
-      bundle.localizedString(forKey: "document_details_issuer_card_reissuance_failed_text")
+      bundle.localizedString(forKey: "document_details_issuer_card_re_issuance_failed_text")
     case .documentDetailsReIssueBlockedText:
       bundle.localizedString(forKey: "document_details_re_issue_blocked_text")
     case .documentDetailsIssuerCardExpiredMessageText:
@@ -693,7 +693,7 @@ final class LocalizableManager: LocalizableManagerType {
     case .requestUserImageNotice:
       bundle.localizedString(forKey: "request_user_image_notice")
     case .offerDocumentsToAppsTitle:
-      bundle.localizedString(forKey: "offer_documents_to_apps")
+      bundle.localizedString(forKey: "offer_documents_to_apps_title")
     case .quickPinWeakError:
       bundle.localizedString(forKey: "quick_pin_weak_error")
     case .issuanceOfferIssuerNotConfiguredError:

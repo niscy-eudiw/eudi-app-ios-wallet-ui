@@ -67,7 +67,7 @@ final class TestPresentationRequestViewModel: EudiTest {
   }
 
   @MainActor
-  func testOnUserImageShareConfirmed_ThenTheConfirmationClosesAndSharingGoesOn() async {
+  func testOnUserImageShareConfirmed_WhenTheUserConfirms_ThenTheConfirmationClosesAndSharingGoesOn() async {
     let viewModel = makeViewModel(isTrusted: true, combinations: [RequestCombinationUiModel(documents: [portraitRequest()])])
     await viewModel.doWork()
     viewModel.onShareClick()
