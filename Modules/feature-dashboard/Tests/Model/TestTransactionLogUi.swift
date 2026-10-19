@@ -376,6 +376,29 @@ final class TestTransactionLogUi: EudiTest {
     }
   }
 
+  func testRegistrationWarning_WhenOnlyAPartyIdentifierOrAnIntermediaryWasRecorded_ThenWarns() {
+    let withIdentifier = TransactionLogDomain.Presentation(
+      id: "1", time: time, result: .completed,
+      party: .init(name: "Verifier", identifier: .init(schemeUri: "scheme", value: "rp"), contacts: []),
+      intermediary: nil, registration: nil, claimsRequested: [], claimsPresented: [], registrationCheck: .notVerified
+    )
+    let withIntermediary = TransactionLogDomain.Presentation(
+      id: "2", time: time, result: .completed,
+      party: .init(name: "Verifier", identifier: nil, contacts: []),
+      intermediary: .init(name: "Intermediary", identifier: nil, contacts: []),
+      registration: nil, claimsRequested: [], claimsPresented: [], registrationCheck: nil
+    )
+    let withNothing = TransactionLogDomain.Presentation(
+      id: "3", time: time, result: .completed,
+      party: .init(name: "Verifier", identifier: nil, contacts: []),
+      intermediary: nil, registration: nil, claimsRequested: [], claimsPresented: [], registrationCheck: nil
+    )
+
+    XCTAssertEqual(withIdentifier.registrationWarning, LocalizableStringKey.transactionDetailsRegistrationNotVerifiedWarning)
+    XCTAssertEqual(withIntermediary.registrationWarning, LocalizableStringKey.transactionDetailsRegistrationNotVerifiedWarning)
+    XCTAssertNil(withNothing.registrationWarning)
+  }
+
   func testRegistrationWarning_WhenTheRegistrationWasVerified_ThenDoesNotWarn() {
     XCTAssertNil(sharedPresentation(registrationCheck: .verified).registrationWarning)
   }

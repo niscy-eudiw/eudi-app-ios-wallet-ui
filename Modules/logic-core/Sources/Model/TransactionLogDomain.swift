@@ -105,10 +105,15 @@ public enum TransactionLogDomain: Sendable, Equatable {
       self.registrationCheck = registrationCheck
     }
 
-    /// True when the entry carries registration details that were not verified when the data was shared, as the
-    /// Android wallet's `hasUnverifiedRegistration`; an entry with no record counts as not verified.
+    /// True when the entry carries registration details (a registration, a party identifier, contacts or an
+    /// intermediary) that were not verified when the data was shared, as the Android wallet's
+    /// `hasUnverifiedRegistration`; an entry with no record counts as not verified.
     public var hasUnverifiedRegistration: Bool {
-      (registration != nil || !party.contacts.isEmpty) && registrationCheck != .verified
+      let hasRegistrationDetails = registration != nil
+        || party.identifier != nil
+        || !party.contacts.isEmpty
+        || intermediary != nil
+      return hasRegistrationDetails && registrationCheck != .verified
     }
   }
 

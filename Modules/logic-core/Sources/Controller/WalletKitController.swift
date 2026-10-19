@@ -323,8 +323,12 @@ final actor WalletKitControllerImpl: WalletKitController {
     ).hasDocuments()
   }
 
+  /// The registration validator is shared with remote presentations, and wallet-kit clears it for a Bluetooth request
+  /// only once a registration certificate is validated, so it is cleared here first: a request that fails before
+  /// that does not show the previous party's registration.
   func startProximityPresentation() async -> ProximitySessionCoordinator {
     await self.stopPresentation()
+    await wallet.wrpRegistrationValidator.resetValidations()
     let session = await wallet.beginPresentation(flow: .ble)
     let proximitySessionCoordinator = DIGraph.shared.resolver.force(
       ProximitySessionCoordinator.self,
@@ -458,10 +462,16 @@ final actor WalletKitControllerImpl: WalletKitController {
     let document = fetchDocument(with: identifier)
     let isBookmarked = await isDocumentBookmarked(with: identifier)
 
-    if let issuerId = document?.credentialIssuerIdentifier,
-       let configId = document?.configurationIdentifier,
-       case .blocked = try await getIssuerRegistration(issuerId: issuerId, configIds: [configId]) {
-      throw RegistrationRefusedError()
+    if isRegistrationChecked {
+      guard
+        let issuerId = document?.credentialIssuerIdentifier,
+        let configId = document?.configurationIdentifier
+      else {
+        throw RegistrationRefusedError()
+      }
+      if case .blocked = try await getIssuerRegistration(issuerId: issuerId, configIds: [configId]) {
+        throw RegistrationRefusedError()
+      }
     }
 
     let credentialOptions = await resolveCredentialOptions(
@@ -736,7 +746,7 @@ final actor WalletKitControllerImpl: WalletKitController {
       registration: .notSupported
     )
 
-    guard walletKitConfig.validateIssuerRegistrationCertificate else { return unregistered }
+    guard isRegistrationChecked else { return unregistered }
 
     guard let policy else {
       return trustViolations.isEmpty ? unregistered : RelyingPartyRegistration(
