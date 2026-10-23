@@ -22,6 +22,10 @@ public protocol RemoteSessionCoordinator: Sendable {
   var sendableCurrentValueSubject: SendableCurrentValueSubject<PresentationState> { get }
   var relyingPartyRegistration: WrpRegistrationPolicy? { get }
   var relyingPartyWarningViolations: [String] { get }
+  /// True when wallet-kit found the registration certificate issued to another party than the one that asked.
+  var isRelyingPartyNotBoundToRequester: Bool { get }
+  /// The transaction identifier of the history entry wallet-kit writes for this presentation.
+  var transactionIdentifier: String { get }
 
   init(session: PresentationSession)
 
@@ -45,6 +49,10 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
 
   var relyingPartyRegistration: WrpRegistrationPolicy? { session.wrpVerifierPolicy }
   var relyingPartyWarningViolations: [String] { (session.wrpVerifierWarnings?[""] ?? []).map(\.message) }
+  var isRelyingPartyNotBoundToRequester: Bool {
+    (session.wrpVerifierWarnings?[""] ?? []).contains { $0.reason == .notBoundToAccessCertificate }
+  }
+  var transactionIdentifier: String { session.presentationService.transactionLog.transactionIdentifier }
 
   private var overaskedClaims: [OveraskedClaim] {
     (session.wrpVerifierWarnings?.values.flatMap { $0 } ?? []).toOveraskedClaims()
@@ -119,11 +127,12 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
   }
 
   private func createRequest() -> PresentationRequest {
-    PresentationRequest(
+    let isTrusted = session.readerAuthenticationStatus == .authenticated
+    return PresentationRequest(
       itemSets: session.disclosedDocumentSets.map(\.docElements),
-      relyingParty: session.readerCertIssuer ?? LocalizableStringKey.unknownVerifier.toString,
+      relyingParty: PresentationRequest.relyingPartyName(certificateName: session.readerCertIssuer, isTrusted: isTrusted),
       dataRequestInfo: session.readerCertValidationMessage ?? LocalizableStringKey.requestDataInfoNotice.toString,
-      isTrusted: session.readerAuthenticationStatus == .authenticated,
+      isTrusted: isTrusted,
       overaskedClaims: overaskedClaims,
       transactionDataSets: session.disclosedDocumentSets.map { $0.transactionDataDomains() },
       requestNames: session.disclosedDocumentSets.map(\.requestName)

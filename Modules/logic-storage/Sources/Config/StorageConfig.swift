@@ -42,7 +42,8 @@ final class StorageConfigImpl: StorageConfig {
         SDBookmark.self,
         SDTransactionLog.self,
         SDRevokedDocument.self,
-        SDFailedReIssuedDocument.self
+        SDFailedReIssuedDocument.self,
+        SDStatusRefreshFailure.self
       ]
     )
   }
@@ -53,7 +54,7 @@ final class StorageConfigImpl: StorageConfig {
       in: .userDomainMask
     ).first ?? FileManager.default.temporaryDirectory
 
-    let dir = base.appendingPathComponent(
+    var dir = base.appendingPathComponent(
       databaseFolder,
       isDirectory: true
     )
@@ -62,6 +63,7 @@ final class StorageConfigImpl: StorageConfig {
       at: dir,
       withIntermediateDirectories: true
     )
+    dir.excludeFromBackup()
 
     return dir
       .appendingPathComponent(databaseName)
@@ -84,5 +86,17 @@ private extension StorageConfigImpl {
 
   var appGroupIdentifier: String {
     Bundle.getAppGroupIdentifier() ?? ""
+  }
+}
+
+private extension URL {
+
+  /// Keeps the history, revocation records and bookmarks out of iCloud backup and device-to-device transfer, as the
+  /// Android wallet's backup rules do (owner, 19 October 2026). A restore to the same device brings the documents
+  /// back from the Keychain without their revocation records until the first check after login.
+  mutating func excludeFromBackup() {
+    var values = URLResourceValues()
+    values.isExcludedFromBackup = true
+    try? setResourceValues(values)
   }
 }

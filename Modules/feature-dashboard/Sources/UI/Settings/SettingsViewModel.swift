@@ -37,6 +37,13 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
     }
   }
 
+  var isOfferingDocumentsToApps: Bool = true {
+    didSet {
+      guard !isHydratingDocumentOffering, oldValue != isOfferingDocumentsToApps else { return }
+      updateDocumentOffering(isOfferingDocumentsToApps)
+    }
+  }
+
   var isIssuerRegistrationValidationEnabled: Bool = false {
     didSet {
       guard !isHydratingIssuerRegistration, oldValue != isIssuerRegistrationValidationEnabled else { return }
@@ -46,6 +53,8 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
 
   var isRestartRequiredAlertShowing: Bool = false
 
+  var isResetConfirmationShowing: Bool = false
+
   var biometryError: SystemBiometryError?
 
   @ObservationIgnored
@@ -53,6 +62,8 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
 
   @ObservationIgnored
   private var isHydratingIssuerRegistration = false
+  @ObservationIgnored
+  private var isHydratingDocumentOffering = false
 
   private let interactor: SettingsInteractor
   private let walletKitController: WalletKitController
@@ -101,9 +112,8 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
   private func setBiometryEnabled(_ isEnabled: Bool) {
     setState { $0.copy(isBiometryEnabled: isEnabled) }
     Task {
-      switch await interactor.authenticateBiometry() {
+      switch await interactor.setBiometrySelection(isEnabled: isEnabled) {
       case .authenticated:
-        await interactor.setBiometrySelection(isEnabled: isEnabled)
         setState { $0.copy(isBiometryEnabled: isEnabled) }
       case .failure(let error):
         setState { $0.copy(isBiometryEnabled: !isEnabled) }
@@ -129,6 +139,11 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
     isHydratingIssuerRegistration = true
     isIssuerRegistrationValidationEnabled = await interactor.isIssuerRegistrationValidationEnabled()
     isHydratingIssuerRegistration = false
+
+    let isDocumentOfferingAvailable = await interactor.isDocumentOfferingAvailable()
+    isHydratingDocumentOffering = true
+    isOfferingDocumentsToApps = await interactor.isOfferingDocumentsToApps()
+    isHydratingDocumentOffering = false
 
     var items: [SettingMenuItemUIModel] = []
 
@@ -188,25 +203,55 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
       )
     )
 
-    items.append(
-      .init(
-        title: .retrieveLogs,
-        icon: Theme.shared.image.retrieveLogs,
-        isShareLink: true,
-        action: {}
+    if isDocumentOfferingAvailable {
+      items.append(
+        .init(
+          title: .offerDocumentsToAppsTitle,
+          icon: Theme.shared.image.share,
+          showDivider: true,
+          isToggle: true,
+          toggleBinding: Binding(
+            get: { [weak self] in
+              self?.isOfferingDocumentsToApps ?? true
+            },
+            set: { [weak self] newValue in
+              self?.isOfferingDocumentsToApps = newValue
+            }
+          ),
+          action: {}
+        )
       )
-    )
+    }
+
+    if logsUrl != nil {
+      items.append(
+        .init(
+          title: .retrieveLogs,
+          icon: Theme.shared.image.retrieveLogs,
+          isShareLink: true,
+          action: {}
+        )
+      )
+    }
 
     if let changelogUrl = await interactor.retrieveChangeLogUrl() {
       items.append(
         .init(
           title: .changelog,
           icon: Theme.shared.image.changelog,
-          showDivider: false,
           action: { changelogUrl.open() }
         )
       )
     }
+
+    items.append(
+      .init(
+        title: .resetWallet,
+        icon: Theme.shared.image.trash,
+        showDivider: false,
+        action: { [weak self] in self?.isResetConfirmationShowing = true }
+      )
+    )
 
     setState {
       $0.copy(
@@ -219,9 +264,36 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
     }
   }
 
+  /// After the confirmation, the user verifies their identity; the reset screen then runs the reset.
+  func onResetConfirmed() {
+    isResetConfirmationShowing = false
+    router.push(
+      with: .featureCommonModule(
+        .biometry(
+          config: UIConfig.Biometry(
+            navigationTitle: .resetWallet,
+            caption: .resetWalletBiometryCaption,
+            quickPinOnlyCaption: .resetWalletPinCaption,
+            pinTextFieldTitle: .resetWalletPinCaption,
+            navigationSuccessType: .push(.featureDashboardModule(.walletReset)),
+            navigationBackType: .pop,
+            isPreAuthorization: false,
+            shouldInitializeBiometricOnCreate: true
+          )
+        )
+      )
+    )
+  }
+
   private func updateBatchCounter(_ isEnabled: Bool) {
     Task {
       await interactor.setBatchCounter(isEnabled: isEnabled)
+    }
+  }
+
+  private func updateDocumentOffering(_ isEnabled: Bool) {
+    Task {
+      await interactor.setOfferingDocumentsToApps(isEnabled: isEnabled)
     }
   }
 

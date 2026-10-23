@@ -141,7 +141,7 @@ final class BiometryViewModel<Router: RouterHost>: ViewModel<Router, BiometrySta
       case .authenticated:
         await interactor.resetPinThrottle()
         stopLockoutTick()
-        self.authenticated()
+        await self.authenticated()
       case .failure(let error):
         if error != .biometricError {
           self.biometryError = error
@@ -154,11 +154,13 @@ final class BiometryViewModel<Router: RouterHost>: ViewModel<Router, BiometrySta
     Task { await interactor.openSettings {} }
   }
 
+  /// A navigation held while the scene was not active runs once when it becomes active, then is cleared, so a later
+  /// phase change cannot repeat a success, as the ID Provider extension's two-step login would read it.
   func setPhase(with phase: ScenePhase) {
     setState { $0.copy(scenePhase: phase) }
-    if let pending = viewState.pendingNavigation {
-      doNavigation(navigationType: pending)
-    }
+    guard phase == .active, let pending = viewState.pendingNavigation else { return }
+    setState { $0.copy(pendingNavigation: nil) }
+    doNavigation(navigationType: pending)
   }
 
   private func subscribeToPinInput() {
@@ -190,7 +192,7 @@ final class BiometryViewModel<Router: RouterHost>: ViewModel<Router, BiometrySta
       case .success:
         await interactor.resetPinThrottle()
         stopLockoutTick()
-        self.authenticated()
+        await self.authenticated()
       case .failure(let error):
         let lockoutState = await interactor.recordPinFailure()
         switch lockoutState {
@@ -204,7 +206,12 @@ final class BiometryViewModel<Router: RouterHost>: ViewModel<Router, BiometrySta
     }
   }
 
-  private func authenticated() {
+  /// Login (`isPreAuthorization`) unlocks the session before the wallet opens; the confirmation before a
+  /// presentation does not.
+  private func authenticated() async {
+    if viewState.config.isPreAuthorization {
+      await interactor.unlockSession()
+    }
     doNavigation(navigationType: viewState.config.navigationSuccessType)
   }
 
