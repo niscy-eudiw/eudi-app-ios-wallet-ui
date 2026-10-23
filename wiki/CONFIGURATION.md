@@ -32,6 +32,12 @@ protocol WalletKitConfig: Sendable {
    * proof policy: only attested proofs (`attestation`, or `jwt` with key attestation) are sent.
    * Set it to `true` only for an issuer that does not support key attestation and requires a plain
    * JWT proof; the proof is then bound to a key without wallet attestation, using ES256/ES384/ES512.
+   *
+   * `encryptionSupportConfig` is set per issuer and keeps wallet-kit's default: with
+   * `credentialResponseEncryptionPolicy` `.supported`, the credential request and response are
+   * encrypted whenever the issuer's metadata advertises encryption, and sent in plain JSON over TLS
+   * otherwise. Set it to `.required` to refuse an issuer that does not support encryption.
+   * `ecConfig`, `rsaConfig` and `supportedEncryptionMethods` restrict the key types and methods used.
    */
   var issuersConfig: [String: VciConfig] { get }
 }
@@ -80,6 +86,7 @@ struct WalletKitConfigImpl: WalletKitConfig {
                 requireDpop: should_use_dpop_bool,
                 issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
                 validateRegistrationCertificate: validateIssuerRegistrationCertificate
+                encryptionSupportConfig: .init(credentialResponseEncryptionPolicy: .supported)
             ),
             order: issuer_order_int
           )
@@ -104,6 +111,7 @@ struct WalletKitConfigImpl: WalletKitConfig {
                   requireDpop: should_use_dpop_bool,
                   issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
                   validateRegistrationCertificate: validateIssuerRegistrationCertificate
+                  encryptionSupportConfig: .init(credentialResponseEncryptionPolicy: .supported)
               ),
               order: issuer_order_int
             )
@@ -126,6 +134,8 @@ client-attestation proof-of-possession key in the Secure Enclave; without it Wal
 software key in the Keychain.
 
 `allowPlainJwtProof` selects the credential proof policy for that issuer. Leave it `false` (the default) to stay HAIP-compliant: the wallet sends only attested proofs, either the `attestation` proof type or a `jwt` proof carrying a key attestation from the Wallet Provider. Set it to `true` only for an issuer that does not support key attestation and requires a plain JWT proof; the wallet then also accepts plain `jwt` proofs signed with ES256, ES384 or ES512, and the proof key is no longer attested. The reference issuers require attested proofs, so every issuer in this repo sets it to `false`.
+
+`encryptionSupportConfig` selects the credential request and response encryption policy for that issuer. Every issuer in this repo keeps wallet-kit's default, `credentialResponseEncryptionPolicy: .supported`: the wallet encrypts the credential request and asks for an encrypted response whenever the issuer's metadata advertises encryption, and otherwise exchanges plain JSON over TLS. Set it to `.required` to refuse an issuer that does not support encryption; issuance then fails instead of falling back to plain JSON. `ecConfig`, `rsaConfig` and `supportedEncryptionMethods` restrict the key types and content encryption methods the wallet uses, and default to EC P-256, RSA 2048 and every method the platform supports.
 
 2. Wallet Attestation Provider
 
@@ -486,7 +496,7 @@ production values for every config surface listed below.
 | Configuration area | Source file | Production value to provide |
 | --- | --- | --- |
 | Build variant/type | `Wallet/Config/*.xcconfig`, `ConfigLogic.swift` | `BUILD_VARIANT = PROD`, `BUILD_TYPE = RELEASE` for production archives. |
-| Issuers | `WalletKitConfig.swift` | Production OpenID4VCI issuer URLs, client IDs, redirect URIs, PAR/DPoP policy, proof-type policy (`allowPlainJwtProof`), signed-metadata policy (`issuerMetadataPolicy`), registration check (`validateRegistrationCertificate`), PoP key options (`popKeyOptions`), logo origins (`logoOrigins`) and display order. |
+| Issuers | `WalletKitConfig.swift` | Production OpenID4VCI issuer URLs, client IDs, redirect URIs, PAR/DPoP policy, proof-type policy (`allowPlainJwtProof`), metadata caching policy, and display order. |
 | Wallet provider attestation | `WalletProviderAttestationConfig.swift` | Production Wallet Provider host used for wallet/key attestation. |
 | Reader trust anchors | `WalletKitConfig.swift`, certificate resources | Production IACA/reader/verifier trust anchors only. |
 | OpenID4VP | `WalletKitConfig.swift` | Approved client ID schemes, preregistered verifier entries where needed, the accepted transaction data types (`supportedTransactionDataTypes`), and the registration check (`validateRegistrationCertificate`). |
