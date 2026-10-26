@@ -1058,13 +1058,21 @@ var staticRootCertificates: [Data] {
   then records a refresh failure and the document keeps its last known state. `.warning`, the
   reference value, accepts the list whatever its signer.
 * `isRevocationEnabled` on `EtsiTrustSource` decides whether PKIX chain validation checks certificate
-  revocation. The reference app passes `false` for every build variant.
+  revocation. The reference app passes `false` for every build variant. With `true`, iOS checks revocation by OCSP
+  in its own trust evaluation (the ETSI library sets a `SecPolicyCreateRevocation` policy), outside the app's
+  network session and App Transport Security, and needs a positive answer. Every certificate below a list entry
+  must therefore name an OCSP responder that answers for it; one that gives only CRL distribution points fails
+  validation. Unlike on Android, where the wallet refuses cleartext revocation downloads, an `http://` OCSP
+  address is not refused. The fallback `StaticListTrustSource` keeps the library default,
+  `isRevocationEnabled: true`, so a chain it validates needs the same OCSP answer.
 
 Production guidance:
 
 * Replace the demo LoTE endpoints in `trustConfiguration` with your production trusted-list locations.
 * Set `isRevocationEnabled` to `true` in the production `EtsiTrustSource`. `false` suits only the
-  development trust lists.
+  development trust lists. Before release, confirm that every certificate below a list entry, in every chain the
+  wallet validates, names an OCSP responder that answers for it, and test issuance, presentation and the
+  registration checks with revocation on.
 * Keep the PID at `.enforce`. Classify every other doc type your trust framework covers and enforce
   it too, or record why it stays at `.warning`.
 * Confirm that every SD-JWT PID issuer sends an `x5c` chain, since only then is the signer checked
@@ -1499,7 +1507,12 @@ Production rules:
 * If the QTSP requires confidential-client behavior, place secret-bearing operations on a backend.
 * Register production redirect URIs with the QTSP/authorization server.
 * Use a production-specific URI scheme.
-* Confirm `includeRevocationInfo` with the signing policy and QTSP.
+* Confirm `includeRevocationInfo` with the signing policy and QTSP. With `true`, a B-LT or B-LTA signature makes
+  the app fetch the CRLs and the OCSP response itself (`rqes-csc-swift`'s `PodofoManager`, through
+  `URLSession.shared`), where App Transport Security refuses plain `http`. Every CRL distribution point and OCSP
+  address in the signing and timestamp certificates must then be an `https://` URL: a CRL of the signing chain
+  that cannot be fetched stops the signature, and an OCSP response that cannot be fetched is left out of it. The reference flow signs
+  at rqes-kit's default level, B-B, which fetches neither.
 * Disable verbose logs in production.
 * Test success, cancellation, network failure, expired authorization, and rejected signing flows.
 
@@ -1681,7 +1694,9 @@ validation strict.
 
 Production rules:
 
-* Use HTTPS for issuers, verifiers, wallet provider, QTSP, TSA, changelog, and analytics endpoints.
+* Use HTTPS for issuers, verifiers, wallet provider, QTSP, TSA, changelog, and analytics endpoints, and for the
+  CRL and OCSP addresses the RQES library fetches inside the app (see [RQES Configuration](#rqes-configuration)).
+  Trusted-list revocation checks run in iOS's own trust evaluation instead (see [Trust Store](#trust-store)).
 * Do not add trust-all `URLSessionDelegate` logic to production.
 * Do not disable ATS globally.
 * Avoid broad `NSExceptionDomains`; any exception must be documented, justified, and time-bounded.
@@ -2567,6 +2582,8 @@ Must provide:
 * Redirect URI registration.
 * TSA endpoint if required.
 * Certificate retrieval trust config.
+* CRL distribution points and OCSP addresses as `https://` URLs in the signing and timestamp certificates, where
+  B-LT or B-LTA signatures carry revocation information (`includeRevocationInfo: true`).
 * Signing policy and audit evidence.
 
 ## Build, Install, And Use In Production Testing

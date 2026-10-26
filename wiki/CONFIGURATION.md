@@ -253,7 +253,9 @@ its issuer is legitimate. Map every doc type the wallet issues before enforcing.
 The app enforces signer trust for the PID only and warns for every other
 attestation: those doc types have no verification context, so enforcing them would refuse every
 EAA. `isRevocationEnabled: false` turns off PKIX revocation checks for the dev trust lists, as
-`relaxPkixRevocation()` does on Android; set it to `true` for production.
+`relaxPkixRevocation()` does on Android; set it to `true` for production. With `true`, iOS checks every
+certificate below a list entry by OCSP in its own trust evaluation and needs a positive answer, so each must name
+an OCSP responder; see GO_LIVE [Trust Store](GO_LIVE.md#trust-store).
 
 **Two trust layers.** An access certificate (WRPAC) answers *who is this party*, a registration
 certificate (WRPRC) answers *what is it registered to do* — the registered identity, declared
