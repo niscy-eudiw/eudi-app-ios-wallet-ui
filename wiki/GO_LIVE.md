@@ -1351,11 +1351,21 @@ Current code configures `documentIssuanceConfig` with:
 The revocation and re-issuance workers start when the dashboard first opens, after login or PIN
 creation, never at launch; see [Revocation And Status Checking](#revocation-and-status-checking).
 
+`.rotateUse` with `batchSize: 1`, the default for every document type other than the PID, gives a document one
+credential and one device key for its whole validity. Every presentation of it, to every verifier, carries the same
+issuer signature and is signed with the same device key, so verifiers who compare notes can link the presentations of
+a multi-year mDL or diploma to one holder. The app sets no maximum key age or presentation count of its own:
+`ReIssuanceWorkManager` re-issues a `.rotateUse` document only by its remaining validity and a `.oneTimeUse` document
+only by its remaining unused credentials, with thresholds from the document's stored credential options, else the
+configuration's, else a default, and no floor or ceiling of the wallet's own. Nothing rotates keys after a suspected
+compromise. The issuer's `validUntil` is the effective bound on a device key's life.
+
 Production decisions:
 
 | Decision | Guidance |
 | --- | --- |
-| Credential policy | Align with issuer policy, privacy goals, and verifier ecosystem. |
+| Credential policy | Align with issuer policy, privacy goals, and verifier ecosystem. Where presentations must not be linkable, prefer `.oneTimeUse` with a batch over `.rotateUse` with `batchSize: 1`, which reuses one device key for the whole validity. |
+| Key lifetime | Decide whether the wallet needs a maximum key age or presentation count besides the issuer's `validUntil`; the reference app enforces neither. |
 | Batch size | Use the smallest value that supports expected offline or high-availability needs. |
 | Reissuance threshold | Choose values that avoid user disruption without excessive unused credential material. |
 | Background behavior | Confirm iOS background execution constraints and user consent. |
@@ -1892,11 +1902,40 @@ or deletion, by the app or the ID Provider extension, stores a fresh token in `P
 its last read while that value is unchanged. The tab still holds the whole history in memory, because its
 filters, search and date range work over all entries.
 
+**Transaction log contents.** WalletKit produces each history entry in the TS10 model (`TransactionEntry`, from
+`eudi-lib-ios-iso18013-data-model`), and the app stores it as JSON in the store's `TransactionLog` table. The log
+records the relying party, the attestation types and the identifiers of the attributes requested and presented, never
+their values; this is the rule the ARF and the Implementing Acts set for it (HLR.64, HLR.65 and IA.34, as the security
+review maps them). With WalletKit 0.56.6:
+
+* a presentation entry records the requested and presented claims as attestation type (mdoc `docType` or SD-JWT VC
+  `vct`) and claim paths, without values, and the relying party's details WalletKit has for it: name, identifier,
+  contacts, intermediary, purpose, privacy policy, registrar and data protection authority;
+* the entry also records the transaction data the request carried, decoded and otherwise unchanged
+  (`transactionalData`). For a signing request this includes document labels, locations, hashes, any one-time password
+  for document access and the whole content of a document carried in the request. History shows the same fields
+  without the one-time passwords;
+* issuance entries record the attestation types, the number of credentials requested and issued, and the issuer.
+  Signing entries, written by the RQES library, record the signing service, the signing certificate's identifier, the
+  document's name and size, and its digest (DTBSR).
+
+Beside each presentation entry the app records whether the relying party's registration was verified
+(`registrationCheck`); WalletKit does not keep it in the entry.
+
+The store has no explicit file-protection class: nothing in the project sets one, so iOS's default applies
+(`completeUntilFirstUserAuthentication`). The file is encrypted at rest and readable from the first unlock after a
+restart, by the app and by the ID Provider extension, which shares the App Group container. Rows carry no integrity
+tag.
+
 Production tasks:
 
 * Confirm which data is stored in SwiftData.
 * Confirm whether the store is in the shared App Group container.
-* Apply file protection where required.
+* Apply file protection to every store that holds personal data, the transaction history included: set the class
+  explicitly instead of relying on iOS's default, and confirm that the ID Provider extension and the background checks
+  can still open the store under it.
+* Decide whether one-time passwords and documents carried inline belong in the transaction log at all for your
+  deployment.
 * The store's folder is excluded from iCloud backup and device-to-device transfer (`isExcludedFromBackup`, set by
   `StorageConfigImpl.storeURL`), as the Android wallet's backup rules exclude its data. A restore is expected to
   bring back no document: wallet-storage keeps documents and their keys as `.whenPasscodeSetThisDeviceOnly`, a class
