@@ -836,7 +836,7 @@ open when the screen appears and lists each transaction, numbered when there is 
 * A request whose transaction data cannot be shown in full is declined with an explanation, never shown in part
   (`PresentationInteractorImpl.canShowTransactionData`): an entry WalletKit cannot read, or an entry bound to a
   document the consent screen does not show. Each option is checked against its own transaction data; an option
-  that is not offered, because its documents are blocked, is not checked. WalletKit 0.56.0 binds transaction data
+  that is not offered, because its documents are blocked, is not checked. WalletKit 0.56.6 binds transaction data
   to SD-JWT and mdoc documents alike.
 
 Where a document location is an HTTP(S) link, "Open document" opens it in the browser. These
@@ -1228,7 +1228,7 @@ case .PROD:
         allowPlainJwtProof: false,
         requireDpop: true,
         issuerMetadataPolicy: trustConfiguration.issuerMetadataPolicy,
-        validateRegistrationCertificate: validateIssuerRegistrationCertificate
+        validateRegistrationCertificate: validateIssuerRegistrationCertificate,
         encryptionSupportConfig: .init(credentialResponseEncryptionPolicy: .supported)
       ),
       order: 0
@@ -1666,7 +1666,7 @@ Modules/logic-api/Sources/Provider/NetworkSessionProvider.swift
 A cookie one relying party sets is therefore never sent to another through that session. Three paths sit outside it,
 and the app cannot change them:
 
-* WalletKit 0.56.0 fetches an SD-JWT issuer's keys, when the credential carries no `x5c` chain, with
+* WalletKit 0.56.6 fetches an SD-JWT issuer's keys, when the credential carries no `x5c` chain, with
   `URLSession.shared`.
 * WalletKit's sign-in sheet for issuers (`ASWebAuthenticationSession` in `OpenId4VciService`) is not ephemeral, so
   it shares Safari's cookies: an issuer can recognise the browser across issuances, and the wallet's reset does not
