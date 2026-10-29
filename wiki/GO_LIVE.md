@@ -540,12 +540,15 @@ For the complete lane usage notes, see [../fastlane/USAGE.md](../fastlane/USAGE.
 
 ## Dependency Governance
 
-* Use released versions, not snapshots or branch dependencies, unless formally approved.
+* Use released versions, not snapshots or branch dependencies, unless formally approved. BluetoothKit is the one
+  exception in the reference app (see below): approve its pinned commit formally or replace the library.
 * Subscribe to security advisories for WalletKit, RQES UI, OpenID4VCI, OpenID4VP, ISO18013
   libraries, Wallet Storage, KeychainAccess, BluetoothKit, Swinject, and the Swift/Xcode toolchain.
 * Keep a dependency update SLA.
 * Keep `Package.resolved` committed and reviewed.
-* Avoid branch dependencies for production unless the commit is pinned and approved.
+* Avoid branch dependencies for production unless the commit is pinned and approved. The reference app has none:
+  BluetoothKit has no release Swift Package Manager can use (its last tag, 0.4.0, predates its `Package.swift`), so
+  `logic-business` pins it to a commit with `revision:`. Move that revision only after reviewing the new commits.
 * Generate and archive an SBOM for every release.
 * Run SCA before each release.
 * Review all transitive dependencies used by WalletKit, RQES, DC API, cryptography, parsing, and UI.
@@ -2523,7 +2526,7 @@ Project-specific actions:
 * Add release checks for demo endpoints.
 * Review exception messages shown to users.
 * Implement forced update or minimum supported version through backend policy.
-* Review branch-based SPM dependencies.
+* Review branch-based SPM dependencies (none in the reference app) and commit-pinned ones (BluetoothKit).
 
 ### MASVS-RESILIENCE
 

@@ -1,5 +1,5 @@
 {
-  "originHash" : "196ddc86c955c684290b3311f3a39a34d1562223e021c94abbeb06329f796a40",
+  "originHash" : "a59f2940822c1dc09db15fa476992c166a9a419885dad8333519c205b7a843de",
   "pins" : [
     {
       "identity" : "activityindicatorview",
@@ -60,7 +60,6 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rhummelmose/BluetoothKit.git",
       "state" : {
-        "branch" : "master",
         "revision" : "d6ab93cb3f98d9c4033bd37413d9fe90a4647cb4"
       }
     },
