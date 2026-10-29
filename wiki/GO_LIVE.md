@@ -1785,9 +1785,14 @@ Production decisions:
 * Keep `KeyChainControllerImpl.accessibility` a `ThisDeviceOnly` class, so the PIN record and the
   lockout state can be restored only to the same device.
 * Confirm whether Keychain items should survive device restore.
-* Confirm behavior when the device passcode is removed.
-* A change in biometric enrolment turns biometric unlock off until the user turns it on again (see Biometric
-  enrollment change); confirm this suits policy.
+* Confirm behavior when the device passcode is removed. iOS then deletes every Keychain item kept
+  `.whenPasscodeSetThisDeviceOnly`: wallet-storage's documents and their keys, and the biometric probe. The PIN record
+  (`.whenUnlockedThisDeviceOnly`) stays, so the login screen shows the passcode warning and the user logs in to a
+  wallet without documents (the transaction history stays); with `requireDeviceSecure` login is refused until a
+  passcode is set. Biometric login fails until a passcode is set again and the user turns biometric unlock off and on
+  in Settings. This follows Apple's documented rule for that class; confirm it on a device.
+* After a change in biometric enrolment, biometric unlock fails and login needs the PIN until the user turns it off
+  and on again (see Biometric enrollment change); confirm this suits policy.
 * Confirm app and extension Keychain sharing.
 
 ### PIN Storage
@@ -1828,9 +1833,10 @@ Production tasks:
 
 * Confirm PIN length, complexity, and retry UX. PINs that are easy to guess are refused (one digit repeated,
   ascending or descending runs, `AuthenticationConfig.commonPins`), and an empty PIN is never stored; decide whether
-  setup needs a device passcode (`requireDeviceSecure`, off by default, which only warns). Changing the PIN of a
-  set-up wallet does not need the passcode, as on Android (`QuickPinInteractor.updatePin`). The setup screen checks
-  the passcode again whenever the app comes back, and PIN entry stays disabled while a passcode is required. See
+  setup and login need a device passcode (`requireDeviceSecure`, off by default, which only warns). Changing the PIN
+  of a set-up wallet does not need the passcode, as on Android (`QuickPinInteractor.updatePin`). The setup screen and
+  the login screen (the ID Provider extension's too) check the passcode again whenever the app comes back. While a
+  passcode is required, PIN entry stays disabled, and at login Face ID or Touch ID is refused as well. See
   CONFIGURATION.
 * Consider binding PIN verification to a hardware-backed key operation (Secure Enclave) for additional defense in depth.
 * Benchmark PBKDF2 iterations on the slowest supported device.
@@ -1875,7 +1881,7 @@ Default policy (`AuthenticationConfigImpl`):
 | Update from a build with the wall-clock lockout | Ends a lockout in progress: those values are not read; the level is kept. An update between builds that use the monotonic clock keeps the lockout running. |
 | App reinstall | The state survives the uninstall, as the Keychain does; the first launch after a reinstall deletes it with the PIN and every document (`StartupInteractor.manageStorageForFirstRun()`). Require re-enrollment unless secure backup/recovery is explicitly implemented. |
 
-Lockout counters are persisted, not just held in UI state. While locked, the PIN input is disabled wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, and the Document Provider extension) and in the change-PIN validation step (`QuickPinViewModel`). The biometric icon on the login screen stays enabled during PIN lockout and acts as an escape hatch — a successful biometric authentication clears the throttle.
+Lockout counters are persisted, not just held in UI state. While locked, the PIN input is disabled wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, and the Document Provider extension) and in the change-PIN validation step (`QuickPinViewModel`). The biometric icon on the login screen stays enabled during PIN lockout, except at login while a required passcode is missing, and acts as an escape hatch — a successful biometric authentication clears the throttle.
 
 Production gaps to address:
 
@@ -2469,6 +2475,7 @@ Project-specific actions:
 * Decide device credential fallback policy.
 * Consider WalletKit user authentication requirements.
 * Test biometric enrollment changes.
+* Decide whether setup and login require a device passcode (`requireDeviceSecure`) and test removing it.
 * Test authentication bypass attempts.
 
 ### MASVS-NETWORK
@@ -2694,6 +2701,9 @@ Before release candidate approval, test:
 * Biometric enablement.
 * Biometric enrollment change.
 * A weak PIN refused at setup and on change; setup on a device without a passcode shows the warning.
+* Removing the device passcode after setup: the documents are gone; login shows the warning, or with
+  `requireDeviceSecure` refuses the PIN and Face ID or Touch ID until a passcode is set; biometric login needs the
+  switch turned off and on again. Test the ID Provider extension before opening the app.
 * An offer from an issuer that is not configured refused; a partial issuance naming the documents not added.
 * The portrait notice, and Share or Accept asking for confirmation.
 * "Offer documents to apps and websites" off: registrations withdrawn, the extension declines.

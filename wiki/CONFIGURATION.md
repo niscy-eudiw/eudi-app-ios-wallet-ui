@@ -506,7 +506,7 @@ production values for every config surface listed below.
 | WalletKit attestation key options | `WalletKitConfig.swift` (`keyOptions`) | Curve, secure area, access protection, access control, and key purposes used when creating attestation/proof keys during issuance, reissuance, deferred issuance, and resume. For LoA High PID and other high-assurance EAA/QEAA credentials, require Secure Enclave (with `.P256`) plus appropriate `accessProtection`/`accessControl`, or an approved remote high-assurance key protection design. |
 | Session lock | `AuthenticationConfig.swift` in `logic-authentication`, `ConfigUiLogic.swift` in `logic-ui` | Confirm `backgroundLockTimeout`, `idleLockTimeout` and `protectedFlowLockTimeout`, and keep `protectedFlowRouteKeys`, `loginRouteKeys` and `coveringScreenModules` in step with your screens; see [Session lock configuration](#session-lock-configuration). |
 | Pictures of the holder | `ConfigUiLogic.swift` in `logic-ui` | `userImageClaimKeys` lists the claims, by the last element of their path, that hold a picture of the holder (`portrait`, `picture`). A request for one shows a biometric-data notice, and Share (Accept in the ID Provider extension) asks for confirmation while it would be disclosed. Add the claims your credentials use. |
-| PIN rules | `AuthenticationConfig.swift` in `logic-authentication` | Confirm `commonPins` and whether setup needs a device passcode (`requireDeviceSecure`, off by default). |
+| PIN rules | `AuthenticationConfig.swift` in `logic-authentication` | Confirm `commonPins` and whether setup and login need a device passcode (`requireDeviceSecure`, off by default). |
 | PIN throttle policy | `AuthenticationConfig.swift` in `logic-authentication` | Confirm `maxFailedPinAttempts` and `pinLockoutDurations` meet policy. Decide what happens once the final lockout tier is reached (e.g. wipe, support flow, device-credential step-up). |
 | Document / WalletKit key storage | `EudiWalletConfiguration`, `ConfigLogic.keyChainConfig`, WalletKit-supported storage APIs | Default app configuration uses WalletKit storage with the configured Keychain service and access group. If production requires alternative local secure storage, a remote-backed key service, or an external protection SDK, use WalletKit-supported extension points and document the exact SDK/API. Start-up reads wallet-storage's `KeyChainStorageService` items to decide whether PIN creation is safe (`WalletKitController.hasStoredDocuments()`); another `DataStorageService` needs its own implementation of that check, see GO_LIVE [PIN Storage](GO_LIVE.md#pin-storage). |
 | Wallet attestation key storage | `WalletKitAttestationProviderImpl`, `WalletProviderAttestationConfig.swift`, Wallet Provider policy | Use when wallet attestation keys must be generated, stored, attested, or unlocked by a custom provider, platform-backed key policy, or remote high-assurance key service. |
@@ -838,18 +838,22 @@ public protocol AuthenticationConfig: Sendable {
   /// wallet's list. Add the PINs your policy names.
   var commonPins: Set<String> { get }
 
-  /// Whether the wallet can be set up only on a device with a passcode. When false, setting up on a device without
-  /// one shows a warning, as on Android.
+  /// Whether the wallet can be set up, and logged in to, only on a device with a passcode. When false, a device
+  /// without one gets a warning on the PIN screen at setup and on the login screen, and the user goes on, as on
+  /// Android.
   var requireDeviceSecure: Bool { get }
 }
 ```
 
 A new PIN is refused when it is one digit repeated, an ascending or descending run of digits, or one of
 `commonPins` (`AuthenticationConfig.isWeakPin`). The PIN screen refuses it when it is entered, and
-`QuickPinInteractor.setPin` when it is set or changed. During setup the PIN screen checks for a device passcode
-(`DeviceLockController`) and warns when there is none; with `requireDeviceSecure` it accepts no PIN until one is set,
-and checks again at each entry. The passcode check does not apply when the PIN of a set-up wallet is changed; the
-weak-PIN rule does. The defaults are the Android wallet's.
+`QuickPinInteractor.setPin` when it is set or changed. During setup the PIN screen, and at each login the login
+screen (`BiometryViewModel` with `isPreAuthorization`, the ID Provider extension's login included), check for a device
+passcode (`DeviceLockController`) and warn when there is none; with `requireDeviceSecure` they accept no PIN, and the
+login screen no Face ID or Touch ID, until one is set. Both check again whenever the app comes back, and setup also
+when the first PIN is entered. The passcode check does not apply when the PIN of a set-up wallet is changed, nor to the
+confirmations before a presentation (Accept in the extension included) or a reset; the weak-PIN rule applies to
+every new PIN. The defaults are the Android wallet's.
 
 Default policy (`AuthenticationConfigImpl`):
 
@@ -898,7 +902,7 @@ The lockout is enforced by `PinThrottleController` and applied wherever `Biometr
 * The PIN input field is disabled (no keyboard, no edits).
 * No PIN is submitted. The PIN screens have no proceed button: they submit on the sixth digit, which is ignored while locked.
 * The existing inline error slot of the PIN view shows a countdown message formatted from the `quick_pin_locked_out` string resource. The message takes two format arguments — the configured `maxFailedPinAttempts` and the remaining time as `mm:ss` — so changing the config values updates the user-facing message automatically.
-* On screens that offer biometrics, the biometric icon stays interactive. A successful biometric authentication clears the throttle.
+* On screens that offer biometrics, the biometric icon stays interactive, except at login while a required passcode is missing. A successful biometric authentication clears the throttle.
 
 ## Session lock configuration
 

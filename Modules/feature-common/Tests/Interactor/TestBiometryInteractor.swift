@@ -70,6 +70,17 @@ final class TestBiometryInteractor: EudiTest {
 
     verify(quickPinInteractor).unlockSession()
   }
+
+  func testGetDeviceLockState_WhenThePasscodeIsRequiredAndMissing_ThenReturnsTheStateSetupUses() async {
+    stub(quickPinInteractor) { mock in
+      when(mock.getDeviceLockState()).thenReturn(.required)
+    }
+
+    let state = await interactor.getDeviceLockState()
+
+    XCTAssertEqual(state, .required)
+    verify(quickPinInteractor).getDeviceLockState()
+  }
   
   // MARK: - isBiometryEnabled
   

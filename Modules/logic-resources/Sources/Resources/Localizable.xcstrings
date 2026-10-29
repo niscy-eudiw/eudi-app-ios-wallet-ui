@@ -1927,7 +1927,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Set a passcode in the device settings before you set up the wallet."
+            "value" : "Set a passcode in the device settings to use the wallet."
           }
         }
       }

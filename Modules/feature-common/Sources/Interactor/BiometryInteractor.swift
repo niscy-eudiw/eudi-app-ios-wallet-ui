@@ -41,6 +41,10 @@ public protocol BiometryInteractor: Sendable {
 
   /// Unlocks the wallet's session after a successful login.
   func unlockSession() async
+
+  /// Whether the device has a passcode and whether the wallet requires one, under the rules setup applies
+  /// (`QuickPinInteractor.getDeviceLockState()`), so that the login screen notices a passcode removed after setup.
+  func getDeviceLockState() async -> DeviceLockState
 }
 
 final actor BiometryInteractorImpl: BiometryInteractor {
@@ -70,6 +74,10 @@ final actor BiometryInteractorImpl: BiometryInteractor {
 
   public func unlockSession() async {
     await quickPinInteractor.unlockSession()
+  }
+
+  public func getDeviceLockState() async -> DeviceLockState {
+    await quickPinInteractor.getDeviceLockState()
   }
 
   public func getBiometryType() async -> LABiometryType {

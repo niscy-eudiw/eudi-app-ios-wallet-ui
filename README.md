@@ -133,7 +133,7 @@ You will also need to download the EUDI Verifier app. More information can be fo
 1. Launch the application
 2. You will be presented with a welcome screen where you will be asked to create a PIN for future logins.
    A PIN that is easy to guess, such as 111111, 123456 or 123123, is refused. On a device without a passcode
-   the PIN screen shows a warning.
+   the PIN screen shows a warning, and the login screen repeats it at each login.
    Later launches ask for that PIN, or for Face ID or Touch ID if you turned it on in Settings, and so
    does the wallet after a minute in the background (ten minutes during an issuance, a presentation or a
    signing) or five minutes without use. If the

@@ -287,6 +287,16 @@ public class MockBiometryInteractor: BiometryInteractor, Cuckoo.ProtocolMock, @u
         )
     }
 
+    public func getDeviceLockState() async -> DeviceLockState {
+        return await cuckoo_manager.call(
+            "getDeviceLockState() async -> DeviceLockState",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.getDeviceLockState()
+        )
+    }
+
     public struct __StubbingProxy_BiometryInteractor: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
@@ -390,6 +400,14 @@ public class MockBiometryInteractor: BiometryInteractor, Cuckoo.ProtocolMock, @u
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockBiometryInteractor.self,
                 method: "unlockSession() async",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func getDeviceLockState() -> Cuckoo.ProtocolStubFunction<(), DeviceLockState> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockBiometryInteractor.self,
+                method: "getDeviceLockState() async -> DeviceLockState",
                 parameterMatchers: matchers
             ))
         }
@@ -553,6 +571,18 @@ public class MockBiometryInteractor: BiometryInteractor, Cuckoo.ProtocolMock, @u
                 sourceLocation: sourceLocation
             )
         }
+        
+        
+        @discardableResult
+        func getDeviceLockState() -> Cuckoo.__DoNotUse<(), DeviceLockState> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "getDeviceLockState() async -> DeviceLockState",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
     }
 }
 
@@ -612,6 +642,10 @@ public class BiometryInteractorStub:BiometryInteractor, @unchecked Sendable {
     
     public func unlockSession() async {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    public func getDeviceLockState() async -> DeviceLockState {
+        return DefaultValueRegistry.defaultValue(for: (DeviceLockState).self)
     }
 }
 
