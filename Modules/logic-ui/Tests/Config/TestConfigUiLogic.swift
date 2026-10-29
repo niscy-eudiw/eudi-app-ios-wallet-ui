@@ -59,6 +59,10 @@ final class TestConfigUiLogic: EudiTest {
     }
   }
 
+  func testHideContentWhileCaptured_WhenNotConfigured_ThenIsOff() {
+    XCTAssertFalse(configUiLogic.hideContentWhileCaptured)
+  }
+
   func testIsProtectedFlow_WhenTheScreenIsTheProximityQrScreen_ThenIsFalse() {
     let proximity = MockProximitySessionCoordinator(session: PresentationSession.fixture)
     let route = AppRoute.featureProximityModule(

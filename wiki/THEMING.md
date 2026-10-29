@@ -559,8 +559,9 @@ any other way, such as assigning `Theme.shared`, does not; apply it in the exten
   could not renew automatically (in both cases its issuer card opens by itself with the notice in
   `warning`), the RQES signing flow, and a request in the ID Provider extension, which opens with
   the PIN or biometric login and shows the requester without a verified badge and with the warning
-  that its identity could not be verified. The start-up error alert is a system alert, which the
-  theme does not style.
+  that its identity could not be verified. With `ConfigUiLogic.hideContentWhileCaptured` on, also the
+  screen-capture cover (`ScreenCaptureCoverView`: the theme's `background`, `primaryLabel` and
+  `bodyLarge`). The start-up error alert is a system alert, which the theme does not style.
 
 ## Production and accessibility checklist
 

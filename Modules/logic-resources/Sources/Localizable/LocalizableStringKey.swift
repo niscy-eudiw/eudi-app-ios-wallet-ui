@@ -261,6 +261,7 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case resetWalletPinCaption
   case resetWalletProgressTitle
   case resetWalletProgressMessage
+  case screenCaptureCoverMessage
   case orderBy
   case filterByCategory
   case searchDocuments

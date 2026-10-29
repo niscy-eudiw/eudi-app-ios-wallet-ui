@@ -31,6 +31,14 @@ public protocol ConfigUiLogic: Sendable {
   /// not one: leaving the app there once its code is shown stops the session and closes the screen.
   var protectedFlowRouteKeys: [AppRouteKey] { get }
 
+  /// Whether the wallet hides its screens behind a cover while the screen is recorded, mirrored (AirPlay, QuickTime)
+  /// or shared, and in the app switcher, as the Android wallet's `shouldPreventScreenCapture` keeps them out of
+  /// captures and the recent-apps preview (`ScreenCaptureController`). Off in the reference configuration, so that its
+  /// screens can be recorded in development and testing; a production build should turn it on. iOS cannot block a
+  /// screenshot: the app learns of one only after it is taken. The ID Provider extension runs in its own process and
+  /// is not covered.
+  var hideContentWhileCaptured: Bool { get }
+
   /// The screens a locked wallet may show, by `AppRoute.info.key`: start-up and its login, PIN creation and
   /// the Trust Mark introduction, as the Android wallet's `loginScreens`. While locked, the navigation
   /// opens no other screen, and one already on the path sends the wallet back to start-up.
@@ -93,6 +101,8 @@ struct ConfigUiLogicImpl: ConfigUiLogic {
     AppRoute.featureDashboardModule(.walletReset).info.key,
     AppRoute.featureCommonModule(.biometry(config: NoConfig())).info.key
   ]
+
+  public var hideContentWhileCaptured: Bool = false
 
   public var userImageClaimKeys: Set<String> = ["portrait", "picture"]
 

@@ -29,6 +29,7 @@ struct Application: App {
   private let deepLinkController: DeepLinkController
   private let sessionLockController: SessionLockController
   private let resetStatusProvider: WalletResetStatusProvider
+  private let screenCaptureController: ScreenCaptureController
 
   init() {
 
@@ -39,6 +40,7 @@ struct Application: App {
     self.deepLinkController = DIGraph.shared.resolver.force(DeepLinkController.self)
     self.sessionLockController = DIGraph.shared.resolver.force(SessionLockController.self)
     self.resetStatusProvider = DIGraph.shared.resolver.force(WalletResetStatusProvider.self)
+    self.screenCaptureController = DIGraph.shared.resolver.force(ScreenCaptureController.self)
     self.toolbarConfig = routerHost.getToolbarConfig()
   }
 
@@ -66,6 +68,7 @@ struct Application: App {
       }
       .onAppear {
         sessionLockController.start()
+        screenCaptureController.start()
       }
       .onOpenURL { url in
         guard

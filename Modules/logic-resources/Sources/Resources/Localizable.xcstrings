@@ -3307,6 +3307,17 @@
         }
       }
     },
+    "screen_capture_cover_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The wallet is hidden while the screen is recorded or shared."
+          }
+        }
+      }
+    },
     "search" : {
       "extractionState" : "manual",
       "localizations" : {
