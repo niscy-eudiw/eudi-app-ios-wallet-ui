@@ -19,4 +19,6 @@ public enum PresentationSessionError: Error {
   case conversionToRequestItemModel
   case invalidState
   case failedToParseRemoteURL
+  /// The holder has no session of the requested kind.
+  case noActiveSession
 }
