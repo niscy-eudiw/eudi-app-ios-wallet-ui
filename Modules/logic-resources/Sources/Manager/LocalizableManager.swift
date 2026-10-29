@@ -50,6 +50,16 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "key_chain_write_error")
     case .biometryOpenSettings:
       bundle.localizedString(forKey: "biometry_open_settings")
+    case .biometryDeniedAccessError:
+      bundle.localizedString(forKey: "biometry_denied_access_error")
+    case .biometryNoFaceIdEnrolledError:
+      bundle.localizedString(forKey: "biometry_no_face_id_enrolled_error")
+    case .biometryNoFingerprintEnrolledError:
+      bundle.localizedString(forKey: "biometry_no_fingerprint_enrolled_error")
+    case .biometryNotRecognizedError:
+      bundle.localizedString(forKey: "biometry_not_recognized_error")
+    case .biometryNotSupportedError:
+      bundle.localizedString(forKey: "biometry_not_supported_error")
     case .invalidQuickPin:
       bundle.localizedString(forKey: "invalid_quick_pin")
     case .pinNotFoundError:

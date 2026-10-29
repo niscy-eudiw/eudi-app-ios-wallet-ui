@@ -4306,6 +4306,7 @@ import logic_resources
 
 import Cuckoo
 import Foundation
+import logic_resources
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
