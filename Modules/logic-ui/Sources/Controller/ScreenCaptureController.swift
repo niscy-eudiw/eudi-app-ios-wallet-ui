@@ -16,16 +16,16 @@
 import Combine
 import UIKit
 
-/// Covers the wallet's screens while the screen is recorded, mirrored or shared, and in the app switcher, when
-/// `ConfigUiLogic.hideContentWhileCaptured` is on.
+/// Covers the wallet's screens, the ID Provider extension's included, while the screen is recorded, mirrored or shared,
+/// and in the app switcher, when `ConfigUiLogic.hideContentWhileCaptured` is on.
 public protocol ScreenCaptureController: Sendable {
-  /// Starts following the app's window scenes. A later call follows the scenes connected since; it does nothing
-  /// more for a scene already followed.
+  /// Starts following the window scenes of the process, in the app or in the ID Provider extension. A later call
+  /// follows the scenes connected since; it does nothing more for a scene already followed.
   @MainActor func start()
 }
 
-/// What `ScreenCaptureControllerImpl` needs from a window scene: `UIWindowScene` in the app, a recording double in the
-/// tests.
+/// What `ScreenCaptureControllerImpl` needs from a window scene: `UIWindowScene` in the app and the extension, a
+/// recording double in the tests.
 protocol ScreenCaptureScene: AnyObject, Sendable {
   /// Whether the scene is recorded, mirrored or shared.
   @MainActor var isCaptured: Bool { get }
@@ -40,11 +40,12 @@ protocol ScreenCaptureScene: AnyObject, Sendable {
   @MainActor func makeCoverWindow() -> ScreenCaptureCoverWindow
 }
 
-/// The `ScreenCaptureController` of the app: follows each window scene's capture state and activation, and shows the
-/// scene's `ScreenCaptureCoverWindow` above every other window, so that sheets, alerts and the RQES SDK's screens are
-/// covered too. While the scene is captured the cover says so; while the scene is inactive or in the background it
-/// shows only the wallet's mark, for the app switcher. The keyboard is put away under either. The cover window never
-/// becomes key, so `UIApplication.currentUIWindow`, and what relies on it, stay on the wallet's own window.
+/// The `ScreenCaptureController` of the app and the ID Provider extension: follows each window scene's capture state
+/// and activation, and shows the scene's `ScreenCaptureCoverWindow` above every other window, so that sheets, alerts
+/// and the RQES SDK's screens are covered too. While the scene is captured the cover says so; while the scene is
+/// inactive or in the background it shows only the wallet's mark, for the app switcher. The keyboard is put away under
+/// either. The cover window never becomes key, so `UIApplication.currentUIWindow`, and what relies on it, stay on the
+/// wallet's own window.
 @MainActor
 final class ScreenCaptureControllerImpl: ScreenCaptureController {
 
@@ -72,13 +73,14 @@ final class ScreenCaptureControllerImpl: ScreenCaptureController {
   }
 
   /// Follows each of `scenes` not followed yet, and covers it at once if it is captured or not active. Does nothing
-  /// while the setting is off.
-  func start(scenes newScenes: [any ScreenCaptureScene]) {
+  /// while the setting is off, and then does not read `scenes`, so the ID Provider extension, where
+  /// `UIApplication.shared` is not meant to be used, reaches it only with the setting on.
+  func start(scenes newScenes: @autoclosure () -> [any ScreenCaptureScene]) {
     guard isEnabled else { return }
     if cancellables.isEmpty {
       observeScenesAndKeyboard()
     }
-    for scene in newScenes {
+    for scene in newScenes() {
       let sceneId = ObjectIdentifier(scene)
       guard scenes[sceneId] == nil else { continue }
       scenes[sceneId] = scene

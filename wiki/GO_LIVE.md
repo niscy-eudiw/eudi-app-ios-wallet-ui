@@ -140,7 +140,7 @@ Use this checklist before the first production release.
 | Deep links | All inbound URI schemes, redirect URIs, hosts, and parameters are validated and threat-modeled. |
 | Presentation relay risk | Relay attack risk is documented, verifier compensating controls are defined, and residual risk is accepted for each presentation scenario. |
 | Logs | Production logs do not include PID, credentials, tokens, request objects, signatures, keys, or user decisions. |
-| Screen capture | `ConfigUiLogic.hideContentWhileCaptured` is true, so recording, mirroring, sharing and the app switcher card show a cover; screenshots cannot be blocked, and the ID Provider extension is handled separately. See [Screenshots, Screen Recording, And Sensitive UI](#screenshots-screen-recording-and-sensitive-ui). |
+| Screen capture | `ConfigUiLogic.hideContentWhileCaptured` is true, so recording, mirroring, sharing and the app switcher card show a cover, over the ID Provider extension's screens too; screenshots cannot be blocked. See [Screenshots, Screen Recording, And Sensitive UI](#screenshots-screen-recording-and-sensitive-ui). |
 | App hardening | Apple App Attest/DeviceCheck, commercial protection, or a manual RASP strategy is implemented and connected to backend risk policy. |
 | MASVS | Controls are mapped to evidence and tested with static, dynamic, and manual security testing. |
 | Privacy | DPIA, data minimization, retention, telemetry, consent, privacy manifest, App Store privacy labels, and privacy notice are complete. |
@@ -205,7 +205,7 @@ Keep these files under strict review:
 | `EudiReferenceWallet.xcodeproj/project.pbxproj` | Defines schemes, build configurations, bundle identifiers, signing style, provisioning profiles, app display name, usage descriptions, and extension settings. |
 | `EudiWallet.entitlements` | Defines main app Keychain Sharing, App Groups, and Identity Document Provider mobile document types. |
 | `EudiReferenceWalletIDProvider/EudiReferenceWalletIDProvider.entitlements` | Defines extension App Groups and Keychain Sharing through `SHARED_APP_GROUP_IDENTIFIER`. |
-| `EudiReferenceWalletIDProvider/DocumentProviderExtension.swift` | Extension entry point for Identity Document Provider requests. |
+| `EudiReferenceWalletIDProvider/DocumentProviderExtension.swift` | Extension entry point for Identity Document Provider requests; starts the screen-capture cover for its screens. |
 | `EudiReferenceWalletIDProvider/Domain/DI/LogicIDPModule.swift` | Initializes `DcApiHandler` with shared service name and Keychain access group. |
 | `Modules/logic-business/Sources/Config/ConfigLogic.swift` | Parses app build type and build variant, exposes app behavior toggles, RQES config, and Keychain config. |
 | `Modules/logic-business/Sources/Config/RQESConfig.swift` | Defines QTSP/RSSP, TSA, OAuth client, redirect URI, hash algorithm, and RQES logging behavior. |
@@ -223,7 +223,7 @@ Keep these files under strict review:
 | `Modules/logic-assembly/Sources/Controller/SessionLockController.swift` | Drives the lock from the scene: background, return, links, the idle check, and login after a lock. A lock, whatever caused it, also ends a running presentation, so a proximity session does not outlive its screens. |
 | `Modules/logic-ui/Sources/Controller/UserInteractionController.swift` | What counts as interaction for the idle lock: touches in the app's windows, text input, VoiceOver focus. |
 | `Modules/logic-ui/Sources/Config/ConfigUiLogic.swift` | The UI settings: the protected-flow and login routes, the screens that cover the wallet (`coveringScreenModules`), the holder-picture claims, and the screen-capture cover (`hideContentWhileCaptured`). |
-| `Modules/logic-ui/Sources/Controller/ScreenCaptureController.swift` | The screen-capture cover: a window above the wallet's while the scene is recorded, mirrored or shared, or not active (app switcher), when `hideContentWhileCaptured` is true. |
+| `Modules/logic-ui/Sources/Controller/ScreenCaptureController.swift` | The screen-capture cover: a window above the wallet's, or the ID Provider extension's, while the scene is recorded, mirrored or shared, or not active (app switcher), when `hideContentWhileCaptured` is true. |
 | `Modules/logic-authentication/Sources/Storage/KeychainPinThrottleProvider.swift` | Keychain-persisted PIN failure counter, lockout level, and the lockout on the monotonic clock and boot session. |
 | `Modules/logic-business/Sources/Controller/KeyChainController.swift` | Keychain access with its accessibility class, and the biometric probe. The service name and access group come from `Bundle+Extensions.swift` and are worked out once in `ConfigLogicImpl.keyChainConfig`. |
 | `Modules/logic-storage/Sources/Config/StorageConfig.swift` | Defines SwiftData store location, App Group container selection, and local storage schema, and excludes the store's folder from backup (`StorageConfigImpl.storeURL`). |
@@ -2113,10 +2113,14 @@ on the cover while it is shown. A tap on the cover counts as activity for the id
 sign-in screens, the cover does not pause the idle timeout. The setting is false in the reference configuration, so that
 the screens can be recorded in development and testing: set it to true for production. `ConfigUiLogicImpl` applies one
 value to every build variant; to keep recording in Dev and Demo builds only, derive it from
-`ConfigLogic.appBuildVariant` (`logic-ui` already depends on `logic-business`). A screenshot cannot be blocked: iOS
+`ConfigLogic.appBuildVariant` (`logic-ui` already depends on `logic-business`); the ID Provider extension reads the
+setting in its own process, and its `WalletIdProvider.plist` has no `Build Variant` key, so it reads `DEV` there unless
+you add the key to it too. A screenshot cannot be blocked: iOS
 tells an app about one only after it is taken, and the reference app does not react to it. Hiding content from captures
 through a secure text field's layer is undocumented and not used. The ID Provider extension runs in its own process and
-is not covered.
+starts the same controller (`DocumentProviderExtension`), so the PIN entry and the request it shows over the requesting
+app are covered too: while the screen is captured, when the request cannot be answered on the device, and in that app's
+card in the app switcher. The system's title and close button around the extension's screens stay visible.
 
 With the setting false, the app switcher card shows the blur that `Application` lays over the wallet's own screens while
 the scene is inactive or in the background. Sheets, alerts and the RQES SDK's screens are presented over those screens
@@ -2136,16 +2140,16 @@ Production actions:
 
 * Set `ConfigUiLogic.hideContentWhileCaptured` to true; it also covers the app switcher card.
 * If the setting stays false, also hide the sheets, alerts and RQES SDK screens that `Application`'s blur does not cover
-  when the app enters the background.
-* Ensure the app switcher snapshot does not expose sensitive data. The ID Provider extension's screens show over the
-  requesting app, not the wallet, so the setting does not reach them: hide them inside the extension if needed.
+  when the app enters the background, and the ID Provider extension's screens, which have no blur.
+* Ensure the app switcher snapshot does not expose sensitive data. The setting also covers the ID Provider extension's
+  screens, which show over the requesting app.
 * Avoid putting secrets or full credential data in notifications.
 * Avoid copying sensitive values to the clipboard.
 * Add manual tests for screenshots, app switching, screen recording, and AirPlay/mirroring behavior: with
   `hideContentWhileCaptured` true, recording or mirroring shows the cover over every screen, sheet and alert, and the
   wallet returns when it stops; the app switcher shows the wallet's mark and no keyboard; a field that takes focus under
-  the cover brings up no keyboard; a screenshot still shows the screen, and the ID Provider extension's sheet is not
-  covered.
+  the cover brings up no keyboard; the ID Provider extension's screens show the cover too, while the screen is captured
+  and in the requesting app's card in the app switcher; a screenshot still shows the screen.
 
 ## Authentication And Biometrics
 
@@ -2768,8 +2772,8 @@ Before release candidate approval, test:
   every screen, sheet and alert, the RQES SDK's included, and no keypad on a PIN screen; the app switcher card shows
   the wallet's mark and no keypad; a saved password or passkey can still be filled into the issuer's sign-in page
   (AutoFill's Face ID check makes the app inactive and brings up the cover);
-  a screenshot still shows the screen and the ID Provider extension's sheet is not covered; with it false, no cover and
-  the blur in the app switcher.
+  the ID Provider extension's screens show the cover too; a screenshot still shows the screen; with it false, no cover,
+  the blur in the app switcher, and the extension's screens in the requesting app's card.
 * Removing the device passcode after setup: the documents are gone; login shows the warning, or with
   `requireDeviceSecure` refuses the PIN and Face ID or Touch ID until a passcode is set; biometric login needs the
   switch turned off and on again. Test the ID Provider extension before opening the app.

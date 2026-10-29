@@ -50,6 +50,19 @@ final class TestScreenCaptureController: EudiTest {
   }
 
   @MainActor
+  func testStart_WhenTheSettingIsOff_ThenTheScenesAreNotRead() {
+    let controller = ScreenCaptureControllerImpl(isEnabled: false)
+    var isRead = false
+
+    controller.start(scenes: {
+      isRead = true
+      return []
+    }())
+
+    XCTAssertFalse(isRead)
+  }
+
+  @MainActor
   func testStart_WhenTheSceneIsCapturedAndThenNot_ThenTheCoverWithItsMessageComesAndGoes() {
     let scene = RecordingScene()
     let controller = ScreenCaptureControllerImpl(isEnabled: true)

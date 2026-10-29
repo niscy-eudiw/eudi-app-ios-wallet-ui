@@ -21,8 +21,11 @@ import logic_assembly
 @main
 struct DocumentProviderExtension: IdentityDocumentProvider {
 
+  private let screenCaptureController: ScreenCaptureController
+
   init() {
     _ = DocumentProviderDIContainer.shared
+    self.screenCaptureController = DIGraph.shared.resolver.force(ScreenCaptureController.self)
     clearCachesAfterWalletReset()
   }
 
@@ -33,6 +36,9 @@ struct DocumentProviderExtension: IdentityDocumentProvider {
           context: context
         )
       )
+      .onAppear {
+        screenCaptureController.start()
+      }
     }
   }
 
