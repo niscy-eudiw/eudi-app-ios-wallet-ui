@@ -315,7 +315,12 @@ final actor WalletKitControllerImpl: WalletKitController {
 
   func deleteDocument(with id: String, status: DocumentStatus) async throws {
     try await wallet.deleteDocument(id: id, status: status)
-    try await deleteRecords(of: id)
+    do {
+      try await deleteRecords(of: id)
+    } catch {
+      await reconcileRegistrations()
+      throw error
+    }
     await reconcileRegistrations()
   }
 
