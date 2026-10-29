@@ -846,7 +846,8 @@ open when the screen appears and lists each transaction, numbered when there is 
   to SD-JWT and mdoc documents alike.
 * When WalletKit itself cannot take a remote request (transaction data it cannot process, no document that satisfies
   the query, a reader certificate whose authentication was required and not established), it sends the error to the
-  verifier before the wallet shows its error screen (WalletKit 0.57.1 and later).
+  verifier's response endpoint, also when that verifier's certificate was not trusted, and the wallet then shows its
+  error screen, or for the certificate the trust alert (WalletKit 0.57.1 and later). The app has no setting for it.
 
 Where a document location is an HTTP(S) link, "Open document" opens it in the browser. These
 details are informational: sharing still uses the existing share flow, and WalletKit binds each
@@ -2084,25 +2085,29 @@ The reference app offers a cover as a setting, as the Android wallet's `ConfigUI
 `FLAG_SECURE`. With
 `ConfigUiLogic.hideContentWhileCaptured` set to true, `ScreenCaptureController` follows each window scene's
 `sceneCaptureState` and activation, and shows a window of its own above the wallet's windows (sheets, alerts and the
-RQES SDK's screens included; the system keyboard stays above it):
+RQES SDK's screens included). The system keyboard's window sits above it, so the keyboard is put away whenever the
+cover shows, and again if a field takes focus under it:
 
-* While the screen is recorded, mirrored through AirPlay or QuickTime, or shared, the cover shows the text
-  `screen_capture_cover_message`, and the keyboard is put away, also when a field takes focus under the cover, so that
-  a PIN typed on the on-screen keypad cannot be read from the recording. Touches go to the cover until the capture
-  ends: unlike `FLAG_SECURE` on Android, the wallet cannot be used on the device itself while the screen is recorded,
-  mirrored or shared.
-* While the app is inactive or in the background, the cover is plain, so that the app switcher card shows none of the
-  wallet's screens, as Android's recent-apps preview with `FLAG_SECURE`; a keyboard that was up when the user left
-  stays above it. The cover also shows behind a system prompt such as Face ID.
+* While the screen is recorded, mirrored through AirPlay or QuickTime, or shared, the cover shows the wallet's mark
+  (`Theme.shared.image.logo`), the title `screen_capture_cover_title` and the message `screen_capture_cover_message`, so
+  that no screen and no PIN typed on the on-screen keypad can be read from the recording. Touches go to the cover until
+  the capture ends: unlike `FLAG_SECURE` on Android, the wallet cannot be used on the device itself while the screen is
+  recorded, mirrored or shared.
+* While the app is inactive or in the background, the cover shows only the wallet's mark, as the start-up screen
+  (`StartupView`) does, so that the app switcher card shows none of the wallet's screens, as Android's recent-apps
+  preview with `FLAG_SECURE`. The cover also shows whenever the app goes inactive: behind a system prompt such as Face
+  ID, Control Center or Notification Center, or on the way to another app. A field that had focus loses it, and the
+  user taps it again on return.
 
-The cover window never becomes key, so the session lock's checks still find the wallet's own window, and VoiceOver
-stays on the cover while it is shown. A tap on the cover counts as activity for the idle lock; unlike the RQES SDK's
-or the sign-in screens, the cover does not pause the idle timeout. The setting is false in the reference configuration,
-so that the screens can be recorded in development and testing: set it to true for production. `ConfigUiLogicImpl`
-applies one value to every build variant; to keep recording in Dev and Demo builds only, derive it from
-`ConfigLogic.appBuildVariant` (`logic-ui` already depends on `logic-business`). A screenshot cannot be blocked: iOS tells an app about one only after it is taken, and the reference app
-does not react to it. Hiding content from captures through a secure text field's layer is undocumented and not used.
-The ID Provider extension runs in its own process and is not covered.
+The cover window never becomes key, so the session lock's checks still find the wallet's own window, and VoiceOver stays
+on the cover while it is shown. A tap on the cover counts as activity for the idle lock; unlike the RQES SDK's or the
+sign-in screens, the cover does not pause the idle timeout. The setting is false in the reference configuration, so that
+the screens can be recorded in development and testing: set it to true for production. `ConfigUiLogicImpl` applies one
+value to every build variant; to keep recording in Dev and Demo builds only, derive it from
+`ConfigLogic.appBuildVariant` (`logic-ui` already depends on `logic-business`). A screenshot cannot be blocked: iOS
+tells an app about one only after it is taken, and the reference app does not react to it. Hiding content from captures
+through a secure text field's layer is undocumented and not used. The ID Provider extension runs in its own process and
+is not covered.
 
 With the setting false, the app switcher card shows the blur that `Application` lays over the wallet's own screens while
 the scene is inactive or in the background. Sheets, alerts and the RQES SDK's screens are presented over those screens
@@ -2129,8 +2134,9 @@ Production actions:
 * Avoid copying sensitive values to the clipboard.
 * Add manual tests for screenshots, app switching, screen recording, and AirPlay/mirroring behavior: with
   `hideContentWhileCaptured` true, recording or mirroring shows the cover over every screen, sheet and alert, and the
-  wallet returns when it stops; the app switcher shows the plain cover; a field that takes focus under the cover brings
-  up no keyboard; a screenshot still shows the screen, and the ID Provider extension's sheet is not covered.
+  wallet returns when it stops; the app switcher shows the wallet's mark and no keyboard; a field that takes focus under
+  the cover brings up no keyboard; a screenshot still shows the screen, and the ID Provider extension's sheet is not
+  covered.
 
 ## Authentication And Biometrics
 
@@ -2748,7 +2754,8 @@ Before release candidate approval, test:
 * Biometric enrollment change.
 * A weak PIN refused at setup and on change; setup on a device without a passcode shows the warning.
 * Screen recording, AirPlay or QuickTime mirroring with `ConfigUiLogic.hideContentWhileCaptured` true: the cover over
-  every screen, sheet and alert, the RQES SDK's included, and no keypad on a PIN screen; the app switcher card plain;
+  every screen, sheet and alert, the RQES SDK's included, and no keypad on a PIN screen; the app switcher card shows
+  the wallet's mark and no keypad; a saved password or passkey filled into the issuer's sign-in page;
   a screenshot still shows the screen and the ID Provider extension's sheet is not covered; with it false, no cover and
   the blur in the app switcher.
 * Removing the device passcode after setup: the documents are gone; login shows the warning, or with
@@ -2770,9 +2777,10 @@ Before release candidate approval, test:
 * Cross-device presentation.
 * Relayed OpenID4VP request and response handling.
 * Proximity QR/BLE, including leaving the app or locking the phone once the code is shown: the session stops, a
-  reader can no longer connect, and the screen closes. Leaving while the code is still loading: the session stops
-  when the code becomes ready. Control Center over the QR screen keeps the session and the screen (with `hideContentWhileCaptured` true, behind the plain cover). Leaving from the
-  request screen keeps the session (10-minute limit).
+  reader can no longer connect, and the screen closes. Leaving while the code is still loading: the session stops when
+  the code becomes ready. Control Center over the QR screen keeps the session and the screen (with
+  `hideContentWhileCaptured` true, behind the cover). Leaving from the request screen keeps the session (10-minute
+  limit).
 * Proximity: the reader ends the Bluetooth session before the user answers: the request screen goes back and the
   presentation ends. A lock, or a wallet link that returns to the dashboard, ends the session and stops the
   advertising.

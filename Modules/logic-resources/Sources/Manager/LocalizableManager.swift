@@ -518,6 +518,8 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "reset_wallet_progress_title")
     case .resetWalletProgressMessage:
       bundle.localizedString(forKey: "reset_wallet_progress_message")
+    case .screenCaptureCoverTitle:
+      bundle.localizedString(forKey: "screen_capture_cover_title")
     case .screenCaptureCoverMessage:
       bundle.localizedString(forKey: "screen_capture_cover_message")
     case .orderBy:

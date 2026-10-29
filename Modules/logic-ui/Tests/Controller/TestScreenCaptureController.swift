@@ -42,9 +42,11 @@ final class TestScreenCaptureController: EudiTest {
 
     controller.start(scenes: [scene])
     post(UIScene.willDeactivateNotification, object: scene)
+    post(UIResponder.keyboardWillShowNotification, object: nil)
 
     XCTAssertEqual(scene.observations, 0)
     XCTAssertNil(scene.coverWindow)
+    XCTAssertEqual(scene.endEditingCount, 0)
   }
 
   @MainActor
@@ -75,13 +77,13 @@ final class TestScreenCaptureController: EudiTest {
   }
 
   @MainActor
-  func testStart_WhenTheSceneIsNotActive_ThenCoversItWithoutTheMessageUntilItIsActive() {
+  func testStart_WhenTheSceneIsNotActive_ThenCoversItWithoutTheMessageAndTheKeyboardUntilItIsActive() {
     let scene = RecordingScene(isForegroundActive: false)
     let controller = ScreenCaptureControllerImpl(isEnabled: true)
     controller.start(scenes: [scene])
     XCTAssertEqual(scene.coverWindow?.isHidden, false)
     XCTAssertEqual(scene.coverWindow?.isMessageShown, false)
-    XCTAssertEqual(scene.endEditingCount, 0)
+    XCTAssertEqual(scene.endEditingCount, 1)
 
     post(UIScene.didActivateNotification, object: scene)
 
@@ -113,7 +115,7 @@ final class TestScreenCaptureController: EudiTest {
   }
 
   @MainActor
-  func testStart_WhenCaptureEndsWhileTheSceneIsNotActive_ThenThePlainCoverStays() {
+  func testStart_WhenCaptureEndsWhileTheSceneIsNotActive_ThenTheCoverWithoutTheMessageStays() {
     let scene = RecordingScene(isCaptured: true)
     let controller = ScreenCaptureControllerImpl(isEnabled: true)
     controller.start(scenes: [scene])
@@ -209,16 +211,42 @@ final class TestScreenCaptureController: EudiTest {
   }
 
   @MainActor
-  func testStart_WhenTheKeyboardShowsInACapturedScene_ThenPutsItAway() {
+  func testStart_WhenTheKeyboardShowsInACoveredScene_ThenPutsItAway() {
     let captured = RecordingScene(isCaptured: true)
-    let notCaptured = RecordingScene()
+    let inactive = RecordingScene(isForegroundActive: false)
+    let uncovered = RecordingScene()
     let controller = ScreenCaptureControllerImpl(isEnabled: true)
-    controller.start(scenes: [captured, notCaptured])
+    controller.start(scenes: [captured, inactive, uncovered])
 
     post(UIResponder.keyboardWillShowNotification, object: nil)
 
     XCTAssertEqual(captured.endEditingCount, 2)
-    XCTAssertEqual(notCaptured.endEditingCount, 0)
+    XCTAssertEqual(inactive.endEditingCount, 2)
+    XCTAssertEqual(uncovered.endEditingCount, 0)
+  }
+
+  @MainActor
+  func testStart_WhenTheKeyboardShowsAfterTheCoverWent_ThenLeavesItThere() {
+    let scene = RecordingScene(isCaptured: true)
+    let controller = ScreenCaptureControllerImpl(isEnabled: true)
+    controller.start(scenes: [scene])
+    scene.setCaptured(false)
+
+    post(UIResponder.keyboardWillShowNotification, object: nil)
+
+    XCTAssertEqual(scene.coverWindow?.isHidden, true)
+    XCTAssertEqual(scene.endEditingCount, 1)
+  }
+
+  @MainActor
+  func testStart_WhenTheSceneGoesToTheAppSwitcher_ThenPutsTheKeyboardAway() {
+    let scene = RecordingScene()
+    let controller = ScreenCaptureControllerImpl(isEnabled: true)
+    controller.start(scenes: [scene])
+
+    post(UIScene.willDeactivateNotification, object: scene)
+
+    XCTAssertEqual(scene.endEditingCount, 1)
   }
 
   @MainActor

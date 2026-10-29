@@ -42,9 +42,9 @@ protocol ScreenCaptureScene: AnyObject, Sendable {
 
 /// The `ScreenCaptureController` of the app: follows each window scene's capture state and activation, and shows the
 /// scene's `ScreenCaptureCoverWindow` above every other window, so that sheets, alerts and the RQES SDK's screens are
-/// covered too. While the scene is captured the cover says so and the keyboard is put away; while the scene is
-/// inactive or in the background the cover is plain, for the app switcher. The cover window never becomes key, so
-/// `UIApplication.currentUIWindow`, and what relies on it, stay on the wallet's own window.
+/// covered too. While the scene is captured the cover says so; while the scene is inactive or in the background it
+/// shows only the wallet's mark, for the app switcher. The keyboard is put away under either. The cover window never
+/// becomes key, so `UIApplication.currentUIWindow`, and what relies on it, stay on the wallet's own window.
 @MainActor
 final class ScreenCaptureControllerImpl: ScreenCaptureController {
 
@@ -115,7 +115,7 @@ final class ScreenCaptureControllerImpl: ScreenCaptureController {
       .store(in: &cancellables)
 
     NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
-      .sink { [weak self] _ in self?.endEditingInCapturedScenes() }
+      .sink { [weak self] _ in self?.endEditingInCoveredScenes() }
       .store(in: &cancellables)
   }
 
@@ -147,8 +147,8 @@ final class ScreenCaptureControllerImpl: ScreenCaptureController {
     setCaptured(scene.isCaptured, sceneId: sceneId)
   }
 
-  /// Shows the scene's cover while `shouldCover` holds, with the capture text and the keyboard put away while the scene
-  /// is captured, and hides it otherwise. The cover is made the first time it is needed.
+  /// Shows the scene's cover while `shouldCover` holds, with the capture text while the scene is captured, and puts the
+  /// keyboard away under it; hides it otherwise. The cover is made the first time it is needed.
   private func updateCover(sceneId: ObjectIdentifier) {
     guard let scene = scenes[sceneId] else { return }
     let isCaptured = capturedScenes.contains(sceneId)
@@ -165,13 +165,11 @@ final class ScreenCaptureControllerImpl: ScreenCaptureController {
     let coverWindow = coverWindows[sceneId] ?? scene.makeCoverWindow()
     coverWindows[sceneId] = coverWindow
     setVisibility(of: coverWindow, isShown: true, isMessageShown: isCaptured)
-    if isCaptured {
-      scene.endEditing()
-    }
+    scene.endEditing()
   }
 
   /// Shows or hides a cover and its message, and tells VoiceOver that the screen changed when the message cover comes
-  /// or goes; the plain cover only shows while the app is not active, so VoiceOver is left where it was.
+  /// or goes; the cover without it only shows while the app is not active, so VoiceOver is left where it was.
   private func setVisibility(of coverWindow: ScreenCaptureCoverWindow, isShown: Bool, isMessageShown: Bool) {
     let wasMessageVisible = !coverWindow.isHidden && coverWindow.isMessageShown
     coverWindow.isMessageShown = isMessageShown
@@ -181,9 +179,9 @@ final class ScreenCaptureControllerImpl: ScreenCaptureController {
     }
   }
 
-  /// Puts the keyboard away again in a captured scene, where a field took focus under the cover.
-  private func endEditingInCapturedScenes() {
-    for sceneId in capturedScenes {
+  /// Puts the keyboard away again in a covered scene, where a field took focus under the cover.
+  private func endEditingInCoveredScenes() {
+    for (sceneId, coverWindow) in coverWindows where !coverWindow.isHidden {
       scenes[sceneId]?.endEditing()
     }
   }

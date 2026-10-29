@@ -16,28 +16,45 @@
 import SwiftUI
 import logic_resources
 
-/// What the wallet shows instead of its screens: the background alone in the app switcher, and a message while the
-/// screen is recorded, mirrored or shared.
+/// What the wallet shows instead of its screens: the wallet's mark alone in the app switcher, as the start-up screen
+/// (`StartupView`) shows it, and the mark with a title and a message while the screen is recorded, mirrored or shared.
 struct ScreenCaptureCoverView: View {
 
   let isMessageShown: Bool
 
   var body: some View {
-    ZStack {
-      Theme.shared.color.background
+    VStack(spacing: SPACING_LARGE) {
+      Theme.shared.image.logo
+        .resizable()
+        .aspectRatio(contentMode: .fit)
+        .frame(width: getScreenRect().width / 2.5)
+        .accessibilityHidden(true)
+
       if isMessageShown {
-        Text(.screenCaptureCoverMessage)
-          .typography(Theme.shared.font.bodyLarge)
-          .foregroundStyle(Theme.shared.color.primaryLabel)
-          .multilineTextAlignment(.center)
-          .padding(Theme.shared.dimension.padding)
+        VStack(spacing: SPACING_SMALL) {
+          Text(.screenCaptureCoverTitle)
+            .typography(Theme.shared.font.displaySmall)
+            .foregroundStyle(Theme.shared.color.primaryLabel)
+          Text(.screenCaptureCoverMessage)
+            .typography(Theme.shared.font.bodyLarge)
+            .foregroundStyle(Theme.shared.color.secondaryLabel)
+        }
+        .multilineTextAlignment(.center)
+        .accessibilityElement(children: .combine)
       }
     }
+    .padding(.horizontal, Theme.shared.dimension.padding)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(Theme.shared.color.background)
     .ignoresSafeArea()
+    .fastenDynamicType()
   }
 }
 
-#Preview {
+#Preview("Recording or sharing") {
   ScreenCaptureCoverView(isMessageShown: true)
+}
+
+#Preview("App switcher") {
+  ScreenCaptureCoverView(isMessageShown: false)
 }

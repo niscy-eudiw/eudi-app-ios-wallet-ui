@@ -20,7 +20,7 @@ import SwiftUI
 /// never becomes key, so that the wallet's own window stays the one `UIApplication.currentUIWindow` finds.
 final class ScreenCaptureCoverWindow: UIWindow {
 
-  /// Whether the cover says that the screen is captured; it is plain while it only hides the wallet in the app
+  /// Whether the cover says that the screen is captured; without it, it shows only the wallet's mark, for the app
   /// switcher.
   var isMessageShown = false {
     didSet {

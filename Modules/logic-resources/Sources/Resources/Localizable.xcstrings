@@ -3313,7 +3313,18 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The wallet is hidden while the screen is recorded or shared."
+            "value" : "The screen is being recorded or shared. The wallet shows again when it stops."
+          }
+        }
+      }
+    },
+    "screen_capture_cover_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your wallet is hidden"
           }
         }
       }
