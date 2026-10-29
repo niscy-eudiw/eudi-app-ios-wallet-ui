@@ -851,6 +851,13 @@ open when the screen appears and lists each transaction, numbered when there is 
   reported too, because WalletKit's `OpenId4VpConfiguration.errorDispatchPolicy` defaults to `.allClients`;
   `.onlyAuthenticatedClients`, set in `WalletKitConfigImpl.vpConfig`, withholds that report from a verifier that did
   not authenticate.
+* Back on the request screen declines a remote request (`RemoteSessionCoordinator.declineResponse`), unless the wallet
+  has already tried to send its response: after a failed send, whether WalletKit reported the failure, the verifier
+  rejected the response or the network failed, Back closes the request without a second answer, so the history keeps
+  the first result. A failure before anything left the device, or a WalletKit authentication prompt cancelled with
+  `userAuthenticationRequired` on (it is off), then leaves the verifier to its own timeout. After a failed send, Retry
+  on the error screen sends nothing (WalletKit has put the session in its error state); Share on the request screen
+  sends the response again, as in the upstream app.
 
 Where a document location is an HTTP(S) link, "Open document" opens it in the browser. These
 details are informational: sharing still uses the existing share flow, and WalletKit binds each
@@ -2751,6 +2758,8 @@ Before release candidate approval, test:
 * Incorrect PIN attempts and lockout; a change of the device date during a lockout (no effect) and a restart during
   one (it begins again).
 * A request with transaction data: every entry is shown before Share; one that cannot be shown in full is declined.
+* A response that fails to send, then Back on the request screen: the verifier gets no second answer, and the history
+  keeps the first result.
 * Biometric enablement (asks for the PIN first) and disablement (PIN or biometric); Back from the check changes
   nothing.
 * Biometric enrollment change.

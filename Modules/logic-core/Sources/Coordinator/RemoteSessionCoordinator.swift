@@ -16,6 +16,7 @@
 import logic_resources
 import logic_business
 import UIKit
+import os
 
 public protocol RemoteSessionCoordinator: Sendable {
 
@@ -32,6 +33,8 @@ public protocol RemoteSessionCoordinator: Sendable {
   func initialize() async
   func requestReceived() async throws -> PresentationRequest
   func sendResponse(response: RequestItemConvertible) async throws
+  /// Declines the request, unless the wallet has already answered it: after a response, sent or failed, or an earlier
+  /// decline, it sends nothing, so that the verifier gets no second answer from Back and the history keeps its result.
   func declineResponse() async throws
   func getState() async -> PresentationState
 
@@ -46,6 +49,9 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
 
   private let sendableAnyCancellable: SendableAnyCancellable = .init()
   private let session: PresentationSession
+  /// Set once the wallet has tried to answer the request. A failed response may already have reached the verifier,
+  /// or WalletKit may have reported the failure to it.
+  private let hasAnswered = OSAllocatedUnfairLock(initialState: false)
 
   var relyingPartyRegistration: WrpRegistrationPolicy? { session.wrpVerifierPolicy }
   var relyingPartyWarningViolations: [String] { (session.wrpVerifierWarnings?[""] ?? []).map(\.message) }
@@ -95,6 +101,7 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
   }
 
   public func sendResponse(response: RequestItemConvertible) async throws {
+    hasAnswered.withLock { $0 = true }
     try await session.sendResponse(
       userAccepted: true,
       itemsToSend: response.items,
@@ -106,6 +113,11 @@ final class RemoteSessionCoordinatorImpl: RemoteSessionCoordinator {
   }
 
   public func declineResponse() async throws {
+    let isFirstAnswer = hasAnswered.withLock { hasAnswered in
+      defer { hasAnswered = true }
+      return !hasAnswered
+    }
+    guard isFirstAnswer else { return }
     try await session.sendResponse(userAccepted: false, itemsToSend: [:], onCancel: nil)
   }
 
