@@ -951,6 +951,12 @@ outlasts it ("Client Attestation has expired"); that limit is wallet-kit's, not 
   and every second while the app is in front. A wallet link that arrives while the wallet is locked is
   kept, in memory for this process only, and opens after login; it starts no presentation session before
   then. A link of no wallet type is dropped.
+* The background time counts from when the app left, also when a login completes after that, for example a
+  PIN check that finishes as the user switches away: the app locks on return once `backgroundLockTimeout`
+  has passed. The PIN or biometric screen is in `protectedFlowRouteKeys` as a flow's confirmation, but the
+  login itself does not count: it counts only when the path also holds a screen past login
+  (`RouterHost.isInProtectedFlow()`). A background from an earlier absence was already cleared when the app
+  came back while locked (`SessionController.lockIfExpired()`). As on Android.
 * The proximity QR screen is not in `protectedFlowRouteKeys`. From the moment its QR code is ready (WalletKit is
   then advertising over Bluetooth), the app going to the background (the user leaves the app or locks the phone)
   stops the session and its advertising, and closes the screen if it is still in front

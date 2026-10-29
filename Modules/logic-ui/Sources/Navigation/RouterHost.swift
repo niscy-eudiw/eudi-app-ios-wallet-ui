@@ -27,7 +27,8 @@ public protocol RouterHost {
   @MainActor func isScreenForeground(with route: AppRoute) -> Bool
   @MainActor func isScreenOnBackStack(with route: AppRoute) -> Bool
   /// True while the screen in front belongs to an issuance, presentation or signing in progress
-  /// (`ConfigUiLogic.protectedFlowRouteKeys`).
+  /// (`ConfigUiLogic.protectedFlowRouteKeys`). The PIN or biometric screen is on that list as a flow's confirmation; it
+  /// counts only when the path also holds a screen past login, so not while it is the login itself.
   @MainActor func isInProtectedFlow() -> Bool
   /// Sends a locked wallet to login, clearing the navigation, when a screen other than a login screen is
   /// on it (`ConfigUiLogic.loginRouteKeys`); does nothing while it is unlocked.
