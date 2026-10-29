@@ -75,6 +75,36 @@ final class TestOfferIssuer: EudiTest {
     )
   }
 
+  func testOf_WhenTheOfferParameterIsNotSpelledAsTheLibraryReadsIt_ThenIsUnreadable() {
+    let reference = encoded("https://issuer.example/offer")
+    let value = encoded(offer(issuer: "https://issuer.example"))
+    for link in [
+      "https://attacker.example/offer?Credential_Offer_Uri=\(reference)",
+      "https://attacker.example/offer?CREDENTIAL_OFFER_URI=\(reference)",
+      "https://attacker.example/offer?Credential_Offer=\(value)",
+      "openid-credential-offer://?Credential_Offer_Uri=\(reference)"
+    ] {
+      XCTAssertEqual(OfferIssuer.of(offerUri: link, configuredIssuers: configured), .unreadable, link)
+    }
+  }
+
+  func testOf_WhenOnlyTheLinkItselfCouldBeFetched_ThenIsUnreadable() {
+    for link in [
+      "https://issuer.example/offer",
+      "https://attacker.example/offer",
+      "https://attacker.example/offer?credential_offer_uri=",
+      "https://attacker.example/offer?credential_offer="
+    ] {
+      XCTAssertEqual(OfferIssuer.of(offerUri: link, configuredIssuers: configured), .unreadable, link)
+    }
+  }
+
+  func testOf_WhenTheOfferUriIsGivenTwice_ThenIsUnreadable() {
+    let link = byReference("https://issuer.example/a") + "&credential_offer_uri=" + encoded("https://attacker.example/b")
+
+    XCTAssertEqual(OfferIssuer.of(offerUri: link, configuredIssuers: configured), .unreadable)
+  }
+
   func testRequireConfigured_WhenTheIssuerIsNotConfigured_ThenThrowsIssuerNotConfigured() {
     XCTAssertThrowsError(
       try OfferIssuer.requireConfigured(offerUri: byValue(issuer: "https://attacker.example"), configuredIssuers: configured)
@@ -92,14 +122,19 @@ final class TestOfferIssuer: EudiTest {
 
 private extension TestOfferIssuer {
 
+  func offer(issuer: String) -> String {
+    "{\"credential_issuer\":\"\(issuer)\",\"credential_configuration_ids\":[\"pid\"]}"
+  }
+
+  func encoded(_ value: String) -> String {
+    value.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""
+  }
+
   func byValue(issuer: String) -> String {
-    let json = "{\"credential_issuer\":\"\(issuer)\",\"credential_configuration_ids\":[\"pid\"]}"
-    return "openid-credential-offer://?credential_offer="
-      + (json.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "")
+    "openid-credential-offer://?credential_offer=" + encoded(offer(issuer: issuer))
   }
 
   func byReference(_ address: String) -> String {
-    "openid-credential-offer://?credential_offer_uri="
-      + (address.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "")
+    "openid-credential-offer://?credential_offer_uri=" + encoded(address)
   }
 }

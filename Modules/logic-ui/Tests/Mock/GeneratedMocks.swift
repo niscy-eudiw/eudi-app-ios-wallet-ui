@@ -7848,6 +7848,7 @@ import Foundation
 
 import Cuckoo
 import Foundation
+import OpenID4VCI
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
