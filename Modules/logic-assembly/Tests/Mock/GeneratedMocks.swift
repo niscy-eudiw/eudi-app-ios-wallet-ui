@@ -5976,16 +5976,6 @@ public class MockWalletKitController: WalletKitController, Cuckoo.ProtocolMock, 
         )
     }
 
-    public func fetchIssuedDocuments(excluded p0: [DocumentTypeIdentifier]) async -> [any DocClaimsDecodable] {
-        return await cuckoo_manager.call(
-            "fetchIssuedDocuments(excluded p0: [DocumentTypeIdentifier]) async -> [any DocClaimsDecodable]",
-            parameters: (p0),
-            escapingParameters: (p0),
-            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.fetchIssuedDocuments(excluded: p0)
-        )
-    }
-
     public func fetchMainPidDocument() async -> (any DocClaimsDecodable)? {
         return await cuckoo_manager.call(
             "fetchMainPidDocument() async -> (any DocClaimsDecodable)?",
@@ -6605,14 +6595,6 @@ return await cuckoo_manager.call(
             ))
         }
         
-        func fetchIssuedDocuments<M1: Cuckoo.Matchable>(excluded p0: M1) -> Cuckoo.ProtocolStubFunction<([DocumentTypeIdentifier]), [any DocClaimsDecodable]> where M1.MatchedType == [DocumentTypeIdentifier] {
-            let matchers: [Cuckoo.ParameterMatcher<([DocumentTypeIdentifier])>] = [wrap(matchable: p0) { $0 }]
-            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
-                method: "fetchIssuedDocuments(excluded p0: [DocumentTypeIdentifier]) async -> [any DocClaimsDecodable]",
-                parameterMatchers: matchers
-            ))
-        }
-        
         func fetchMainPidDocument() -> Cuckoo.ProtocolStubFunction<(), (any DocClaimsDecodable)?> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
@@ -7127,18 +7109,6 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<([DocumentTypeIdentifier])>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
                 "fetchIssuedDocuments(with p0: [DocumentTypeIdentifier]) async -> [any DocClaimsDecodable]",
-                callMatcher: callMatcher,
-                parameterMatchers: matchers,
-                sourceLocation: sourceLocation
-            )
-        }
-        
-        
-        @discardableResult
-        func fetchIssuedDocuments<M1: Cuckoo.Matchable>(excluded p0: M1) -> Cuckoo.__DoNotUse<([DocumentTypeIdentifier]), [any DocClaimsDecodable]> where M1.MatchedType == [DocumentTypeIdentifier] {
-            let matchers: [Cuckoo.ParameterMatcher<([DocumentTypeIdentifier])>] = [wrap(matchable: p0) { $0 }]
-            return cuckoo_manager.verify(
-                "fetchIssuedDocuments(excluded p0: [DocumentTypeIdentifier]) async -> [any DocClaimsDecodable]",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -7798,10 +7768,6 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
     }
     
     public func fetchIssuedDocuments(with p0: [DocumentTypeIdentifier]) async -> [any DocClaimsDecodable] {
-        return DefaultValueRegistry.defaultValue(for: ([any DocClaimsDecodable]).self)
-    }
-    
-    public func fetchIssuedDocuments(excluded p0: [DocumentTypeIdentifier]) async -> [any DocClaimsDecodable] {
         return DefaultValueRegistry.defaultValue(for: ([any DocClaimsDecodable]).self)
     }
     
@@ -12748,20 +12714,6 @@ import logic_resources
 // MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/Extension/ExpandableListItem+Extensions.swift'
 
 import Cuckoo
-@testable import logic_core
-@testable import logic_business
-@testable import logic_analytics
-@testable import logic_ui
-@testable import logic_authentication
-@testable import logic_assembly
-
-
-
-// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/Extension/Image+Extensions.swift'
-
-import Cuckoo
-import SwiftUI
-import logic_resources
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics

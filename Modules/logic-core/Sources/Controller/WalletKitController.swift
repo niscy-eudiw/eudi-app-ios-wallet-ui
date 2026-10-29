@@ -38,7 +38,6 @@ public protocol WalletKitController: Sendable {
   func fetchDeferredDocuments() async -> [WalletStorage.Document]
   func fetchIssuedDocuments() async -> [any DocClaimsDecodable]
   func fetchIssuedDocuments(with types: [DocumentTypeIdentifier]) async -> [any DocClaimsDecodable]
-  func fetchIssuedDocuments(excluded: [DocumentTypeIdentifier]) async -> [any DocClaimsDecodable]
   func fetchMainPidDocument() async -> (any DocClaimsDecodable)?
   func fetchDocument(with id: String) async -> (any DocClaimsDecodable)?
   func fetchDocuments(with ids: [String]) async -> [any DocClaimsDecodable]
@@ -382,11 +381,6 @@ final actor WalletKitControllerImpl: WalletKitController {
   func fetchMainPidDocument() -> (any DocClaimsDecodable)? {
     return fetchIssuedDocuments(with: [DocumentTypeIdentifier.mDocPid, DocumentTypeIdentifier.sdJwtPid])
       .sorted { $0.createdAt > $1.createdAt }.last
-  }
-
-  func fetchIssuedDocuments(excluded: [DocumentTypeIdentifier]) -> [any DocClaimsDecodable] {
-    let excludedRawValues = excluded.map { $0.rawValue }
-    return fetchIssuedDocuments().filter { !excludedRawValues.contains($0.docType) }
   }
 
   func fetchDocument(with id: String) -> (any DocClaimsDecodable)? {
