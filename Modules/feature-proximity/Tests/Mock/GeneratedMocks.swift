@@ -12021,28 +12021,6 @@ public class MockSessionCoordinatorHolder: SessionCoordinatorHolder, Cuckoo.Prot
         )
     }
 
-    public func getActiveRemoteCoordinator() async throws -> RemoteSessionCoordinator {
-        return try await cuckoo_manager.callThrows(
-            "getActiveRemoteCoordinator() async throws -> RemoteSessionCoordinator",
-            parameters: (),
-            escapingParameters: (),
-            errorType: Swift.Error.self,
-            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.getActiveRemoteCoordinator()
-        )
-    }
-
-    public func getActiveProximityCoordinator() async throws -> ProximitySessionCoordinator {
-        return try await cuckoo_manager.callThrows(
-            "getActiveProximityCoordinator() async throws -> ProximitySessionCoordinator",
-            parameters: (),
-            escapingParameters: (),
-            errorType: Swift.Error.self,
-            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.getActiveProximityCoordinator()
-        )
-    }
-
     public struct __StubbingProxy_SessionCoordinatorHolder: Cuckoo.StubbingProxy {
         private let cuckoo_manager: Cuckoo.MockManager
     
@@ -12070,22 +12048,6 @@ public class MockSessionCoordinatorHolder: SessionCoordinatorHolder, Cuckoo.Prot
             let matchers: [Cuckoo.ParameterMatcher<(ProximitySessionCoordinator)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockSessionCoordinatorHolder.self,
                 method: "setActiveProximityCoordinator(_ p0: ProximitySessionCoordinator) async",
-                parameterMatchers: matchers
-            ))
-        }
-        
-        func getActiveRemoteCoordinator() -> Cuckoo.ProtocolStubThrowingFunction<(), RemoteSessionCoordinator,Swift.Error> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return .init(stub: cuckoo_manager.createStub(for: MockSessionCoordinatorHolder.self,
-                method: "getActiveRemoteCoordinator() async throws -> RemoteSessionCoordinator",
-                parameterMatchers: matchers
-            ))
-        }
-        
-        func getActiveProximityCoordinator() -> Cuckoo.ProtocolStubThrowingFunction<(), ProximitySessionCoordinator,Swift.Error> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return .init(stub: cuckoo_manager.createStub(for: MockSessionCoordinatorHolder.self,
-                method: "getActiveProximityCoordinator() async throws -> ProximitySessionCoordinator",
                 parameterMatchers: matchers
             ))
         }
@@ -12137,30 +12099,6 @@ public class MockSessionCoordinatorHolder: SessionCoordinatorHolder, Cuckoo.Prot
                 sourceLocation: sourceLocation
             )
         }
-        
-        
-        @discardableResult
-        func getActiveRemoteCoordinator() -> Cuckoo.__DoNotUse<(), RemoteSessionCoordinator> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return cuckoo_manager.verify(
-                "getActiveRemoteCoordinator() async throws -> RemoteSessionCoordinator",
-                callMatcher: callMatcher,
-                parameterMatchers: matchers,
-                sourceLocation: sourceLocation
-            )
-        }
-        
-        
-        @discardableResult
-        func getActiveProximityCoordinator() -> Cuckoo.__DoNotUse<(), ProximitySessionCoordinator> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return cuckoo_manager.verify(
-                "getActiveProximityCoordinator() async throws -> ProximitySessionCoordinator",
-                callMatcher: callMatcher,
-                parameterMatchers: matchers,
-                sourceLocation: sourceLocation
-            )
-        }
     }
 }
 
@@ -12178,14 +12116,6 @@ public class SessionCoordinatorHolderStub:SessionCoordinatorHolder, @unchecked S
     
     public func setActiveProximityCoordinator(_ p0: ProximitySessionCoordinator) async {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
-    }
-    
-    public func getActiveRemoteCoordinator() async throws -> RemoteSessionCoordinator {
-        return DefaultValueRegistry.defaultValue(for: (RemoteSessionCoordinator).self)
-    }
-    
-    public func getActiveProximityCoordinator() async throws -> ProximitySessionCoordinator {
-        return DefaultValueRegistry.defaultValue(for: (ProximitySessionCoordinator).self)
     }
 }
 
