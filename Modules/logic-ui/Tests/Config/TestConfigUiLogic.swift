@@ -101,7 +101,8 @@ final class TestConfigUiLogic: EudiTest {
       .featureDashboardModule(.dashboard),
       .featureDashboardModule(.documentDetails(id: "id")),
       .featureIssuanceModule(.issuanceAddDocument(config: NoConfig())),
-      .featureCommonModule(.genericSuccess(config: NoConfig()))
+      .featureCommonModule(.genericSuccess(config: NoConfig())),
+      .featureDashboardModule(.biometrySelection(isEnabled: true))
     ]
 
     for route in routes {

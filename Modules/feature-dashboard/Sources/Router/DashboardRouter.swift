@@ -83,6 +83,16 @@ public final class DashboardRouter {
           )
         )
       )
+    case .biometrySelection(let isEnabled):
+      BiometrySelectionView(
+        with: .init(
+          router: host,
+          interactor: DIGraph.shared.resolver.force(
+            SettingsInteractor.self
+          ),
+          isEnabled: isEnabled
+        )
+      )
     case .issuanceOption:
       IssuanceOptionView(
         with: .init(

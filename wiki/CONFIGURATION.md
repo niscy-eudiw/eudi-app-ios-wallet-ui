@@ -852,8 +852,8 @@ screen (`BiometryViewModel` with `isPreAuthorization`, the ID Provider extension
 passcode (`DeviceLockController`) and warn when there is none; with `requireDeviceSecure` they accept no PIN, and the
 login screen no Face ID or Touch ID, until one is set. Both check again whenever the app comes back, and setup also
 when the first PIN is entered. The passcode check does not apply when the PIN of a set-up wallet is changed, nor to the
-confirmations before a presentation (Accept in the extension included) or a reset; the weak-PIN rule applies to
-every new PIN. The defaults are the Android wallet's.
+confirmations before a presentation (Accept in the extension included), a reset or the biometric unlock switch; the
+weak-PIN rule applies to every new PIN. The defaults are the Android wallet's.
 
 Default policy (`AuthenticationConfigImpl`):
 
@@ -897,7 +897,7 @@ container.register(AuthenticationConfig.self) { _ in
 .inObjectScope(ObjectScope.container)
 ```
 
-The lockout is enforced by `PinThrottleController` and applied wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, and the Document Provider extension before it shows a request and again on Accept) and in the change-PIN validation step (`QuickPinViewModel`). While locked:
+The lockout is enforced by `PinThrottleController` and applied wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, the factory reset and the biometric unlock switch in Settings, and the ID Provider extension before it shows a request and again on Accept) and in the change-PIN validation step (`QuickPinViewModel`). While locked:
 
 * The PIN input field is disabled (no keyboard, no edits).
 * No PIN is submitted. The PIN screens have no proceed button: they submit on the sixth digit, which is ignored while locked.

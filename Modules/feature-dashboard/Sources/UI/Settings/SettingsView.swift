@@ -16,7 +16,6 @@
 import SwiftUI
 import logic_ui
 import logic_resources
-import logic_business
 
 struct SettingsView<Router: RouterHost>: View {
   @State private var viewModel: SettingsViewModel<Router>
@@ -57,16 +56,6 @@ struct SettingsView<Router: RouterHost>: View {
           .accessibilityIdentifier(SettingsLocators.confirmDialogCancelButton.id)
       }
     )
-    .alert(item: $viewModel.biometryError) { error in
-      Alert(
-        title: Text(.genericErrorTitle),
-        message: Text(error.errorDescription.orEmpty),
-        primaryButton: .default(Text(.biometryOpenSettings)) {
-          viewModel.onBiometrySettings()
-        },
-        secondaryButton: .cancel {}
-      )
-    }
   }
 }
 

@@ -31,7 +31,8 @@ public protocol BiometryInteractor: Sendable {
   func getBiometricsMethod() async -> String
   func getBiometryType() async -> LABiometryType
   func isBiometryEnabled() async -> Bool
-  /// Turns biometric unlock on or off after a biometric check, and keeps the choice only when the check passes.
+  /// Turns biometric unlock on after a biometric check, keeping the choice only when the check passes, or off at
+  /// once. The caller first confirms the user with the PIN, or, to turn it off, with the PIN or a biometric.
   func setBiometrySelection(isEnabled: Bool) async -> BiometricsState
   func isPinValid(with pin: String) async -> QuickPinPartialState
 

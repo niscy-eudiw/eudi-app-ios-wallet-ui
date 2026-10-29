@@ -68,6 +68,9 @@ final class BiometryViewModel<Router: RouterHost>: ViewModel<Router, BiometrySta
   @ObservationIgnored
   private var lockoutTickTask: Task<Void, Never>?
 
+  @ObservationIgnored
+  private var isFinished = false
+
   init(
     router: Router,
     interactor: BiometryInteractor,
@@ -140,10 +143,12 @@ final class BiometryViewModel<Router: RouterHost>: ViewModel<Router, BiometrySta
     }
   }
 
+  /// Back ends the screen; a PIN or biometric success still in progress then does nothing, so that Back after a
+  /// correct PIN changes nothing.
   func onPop() {
-    if let backNavigation = viewState.config.navigationBackType {
-      doNavigation(navigationType: backNavigation)
-    }
+    guard !isFinished, let backNavigation = viewState.config.navigationBackType else { return }
+    isFinished = true
+    doNavigation(navigationType: backNavigation)
   }
 
   func onBiometry() {
@@ -242,8 +247,12 @@ final class BiometryViewModel<Router: RouterHost>: ViewModel<Router, BiometrySta
   }
 
   /// Login (`isPreAuthorization`) unlocks the session before the wallet opens; the confirmation before a
-  /// presentation does not.
+  /// presentation does not. On a screen with Back, the first success ends it, so Back before it, or a second success,
+  /// changes nothing. Login has no Back and takes every success, so that one whose navigation a lock refused can be
+  /// followed by another.
   private func authenticated() async {
+    guard !isFinished else { return }
+    isFinished = viewState.isCancellable
     if viewState.config.isPreAuthorization {
       await interactor.unlockSession()
     }

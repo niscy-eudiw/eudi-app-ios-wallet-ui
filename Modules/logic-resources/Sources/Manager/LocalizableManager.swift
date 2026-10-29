@@ -418,6 +418,10 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "biometry_confirm_request")
     case .biometryUnlockReason:
       bundle.localizedString(forKey: "biometry_unlock_reason")
+    case .biometryUnlockOffCaption:
+      bundle.localizedString(forKey: "biometry_unlock_off_caption")
+    case .biometryUnlockOnCaption:
+      bundle.localizedString(forKey: "biometry_unlock_on_caption")
     case .viewDetails:
       bundle.localizedString(forKey: "view_details")
     case .requestsTheFollowing:

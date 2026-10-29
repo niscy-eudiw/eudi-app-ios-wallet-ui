@@ -1881,7 +1881,7 @@ Default policy (`AuthenticationConfigImpl`):
 | Update from a build with the wall-clock lockout | Ends a lockout in progress: those values are not read; the level is kept. An update between builds that use the monotonic clock keeps the lockout running. |
 | App reinstall | The state survives the uninstall, as the Keychain does; the first launch after a reinstall deletes it with the PIN and every document (`StartupInteractor.manageStorageForFirstRun()`). Require re-enrollment unless secure backup/recovery is explicitly implemented. |
 
-Lockout counters are persisted, not just held in UI state. While locked, the PIN input is disabled wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, and the Document Provider extension) and in the change-PIN validation step (`QuickPinViewModel`). The biometric icon on the login screen stays enabled during PIN lockout, except at login while a required passcode is missing, and acts as an escape hatch — a successful biometric authentication clears the throttle.
+Lockout counters are persisted, not just held in UI state. While locked, the PIN input is disabled wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, the factory reset and the biometric unlock switch, and the ID Provider extension) and in the change-PIN validation step (`QuickPinViewModel`). The biometric icon on the login screen stays enabled during PIN lockout, except at login while a required passcode is missing, and acts as an escape hatch — a successful biometric authentication clears the throttle.
 
 Production gaps to address:
 
@@ -2105,8 +2105,9 @@ Production decisions:
 | PIN lockout policy | Defaults to 3 attempts then escalating lockouts of 30s, 90s, 5m (then 5m repeats). Tune via `AuthenticationConfig.maxFailedPinAttempts` and `pinLockoutDurations`. Decide whether the final tier should escalate further (wipe, support flow, device-credential step-up). See [PIN Throttle And Lockout](#pin-throttle-and-lockout). |
 | Session lock | The wallet locks after 60 seconds in the background or 5 minutes without interaction, on every screen; during an issuance, presentation or signing the background limit is 10 minutes, and while another screen (the RQES SDK's, the issuer's sign-in) covers the wallet the idle timeout pauses and 10 minutes covered requires login when the wallet's screen returns. An issuer's sign-in still open after 10 minutes locks the wallet. A lock dismisses what is presented, ends every cover and returns to login; after login the user starts again from the dashboard. A lock also ends a running presentation: a proximity session stops its Bluetooth transfer and advertising (`WalletKitController.stopPresentation()`), and so does a wallet link that returns the user to the dashboard. The proximity QR screen is the exception to the 10-minute limit: leaving the app there once its code is shown stops the session and closes the screen. Tune the timeouts in `AuthenticationConfig` and the screens in `ConfigUiLogic.protectedFlowRouteKeys`; see CONFIGURATION [Session lock configuration](CONFIGURATION.md#session-lock-configuration). The rules are the Android wallet's, except that on iOS the issuer's sign-in pauses the idle timeout: it shows inside the wallet's own scene. |
 | Biometric opt-in | Decide whether biometrics are optional or required for specific operations. |
+| Biometric unlock switch | Turning biometric unlock on in Settings first asks for the wallet PIN (the PIN-or-biometric screen, as the factory reset does), then for Face ID or Touch ID; turning it off accepts the PIN or a biometric. Someone holding the unlocked phone who has enrolled a new biometric therefore cannot turn it on, as on Android. Keep the PIN step if you change the Settings screen. |
 | Device credential fallback | Decide whether passcode fallback is allowed. |
-| Biometric enrollment change | Biometric unlock is bound to the enrolment present when the user turns it on: the Keychain probe is written with `.biometryCurrentSet` (`KeyChainController.storeBiometricProbe()`), so after a fingerprint or face is added or removed the probe can no longer be read, and login needs the PIN until the user turns biometric unlock off and on again in Settings. Turning it on or off needs a biometric check. An install from before this binding has biometric unlock on without a probe; its first biometric login binds it (`Prefs.Key.biometricUnlockBound`), as Android binds its key at the first biometric success. Android invalidates its key on enrolment the same way (`setInvalidatedByBiometricEnrollment(true)`). |
+| Biometric enrollment change | Biometric unlock is bound to the enrolment present when the user turns it on: the Keychain probe is written with `.biometryCurrentSet` (`KeyChainController.storeBiometricProbe()`), so after a fingerprint or face is added or removed the probe can no longer be read, and login needs the PIN until the user turns biometric unlock off and on again in Settings. Turning it on asks for the wallet PIN, then for Face ID or Touch ID; turning it off accepts the PIN or a biometric, with no further prompt (`SettingsViewModel.onBiometrySwitch()`, `BiometrySelectionViewModel`). An install from before this binding has biometric unlock on without a probe; its first biometric login binds it (`Prefs.Key.biometricUnlockBound`), as Android binds its key at the first biometric success. Android invalidates its key on enrolment the same way (`setInvalidatedByBiometricEnrollment(true)`). |
 | High-risk operation step-up | Require re-authentication before issuance, presentation, RQES signing, reset, or document deletion where policy requires it. |
 | Recovery | Define user-facing recovery and reset policy. The reference app fails closed at start-up when the PIN record cannot be read, or when it is missing while documents exist or the Keychain check for them fails; see [PIN Storage](#pin-storage). |
 
@@ -2475,6 +2476,7 @@ Project-specific actions:
 * Decide device credential fallback policy.
 * Consider WalletKit user authentication requirements.
 * Test biometric enrollment changes.
+* Confirm that turning biometric unlock on asks for the PIN.
 * Decide whether setup and login require a device passcode (`requireDeviceSecure`) and test removing it.
 * Test authentication bypass attempts.
 
@@ -2698,7 +2700,8 @@ Before release candidate approval, test:
 * Incorrect PIN attempts and lockout; a change of the device date during a lockout (no effect) and a restart during
   one (it begins again).
 * A request with transaction data: every entry is shown before Share; one that cannot be shown in full is declined.
-* Biometric enablement.
+* Biometric enablement (asks for the PIN first) and disablement (PIN or biometric); Back from the check changes
+  nothing.
 * Biometric enrollment change.
 * A weak PIN refused at setup and on change; setup on a device without a passcode shows the warning.
 * Removing the device passcode after setup: the documents are gone; login shows the warning, or with

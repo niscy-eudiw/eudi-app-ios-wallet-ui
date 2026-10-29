@@ -153,6 +153,79 @@ final class TestBiometryViewModel: EudiTest {
   }
 
   @MainActor
+  func testOnPop_WhenTheUserLeavesBeforeASuccessLands_ThenTheSuccessDoesNothing() async {
+    let continued = expectation(description: "flow continued")
+    continued.isInverted = true
+    stub(router) { mock in
+      when(mock.pop()).thenDoNothing()
+      when(mock.push(with: any())).then { _ in continued.fulfill() }
+    }
+    let viewModel = makeViewModel(isPreAuthorization: false, navigationBackType: .pop)
+
+    viewModel.onPop()
+    viewModel.uiPinInputField = "135792"
+
+    await fulfillment(of: [continued], timeout: 1)
+    verify(router).pop()
+  }
+
+  @MainActor
+  func testPinEntry_WhenABiometricAlsoSucceedsOnAScreenWithBack_ThenTheFlowContinuesOnce() async {
+    let continued = expectation(description: "flow continued")
+    continued.assertForOverFulfill = false
+    let continuedAgain = expectation(description: "flow continued again")
+    continuedAgain.expectedFulfillmentCount = 2
+    continuedAgain.isInverted = true
+    stub(router) { mock in
+      when(mock.push(with: any())).then { _ in
+        continued.fulfill()
+        continuedAgain.fulfill()
+      }
+    }
+    let viewModel = makeViewModel(isPreAuthorization: false, navigationBackType: .pop)
+
+    viewModel.uiPinInputField = "135792"
+    viewModel.onBiometry()
+
+    await fulfillment(of: [continued], timeout: 5)
+    await fulfillment(of: [continuedAgain], timeout: 0.5)
+  }
+
+  @MainActor
+  func testOnPop_WhenASuccessHasEndedTheScreen_ThenBackDoesNothing() async {
+    let continued = expectation(description: "flow continued")
+    stub(router) { mock in
+      when(mock.pop()).thenDoNothing()
+      when(mock.push(with: any())).then { _ in continued.fulfill() }
+    }
+    let viewModel = makeViewModel(isPreAuthorization: false, navigationBackType: .pop)
+
+    viewModel.uiPinInputField = "135792"
+    await fulfillment(of: [continued], timeout: 5)
+    viewModel.onPop()
+
+    verify(router, never()).pop()
+  }
+
+  @MainActor
+  func testOnBiometry_WhenALoginSucceedsAgain_ThenTheWalletOpensAgain() async {
+    let opened = expectation(description: "wallet opened twice")
+    opened.expectedFulfillmentCount = 2
+    stub(interactor) { mock in
+      when(mock.unlockSession()).thenDoNothing()
+    }
+    stub(router) { mock in
+      when(mock.push(with: any())).then { _ in opened.fulfill() }
+    }
+    let viewModel = makeViewModel(isPreAuthorization: true)
+
+    viewModel.onBiometry()
+    viewModel.onBiometry()
+
+    await fulfillment(of: [opened], timeout: 5)
+  }
+
+  @MainActor
   func testSetPhase_WhenASuccessLandedWhileInactive_ThenItsNavigationRunsOnceOnReturn() async {
     let continued = expectation(description: "flow continued")
     continued.assertForOverFulfill = false
@@ -206,7 +279,8 @@ private extension TestBiometryViewModel {
   @MainActor
   func makeViewModel(
     isPreAuthorization: Bool,
-    shouldInitializeBiometricOnCreate: Bool = false
+    shouldInitializeBiometricOnCreate: Bool = false,
+    navigationBackType: UIConfig.ThreeWayNavigationType? = nil
   ) -> BiometryViewModel<MockRouterHost> {
     BiometryViewModel(
       router: router,
@@ -216,7 +290,7 @@ private extension TestBiometryViewModel {
         caption: .loginCaption,
         quickPinOnlyCaption: .loginCaptionQuickPinOnly,
         navigationSuccessType: .push(.featureDashboardModule(.dashboard)),
-        navigationBackType: nil,
+        navigationBackType: navigationBackType,
         isPreAuthorization: isPreAuthorization,
         shouldInitializeBiometricOnCreate: shouldInitializeBiometricOnCreate
       ),

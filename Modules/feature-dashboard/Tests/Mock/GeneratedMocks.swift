@@ -4337,6 +4337,36 @@ import Cuckoo
 
 
 
+// MARK: - Mocks generated from file: '../Modules/feature-dashboard/Sources/UI/BiometrySelection/BiometrySelectionView.swift'
+
+import Cuckoo
+import SwiftUI
+import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+
+
+// MARK: - Mocks generated from file: '../Modules/feature-dashboard/Sources/UI/BiometrySelection/BiometrySelectionViewModel.swift'
+
+import Cuckoo
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+
+
 // MARK: - Mocks generated from file: '../Modules/feature-dashboard/Sources/UI/Dashboard/Component/FiltersListView.swift'
 
 import Cuckoo

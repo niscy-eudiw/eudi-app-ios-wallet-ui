@@ -199,6 +199,28 @@
         }
       }
     },
+    "biometry_unlock_off_caption" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use your biometrics or your PIN to turn off authentication with biometrics."
+          }
+        }
+      }
+    },
+    "biometry_unlock_on_caption" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter your PIN to turn on authentication with biometrics."
+          }
+        }
+      }
+    },
     "biometry_unlock_reason" : {
       "extractionState" : "manual",
       "localizations" : {

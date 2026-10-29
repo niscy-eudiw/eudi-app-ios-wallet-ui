@@ -27,6 +27,8 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case biometryOpenSettings
   case biometryConfirmRequest
   case biometryUnlockReason
+  case biometryUnlockOffCaption
+  case biometryUnlockOnCaption
   case invalidQuickPin
   case pinNotFoundError
   case tryAgain

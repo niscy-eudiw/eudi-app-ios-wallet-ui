@@ -66,6 +66,7 @@ public enum FeatureDashboardRouteModule: AppRouteModule {
   case transactionAction(id: String, action: TransactionDataProtectionAction)
   case transactionActionHistory(id: String, action: TransactionDataProtectionAction)
   case walletReset
+  case biometrySelection(isEnabled: Bool)
 
   public var info: (key: String, arguments: [String: String]) {
     return switch self {
@@ -89,6 +90,8 @@ public enum FeatureDashboardRouteModule: AppRouteModule {
       (key: "TransactionActionHistory", arguments: ["id": id, "action": action.rawValue])
     case .walletReset:
       (key: "WalletReset", arguments: [:])
+    case .biometrySelection(let isEnabled):
+      (key: "BiometrySelection", arguments: ["isEnabled": "\(isEnabled)"])
     }
   }
 }

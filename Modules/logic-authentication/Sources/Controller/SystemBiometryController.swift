@@ -25,8 +25,8 @@ public protocol SystemBiometryController: Sendable {
   /// Turns biometric unlock on once the system has evaluated the biometric policy, binding it to the enrolment of
   /// that moment.
   func enableBiometricUnlock() async throws
-  /// Turns biometric unlock off once the system has evaluated the biometric policy; this works after a new
-  /// enrolment too, since only the unlock is bound.
+  /// Turns biometric unlock off, with no biometric prompt: the user has already confirmed with the PIN or a
+  /// biometric, as on Android, so this works when the enrolment changed or biometrics are locked out too.
   func disableBiometricUnlock() async throws
   func openSettings(action: @escaping @Sendable () -> Void) async
 }
@@ -73,9 +73,7 @@ final actor SystemBiometryControllerImpl: SystemBiometryController {
   }
 
   public func disableBiometricUnlock() async throws {
-    try await evaluateBiometricPolicy { _ in
-      keyChainController.clearKeyChainBiometry()
-    }
+    keyChainController.clearKeyChainBiometry()
   }
 
   @MainActor
