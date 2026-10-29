@@ -200,7 +200,7 @@ Keep these files under strict review:
 | File | Why it matters |
 | --- | --- |
 | `Wallet/Config/*.xcconfig` | Defines build type, build variant, changelog URL, and other compile-time values consumed by the plist and config logic. |
-| `Wallet/Wallet.plist` | Defines build metadata, URL schemes, Team ID, encryption export flag, and app-level plist values. |
+| `Wallet/Wallet.plist` | Defines build metadata, URL schemes, encryption export flag, and app-level plist values. |
 | `EudiReferenceWallet.xcodeproj/project.pbxproj` | Defines schemes, build configurations, bundle identifiers, signing style, provisioning profiles, app display name, usage descriptions, and extension settings. |
 | `EudiWallet.entitlements` | Defines main app Keychain Sharing, App Groups, and Identity Document Provider mobile document types. |
 | `EudiReferenceWalletIDProvider/EudiReferenceWalletIDProvider.entitlements` | Defines extension App Groups and Keychain Sharing through `SHARED_APP_GROUP_IDENTIFIER`. |
@@ -378,7 +378,7 @@ Production identity values must be final before external testing.
 | Extension bundle identifier | Extension target `PRODUCT_BUNDLE_IDENTIFIER` | Use a child identifier of the main app, for example `eu.example.wallet.EudiReferenceWalletIDProvider`. |
 | App display name | `INFOPLIST_KEY_CFBundleDisplayName` | Use the official wallet name approved for the Member State or wallet provider. |
 | App icon | Asset catalogs and target settings | Replace reference assets with production brand assets. |
-| Apple team | `DEVELOPMENT_TEAM`, App Store Connect | Use the production Apple Developer Program team. The `Team ID` keys in `Wallet.plist` and `WalletIdProvider.plist` take `$(DEVELOPMENT_TEAM)`; no code reads them. |
+| Apple team | `DEVELOPMENT_TEAM`, App Store Connect | Use the production Apple Developer Program team. |
 | Version | `MARKETING_VERSION`, Fastlane lane mutation | Use the approved public versioning scheme. |
 | Build number | `CURRENT_PROJECT_VERSION`, `CFBundleVersion`, Fastlane lane mutation | Must monotonically increase for App Store Connect. |
 | Minimum iOS | Swift packages and project deployment target | Current packages target iOS 17. Confirm this with the device support policy. |
