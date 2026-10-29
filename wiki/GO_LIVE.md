@@ -846,8 +846,11 @@ open when the screen appears and lists each transaction, numbered when there is 
   to SD-JWT and mdoc documents alike.
 * When WalletKit itself cannot take a remote request (transaction data it cannot process, no document that satisfies
   the query, a reader certificate whose authentication was required and not established), it sends the error to the
-  verifier's response endpoint, also when that verifier's certificate was not trusted, and the wallet then shows its
-  error screen, or for the certificate the trust alert (WalletKit 0.57.1 and later). The app has no setting for it.
+  verifier's response endpoint, and the wallet then shows its error screen, or for the certificate the trust alert
+  (WalletKit 0.57.1 and later; the app has no setting for these). A request whose reader certificate is not trusted is
+  reported too, because WalletKit's `OpenId4VpConfiguration.errorDispatchPolicy` defaults to `.allClients`;
+  `.onlyAuthenticatedClients`, set in `WalletKitConfigImpl.vpConfig`, withholds that report from a verifier that did
+  not authenticate.
 
 Where a document location is an HTTP(S) link, "Open document" opens it in the browser. These
 details are informational: sharing still uses the existing share flow, and WalletKit binds each
@@ -2082,9 +2085,8 @@ Avoid:
 iOS does not provide a universal way to block screenshots. Production should still reduce leakage.
 
 The reference app offers a cover as a setting, as the Android wallet's `ConfigUILogic.shouldPreventScreenCapture` sets
-`FLAG_SECURE`. With
-`ConfigUiLogic.hideContentWhileCaptured` set to true, `ScreenCaptureController` follows each window scene's
-`sceneCaptureState` and activation, and shows a window of its own above the wallet's windows (sheets, alerts and the
+`FLAG_SECURE`. With `ConfigUiLogic.hideContentWhileCaptured` set to true, `ScreenCaptureController` follows each
+window scene's `sceneCaptureState` and activation, and shows a window of its own above the wallet's windows (sheets, alerts and the
 RQES SDK's screens included). The system keyboard's window sits above it, so the keyboard is put away whenever the
 cover shows, and again if a field takes focus under it:
 
@@ -2755,7 +2757,8 @@ Before release candidate approval, test:
 * A weak PIN refused at setup and on change; setup on a device without a passcode shows the warning.
 * Screen recording, AirPlay or QuickTime mirroring with `ConfigUiLogic.hideContentWhileCaptured` true: the cover over
   every screen, sheet and alert, the RQES SDK's included, and no keypad on a PIN screen; the app switcher card shows
-  the wallet's mark and no keypad; a saved password or passkey filled into the issuer's sign-in page;
+  the wallet's mark and no keypad; a saved password or passkey can still be filled into the issuer's sign-in page
+  (AutoFill's Face ID check makes the app inactive and brings up the cover);
   a screenshot still shows the screen and the ID Provider extension's sheet is not covered; with it false, no cover and
   the blur in the app switcher.
 * Removing the device passcode after setup: the documents are gone; login shows the warning, or with

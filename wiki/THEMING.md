@@ -562,8 +562,8 @@ any other way, such as assigning `Theme.shared`, does not; apply it in the exten
   that its identity could not be verified. With `ConfigUiLogic.hideContentWhileCaptured` on, also the
   screen-capture cover (`ScreenCaptureCoverView`: the theme's `logo`, `background`, `displaySmall`
   and `primaryLabel` for its title, `bodyLarge` and `secondaryLabel` for its message, capped at the
-  first accessibility text size), both while the screen is recorded and in the app switcher. The start-up error alert is a system alert, which the
-  theme does not style.
+  first accessibility text size), both while the screen is recorded and in the app switcher. The
+  start-up error alert is a system alert, which the theme does not style.
 
 ## Production and accessibility checklist
 
