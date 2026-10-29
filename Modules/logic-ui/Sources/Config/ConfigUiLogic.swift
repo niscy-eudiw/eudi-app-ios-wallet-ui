@@ -27,7 +27,8 @@ public protocol ConfigUiLogic: Sendable {
 
   /// The screens of an issuance, presentation or signing in progress, by `AppRoute.info.key`. On them the
   /// session lock waits `AuthenticationConfig.protectedFlowLockTimeout` in the background instead of
-  /// `backgroundLockTimeout`, as the Android wallet's `protectedFlowScreens` do.
+  /// `backgroundLockTimeout`, as the Android wallet's `protectedFlowScreens` do. The proximity QR screen is
+  /// not one: leaving the app there once its code is shown stops the session and closes the screen.
   var protectedFlowRouteKeys: [AppRouteKey] { get }
 
   /// The screens a locked wallet may show, by `AppRoute.info.key`: start-up and its login, PIN creation and
@@ -86,7 +87,6 @@ struct ConfigUiLogicImpl: ConfigUiLogic {
     AppRoute.featureIssuanceModule(.issuanceCode(config: NoConfig())).info.key,
     "PresentationRequest",
     "PresentationLoader",
-    "ProximityConnection",
     "ProximityRequest",
     "ProximityLoader",
     AppRoute.featureDashboardModule(.signDocument).info.key,

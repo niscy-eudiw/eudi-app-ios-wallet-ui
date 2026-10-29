@@ -210,7 +210,9 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
 3. Tap the "Authenticate" button on the first informative card. A modal with two options will appear.
 4. Select "In person".
 5. You will be prompted to enable Bluetooth (if it is not already enabled) and grant the necessary permissions for the app to use it (if you have not already done so).
-6. The Verifier scans the presented QR code.
+6. The Verifier scans the presented QR code. The code works only while the app stays in front: leaving the app or
+   locking the phone stops the session and closes the screen. Start again from step 3, after logging in if the
+   wallet has locked meanwhile.
 7. The app's "Request" screen will load. Here, you can select or deselect which attributes to share
    with the Verifier. You must select at least one attribute to proceed. If the request can be satisfied
    in more than one way, choose the option you prefer, as in the remote flow. As in the remote flow, and

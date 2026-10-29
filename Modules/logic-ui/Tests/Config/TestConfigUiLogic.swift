@@ -40,7 +40,6 @@ final class TestConfigUiLogic: EudiTest {
           items: []
         )
       ),
-      .featureProximityModule(.proximityConnection(presentationCoordinator: proximity, originator: dashboard)),
       .featureProximityModule(.proximityRequest(presentationCoordinator: proximity, originator: dashboard)),
       .featureProximityModule(
         .proximityLoader(
@@ -58,6 +57,15 @@ final class TestConfigUiLogic: EudiTest {
     for route in routes {
       XCTAssertTrue(configUiLogic.isProtectedFlow(route), route.info.key)
     }
+  }
+
+  func testIsProtectedFlow_WhenTheScreenIsTheProximityQrScreen_ThenIsFalse() {
+    let proximity = MockProximitySessionCoordinator(session: PresentationSession.fixture)
+    let route = AppRoute.featureProximityModule(
+      .proximityConnection(presentationCoordinator: proximity, originator: .featureDashboardModule(.dashboard))
+    )
+
+    XCTAssertFalse(configUiLogic.isProtectedFlow(route))
   }
 
   func testIsProtectedFlow_WhenTheScreenIsOutsideSuchAFlowOrMissing_ThenIsFalse() {

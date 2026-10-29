@@ -908,7 +908,7 @@ The wallet starts locked. Login (the PIN or biometric screen at start-up) and PI
 | Situation | Locks after | Setting |
 | --- | --- | --- |
 | In the background | 60 seconds | `AuthenticationConfig.backgroundLockTimeout` |
-| In the background from an issuance, presentation, signing or reset screen or a PIN or biometric confirmation, or while another screen covers the wallet's own on return | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout`, screens in `ConfigUiLogic.protectedFlowRouteKeys` |
+| In the background from an issuance, a presentation's request or loading screen (not the proximity QR screen), a signing or reset screen or a PIN or biometric confirmation, or while another screen covers the wallet's own on return | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout`, screens in `ConfigUiLogic.protectedFlowRouteKeys` |
 | No interaction, on any screen | 5 minutes | `AuthenticationConfig.idleLockTimeout` |
 | Covered by another screen (the RQES SDK's, the issuer's sign-in) for this long, when the wallet's screen returns | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout` |
 | The issuer's sign-in lasting this long, while it is still open | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout` |
@@ -945,6 +945,13 @@ outlasts it ("Client Attestation has expired"); that limit is wallet-kit's, not 
   and every second while the app is in front. A wallet link that arrives while the wallet is locked is
   kept, in memory for this process only, and opens after login; it starts no presentation session before
   then. A link of no wallet type is dropped.
+* The proximity QR screen is not in `protectedFlowRouteKeys`. From the moment its QR code is ready (WalletKit is
+  then advertising over Bluetooth), the app going to the background (the user leaves the app or locks the phone)
+  stops the session and its advertising, and closes the screen if it is still in front
+  (`ProximityConnectionViewModel.setPhase(with:)`). A code that becomes ready after the user has left is stopped at
+  once; if the user returns before it is ready, the session goes on. `.inactive` (Control Center, a system sheet)
+  changes nothing. Once a reader's request has arrived, the session belongs to the request screen, a protected-flow
+  screen.
 * `ConfigUiLogic.protectedFlowRouteKeys` and `loginRouteKeys` list the screens by `AppRoute.info.key`, as
   the Android wallet's `protectedFlowScreens` and `loginScreens` do. A custom flow screen that sends the
   user to a website and back belongs in the first; a custom screen shown before login, in the second.
