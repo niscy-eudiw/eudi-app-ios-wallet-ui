@@ -32,6 +32,8 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case biometryNoFingerprintEnrolledError
   case biometryNotRecognizedError
   case biometryNotSupportedError
+  case biometryUnlockOffCaption
+  case biometryUnlockOnCaption
   case invalidQuickPin
   case pinNotFoundError
   case tryAgain
@@ -264,6 +266,8 @@ public enum LocalizableStringKey: Equatable, Sendable {
   case resetWalletPinCaption
   case resetWalletProgressTitle
   case resetWalletProgressMessage
+  case screenCaptureCoverTitle
+  case screenCaptureCoverMessage
   case orderBy
   case filterByCategory
   case searchDocuments

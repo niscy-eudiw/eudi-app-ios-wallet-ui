@@ -20,7 +20,7 @@ public enum QuickPinPartialState: Sendable {
   case failure(Error)
 }
 
-/// Whether the device has a passcode, for PIN setup: `missing` warns, `required` waits until one is set
+/// Whether the device has a passcode, for PIN setup and login: `missing` warns, `required` waits until one is set
 /// (`AuthenticationConfig.requireDeviceSecure`).
 public enum DeviceLockState: Sendable, Equatable {
   case secure

@@ -16,7 +16,6 @@
 import SwiftUI
 import logic_ui
 import logic_core
-import logic_authentication
 import feature_common
 
 @Copyable
@@ -55,8 +54,6 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
 
   var isResetConfirmationShowing: Bool = false
 
-  var biometryError: SystemBiometryError?
-
   @ObservationIgnored
   private var isHydratingBatchCounter = false
 
@@ -64,6 +61,8 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
   private var isHydratingIssuerRegistration = false
   @ObservationIgnored
   private var isHydratingDocumentOffering = false
+  @ObservationIgnored
+  private var isBiometrySwitchOpening = false
 
   private let interactor: SettingsInteractor
   private let walletKitController: WalletKitController
@@ -88,6 +87,7 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
   }
 
   func initialize() async {
+    isBiometrySwitchOpening = false
     await buildUi()
   }
 
@@ -105,23 +105,35 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
     )
   }
 
-  func onBiometrySettings() {
-    Task { await interactor.openBiometrySettings {} }
-  }
-
-  private func setBiometryEnabled(_ isEnabled: Bool) {
-    setState { $0.copy(isBiometryEnabled: isEnabled) }
-    Task {
-      switch await interactor.setBiometrySelection(isEnabled: isEnabled) {
-      case .authenticated:
-        setState { $0.copy(isBiometryEnabled: isEnabled) }
-      case .failure(let error):
-        setState { $0.copy(isBiometryEnabled: !isEnabled) }
-        if error != .biometricError {
-          self.biometryError = error
-        }
-      }
-    }
+  /// Opens the PIN or biometric check that must pass before biometric unlock is switched, as on Android: the PIN to
+  /// turn it on, so that a biometric enrolled by someone holding the unlocked phone cannot turn it on, and the PIN or
+  /// a biometric to turn it off. The screen after the check makes the change and returns here; Back changes nothing.
+  /// A second tap while the check opens is ignored, since the router would queue a second screen; the switch takes
+  /// taps again when the settings appear again.
+  func onBiometrySwitch() {
+    guard !isBiometrySwitchOpening else { return }
+    isBiometrySwitchOpening = true
+    let caption: LocalizableStringKey = viewState.isBiometryEnabled
+      ? .biometryUnlockOffCaption
+      : .biometryUnlockOnCaption
+    router.push(
+      with: .featureCommonModule(
+        .biometry(
+          config: UIConfig.Biometry(
+            navigationTitle: .loginWithBiometrics,
+            caption: caption,
+            quickPinOnlyCaption: caption,
+            pinTextFieldTitle: caption,
+            navigationSuccessType: .push(
+              .featureDashboardModule(.biometrySelection(isEnabled: !viewState.isBiometryEnabled))
+            ),
+            navigationBackType: .pop,
+            isPreAuthorization: false,
+            shouldInitializeBiometricOnCreate: true
+          )
+        )
+      )
+    )
   }
 
   private func buildUi() async {
@@ -160,8 +172,7 @@ final class SettingsViewModel<Router: RouterHost>: ViewModel<Router, SettingsVie
             set: { _ in }
           ),
           action: { [weak self] in
-            guard let self else { return }
-            self.setBiometryEnabled(!self.viewState.isBiometryEnabled)
+            self?.onBiometrySwitch()
           }
         )
       )

@@ -133,10 +133,11 @@ You will also need to download the EUDI Verifier app. More information can be fo
 1. Launch the application
 2. You will be presented with a welcome screen where you will be asked to create a PIN for future logins.
    A PIN that is easy to guess, such as 111111, 123456 or 123123, is refused. On a device without a passcode
-   the PIN screen shows a warning.
-   Later launches ask for that PIN, or for Face ID or Touch ID if you turned it on in Settings, and so
-   does the wallet after a minute in the background (ten minutes during an issuance, a presentation or a
-   signing) or five minutes without use. If the
+   the PIN screen shows a warning, and the login screen repeats it at each login.
+   Later launches ask for that PIN, or for Face ID or Touch ID if you turned it on in Settings ("Authenticate
+   with biometrics" asks for your PIN, then for Face ID or Touch ID; turning it off asks for your PIN, Face ID or
+   Touch ID). The wallet asks again after a minute in the background (ten minutes during an issuance, a
+   presentation or a signing) or five minutes without use. If the
    wallet cannot read its PIN record (for example while the device is locked), or holds documents but
    has no PIN, start-up stops on an error with "Try again"; it never offers to create a new PIN over
    existing documents.
@@ -210,7 +211,9 @@ To delete a document, navigate to the 'Documents' tab within the 'Dashboard' scr
 3. Tap the "Authenticate" button on the first informative card. A modal with two options will appear.
 4. Select "In person".
 5. You will be prompted to enable Bluetooth (if it is not already enabled) and grant the necessary permissions for the app to use it (if you have not already done so).
-6. The Verifier scans the presented QR code.
+6. The Verifier scans the presented QR code. The code works only while the app stays in front: leaving the app or
+   locking the phone stops the session and closes the screen. Start again from step 3, after logging in if the
+   wallet has locked meanwhile.
 7. The app's "Request" screen will load. Here, you can select or deselect which attributes to share
    with the Verifier. You must select at least one attribute to proceed. If the request can be satisfied
    in more than one way, choose the option you prefer, as in the remote flow. As in the remote flow, and

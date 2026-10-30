@@ -428,6 +428,10 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "biometry_confirm_request")
     case .biometryUnlockReason:
       bundle.localizedString(forKey: "biometry_unlock_reason")
+    case .biometryUnlockOffCaption:
+      bundle.localizedString(forKey: "biometry_unlock_off_caption")
+    case .biometryUnlockOnCaption:
+      bundle.localizedString(forKey: "biometry_unlock_on_caption")
     case .viewDetails:
       bundle.localizedString(forKey: "view_details")
     case .requestsTheFollowing:
@@ -524,6 +528,10 @@ final class LocalizableManager: LocalizableManagerType {
       bundle.localizedString(forKey: "reset_wallet_progress_title")
     case .resetWalletProgressMessage:
       bundle.localizedString(forKey: "reset_wallet_progress_message")
+    case .screenCaptureCoverTitle:
+      bundle.localizedString(forKey: "screen_capture_cover_title")
+    case .screenCaptureCoverMessage:
+      bundle.localizedString(forKey: "screen_capture_cover_message")
     case .orderBy:
       bundle.localizedString(forKey: "order_by")
     case .filterByCategory:

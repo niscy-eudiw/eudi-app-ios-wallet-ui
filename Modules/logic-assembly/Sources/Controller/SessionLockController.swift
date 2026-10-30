@@ -108,7 +108,8 @@ final class SessionLockControllerImpl: SessionLockController {
   }
 
   /// Checks the idle limit every `idleCheckInterval` while the app is active; the check is cancelled in the
-  /// background.
+  /// background. A check whose wait had already ended when it was cancelled does not run either, so that it cannot
+  /// use up the background record.
   @MainActor
   private func startIdleCheck() {
     idleCheck?.cancel()
@@ -119,7 +120,7 @@ final class SessionLockControllerImpl: SessionLockController {
         } catch {
           return
         }
-        guard let self else { return }
+        guard !Task.isCancelled, let self else { return }
         self.checkIdle()
       }
     }

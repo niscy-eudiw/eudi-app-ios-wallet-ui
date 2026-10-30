@@ -132,6 +132,7 @@ final class RouterHostImpl: RouterHost {
 
   public func isInProtectedFlow() -> Bool {
     uiConfigLogic.isProtectedFlow(getCurrentScreen())
+      && pathElements.contains(where: { !uiConfigLogic.isLoginRoute($0) })
   }
 
   /// Sends a locked wallet back to the start-up screen, whose gate shows login, when any screen on the path

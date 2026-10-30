@@ -46,5 +46,10 @@ public final class LogicUiAssembly: Assembly {
       UserInteractionControllerImpl()
     }
     .inObjectScope(ObjectScope.container)
+
+    container.register(ScreenCaptureController.self) { r in
+      ScreenCaptureControllerImpl(isEnabled: r.force(ConfigUiLogic.self).hideContentWhileCaptured)
+    }
+    .inObjectScope(ObjectScope.container)
   }
 }

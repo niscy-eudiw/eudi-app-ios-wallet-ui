@@ -41,20 +41,25 @@ extension PresentationSession {
 
     var flow: EudiWalletKit.FlowType
 
-    func sendResponse(userAccepted: Bool, itemsToSend: EudiWalletKit.RequestItems, deviceNameSpacesToSend: MdocDataTransfer18013.RequestDeviceNameSpaces?, authenticationContext: ThreadSafeAuthContext, onSuccess: (@Sendable (URL?) -> Void)?) async throws {}
+    func sendResponse(userAccepted: Bool, itemsToSend: EudiWalletKit.RequestItems, deviceNameSpacesToSend: MdocDataTransfer18013.RequestDeviceNameSpaces?, authenticationContext: ThreadSafeAuthContext, onSuccess: (@Sendable (URL?) -> Void)?) async throws {
+      try onSend?(userAccepted)
+    }
 
     private let onStop: (@Sendable (Bool) -> Void)?
+    private let onSend: (@Sendable (Bool) throws -> Void)?
     let isReaderDisconnected: Bool
 
     init(
       transactionLog: TransactionEntry,
       flow: EudiWalletKit.FlowType,
       onStop: (@Sendable (Bool) -> Void)?,
+      onSend: (@Sendable (Bool) throws -> Void)? = nil,
       isReaderDisconnected: Bool
     ) {
       self.transactionLog = transactionLog
       self.flow = flow
       self.onStop = onStop
+      self.onSend = onSend
       self.isReaderDisconnected = isReaderDisconnected
     }
 
@@ -93,6 +98,25 @@ extension PresentationSession {
         flow: .other,
         onStop: onStop,
         isReaderDisconnected: isReaderDisconnected
+      ),
+      storageManager: .init(storageService: fixtureStorageService),
+      docIdToPresentInfo: [:],
+      documentKeyIndexes: [:],
+      userAuthenticationRequired: false,
+      localAuthenticationContext: ThreadSafeAuthContext()
+    )
+  }
+
+  /// A presentation session over a stub service that reports each answer it is asked to send (true for a response,
+  /// false for a decline) to `onSend`, which may throw to make the send fail.
+  static func answeringFixture(onSend: @escaping @Sendable (Bool) throws -> Void) -> PresentationSession {
+    PresentationSession(
+      presentationService: StubPresentationService(
+        transactionLog: fixtureTransactionLog,
+        flow: .other,
+        onStop: nil,
+        onSend: onSend,
+        isReaderDisconnected: false
       ),
       storageManager: .init(storageService: fixtureStorageService),
       docIdToPresentInfo: [:],

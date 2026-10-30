@@ -254,6 +254,28 @@
         }
       }
     },
+    "biometry_unlock_off_caption" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use your biometrics or your PIN to turn off authentication with biometrics."
+          }
+        }
+      }
+    },
+    "biometry_unlock_on_caption" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter your PIN to turn on authentication with biometrics."
+          }
+        }
+      }
+    },
     "biometry_unlock_reason" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1982,7 +2004,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Set a passcode in the device settings before you set up the wallet."
+            "value" : "Set a passcode in the device settings to use the wallet."
           }
         }
       }
@@ -3336,6 +3358,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your document %@ from %@ has been requested. You will be notified when it has been issued to your wallet."
+          }
+        }
+      }
+    },
+    "screen_capture_cover_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The screen is being recorded or shared. The wallet shows again when it stops."
+          }
+        }
+      }
+    },
+    "screen_capture_cover_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your wallet is hidden"
           }
         }
       }

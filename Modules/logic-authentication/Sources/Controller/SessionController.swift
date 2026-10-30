@@ -39,7 +39,9 @@ public protocol SessionController: Sendable {
   /// True between a successful login or PIN creation and the next lock.
   @MainActor var isUnlocked: Bool { get }
 
-  /// Called when the user has logged in or created the PIN.
+  /// Called when the user has logged in or created the PIN. If the app left before the login completed, the background
+  /// record is kept, so the background limit still applies when the app returns. A record from an earlier absence is
+  /// already gone: `lockIfExpired()` clears it when the app returns while locked.
   @MainActor func unlock()
 
   /// Ends the session.
@@ -125,7 +127,6 @@ final class SessionControllerImpl: SessionController {
   func unlock() {
     isUnlocked = true
     lastInteractionAt = now()
-    backgroundSince = nil
   }
 
   func lock() {

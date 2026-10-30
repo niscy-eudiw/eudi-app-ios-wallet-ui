@@ -378,26 +378,24 @@ final class TestSystemBiometryController: EudiTest {
     verify(keyChainController, never()).storeBiometricProbe()
   }
 
-  func testDisableBiometricUnlock_WhenThePolicyIsEvaluated_ThenRemovesTheProbe() async throws {
-    stubCanEvaluateBiometrics()
+  func testDisableBiometricUnlock_WhenCalled_ThenRemovesTheProbeWithoutAPrompt() async throws {
+    stubClearKeyChainBiometry()
 
     try await biometryController.disableBiometricUnlock()
 
     verify(keyChainController).clearKeyChainBiometry()
+    XCTAssertTrue(contextProvider.records.isEmpty)
   }
 
-  func testDisableBiometricUnlock_WhenThePolicyFails_ThenBiometricErrorAndTheProbeStays() async {
-    stubCanEvaluateBiometrics()
-    contextProvider.evaluatePolicyResult = (false, nil)
+  func testDisableBiometricUnlock_WhenBiometricsAreLockedOut_ThenStillRemovesTheProbe() async throws {
+    context.canEvaluateReturn = false
+    context.evaluateError = NSError(domain: LAErrorDomain, code: LAError.Code.biometryLockout.rawValue, userInfo: nil)
+    stubClearKeyChainBiometry()
 
-    do {
-      try await biometryController.disableBiometricUnlock()
-      XCTFail("Expected disableBiometricUnlock to throw")
-    } catch {
-      XCTAssertEqual(error as? SystemBiometryError, .biometricError)
-    }
+    try await biometryController.disableBiometricUnlock()
 
-    verify(keyChainController, never()).clearKeyChainBiometry()
+    verify(keyChainController).clearKeyChainBiometry()
+    XCTAssertTrue(contextProvider.records.isEmpty)
   }
 
   func testRequestBiometricUnlock_WhenPolicyEvaluated_ThenProbeReadsWithTheEvaluatedContext() async throws {
@@ -484,13 +482,17 @@ final class TestSystemBiometryController: EudiTest {
 
 private extension TestSystemBiometryController {
 
+  func stubClearKeyChainBiometry() {
+    stub(keyChainController) { stub in
+      when(stub.clearKeyChainBiometry()).thenDoNothing()
+    }
+  }
+
   func stubCanEvaluateBiometrics() {
     context.canEvaluateReturn = true
     context.evaluateError = nil
     context.stubBiometryType = .faceID
-    stub(keyChainController) { stub in
-      when(stub.clearKeyChainBiometry()).thenDoNothing()
-    }
+    stubClearKeyChainBiometry()
   }
 
   func assertUnlockFails(with expectedError: SystemBiometryError) async {

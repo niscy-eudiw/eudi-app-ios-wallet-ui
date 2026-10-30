@@ -116,13 +116,25 @@ final class TestRouterHost: EudiTest {
   }
 
   @MainActor
-  func testIsInProtectedFlow_WhenTheScreenInFrontIsAProtectedScreen_ThenIsTrue() {
+  func testIsInProtectedFlow_WhenAProtectedScreenFollowsAScreenPastLogin_ThenIsTrue() async throws {
     let host = makeHost(isUnlocked: true)
     XCTAssertFalse(host.isInProtectedFlow())
 
+    host.push(with: dashboard)
+    host.push(with: login)
+    try await Task.sleep(seconds: 1)
+
+    XCTAssertEqual(host.getCurrentScreen(), login)
+    XCTAssertTrue(host.isInProtectedFlow())
+  }
+
+  @MainActor
+  func testIsInProtectedFlow_WhenLoginIsAllThePathHolds_ThenIsFalse() {
+    let host = makeHost(isUnlocked: true)
+
     host.push(with: login)
 
-    XCTAssertTrue(host.isInProtectedFlow())
+    XCTAssertFalse(host.isInProtectedFlow())
   }
 
   @MainActor

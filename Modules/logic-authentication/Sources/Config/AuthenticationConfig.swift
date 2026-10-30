@@ -41,8 +41,9 @@ public protocol AuthenticationConfig: Sendable {
   /// wallet's list. Add the PINs your policy names.
   var commonPins: Set<String> { get }
 
-  /// Whether the wallet can be set up only on a device with a passcode. When false, setting up on a device without
-  /// one shows a warning, as on Android.
+  /// Whether the wallet can be set up, and logged in to, only on a device with a passcode. When false, a device
+  /// without one gets a warning on the PIN screen at setup and on the login screen, and the user goes on, as on
+  /// Android.
   var requireDeviceSecure: Bool { get }
 }
 

@@ -307,7 +307,7 @@ the first governs presentation as well:
 | Setting | Where | Effect |
 |---|---|---|
 | `validateIssuerRegistrationCertificate` | `WalletKitConfig` | Turns WRPRC validation on, for OpenID4VCI and for presentation alike. It is exposed as **Check Registration Certificates** in Settings and **defaults to off**; a change takes effect after the app restarts. Off means no registration is ever evaluated: issuance never refuses on this basis, and no verifier registration is resolved or shown. An issuer that publishes no `issuer_info` never reaches the validation hook at all, so no registration is established and the app refuses on that basis; enabling this against such an issuer fails every issuance. |
-| `wrprcVciTrustPolicy` | `TrustConfiguration` | Decides what a failed WRPRC check does to an **issuance** inside WalletKit. `.enforce` refuses: an expired, revoked or suspended certificate, a missing status list, a broken trust chain, or an offer reaching past the registered scope all stop the flow. `.warning` lets WalletKit go on, but the app refuses an issuance on any registration warning, whatever the policy (`WalletKitController.makeIssuerRegistration`), so the same cases are still refused. A registration certificate that cannot be decoded at all establishes no registration, and the app refuses that issuance under either policy, as the Android wallet does. |
+| `wrprcVciTrustPolicy` | `TrustConfiguration` | Decides what a failed WRPRC check does to an **issuance** inside WalletKit. `.enforce` refuses: an expired, revoked or suspended certificate, a missing status list, a status-list token that fails authentication, a broken trust chain, or an offer reaching past the registered scope all stop the flow. `.warning` lets WalletKit go on, but the app refuses an issuance on any registration warning, whatever the policy (`WalletKitController.makeIssuerRegistration`), so the same cases are still refused. A registration certificate that cannot be decoded at all establishes no registration, and the app refuses that issuance under either policy, as the Android wallet does. |
 
 `wrprcVpTrustPolicy` is the same decision for **presentations**, and the app deliberately sets it to
 `.warning` so a failed check reaches the consent screen behind an acknowledgement rather than ending
@@ -506,7 +506,8 @@ production values for every config surface listed below.
 | WalletKit attestation key options | `WalletKitConfig.swift` (`keyOptions`) | Curve, secure area, access protection, access control, and key purposes used when creating attestation/proof keys during issuance, reissuance, deferred issuance, and resume. For LoA High PID and other high-assurance EAA/QEAA credentials, require Secure Enclave (with `.P256`) plus appropriate `accessProtection`/`accessControl`, or an approved remote high-assurance key protection design. |
 | Session lock | `AuthenticationConfig.swift` in `logic-authentication`, `ConfigUiLogic.swift` in `logic-ui` | Confirm `backgroundLockTimeout`, `idleLockTimeout` and `protectedFlowLockTimeout`, and keep `protectedFlowRouteKeys`, `loginRouteKeys` and `coveringScreenModules` in step with your screens; see [Session lock configuration](#session-lock-configuration). |
 | Pictures of the holder | `ConfigUiLogic.swift` in `logic-ui` | `userImageClaimKeys` lists the claims, by the last element of their path, that hold a picture of the holder (`portrait`, `picture`). A request for one shows a biometric-data notice, and Share (Accept in the ID Provider extension) asks for confirmation while it would be disclosed. Add the claims your credentials use. |
-| PIN rules | `AuthenticationConfig.swift` in `logic-authentication` | Confirm `commonPins` and whether setup needs a device passcode (`requireDeviceSecure`, off by default). |
+| Screen capture | `ConfigUiLogic.swift` in `logic-ui` | `hideContentWhileCaptured` is false in the reference configuration, so that screens can be recorded in development and testing. Set it to true for production: while the screen is recorded, mirrored or shared, the wallet shows a cover over every screen, sheet and alert, the ID Provider extension's screens included, and cannot be used on the device; while the app is inactive or in the background (the app switcher, Face ID and other system prompts) the cover shows only the wallet's mark (`ScreenCaptureController`). The keyboard is put away while the cover shows. Screenshots cannot be blocked on iOS. See GO_LIVE [Screenshots, Screen Recording, And Sensitive UI](GO_LIVE.md#screenshots-screen-recording-and-sensitive-ui). |
+| PIN rules | `AuthenticationConfig.swift` in `logic-authentication` | Confirm `commonPins` and whether setup and login need a device passcode (`requireDeviceSecure`, off by default). |
 | PIN throttle policy | `AuthenticationConfig.swift` in `logic-authentication` | Confirm `maxFailedPinAttempts` and `pinLockoutDurations` meet policy. Decide what happens once the final lockout tier is reached (e.g. wipe, support flow, device-credential step-up). |
 | Document / WalletKit key storage | `EudiWalletConfiguration`, `ConfigLogic.keyChainConfig`, WalletKit-supported storage APIs | Default app configuration uses WalletKit storage with the configured Keychain service and access group. If production requires alternative local secure storage, a remote-backed key service, or an external protection SDK, use WalletKit-supported extension points and document the exact SDK/API. Start-up reads wallet-storage's `KeyChainStorageService` items to decide whether PIN creation is safe (`WalletKitController.hasStoredDocuments()`); another `DataStorageService` needs its own implementation of that check, see GO_LIVE [PIN Storage](GO_LIVE.md#pin-storage). |
 | Wallet attestation key storage | `WalletKitAttestationProviderImpl`, `WalletProviderAttestationConfig.swift`, Wallet Provider policy | Use when wallet attestation keys must be generated, stored, attested, or unlocked by a custom provider, platform-backed key policy, or remote high-assurance key service. |
@@ -838,18 +839,22 @@ public protocol AuthenticationConfig: Sendable {
   /// wallet's list. Add the PINs your policy names.
   var commonPins: Set<String> { get }
 
-  /// Whether the wallet can be set up only on a device with a passcode. When false, setting up on a device without
-  /// one shows a warning, as on Android.
+  /// Whether the wallet can be set up, and logged in to, only on a device with a passcode. When false, a device
+  /// without one gets a warning on the PIN screen at setup and on the login screen, and the user goes on, as on
+  /// Android.
   var requireDeviceSecure: Bool { get }
 }
 ```
 
 A new PIN is refused when it is one digit repeated, an ascending or descending run of digits, or one of
 `commonPins` (`AuthenticationConfig.isWeakPin`). The PIN screen refuses it when it is entered, and
-`QuickPinInteractor.setPin` when it is set or changed. During setup the PIN screen checks for a device passcode
-(`DeviceLockController`) and warns when there is none; with `requireDeviceSecure` it accepts no PIN until one is set,
-and checks again at each entry. The passcode check does not apply when the PIN of a set-up wallet is changed; the
-weak-PIN rule does. The defaults are the Android wallet's.
+`QuickPinInteractor.setPin` when it is set or changed. During setup the PIN screen, and at each login the login
+screen (`BiometryViewModel` with `isPreAuthorization`, the ID Provider extension's login included), check for a device
+passcode (`DeviceLockController`) and warn when there is none; with `requireDeviceSecure` they accept no PIN, and the
+login screen no Face ID or Touch ID, until one is set. Both check again whenever the app comes back, and setup also
+when the first PIN is entered. The passcode check does not apply when the PIN of a set-up wallet is changed, nor to the
+confirmations before a presentation (Accept in the extension included), a reset or the biometric unlock switch; the
+weak-PIN rule applies to every new PIN. The defaults are the Android wallet's.
 
 Default policy (`AuthenticationConfigImpl`):
 
@@ -893,12 +898,12 @@ container.register(AuthenticationConfig.self) { _ in
 .inObjectScope(ObjectScope.container)
 ```
 
-The lockout is enforced by `PinThrottleController` and applied wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, and the Document Provider extension before it shows a request and again on Accept) and in the change-PIN validation step (`QuickPinViewModel`). While locked:
+The lockout is enforced by `PinThrottleController` and applied wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, the factory reset and the biometric unlock switch in Settings, and the ID Provider extension before it shows a request and again on Accept) and in the change-PIN validation step (`QuickPinViewModel`). While locked:
 
 * The PIN input field is disabled (no keyboard, no edits).
 * No PIN is submitted. The PIN screens have no proceed button: they submit on the sixth digit, which is ignored while locked.
 * The existing inline error slot of the PIN view shows a countdown message formatted from the `quick_pin_locked_out` string resource. The message takes two format arguments — the configured `maxFailedPinAttempts` and the remaining time as `mm:ss` — so changing the config values updates the user-facing message automatically.
-* On screens that offer biometrics, the biometric icon stays interactive. A successful biometric authentication clears the throttle.
+* On screens that offer biometrics, the biometric icon stays interactive, except at login while a required passcode is missing. A successful biometric authentication clears the throttle.
 
 ## Session lock configuration
 
@@ -908,7 +913,7 @@ The wallet starts locked. Login (the PIN or biometric screen at start-up) and PI
 | Situation | Locks after | Setting |
 | --- | --- | --- |
 | In the background | 60 seconds | `AuthenticationConfig.backgroundLockTimeout` |
-| In the background from an issuance, presentation, signing or reset screen or a PIN or biometric confirmation, or while another screen covers the wallet's own on return | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout`, screens in `ConfigUiLogic.protectedFlowRouteKeys` |
+| In the background from an issuance, a presentation's request or loading screen (not the proximity QR screen), a signing or reset screen or a PIN or biometric confirmation, or while another screen covers the wallet's own on return | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout`, screens in `ConfigUiLogic.protectedFlowRouteKeys` |
 | No interaction, on any screen | 5 minutes | `AuthenticationConfig.idleLockTimeout` |
 | Covered by another screen (the RQES SDK's, the issuer's sign-in) for this long, when the wallet's screen returns | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout` |
 | The issuer's sign-in lasting this long, while it is still open | 10 minutes | `AuthenticationConfig.protectedFlowLockTimeout` |
@@ -920,7 +925,8 @@ belongs to a module in `ConfigUiLogic.coveringScreenModules` (`UIApplication.isW
 default lists only the RQES SDK, `EudiRQESUi`; add the module of any other SDK your build presents the same way. The
 issuance interactors mark the calls that can show the issuer's sign-in
 (`SessionController.duringExternalFlow`). The background limit is chosen when the app returns, from the
-screen it left and what covers the wallet then, as on Android. A lock ends every cover.
+screen it left and what covers the wallet then, as on Android. A lock ends every such cover (the screen-capture cover of
+`hideContentWhileCaptured` is separate).
 
 On Android only the RQES screens pause the idle timeout, because the issuer's sign-in opens in the
 browser and the wallet goes to the background. On iOS wallet-kit shows the sign-in in a sheet inside the
@@ -945,6 +951,19 @@ outlasts it ("Client Attestation has expired"); that limit is wallet-kit's, not 
   and every second while the app is in front. A wallet link that arrives while the wallet is locked is
   kept, in memory for this process only, and opens after login; it starts no presentation session before
   then. A link of no wallet type is dropped.
+* The background time counts from when the app left, also when a login completes after that, for example a
+  PIN check that finishes as the user switches away: the app locks on return once `backgroundLockTimeout`
+  has passed. The PIN or biometric screen is in `protectedFlowRouteKeys` as a flow's confirmation, but the
+  login itself does not count: it counts only when the path also holds a screen past login
+  (`RouterHost.isInProtectedFlow()`). A background from an earlier absence was already cleared when the app
+  came back while locked (`SessionController.lockIfExpired()`). As on Android.
+* The proximity QR screen is not in `protectedFlowRouteKeys`. From the moment its QR code is ready (WalletKit is
+  then advertising over Bluetooth), the app going to the background (the user leaves the app or locks the phone)
+  stops the session and its advertising, and closes the screen if it is still in front
+  (`ProximityConnectionViewModel.setPhase(with:)`). A code that becomes ready after the user has left is stopped at
+  once; if the user returns before it is ready, the session goes on. `.inactive` (Control Center, a system sheet)
+  changes nothing. Once a reader's request has arrived, the session belongs to the request screen, a protected-flow
+  screen.
 * `ConfigUiLogic.protectedFlowRouteKeys` and `loginRouteKeys` list the screens by `AppRoute.info.key`, as
   the Android wallet's `protectedFlowScreens` and `loginScreens` do. A custom flow screen that sends the
   user to a website and back belongs in the first; a custom screen shown before login, in the second.

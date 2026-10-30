@@ -140,6 +140,7 @@ Use this checklist before the first production release.
 | Deep links | All inbound URI schemes, redirect URIs, hosts, and parameters are validated and threat-modeled. |
 | Presentation relay risk | Relay attack risk is documented, verifier compensating controls are defined, and residual risk is accepted for each presentation scenario. |
 | Logs | Production logs do not include PID, credentials, tokens, request objects, signatures, keys, or user decisions. |
+| Screen capture | `ConfigUiLogic.hideContentWhileCaptured` is true, so recording, mirroring, sharing and the app switcher card show a cover, over the ID Provider extension's screens too; screenshots cannot be blocked. See [Screenshots, Screen Recording, And Sensitive UI](#screenshots-screen-recording-and-sensitive-ui). |
 | App hardening | Apple App Attest/DeviceCheck, commercial protection, or a manual RASP strategy is implemented and connected to backend risk policy. |
 | MASVS | Controls are mapped to evidence and tested with static, dynamic, and manual security testing. |
 | Privacy | DPIA, data minimization, retention, telemetry, consent, privacy manifest, App Store privacy labels, and privacy notice are complete. |
@@ -160,7 +161,7 @@ The application is a modular iOS project. Important modules and targets for prod
 | `logic-api` | `URLSession` provider and network request helpers. |
 | `logic-analytics` | Optional analytics provider integration. |
 | `logic-resources` | Strings, images, theme, localized resources. |
-| `logic-ui` | Shared SwiftUI components, navigation, deep-link parsing and handling, interaction tracking for the idle lock. |
+| `logic-ui` | Shared SwiftUI components, navigation, deep-link parsing and handling, interaction tracking for the idle lock, the screen-capture cover (`ScreenCaptureController`). |
 | `logic-assembly` | Dependency injection graph, app routing assembly, and the session lock's scene driver (`SessionLockController`). |
 | `feature-*` | User-facing flows for startup, dashboard, issuance, presentation, proximity, and common features; `feature-common` holds the QR scanner and the request screens. |
 | `logic-test` / `feature-test` | Shared test utilities, mock generation helpers, and test fixtures; not included in production targets. |
@@ -204,7 +205,7 @@ Keep these files under strict review:
 | `EudiReferenceWallet.xcodeproj/project.pbxproj` | Defines schemes, build configurations, bundle identifiers, signing style, provisioning profiles, app display name, usage descriptions, and extension settings. |
 | `EudiWallet.entitlements` | Defines main app Keychain Sharing, App Groups, and Identity Document Provider mobile document types. |
 | `EudiReferenceWalletIDProvider/EudiReferenceWalletIDProvider.entitlements` | Defines extension App Groups and Keychain Sharing through `SHARED_APP_GROUP_IDENTIFIER`. |
-| `EudiReferenceWalletIDProvider/DocumentProviderExtension.swift` | Extension entry point for Identity Document Provider requests. |
+| `EudiReferenceWalletIDProvider/DocumentProviderExtension.swift` | Extension entry point for Identity Document Provider requests; starts the screen-capture cover for its screens. |
 | `EudiReferenceWalletIDProvider/Domain/DI/LogicIDPModule.swift` | Initializes `DcApiHandler` with shared service name and Keychain access group. |
 | `Modules/logic-business/Sources/Config/ConfigLogic.swift` | Parses app build type and build variant, exposes app behavior toggles, RQES config, and Keychain config. |
 | `Modules/logic-business/Sources/Config/RQESConfig.swift` | Defines QTSP/RSSP, TSA, OAuth client, redirect URI, hash algorithm, and RQES logging behavior. |
@@ -221,6 +222,8 @@ Keep these files under strict review:
 | `Modules/logic-authentication/Sources/Controller/SessionController.swift` | The session lock: unlocked by login or PIN creation, locked again after time in the background or idle. |
 | `Modules/logic-assembly/Sources/Controller/SessionLockController.swift` | Drives the lock from the scene: background, return, links, the idle check, and login after a lock. A lock, whatever caused it, also ends a running presentation, so a proximity session does not outlive its screens. |
 | `Modules/logic-ui/Sources/Controller/UserInteractionController.swift` | What counts as interaction for the idle lock: touches in the app's windows, text input, VoiceOver focus. |
+| `Modules/logic-ui/Sources/Config/ConfigUiLogic.swift` | The UI settings: the protected-flow and login routes, the screens that cover the wallet (`coveringScreenModules`), the holder-picture claims, and the screen-capture cover (`hideContentWhileCaptured`). |
+| `Modules/logic-ui/Sources/Controller/ScreenCaptureController.swift` | The screen-capture cover: a window above the wallet's, or the ID Provider extension's, while the scene is recorded, mirrored or shared, or not active (app switcher), when `hideContentWhileCaptured` is true. |
 | `Modules/logic-authentication/Sources/Storage/KeychainPinThrottleProvider.swift` | Keychain-persisted PIN failure counter, lockout level, and the lockout on the monotonic clock and boot session. |
 | `Modules/logic-business/Sources/Controller/KeyChainController.swift` | Keychain access with its accessibility class, and the biometric probe. The service name and access group come from `Bundle+Extensions.swift` and are worked out once in `ConfigLogicImpl.keyChainConfig`. |
 | `Modules/logic-storage/Sources/Config/StorageConfig.swift` | Defines SwiftData store location, App Group container selection, and local storage schema, and excludes the store's folder from backup (`StorageConfigImpl.storeURL`). |
@@ -540,12 +543,15 @@ For the complete lane usage notes, see [../fastlane/USAGE.md](../fastlane/USAGE.
 
 ## Dependency Governance
 
-* Use released versions, not snapshots or branch dependencies, unless formally approved.
+* Use released versions, not snapshots or branch dependencies, unless formally approved. BluetoothKit is the one
+  exception in the reference app (see below): approve its pinned commit formally or replace the library.
 * Subscribe to security advisories for WalletKit, RQES UI, OpenID4VCI, OpenID4VP, ISO18013
   libraries, Wallet Storage, KeychainAccess, BluetoothKit, Swinject, and the Swift/Xcode toolchain.
 * Keep a dependency update SLA.
 * Keep `Package.resolved` committed and reviewed.
-* Avoid branch dependencies for production unless the commit is pinned and approved.
+* Avoid branch dependencies for production unless the commit is pinned and approved. The reference app has none:
+  BluetoothKit has no release Swift Package Manager can use (its last tag, 0.4.0, predates its `Package.swift`), so
+  `logic-business` pins it to a commit with `revision:`. Move that revision only after reviewing the new commits.
 * Generate and archive an SBOM for every release.
 * Run SCA before each release.
 * Review all transitive dependencies used by WalletKit, RQES, DC API, cryptography, parsing, and UI.
@@ -836,8 +842,22 @@ open when the screen appears and lists each transaction, numbered when there is 
 * A request whose transaction data cannot be shown in full is declined with an explanation, never shown in part
   (`PresentationInteractorImpl.canShowTransactionData`): an entry WalletKit cannot read, or an entry bound to a
   document the consent screen does not show. Each option is checked against its own transaction data; an option
-  that is not offered, because its documents are blocked, is not checked. WalletKit 0.56.6 binds transaction data
+  that is not offered, because its documents are blocked, is not checked. WalletKit 0.57.2 binds transaction data
   to SD-JWT and mdoc documents alike.
+* When WalletKit itself cannot take a remote request (transaction data it cannot process, no document that satisfies
+  the query, a reader certificate whose authentication was required and not established), it sends the error to the
+  verifier's response endpoint, and the wallet then shows its error screen, or for the certificate the trust alert
+  (WalletKit 0.57.1 and later; the app has no setting for these). A request whose reader certificate is not trusted is
+  reported too, because WalletKit's `OpenId4VpConfiguration.errorDispatchPolicy` defaults to `.allClients`;
+  `.onlyAuthenticatedClients`, set in `WalletKitConfigImpl.vpConfig`, withholds that report from a verifier that did
+  not authenticate.
+* Back on the request screen declines a remote request (`RemoteSessionCoordinator.declineResponse`), unless the wallet
+  has already tried to send its response: after a failed send, whether WalletKit reported the failure, the verifier
+  rejected the response or the network failed, Back closes the request without a second answer, so the history keeps
+  the first result. A failure before anything left the device, or a WalletKit authentication prompt cancelled with
+  `userAuthenticationRequired` on (it is off), then leaves the verifier to its own timeout. After a failed send, Retry
+  on the error screen sends nothing (WalletKit has put the session in its error state); Share on the request screen
+  sends the response again, as in the upstream app.
 
 Where a document location is an HTTP(S) link, "Open document" opens it in the browser. These
 details are informational: sharing still uses the existing share flow, and WalletKit binds each
@@ -1689,7 +1709,7 @@ Modules/logic-api/Sources/Provider/NetworkSessionProvider.swift
 A cookie one relying party sets is therefore never sent to another through that session. Three paths sit outside it,
 and the app cannot change them:
 
-* WalletKit 0.56.6 fetches an SD-JWT issuer's keys, when the credential carries no `x5c` chain, with
+* WalletKit 0.57.2 fetches an SD-JWT issuer's keys, when the credential carries no `x5c` chain, with
   `URLSession.shared`.
 * WalletKit's sign-in sheet for issuers (`ASWebAuthenticationSession` in `OpenId4VciService`) is not ephemeral, so
   it shares Safari's cookies: an issuer can recognise the browser across issuances, and the wallet's reset does not
@@ -1782,9 +1802,14 @@ Production decisions:
 * Keep `KeyChainControllerImpl.accessibility` a `ThisDeviceOnly` class, so the PIN record and the
   lockout state can be restored only to the same device.
 * Confirm whether Keychain items should survive device restore.
-* Confirm behavior when the device passcode is removed.
-* A change in biometric enrolment turns biometric unlock off until the user turns it on again (see Biometric
-  enrollment change); confirm this suits policy.
+* Confirm behavior when the device passcode is removed. iOS then deletes every Keychain item kept
+  `.whenPasscodeSetThisDeviceOnly`: wallet-storage's documents and their keys, and the biometric probe. The PIN record
+  (`.whenUnlockedThisDeviceOnly`) stays, so the login screen shows the passcode warning and the user logs in to a
+  wallet without documents (the transaction history stays); with `requireDeviceSecure` login is refused until a
+  passcode is set. Biometric login fails until a passcode is set again and the user turns biometric unlock off and on
+  in Settings. This follows Apple's documented rule for that class; confirm it on a device.
+* After a change in biometric enrolment, biometric unlock fails and login needs the PIN until the user turns it off
+  and on again (see Biometric enrollment change); confirm this suits policy.
 * Confirm app and extension Keychain sharing.
 
 ### PIN Storage
@@ -1825,9 +1850,10 @@ Production tasks:
 
 * Confirm PIN length, complexity, and retry UX. PINs that are easy to guess are refused (one digit repeated,
   ascending or descending runs, `AuthenticationConfig.commonPins`), and an empty PIN is never stored; decide whether
-  setup needs a device passcode (`requireDeviceSecure`, off by default, which only warns). Changing the PIN of a
-  set-up wallet does not need the passcode, as on Android (`QuickPinInteractor.updatePin`). The setup screen checks
-  the passcode again whenever the app comes back, and PIN entry stays disabled while a passcode is required. See
+  setup and login need a device passcode (`requireDeviceSecure`, off by default, which only warns). Changing the PIN
+  of a set-up wallet does not need the passcode, as on Android (`QuickPinInteractor.updatePin`). The setup screen and
+  the login screen (the ID Provider extension's too) check the passcode again whenever the app comes back. While a
+  passcode is required, PIN entry stays disabled, and at login Face ID or Touch ID is refused as well. See
   CONFIGURATION.
 * Consider binding PIN verification to a hardware-backed key operation (Secure Enclave) for additional defense in depth.
 * Benchmark PBKDF2 iterations on the slowest supported device.
@@ -1872,7 +1898,7 @@ Default policy (`AuthenticationConfigImpl`):
 | Update from a build with the wall-clock lockout | Ends a lockout in progress: those values are not read; the level is kept. An update between builds that use the monotonic clock keeps the lockout running. |
 | App reinstall | The state survives the uninstall, as the Keychain does; the first launch after a reinstall deletes it with the PIN and every document (`StartupInteractor.manageStorageForFirstRun()`). Require re-enrollment unless secure backup/recovery is explicitly implemented. |
 
-Lockout counters are persisted, not just held in UI state. While locked, the PIN input is disabled wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, and the Document Provider extension) and in the change-PIN validation step (`QuickPinViewModel`). The biometric icon on the login screen stays enabled during PIN lockout and acts as an escape hatch — a successful biometric authentication clears the throttle.
+Lockout counters are persisted, not just held in UI state. While locked, the PIN input is disabled wherever `BiometryViewModel` asks for the PIN (the login, the confirmations before sharing, the factory reset and the biometric unlock switch, and the ID Provider extension) and in the change-PIN validation step (`QuickPinViewModel`). The biometric icon on the login screen stays enabled during PIN lockout, except at login while a required passcode is missing, and acts as an escape hatch — a successful biometric authentication clears the throttle.
 
 Production gaps to address:
 
@@ -1906,7 +1932,7 @@ filters, search and date range work over all entries.
 `eudi-lib-ios-iso18013-data-model`), and the app stores it as JSON in the store's `TransactionLog` table. The log
 records the relying party, the attestation types and the identifiers of the attributes requested and presented, never
 their values; this is the rule the ARF and the Implementing Acts set for it (HLR.64, HLR.65 and IA.34, as the security
-review maps them). With WalletKit 0.56.6:
+review maps them). With WalletKit 0.57.2:
 
 * a presentation entry records the requested and presented claims as attestation type (mdoc `docType` or SD-JWT VC
   `vct`) and claim paths, without values, and the relying party's details WalletKit has for it: name, identifier,
@@ -2065,6 +2091,41 @@ Avoid:
 
 iOS does not provide a universal way to block screenshots. Production should still reduce leakage.
 
+The reference app offers a cover as a setting, as the Android wallet's `ConfigUILogic.shouldPreventScreenCapture` sets
+`FLAG_SECURE`. With `ConfigUiLogic.hideContentWhileCaptured` set to true, `ScreenCaptureController` follows each
+window scene's `sceneCaptureState` and activation, and shows a window of its own above the wallet's windows (sheets, alerts and the
+RQES SDK's screens included). The system keyboard's window sits above it, so the keyboard is put away whenever the
+cover shows, and again if a field takes focus under it:
+
+* While the screen is recorded, mirrored through AirPlay or QuickTime, or shared, the cover shows the wallet's mark
+  (`Theme.shared.image.logo`), the title `screen_capture_cover_title` and the message `screen_capture_cover_message`, so
+  that no screen and no PIN typed on the on-screen keypad can be read from the recording. Touches go to the cover until
+  the capture ends: unlike `FLAG_SECURE` on Android, the wallet cannot be used on the device itself while the screen is
+  recorded, mirrored or shared.
+* While the app is inactive or in the background, the cover shows only the wallet's mark, as the start-up screen
+  (`StartupView`) does, so that the app switcher card shows none of the wallet's screens, as Android's recent-apps
+  preview with `FLAG_SECURE`. The cover also shows whenever the app goes inactive: behind a system prompt such as Face
+  ID, Control Center or Notification Center, or on the way to another app. A field that had focus loses it, and the
+  user taps it again on return.
+
+The cover window never becomes key, so the session lock's checks still find the wallet's own window, and VoiceOver stays
+on the cover while it is shown. A tap on the cover counts as activity for the idle lock; unlike the RQES SDK's or the
+sign-in screens, the cover does not pause the idle timeout. The setting is false in the reference configuration, so that
+the screens can be recorded in development and testing: set it to true for production. `ConfigUiLogicImpl` applies one
+value to every build variant; to keep recording in Dev and Demo builds only, derive it from
+`ConfigLogic.appBuildVariant` (`logic-ui` already depends on `logic-business`); the ID Provider extension reads the
+setting in its own process, and its `WalletIdProvider.plist` has no `Build Variant` key, so it reads `DEV` there unless
+you add the key to it too. A screenshot cannot be blocked: iOS
+tells an app about one only after it is taken, and the reference app does not react to it. Hiding content from captures
+through a secure text field's layer is undocumented and not used. The ID Provider extension runs in its own process and
+starts the same controller (`DocumentProviderExtension`), so the PIN entry and the request it shows over the requesting
+app are covered too: while the screen is captured, when the request cannot be answered on the device, and in that app's
+card in the app switcher. The system's title and close button around the extension's screens stay visible.
+
+With the setting false, the app switcher card shows the blur that `Application` lays over the wallet's own screens while
+the scene is inactive or in the background. Sheets, alerts and the RQES SDK's screens are presented over those screens
+and are not blurred, so they show in the card.
+
 Review screens that show:
 
 * PID attributes.
@@ -2077,12 +2138,18 @@ Review screens that show:
 
 Production actions:
 
-* Observe screen capture state where useful.
-* Hide or blur highly sensitive content when the app enters background.
-* Ensure the app switcher snapshot does not expose sensitive data.
+* Set `ConfigUiLogic.hideContentWhileCaptured` to true; it also covers the app switcher card.
+* If the setting stays false, also hide the sheets, alerts and RQES SDK screens that `Application`'s blur does not cover
+  when the app enters the background, and the ID Provider extension's screens, which have no blur.
+* Ensure the app switcher snapshot does not expose sensitive data. The setting also covers the ID Provider extension's
+  screens, which show over the requesting app.
 * Avoid putting secrets or full credential data in notifications.
 * Avoid copying sensitive values to the clipboard.
-* Add manual tests for screenshots, app switching, screen recording, and AirPlay/mirroring behavior.
+* Add manual tests for screenshots, app switching, screen recording, and AirPlay/mirroring behavior: with
+  `hideContentWhileCaptured` true, recording or mirroring shows the cover over every screen, sheet and alert, and the
+  wallet returns when it stops; the app switcher shows the wallet's mark and no keyboard; a field that takes focus under
+  the cover brings up no keyboard; the ID Provider extension's screens show the cover too, while the screen is captured
+  and in the requesting app's card in the app switcher; a screenshot still shows the screen.
 
 ## Authentication And Biometrics
 
@@ -2094,10 +2161,11 @@ Production decisions:
 | --- | --- |
 | PIN length | Define minimum length and whether numeric-only is acceptable. |
 | PIN lockout policy | Defaults to 3 attempts then escalating lockouts of 30s, 90s, 5m (then 5m repeats). Tune via `AuthenticationConfig.maxFailedPinAttempts` and `pinLockoutDurations`. Decide whether the final tier should escalate further (wipe, support flow, device-credential step-up). See [PIN Throttle And Lockout](#pin-throttle-and-lockout). |
-| Session lock | The wallet locks after 60 seconds in the background or 5 minutes without interaction, on every screen; during an issuance, presentation or signing the background limit is 10 minutes, and while another screen (the RQES SDK's, the issuer's sign-in) covers the wallet the idle timeout pauses and 10 minutes covered requires login when the wallet's screen returns. An issuer's sign-in still open after 10 minutes locks the wallet. A lock dismisses what is presented, ends every cover and returns to login; after login the user starts again from the dashboard. A lock also ends a running presentation: a proximity session stops its Bluetooth transfer and advertising (`WalletKitController.stopPresentation()`), and so does a wallet link that returns the user to the dashboard. Tune the timeouts in `AuthenticationConfig` and the screens in `ConfigUiLogic.protectedFlowRouteKeys`; see CONFIGURATION [Session lock configuration](CONFIGURATION.md#session-lock-configuration). The rules are the Android wallet's, except that on iOS the issuer's sign-in pauses the idle timeout: it shows inside the wallet's own scene. |
+| Session lock | The wallet locks after 60 seconds in the background or 5 minutes without interaction, on every screen; during an issuance, presentation or signing the background limit is 10 minutes, and while another screen (the RQES SDK's, the issuer's sign-in) covers the wallet the idle timeout pauses and 10 minutes covered requires login when the wallet's screen returns. An issuer's sign-in still open after 10 minutes locks the wallet. A lock dismisses what is presented, ends the covered state of the RQES SDK's or the sign-in screens and returns to login; after login the user starts again from the dashboard. A lock also ends a running presentation: a proximity session stops its Bluetooth transfer and advertising (`WalletKitController.stopPresentation()`), and so does a wallet link that returns the user to the dashboard. The proximity QR screen is the exception to the 10-minute limit: leaving the app there once its code is shown stops the session and closes the screen. Tune the timeouts in `AuthenticationConfig` and the screens in `ConfigUiLogic.protectedFlowRouteKeys`; see CONFIGURATION [Session lock configuration](CONFIGURATION.md#session-lock-configuration). The rules are the Android wallet's, except that on iOS the issuer's sign-in pauses the idle timeout: it shows inside the wallet's own scene. |
 | Biometric opt-in | Decide whether biometrics are optional or required for specific operations. |
+| Biometric unlock switch | Turning biometric unlock on in Settings first asks for the wallet PIN (the PIN-or-biometric screen, as the factory reset does), then for Face ID or Touch ID; turning it off accepts the PIN or a biometric. Someone holding the unlocked phone who has enrolled a new biometric therefore cannot turn it on, as on Android. Keep the PIN step if you change the Settings screen. |
 | Device credential fallback | Decide whether passcode fallback is allowed. |
-| Biometric enrollment change | Biometric unlock is bound to the enrolment present when the user turns it on: the Keychain probe is written with `.biometryCurrentSet` (`KeyChainController.storeBiometricProbe()`), so after a fingerprint or face is added or removed the probe can no longer be read, and login needs the PIN until the user turns biometric unlock off and on again in Settings. Turning it on or off needs a biometric check. An install from before this binding has biometric unlock on without a probe; its first biometric login binds it (`Prefs.Key.biometricUnlockBound`), as Android binds its key at the first biometric success. Android invalidates its key on enrolment the same way (`setInvalidatedByBiometricEnrollment(true)`). |
+| Biometric enrollment change | Biometric unlock is bound to the enrolment present when the user turns it on: the Keychain probe is written with `.biometryCurrentSet` (`KeyChainController.storeBiometricProbe()`), so after a fingerprint or face is added or removed the probe can no longer be read, and login needs the PIN until the user turns biometric unlock off and on again in Settings. Turning it on asks for the wallet PIN, then for Face ID or Touch ID; turning it off accepts the PIN or a biometric, with no further prompt (`SettingsViewModel.onBiometrySwitch()`, `BiometrySelectionViewModel`). An install from before this binding has biometric unlock on without a probe; its first biometric login binds it (`Prefs.Key.biometricUnlockBound`), as Android binds its key at the first biometric success. Android invalidates its key on enrolment the same way (`setInvalidatedByBiometricEnrollment(true)`). |
 | High-risk operation step-up | Require re-authentication before issuance, presentation, RQES signing, reset, or document deletion where policy requires it. |
 | Recovery | Define user-facing recovery and reset policy. The reference app fails closed at start-up when the PIN record cannot be read, or when it is missing while documents exist or the Keychain check for them fails; see [PIN Storage](#pin-storage). |
 
@@ -2427,6 +2495,8 @@ Project-specific actions:
 * Review App Group container contents.
 * Confirm the shipped PIN lockout / rate limiting (`PinThrottleController`) meets policy; tune `maxFailedPinAttempts` / `pinLockoutDurations` as needed.
 * Confirm that release builds write no log file (`WalletKitConfig.logFileName` is `nil` outside debug builds).
+* Set `ConfigUiLogic.hideContentWhileCaptured` to true, so that recording, mirroring, sharing and the app switcher show
+  a cover.
 * Add tests that inspect app data after flows.
 
 ### MASVS-CRYPTO
@@ -2466,6 +2536,8 @@ Project-specific actions:
 * Decide device credential fallback policy.
 * Consider WalletKit user authentication requirements.
 * Test biometric enrollment changes.
+* Confirm that turning biometric unlock on asks for the PIN.
+* Decide whether setup and login require a device passcode (`requireDeviceSecure`) and test removing it.
 * Test authentication bypass attempts.
 
 ### MASVS-NETWORK
@@ -2504,6 +2576,8 @@ Project-specific actions:
 * Review App Groups and Keychain Sharing.
 * Review Identity Document Provider extension authorization UI.
 * Request camera, Bluetooth, and Face ID permissions only for relevant flows.
+* Set `ConfigUiLogic.hideContentWhileCaptured` to true and test recording, mirroring, sharing and the app switcher;
+  screenshots cannot be blocked.
 
 ### MASVS-CODE
 
@@ -2523,7 +2597,7 @@ Project-specific actions:
 * Add release checks for demo endpoints.
 * Review exception messages shown to users.
 * Implement forced update or minimum supported version through backend policy.
-* Review branch-based SPM dependencies.
+* Review branch-based SPM dependencies (none in the reference app) and commit-pinned ones (BluetoothKit).
 
 ### MASVS-RESILIENCE
 
@@ -2688,9 +2762,21 @@ Before release candidate approval, test:
 * Incorrect PIN attempts and lockout; a change of the device date during a lockout (no effect) and a restart during
   one (it begins again).
 * A request with transaction data: every entry is shown before Share; one that cannot be shown in full is declined.
-* Biometric enablement.
+* A response that fails to send, then Back on the request screen: the verifier gets no second answer, and the history
+  keeps the first result.
+* Biometric enablement (asks for the PIN first) and disablement (PIN or biometric); Back from the check changes
+  nothing.
 * Biometric enrollment change.
 * A weak PIN refused at setup and on change; setup on a device without a passcode shows the warning.
+* Screen recording, AirPlay or QuickTime mirroring with `ConfigUiLogic.hideContentWhileCaptured` true: the cover over
+  every screen, sheet and alert, the RQES SDK's included, and no keypad on a PIN screen; the app switcher card shows
+  the wallet's mark and no keypad; a saved password or passkey can still be filled into the issuer's sign-in page
+  (AutoFill's Face ID check makes the app inactive and brings up the cover);
+  the ID Provider extension's screens show the cover too; a screenshot still shows the screen; with it false, no cover,
+  the blur in the app switcher, and the extension's screens in the requesting app's card.
+* Removing the device passcode after setup: the documents are gone; login shows the warning, or with
+  `requireDeviceSecure` refuses the PIN and Face ID or Touch ID until a passcode is set; biometric login needs the
+  switch turned off and on again. Test the ID Provider extension before opening the app.
 * An offer from an issuer that is not configured refused; a partial issuance naming the documents not added.
 * The portrait notice, and Share or Accept asking for confirmation.
 * "Offer documents to apps and websites" off: registrations withdrawn, the extension declines.
@@ -2706,7 +2792,11 @@ Before release candidate approval, test:
 * Same-device OpenID4VP presentation.
 * Cross-device presentation.
 * Relayed OpenID4VP request and response handling.
-* Proximity QR/BLE.
+* Proximity QR/BLE, including leaving the app or locking the phone once the code is shown: the session stops, a
+  reader can no longer connect, and the screen closes. Leaving while the code is still loading: the session stops when
+  the code becomes ready. Control Center over the QR screen keeps the session and the screen (with
+  `hideContentWhileCaptured` true, behind the cover). Leaving from the request screen keeps the session (10-minute
+  limit).
 * Proximity: the reader ends the Bluetooth session before the user answers: the request screen goes back and the
   presentation ends. A lock, or a wallet link that returns to the dashboard, ends the session and stops the
   advertising.

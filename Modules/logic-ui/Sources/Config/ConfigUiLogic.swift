@@ -27,8 +27,16 @@ public protocol ConfigUiLogic: Sendable {
 
   /// The screens of an issuance, presentation or signing in progress, by `AppRoute.info.key`. On them the
   /// session lock waits `AuthenticationConfig.protectedFlowLockTimeout` in the background instead of
-  /// `backgroundLockTimeout`, as the Android wallet's `protectedFlowScreens` do.
+  /// `backgroundLockTimeout`, as the Android wallet's `protectedFlowScreens` do. The proximity QR screen is
+  /// not one: leaving the app there once its code is shown stops the session and closes the screen.
   var protectedFlowRouteKeys: [AppRouteKey] { get }
+
+  /// Whether the wallet hides its screens, and the ID Provider extension's, behind a cover while the screen is
+  /// recorded, mirrored (AirPlay, QuickTime) or shared, and in the app switcher, as the Android wallet's
+  /// `shouldPreventScreenCapture` keeps them out of captures and the recent-apps preview (`ScreenCaptureController`).
+  /// Off in the reference configuration, so that its screens can be recorded in development and testing; a production
+  /// build should turn it on. iOS cannot block a screenshot: the app learns of one only after it is taken.
+  var hideContentWhileCaptured: Bool { get }
 
   /// The screens a locked wallet may show, by `AppRoute.info.key`: start-up and its login, PIN creation and
   /// the Trust Mark introduction, as the Android wallet's `loginScreens`. While locked, the navigation
@@ -86,13 +94,14 @@ struct ConfigUiLogicImpl: ConfigUiLogic {
     AppRoute.featureIssuanceModule(.issuanceCode(config: NoConfig())).info.key,
     "PresentationRequest",
     "PresentationLoader",
-    "ProximityConnection",
     "ProximityRequest",
     "ProximityLoader",
     AppRoute.featureDashboardModule(.signDocument).info.key,
     AppRoute.featureDashboardModule(.walletReset).info.key,
     AppRoute.featureCommonModule(.biometry(config: NoConfig())).info.key
   ]
+
+  public var hideContentWhileCaptured: Bool = false
 
   public var userImageClaimKeys: Set<String> = ["portrait", "picture"]
 

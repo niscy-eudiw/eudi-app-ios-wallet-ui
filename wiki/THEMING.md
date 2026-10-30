@@ -340,7 +340,7 @@ The brand logos and key illustrations (bundled imagesets):
 
 | `ImageManager` role | Imageset | Where it appears |
 | --- | --- | --- |
-| `logo` | `logo` (`ic-logo-2.svg`) | [Splash screen](#splash-screen) |
+| `logo` | `logo` (`ic-logo-2.svg`) | [Splash screen](#splash-screen); the screen-capture cover (`hideContentWhileCaptured`) |
 | `logoEuDigitalIndentityWallet` | `logo-eu-digital-indentity-wallet` | Branded headers (combined icon + wordmark) |
 | `homeIdentity`, `homeContract`, `successSecuredWallet`, `digitalIdIssuance`, `chooseDocumentImage`, `scanDocumentImage`, … | matching imagesets | Onboarding / dashboard / success illustrations |
 
@@ -559,8 +559,11 @@ any other way, such as assigning `Theme.shared`, does not; apply it in the exten
   could not renew automatically (in both cases its issuer card opens by itself with the notice in
   `warning`), the RQES signing flow, and a request in the ID Provider extension, which opens with
   the PIN or biometric login and shows the requester without a verified badge and with the warning
-  that its identity could not be verified. The start-up error alert is a system alert, which the
-  theme does not style.
+  that its identity could not be verified. With `ConfigUiLogic.hideContentWhileCaptured` on, also the
+  screen-capture cover (`ScreenCaptureCoverView`: the theme's `logo`, `background`, `displaySmall`
+  and `primaryLabel` for its title, `bodyLarge` and `secondaryLabel` for its message, capped at the
+  first accessibility text size), both while the screen is recorded and in the app switcher. The
+  start-up error alert is a system alert, which the theme does not style.
 
 ## Production and accessibility checklist
 

@@ -105,9 +105,18 @@ private extension Data {
   }
 
   var crc32: UInt32 {
-    ~reduce(UInt32.max) { crc, byte in
-      (0..<8).reduce(crc ^ UInt32(byte)) { value, _ in value & 1 == 1 ? (value >> 1) ^ 0xEDB8_8320 : value >> 1 }
+    var crc = UInt32.max
+    for byte in self {
+      crc ^= UInt32(byte)
+      for _ in 0..<8 {
+        if crc & 1 == 1 {
+          crc = (crc >> 1) ^ 0xEDB8_8320
+        } else {
+          crc >>= 1
+        }
+      }
     }
+    return ~crc
   }
 }
 

@@ -32,7 +32,7 @@ The iOS build still uses the Xcode project, schemes, and configuration described
 | Lane | Purpose |
 | --- | --- |
 | `ios tests` | Runs the selected scheme's test plan with `scan`. |
-| `ios code_coverage` | Runs tests with coverage enabled and generates `xcov` output in `xcov_output/`. Failing tests do not fail the lane (`fail_build: false`); read the test results there. |
+| `ios code_coverage` | Runs tests with coverage enabled and generates `xcov` output in `xcov_output/`. Failing tests do not fail the lane (`fail_build: false`); read the test results there. `fastlane/.xcovignore` leaves out test code, the app shell, configuration, errors, views and other UI components, UI models, routes and dependency injection; view models, extensions, the navigation host and the storage controllers are counted. xcov matches each entry, lowercased, against file names as a regular expression anchored at the end, or as a path prefix. |
 | `ios deploy` | Pulls the latest Git state, creates an App Store Connect API key, calculates a build number from TestFlight, sets version and build number values, archives the app, uploads it to App Store Connect/TestFlight, deletes the IPA and dSYM files, resets project version values, tags the release, pushes the tag to any configured remote, and optionally creates a GitHub release. |
 | `ios upload_appstore` | Uploads the generated IPA to App Store Connect/TestFlight with `pilot`, without waiting for processing or distributing the build to testers. |
 | `ios github_release` | Creates a GitHub release from the repository, token, tag and version that `deploy` passes in. |

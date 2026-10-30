@@ -305,10 +305,35 @@ final class TestSessionController: EudiTest {
   }
 
   @MainActor
-  func testUnlock_WhenTheBackgroundWasRecordedBeforeLogin_ThenItIsForgotten() {
+  func testLockIfExpired_WhenLoggedInWhileAwayForTheBackgroundLimit_ThenLocks() {
+    let (controller, clock) = makeController()
+    controller.recordBackground(isProtectedFlow: false)
+    controller.unlock()
+
+    clock.now += 60
+
+    XCTAssertTrue(controller.lockIfExpired())
+    XCTAssertFalse(controller.isUnlocked)
+  }
+
+  @MainActor
+  func testLockIfExpired_WhenLoggedInWhileAwayForLessThanTheBackgroundLimit_ThenStaysUnlocked() {
+    let (controller, clock) = makeController()
+    controller.recordBackground(isProtectedFlow: false)
+    controller.unlock()
+
+    clock.now += 59
+
+    XCTAssertFalse(controller.lockIfExpired())
+    XCTAssertTrue(controller.isUnlocked)
+  }
+
+  @MainActor
+  func testUnlock_WhenTheAppReturnedLockedBeforeLogin_ThenTheEarlierBackgroundIsForgotten() {
     let (controller, clock) = makeController()
     controller.recordBackground(isProtectedFlow: false)
     clock.now += 120
+    XCTAssertFalse(controller.lockIfExpired())
 
     controller.unlock()
 

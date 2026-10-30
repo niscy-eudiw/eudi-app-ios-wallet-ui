@@ -22,7 +22,7 @@ import logic_business
 
 final class TestLogicUiAssembly: EudiTest {
 
-  func testAssemble_WhenTheLinkAndInteractionControllersAreResolvedTwice_ThenEachIsTheSameInstance() {
+  func testAssemble_WhenTheLinkInteractionAndCaptureControllersAreResolvedTwice_ThenEachIsTheSameInstance() {
     let container = Container()
     LogicBusinessAssembly().assemble(container: container)
     LogicUiAssembly().assemble(container: container)
@@ -35,10 +35,13 @@ final class TestLogicUiAssembly: EudiTest {
 
     let link = container.resolve(DeepLinkController.self) as AnyObject?
     let interaction = container.resolve(UserInteractionController.self) as AnyObject?
+    let capture = container.resolve(ScreenCaptureController.self) as AnyObject?
 
     XCTAssertNotNil(link)
     XCTAssertTrue(link === container.resolve(DeepLinkController.self) as AnyObject?)
     XCTAssertNotNil(interaction)
     XCTAssertTrue(interaction === container.resolve(UserInteractionController.self) as AnyObject?)
+    XCTAssertNotNil(capture)
+    XCTAssertTrue(capture === container.resolve(ScreenCaptureController.self) as AnyObject?)
   }
 }

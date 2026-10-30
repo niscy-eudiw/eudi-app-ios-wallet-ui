@@ -174,6 +174,20 @@ final class TestSessionLockController: EudiTest {
   }
 
   @MainActor
+  func testSceneDidEnterBackground_WhenAnIdleCheckIsAlreadyDue_ThenItDoesNotRunAfterTheBackground() async throws {
+    let controller = makeController(idleCheckInterval: 0.02)
+    controller.start()
+    await Task.yield()
+    blockMainActor(for: 0.2)
+
+    controller.sceneDidEnterBackground()
+    try await Task.sleep(seconds: 0.2)
+
+    XCTAssertEqual(calls.entries.last, "recordBackground(true)")
+    withExtendedLifetime(controller) {}
+  }
+
+  @MainActor
   func testCheckIdle_WhenTheWalletWasUnlockedAndIsNowLocked_ThenTheRunningPresentationIsStopped() async {
     let stopped = expectation(description: "presentation stopped")
     stub(walletKitController) { mock in
@@ -242,6 +256,12 @@ private extension TestSessionLockController {
       isCovered: { isCovered },
       idleCheckInterval: idleCheckInterval
     )
+  }
+
+  /// Keeps the main thread busy, so that an idle check that falls due meanwhile waits for the main actor.
+  @MainActor
+  func blockMainActor(for seconds: TimeInterval) {
+    Thread.sleep(forTimeInterval: seconds)
   }
 }
 

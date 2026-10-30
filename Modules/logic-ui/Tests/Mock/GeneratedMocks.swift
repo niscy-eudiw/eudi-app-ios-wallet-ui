@@ -9031,6 +9031,16 @@ public class MockConfigUiLogic: ConfigUiLogic, Cuckoo.ProtocolMock, @unchecked S
         }
     }
 
+    public var hideContentWhileCaptured: Bool {
+        get {
+            return cuckoo_manager.getter(
+                "hideContentWhileCaptured",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.hideContentWhileCaptured
+            )
+        }
+    }
+
     public var loginRouteKeys: [AppRouteKey] {
         get {
             return cuckoo_manager.getter(
@@ -9086,6 +9096,10 @@ public class MockConfigUiLogic: ConfigUiLogic, Cuckoo.ProtocolMock, @unchecked S
             return .init(manager: cuckoo_manager, name: "protectedFlowRouteKeys")
         }
         
+        var hideContentWhileCaptured: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockConfigUiLogic,Bool> {
+            return .init(manager: cuckoo_manager, name: "hideContentWhileCaptured")
+        }
+        
         var loginRouteKeys: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockConfigUiLogic,[AppRouteKey]> {
             return .init(manager: cuckoo_manager, name: "loginRouteKeys")
         }
@@ -9126,6 +9140,10 @@ public class MockConfigUiLogic: ConfigUiLogic, Cuckoo.ProtocolMock, @unchecked S
             return .init(manager: cuckoo_manager, name: "protectedFlowRouteKeys", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
         
+        var hideContentWhileCaptured: Cuckoo.VerifyReadOnlyProperty<Bool> {
+            return .init(manager: cuckoo_manager, name: "hideContentWhileCaptured", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
         var loginRouteKeys: Cuckoo.VerifyReadOnlyProperty<[AppRouteKey]> {
             return .init(manager: cuckoo_manager, name: "loginRouteKeys", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
@@ -9163,6 +9181,12 @@ public class ConfigUiLogicStub:ConfigUiLogic, @unchecked Sendable {
     public var protectedFlowRouteKeys: [AppRouteKey] {
         get {
             return DefaultValueRegistry.defaultValue(for: ([AppRouteKey]).self)
+        }
+    }
+    
+    public var hideContentWhileCaptured: Bool {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (Bool).self)
         }
     }
     
@@ -9527,6 +9551,290 @@ public class DeepLinkControllerStub:DeepLinkController, @unchecked Sendable {
     
     public func setDocumentsLoaded() {
         return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+}
+
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/Controller/ScreenCaptureController.swift'
+
+import Cuckoo
+import Combine
+import UIKit
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+public class MockScreenCaptureController: ScreenCaptureController, Cuckoo.ProtocolMock, @unchecked Sendable {
+    public typealias MocksType = any ScreenCaptureController
+    public typealias Stubbing = __StubbingProxy_ScreenCaptureController
+    public typealias Verification = __VerificationProxy_ScreenCaptureController
+
+    // Original typealiases
+
+    public let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+
+    private var __defaultImplStub: (any ScreenCaptureController)?
+
+    public func enableDefaultImplementation(_ stub: any ScreenCaptureController) {
+        __defaultImplStub = stub
+        cuckoo_manager.enableDefaultStubImplementation()
+    }
+
+
+    public func start() {
+        return cuckoo_manager.call(
+            "start()",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.start()
+        )
+    }
+
+    public struct __StubbingProxy_ScreenCaptureController: Cuckoo.StubbingProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+    
+        public init(manager: Cuckoo.MockManager) {
+            self.cuckoo_manager = manager
+        }
+        
+        func start() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockScreenCaptureController.self,
+                method: "start()",
+                parameterMatchers: matchers
+            ))
+        }
+    }
+
+    public struct __VerificationProxy_ScreenCaptureController: Cuckoo.VerificationProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+        private let callMatcher: Cuckoo.CallMatcher
+        private let sourceLocation: Cuckoo.SourceLocation
+    
+        public init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+            self.cuckoo_manager = manager
+            self.callMatcher = callMatcher
+            self.sourceLocation = sourceLocation
+        }
+        
+        
+        @discardableResult
+        func start() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "start()",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+    }
+}
+
+public class ScreenCaptureControllerStub:ScreenCaptureController, @unchecked Sendable {
+
+
+    
+    public func start() {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+}
+
+
+class MockScreenCaptureScene: ScreenCaptureScene, Cuckoo.ProtocolMock, @unchecked Sendable {
+    typealias MocksType = any ScreenCaptureScene
+    typealias Stubbing = __StubbingProxy_ScreenCaptureScene
+    typealias Verification = __VerificationProxy_ScreenCaptureScene
+
+    // Original typealiases
+
+    let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+
+    private var __defaultImplStub: (any ScreenCaptureScene)?
+
+    func enableDefaultImplementation(_ stub: any ScreenCaptureScene) {
+        __defaultImplStub = stub
+        cuckoo_manager.enableDefaultStubImplementation()
+    }
+
+    var isCaptured: Bool {
+        get {
+            return cuckoo_manager.getter(
+                "isCaptured",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.isCaptured
+            )
+        }
+    }
+
+    var isForegroundActive: Bool {
+        get {
+            return cuckoo_manager.getter(
+                "isForegroundActive",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.isForegroundActive
+            )
+        }
+    }
+
+
+    func observeCaptureState(onChange p0: @escaping @MainActor (Bool) -> Void) {
+        return cuckoo_manager.call(
+            "observeCaptureState(onChange p0: @escaping @MainActor (Bool) -> Void)",
+            parameters: (p0),
+            escapingParameters: (p0),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.observeCaptureState(onChange: p0)
+        )
+    }
+
+    func endEditing() {
+        return cuckoo_manager.call(
+            "endEditing()",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.endEditing()
+        )
+    }
+
+    func makeCoverWindow() -> ScreenCaptureCoverWindow {
+        return cuckoo_manager.call(
+            "makeCoverWindow() -> ScreenCaptureCoverWindow",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.makeCoverWindow()
+        )
+    }
+
+    struct __StubbingProxy_ScreenCaptureScene: Cuckoo.StubbingProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+    
+        init(manager: Cuckoo.MockManager) {
+            self.cuckoo_manager = manager
+        }
+        
+        var isCaptured: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockScreenCaptureScene,Bool> {
+            return .init(manager: cuckoo_manager, name: "isCaptured")
+        }
+        
+        var isForegroundActive: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockScreenCaptureScene,Bool> {
+            return .init(manager: cuckoo_manager, name: "isForegroundActive")
+        }
+        
+        func observeCaptureState<M1: Cuckoo.Matchable>(onChange p0: M1) -> Cuckoo.ProtocolStubNoReturnFunction<(@MainActor (Bool) -> Void)> where M1.MatchedType == @MainActor (Bool) -> Void {
+            let matchers: [Cuckoo.ParameterMatcher<(@MainActor (Bool) -> Void)>] = [wrap(matchable: p0) { $0 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockScreenCaptureScene.self,
+                method: "observeCaptureState(onChange p0: @escaping @MainActor (Bool) -> Void)",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func endEditing() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockScreenCaptureScene.self,
+                method: "endEditing()",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func makeCoverWindow() -> Cuckoo.ProtocolStubFunction<(), ScreenCaptureCoverWindow> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockScreenCaptureScene.self,
+                method: "makeCoverWindow() -> ScreenCaptureCoverWindow",
+                parameterMatchers: matchers
+            ))
+        }
+    }
+
+    struct __VerificationProxy_ScreenCaptureScene: Cuckoo.VerificationProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+        private let callMatcher: Cuckoo.CallMatcher
+        private let sourceLocation: Cuckoo.SourceLocation
+    
+        init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+            self.cuckoo_manager = manager
+            self.callMatcher = callMatcher
+            self.sourceLocation = sourceLocation
+        }
+        
+        var isCaptured: Cuckoo.VerifyReadOnlyProperty<Bool> {
+            return .init(manager: cuckoo_manager, name: "isCaptured", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        var isForegroundActive: Cuckoo.VerifyReadOnlyProperty<Bool> {
+            return .init(manager: cuckoo_manager, name: "isForegroundActive", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        
+        @discardableResult
+        func observeCaptureState<M1: Cuckoo.Matchable>(onChange p0: M1) -> Cuckoo.__DoNotUse<(@MainActor (Bool) -> Void), Void> where M1.MatchedType == @MainActor (Bool) -> Void {
+            let matchers: [Cuckoo.ParameterMatcher<(@MainActor (Bool) -> Void)>] = [wrap(matchable: p0) { $0 }]
+            return cuckoo_manager.verify(
+                "observeCaptureState(onChange p0: @escaping @MainActor (Bool) -> Void)",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func endEditing() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "endEditing()",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func makeCoverWindow() -> Cuckoo.__DoNotUse<(), ScreenCaptureCoverWindow> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "makeCoverWindow() -> ScreenCaptureCoverWindow",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+    }
+}
+
+class ScreenCaptureSceneStub:ScreenCaptureScene, @unchecked Sendable {
+    
+    var isCaptured: Bool {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (Bool).self)
+        }
+    }
+    
+    var isForegroundActive: Bool {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (Bool).self)
+        }
+    }
+
+
+    
+    func observeCaptureState(onChange p0: @escaping @MainActor (Bool) -> Void) {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    func endEditing() {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    func makeCoverWindow() -> ScreenCaptureCoverWindow {
+        return DefaultValueRegistry.defaultValue(for: (ScreenCaptureCoverWindow).self)
     }
 }
 
@@ -10047,6 +10355,18 @@ import logic_resources
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Cover/ScreenCaptureCoverView.swift'
+
+import Cuckoo
+import SwiftUI
+import logic_resources
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/DesignSystem/Component/Dialog/DialogCompat.swift'
 
 import Cuckoo
@@ -10461,6 +10781,17 @@ import SwiftUI
 
 
 // MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/Extension/UIScreen+Extensions.swift'
+
+import Cuckoo
+import UIKit
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-ui/Sources/Extension/UIWindowScene+Extensions.swift'
 
 import Cuckoo
 import UIKit
