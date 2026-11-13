@@ -8949,6 +8949,16 @@ return await cuckoo_manager.call(
         )
     }
 
+    public func fetchFailedDeferredDocumentIds() async -> Set<String> {
+        return await cuckoo_manager.call(
+            "fetchFailedDeferredDocumentIds() async -> Set<String>",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.fetchFailedDeferredDocumentIds()
+        )
+    }
+
     public func refreshUsageCounters() async throws {
         return try await cuckoo_manager.callThrows(
             "refreshUsageCounters() async throws",
@@ -9460,6 +9470,14 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
                 method: "hasReIssuanceFailure(with p0: String) async -> Bool",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func fetchFailedDeferredDocumentIds() -> Cuckoo.ProtocolStubFunction<(), Set<String>> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "fetchFailedDeferredDocumentIds() async -> Set<String>",
                 parameterMatchers: matchers
             ))
         }
@@ -10186,6 +10204,18 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
+        func fetchFailedDeferredDocumentIds() -> Cuckoo.__DoNotUse<(), Set<String>> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "fetchFailedDeferredDocumentIds() async -> Set<String>",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
         func refreshUsageCounters() -> Cuckoo.__DoNotUse<(), Void> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
@@ -10494,6 +10524,10 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
     
     public func hasReIssuanceFailure(with p0: String) async -> Bool {
         return DefaultValueRegistry.defaultValue(for: (Bool).self)
+    }
+    
+    public func fetchFailedDeferredDocumentIds() async -> Set<String> {
+        return DefaultValueRegistry.defaultValue(for: (Set<String>).self)
     }
     
     public func refreshUsageCounters() async throws {

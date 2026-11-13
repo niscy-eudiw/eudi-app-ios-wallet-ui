@@ -136,6 +136,8 @@ public protocol WalletKitController: Sendable {
   func removeAllFailedReIssuedDocuments() async throws
   /// Whether the last background re-issuance could not renew the document.
   func hasReIssuanceFailure(with id: String) async -> Bool
+  /// Deferred documents refused by the issuer. Empty if the entries can't be read, so they show as pending.
+  func fetchFailedDeferredDocumentIds() async -> Set<String>
 
   func refreshUsageCounters() async throws
   func getIssuerRegistration(for offer: OfferedIssuanceModel) async -> IssuerRegistration?
@@ -1092,6 +1094,11 @@ final actor WalletKitControllerImpl: WalletKitController {
 
   func hasReIssuanceFailure(with id: String) async -> Bool {
     (try? await failedReIssuedDocStorageController.retrieve(id)) != nil
+  }
+
+  func fetchFailedDeferredDocumentIds() async -> Set<String> {
+    let entries = (try? await deferredIssuanceStorageController.retrieveAllEntries()) ?? []
+    return Set(entries.filter { $0.state == .failed }.map(\.identifier))
   }
 
   func refreshUsageCounters() async throws {

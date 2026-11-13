@@ -49,7 +49,8 @@ public enum DocumentFiltersPartialState: Sendable {
 }
 
 public protocol DocumentTabInteractor: Sendable {
-  func fetchDocuments(failedDocuments: [String], shouldRefreshCounters: Bool) async -> DocumentsPartialState
+  /// Deferred documents refused by the issuer are marked as failed.
+  func fetchDocuments(shouldRefreshCounters: Bool) async -> DocumentsPartialState
   func deleteDeferredDocument(with id: String) async -> DeleteDeferredPartialState
   /// List items for the "documents issued" sheet. Ids no longer in the wallet are skipped.
   func fetchIssuedDeferredDocuments(with ids: [String]) async -> [DocumentTabUIModel]
@@ -168,12 +169,9 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     await filterValidator.updateLists(sortOrder: sortOrder, filterableList: filterableList)
   }
 
-  func fetchDocuments(failedDocuments: [String], shouldRefreshCounters: Bool) async -> DocumentsPartialState {
+  func fetchDocuments(shouldRefreshCounters: Bool) async -> DocumentsPartialState {
 
-    let documents = await fetchFilteredDocuments(
-      failedDocuments: failedDocuments,
-      shouldRefreshCounters: shouldRefreshCounters
-    )
+    let documents = await fetchFilteredDocuments(shouldRefreshCounters: shouldRefreshCounters)
 
     guard let documents = documents else {
       return .failure(WalletCoreError.unableFetchDocuments)
@@ -395,7 +393,7 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     }
   }
 
-  private func fetchFilteredDocuments(failedDocuments: [String], shouldRefreshCounters: Bool) async -> FilterableList? {
+  private func fetchFilteredDocuments(shouldRefreshCounters: Bool) async -> FilterableList? {
 
     if shouldRefreshCounters {
       try? await walletKitController.refreshUsageCounters()
@@ -408,13 +406,16 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
       return nil
     }
 
+    let failedDeferredIds = await walletKitController.fetchFailedDeferredDocumentIds()
     var filterableItems: [FilterableItem] = []
     let issuerLogoOrigins = await walletKitController.issuerLogoOrigins()
     for document in documents {
       let revocationStatus = revocationStatuses[document.id]
 
       let documentIsLowOnCredentials = await walletKitController.isDocumentLowOnCredentials(document: document)
+      let isFailedDeferred = document is DeferrredDocument && failedDeferredIds.contains(document.id)
       let documentPayload = await document.transformToDocumentTabUi(
+        with: isFailedDeferred ? [document.id] : [],
         categories: self.walletKitController.getDocumentCategories(),
         revocationStatus: revocationStatus,
         documentIsLowOnCredentials: documentIsLowOnCredentials,

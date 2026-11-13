@@ -27,7 +27,6 @@ struct DocumentTabState: ViewState {
   let lifecycle: Lifecycle
   let pendingDeletionDocument: DocumentTabUIModel?
   let succededIssuedDocuments: [DocumentTabUIModel]
-  let failedDocuments: [String]
   let hasDefaultFilters: Bool
 
   var pendingDocumentTitle: String {
@@ -87,7 +86,6 @@ final class DocumentTabViewModel<Router: RouterHost>: ViewModel<Router, Document
         lifecycle: .tabNotActivePaused,
         pendingDeletionDocument: nil,
         succededIssuedDocuments: [],
-        failedDocuments: [],
         hasDefaultFilters: true
       )
     )
@@ -109,10 +107,7 @@ final class DocumentTabViewModel<Router: RouterHost>: ViewModel<Router, Document
   func fetch() {
     Task {
 
-      let failedDocuments = viewState.failedDocuments
-
       let state = await interactor.fetchDocuments(
-        failedDocuments: failedDocuments,
         shouldRefreshCounters: viewState.lifecycle != .active
       )
 
