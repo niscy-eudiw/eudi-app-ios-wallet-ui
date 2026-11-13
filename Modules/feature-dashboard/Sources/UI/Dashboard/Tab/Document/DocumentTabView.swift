@@ -230,7 +230,6 @@ private struct DocumentTabViewContainer: View {
     lifecycle: .active,
     pendingDeletionDocument: nil,
     succededIssuedDocuments: [],
-    failedDocuments: [],
     hasDefaultFilters: false
   )
   DocumentTabViewContainer(

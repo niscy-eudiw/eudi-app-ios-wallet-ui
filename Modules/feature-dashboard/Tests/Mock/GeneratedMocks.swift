@@ -2017,13 +2017,13 @@ public class MockDocumentTabInteractor: DocumentTabInteractor, Cuckoo.ProtocolMo
     }
 
 
-    public func fetchDocuments(failedDocuments p0: [String], shouldRefreshCounters p1: Bool) async -> DocumentsPartialState {
+    public func fetchDocuments(shouldRefreshCounters p0: Bool) async -> DocumentsPartialState {
         return await cuckoo_manager.call(
-            "fetchDocuments(failedDocuments p0: [String], shouldRefreshCounters p1: Bool) async -> DocumentsPartialState",
-            parameters: (p0, p1),
-            escapingParameters: (p0, p1),
+            "fetchDocuments(shouldRefreshCounters p0: Bool) async -> DocumentsPartialState",
+            parameters: (p0),
+            escapingParameters: (p0),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.fetchDocuments(failedDocuments: p0, shouldRefreshCounters: p1)
+            defaultCall: await __defaultImplStub!.fetchDocuments(shouldRefreshCounters: p0)
         )
     }
 
@@ -2144,10 +2144,10 @@ public class MockDocumentTabInteractor: DocumentTabInteractor, Cuckoo.ProtocolMo
             self.cuckoo_manager = manager
         }
         
-        func fetchDocuments<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(failedDocuments p0: M1, shouldRefreshCounters p1: M2) -> Cuckoo.ProtocolStubFunction<([String], Bool), DocumentsPartialState> where M1.MatchedType == [String], M2.MatchedType == Bool {
-            let matchers: [Cuckoo.ParameterMatcher<([String], Bool)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
+        func fetchDocuments<M1: Cuckoo.Matchable>(shouldRefreshCounters p0: M1) -> Cuckoo.ProtocolStubFunction<(Bool), DocumentsPartialState> where M1.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockDocumentTabInteractor.self,
-                method: "fetchDocuments(failedDocuments p0: [String], shouldRefreshCounters p1: Bool) async -> DocumentsPartialState",
+                method: "fetchDocuments(shouldRefreshCounters p0: Bool) async -> DocumentsPartialState",
                 parameterMatchers: matchers
             ))
         }
@@ -2254,10 +2254,10 @@ public class MockDocumentTabInteractor: DocumentTabInteractor, Cuckoo.ProtocolMo
         
         
         @discardableResult
-        func fetchDocuments<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(failedDocuments p0: M1, shouldRefreshCounters p1: M2) -> Cuckoo.__DoNotUse<([String], Bool), DocumentsPartialState> where M1.MatchedType == [String], M2.MatchedType == Bool {
-            let matchers: [Cuckoo.ParameterMatcher<([String], Bool)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
+        func fetchDocuments<M1: Cuckoo.Matchable>(shouldRefreshCounters p0: M1) -> Cuckoo.__DoNotUse<(Bool), DocumentsPartialState> where M1.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
-                "fetchDocuments(failedDocuments p0: [String], shouldRefreshCounters p1: Bool) async -> DocumentsPartialState",
+                "fetchDocuments(shouldRefreshCounters p0: Bool) async -> DocumentsPartialState",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -2402,7 +2402,7 @@ public class DocumentTabInteractorStub:DocumentTabInteractor, @unchecked Sendabl
 
 
     
-    public func fetchDocuments(failedDocuments p0: [String], shouldRefreshCounters p1: Bool) async -> DocumentsPartialState {
+    public func fetchDocuments(shouldRefreshCounters p0: Bool) async -> DocumentsPartialState {
         return DefaultValueRegistry.defaultValue(for: (DocumentsPartialState).self)
     }
     
@@ -12072,6 +12072,16 @@ return await cuckoo_manager.call(
         )
     }
 
+    public func fetchFailedDeferredDocumentIds() async -> Set<String> {
+        return await cuckoo_manager.call(
+            "fetchFailedDeferredDocumentIds() async -> Set<String>",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.fetchFailedDeferredDocumentIds()
+        )
+    }
+
     public func refreshUsageCounters() async throws {
         return try await cuckoo_manager.callThrows(
             "refreshUsageCounters() async throws",
@@ -12583,6 +12593,14 @@ return await cuckoo_manager.call(
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
                 method: "hasReIssuanceFailure(with p0: String) async -> Bool",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func fetchFailedDeferredDocumentIds() -> Cuckoo.ProtocolStubFunction<(), Set<String>> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletKitController.self,
+                method: "fetchFailedDeferredDocumentIds() async -> Set<String>",
                 parameterMatchers: matchers
             ))
         }
@@ -13309,6 +13327,18 @@ return await cuckoo_manager.call(
         
         
         @discardableResult
+        func fetchFailedDeferredDocumentIds() -> Cuckoo.__DoNotUse<(), Set<String>> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "fetchFailedDeferredDocumentIds() async -> Set<String>",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
         func refreshUsageCounters() -> Cuckoo.__DoNotUse<(), Void> {
             let matchers: [Cuckoo.ParameterMatcher<Void>] = []
             return cuckoo_manager.verify(
@@ -13617,6 +13647,10 @@ public class WalletKitControllerStub:WalletKitController, @unchecked Sendable {
     
     public func hasReIssuanceFailure(with p0: String) async -> Bool {
         return DefaultValueRegistry.defaultValue(for: (Bool).self)
+    }
+    
+    public func fetchFailedDeferredDocumentIds() async -> Set<String> {
+        return DefaultValueRegistry.defaultValue(for: (Set<String>).self)
     }
     
     public func refreshUsageCounters() async throws {

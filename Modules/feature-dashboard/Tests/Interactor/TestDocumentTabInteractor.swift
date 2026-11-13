@@ -39,6 +39,7 @@ final class TestDocumentTabInteractor: EudiTest {
     self.filterValidator = MockFilterValidator()
     stub(walletKitController) { mock in
       when(mock.fetchAllDocuments()).thenReturn([])
+      when(mock.fetchFailedDeferredDocumentIds()).thenReturn([])
     }
     self.interactor = DocumentTabInteractorImpl(
       walletKitController: walletKitController,
@@ -68,7 +69,7 @@ final class TestDocumentTabInteractor: EudiTest {
     stubIsBatchCounterEnabled()
 
     // When
-    let state = await interactor.fetchDocuments(failedDocuments: [], shouldRefreshCounters: false)
+    let state = await interactor.fetchDocuments(shouldRefreshCounters: false)
     
     // Then
     switch state {
@@ -118,7 +119,7 @@ final class TestDocumentTabInteractor: EudiTest {
     stubIsBatchCounterEnabled()
     
     // When
-    let state = await interactor.fetchDocuments(failedDocuments: [], shouldRefreshCounters: true)
+    let state = await interactor.fetchDocuments(shouldRefreshCounters: true)
     
     // Then
     switch state {
@@ -143,7 +144,7 @@ final class TestDocumentTabInteractor: EudiTest {
     stubRefreshCounters()
     stubIsBatchCounterEnabled()
 
-    let state = await interactor.fetchDocuments(failedDocuments: [], shouldRefreshCounters: false)
+    let state = await interactor.fetchDocuments(shouldRefreshCounters: false)
 
     guard case .success(let list) = state else {
       return XCTFail("Wrong state \(state)")
@@ -169,7 +170,7 @@ final class TestDocumentTabInteractor: EudiTest {
     stubRefreshCounters()
     stubIsBatchCounterEnabled()
 
-    let state = await interactor.fetchDocuments(failedDocuments: [], shouldRefreshCounters: false)
+    let state = await interactor.fetchDocuments(shouldRefreshCounters: false)
 
     guard case .success(let list) = state else {
       return XCTFail("Wrong state \(state)")
@@ -178,6 +179,32 @@ final class TestDocumentTabInteractor: EudiTest {
       (item.payload as? DocumentTabUIModel).map { ($0.id, $0.value.state) }
     })
     XCTAssertEqual(states, [pid.id: .revoked, mdl.id: .revoked])
+  }
+
+  func testFetchDocuments_WhenTheIssuerRefusedADeferredDocument_ThenItShowsAsFailedAndTheOthersAsBefore() async {
+    let pid = Constants.createEuPidModel()
+    let refused = deferredDocument(id: "refused")
+    let pending = deferredDocument(id: "pending")
+    stubFetchDocumentsForTheList([pid, refused, pending])
+    stub(walletKitController) { mock in
+      when(mock.fetchFailedDeferredDocumentIds()).thenReturn(["refused"])
+    }
+
+    let states = await fetchedStates()
+
+    XCTAssertEqual(states, [pid.id: .issued, "refused": .failed, "pending": .pending])
+  }
+
+  func testFetchDocuments_WhenAnIssuedDocumentKeepsARefusedEntry_ThenItShowsAsIssued() async {
+    let pid = Constants.createEuPidModel()
+    stubFetchDocumentsForTheList([pid])
+    stub(walletKitController) { mock in
+      when(mock.fetchFailedDeferredDocumentIds()).thenReturn([pid.id])
+    }
+
+    let states = await fetchedStates()
+
+    XCTAssertEqual(states, [pid.id: .issued])
   }
 
   func testFetchDocuments_WhenWalletKitControllerReturnsDataWithNilUsageCount_ThenReturnsUiModels() async {
@@ -217,7 +244,7 @@ final class TestDocumentTabInteractor: EudiTest {
     stubIsBatchCounterEnabled()
     
     // When
-    let state = await interactor.fetchDocuments(failedDocuments: [], shouldRefreshCounters: true)
+    let state = await interactor.fetchDocuments(shouldRefreshCounters: true)
 
     // Then
     switch state {
@@ -586,6 +613,41 @@ private extension TestDocumentTabInteractor {
       attributes: TestDocumentTabInteractor.mockDocumentFilterableAttributes)
   ])
   
+  /// Stubs the list with `documents`, none revoked or low on credentials.
+  func stubFetchDocumentsForTheList(_ documents: [any DocClaimsDecodable]) {
+    stubFetchRevokedDocumentStatuses(with: [:])
+    stubFetchDocuments(with: documents)
+    stubFetchDocumentCategories(with: [:])
+    stubIsDocumentLowOnCredentials(hasLowOnCredentials: false)
+    stubRefreshCounters()
+    stubIsBatchCounterEnabled(false)
+  }
+
+  /// Listed document states by id.
+  func fetchedStates() async -> [String: DocumentTabUIModel.Value.State] {
+    guard case .success(let list) = await interactor.fetchDocuments(shouldRefreshCounters: false) else {
+      XCTFail("Expected the documents")
+      return [:]
+    }
+    return Dictionary(uniqueKeysWithValues: list.items.compactMap { item in
+      (item.payload as? DocumentTabUIModel).map { ($0.id, $0.value.state) }
+    })
+  }
+
+  func deferredDocument(id: String) -> any DocClaimsDecodable {
+    WalletStorage.Document(
+      id: id,
+      docType: "",
+      docDataFormat: .cbor,
+      data: Data(),
+      docKeyInfo: nil,
+      createdAt: nil,
+      metadata: nil,
+      displayName: "Deferred \(id)",
+      status: .deferred
+    ).transformToDeferredDecodable()
+  }
+
   func stubFetchDocuments(with documents: [any DocClaimsDecodable]) {
     stub(walletKitController) { mock in
       when(mock.fetchAllDocuments()).thenReturn(documents)
