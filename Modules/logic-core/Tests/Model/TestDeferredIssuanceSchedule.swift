@@ -95,6 +95,58 @@ final class TestDeferredIssuanceSchedule: EudiTest {
     XCTAssertEqual(entries.first?.interval, nil)
     XCTAssertEqual(entries.first?.nextAttemptAt, now.addingTimeInterval(5))
   }
+
+  func testRetryDelay_ThenDoublesFromThirtySecondsUpToAnHour() {
+    let delays = (1...9).map { DeferredIssuanceSchedule.retryDelay(afterFailures: $0) }
+
+    XCTAssertEqual(delays, [30, 60, 120, 240, 480, 960, 1920, 3600, 3600])
+    XCTAssertEqual(DeferredIssuanceSchedule.retryDelay(afterFailures: 1_000), 3600)
+  }
+
+  func testAfter_WhenTheFirstRequestFailsTransiently_ThenWaitsThirtySecondsAndCountsTheFailure() {
+    let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, interval: 5)
+
+    let next = DeferredIssuanceSchedule.after(.transient, of: entry, at: now)
+
+    XCTAssertEqual(
+      next,
+      DeferredIssuance(
+        identifier: "pid",
+        nextAttemptAt: now.addingTimeInterval(30),
+        interval: 5,
+        failedAttempts: 1,
+        state: .pending
+      )
+    )
+  }
+
+  func testAfter_WhenRequestsKeepFailingTransiently_ThenWaitsLongerEachTime() {
+    let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, failedAttempts: 2)
+
+    let next = DeferredIssuanceSchedule.after(.transient, of: entry, at: now)
+
+    XCTAssertEqual(next.failedAttempts, 3)
+    XCTAssertEqual(next.nextAttemptAt, now.addingTimeInterval(120))
+  }
+
+  func testAfter_WhenTheIssuersIntervalIsLongerThanTheRetryDelay_ThenWaitsTheInterval() {
+    let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, interval: 7_200)
+
+    let next = DeferredIssuanceSchedule.after(.transient, of: entry, at: now)
+
+    XCTAssertEqual(next.nextAttemptAt, now.addingTimeInterval(7_200))
+  }
+
+  func testAfter_WhenTheIssuerRefuses_ThenStopsAskingAndKeepsTheRest() {
+    let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, interval: 60, failedAttempts: 2)
+
+    let next = DeferredIssuanceSchedule.after(.refused, of: entry, at: now.addingTimeInterval(100))
+
+    XCTAssertEqual(
+      next,
+      DeferredIssuance(identifier: "pid", nextAttemptAt: now, interval: 60, failedAttempts: 2, state: .failed)
+    )
+  }
 }
 
 private extension TestDeferredIssuanceSchedule {
