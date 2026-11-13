@@ -63,6 +63,9 @@ struct DocumentTabView<Router: RouterHost>: View {
     .onReceive(NotificationCenter.default.publisher(for: NSNotification.DocumentTabRefresh)) { _ in
       viewModel.handleRefreshotification()
     }
+    .onReceive(NotificationCenter.default.publisher(for: NSNotification.DeferredIssuanceResult)) { notification in
+      viewModel.handleDeferredIssuanceNotification(for: notification.userInfo)
+    }
   }
 }
 

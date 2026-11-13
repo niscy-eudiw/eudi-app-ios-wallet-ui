@@ -48,16 +48,11 @@ public enum DocumentFiltersPartialState: Sendable {
   case cancelled
 }
 
-public enum DeferredPartialState: Sendable {
-  case completion(issued: [DocumentTabUIModel], failed: [String])
-  case cancelled
-}
-
 public protocol DocumentTabInteractor: Sendable {
   func fetchDocuments(failedDocuments: [String], shouldRefreshCounters: Bool) async -> DocumentsPartialState
-  func hasDeferredDocuments() async -> Bool
   func deleteDeferredDocument(with id: String) async -> DeleteDeferredPartialState
-  func requestDeferredIssuance() async -> DeferredPartialState
+  /// List items for the "documents issued" sheet. Ids no longer in the wallet are skipped.
+  func fetchIssuedDeferredDocuments(with ids: [String]) async -> [DocumentTabUIModel]
   func onFilterChangeState() async -> AsyncStream<DocumentFiltersPartialState>
   func initializeFilters(filterableList: FilterableList) async
   func applyFilters() async
@@ -75,7 +70,6 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
   private let prefsController: PrefsController
   private let filterValidator: FilterValidator
   private let configLogic: ConfigLogic
-  private let walletWorkScheduler: WalletWorkScheduler
 
   private var filtersStateAsync: AsyncStream<DocumentFiltersPartialState>.Continuation?
 
@@ -83,22 +77,16 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     walletKitController: WalletKitController,
     prefsController: PrefsController,
     filterValidator: FilterValidator,
-    configLogic: ConfigLogic,
-    walletWorkScheduler: WalletWorkScheduler
+    configLogic: ConfigLogic
   ) {
     self.walletKitController = walletKitController
     self.prefsController = prefsController
     self.filterValidator = filterValidator
     self.configLogic = configLogic
-    self.walletWorkScheduler = walletWorkScheduler
   }
 
   deinit {
     filtersStateAsync?.finish()
-  }
-
-  func hasDeferredDocuments() async -> Bool {
-    return await !walletKitController.fetchDeferredDocuments().isEmpty
   }
 
   func onFilterChangeState() -> AsyncStream<DocumentFiltersPartialState> {
@@ -204,58 +192,27 @@ final actor DocumentTabInteractorImpl: DocumentTabInteractor {
     }
   }
 
-  func requestDeferredIssuance() async -> DeferredPartialState {
+  func fetchIssuedDeferredDocuments(with ids: [String]) async -> [DocumentTabUIModel] {
+    let documents = await walletKitController.fetchDocuments(with: ids)
+    guard !documents.isEmpty else { return [] }
 
-    var issued: [DocumentTabUIModel] = []
-    var failed: [String] = []
-
-    let categories = await self.walletKitController.getDocumentCategories()
-    let deferredDocuments = await walletKitController.fetchDeferredDocuments()
-    let revocationStatuses = await revocationStatuses(for: deferredDocuments.map(\.id))
+    let categories = await walletKitController.getDocumentCategories()
+    let revocationStatuses = await revocationStatuses(for: documents.map(\.id))
     let issuerLogoOrigins = await walletKitController.issuerLogoOrigins()
 
-    for deferred in deferredDocuments {
-
-      if Task.isCancelled { return .cancelled }
-
-      do {
-        let document = try await walletKitController.requestDeferredIssuance(with: deferred)
-        if (document is DeferrredDocument) == false {
-          issued.append(
-            document.transformToDocumentTabUi(
-              categories: categories,
-              revocationStatus: revocationStatuses[deferred.id],
-              usageCount: isBatchCounterEnabled()
-              ? getCredentialsUsageCount(
-                credentialsUsageCounts: document.credentialsUsageCounts,
-                isDeferred: (document is DeferrredDocument) == true
-              )
-              : nil,
-              issuerLogoOrigins: issuerLogoOrigins
-            )
-          )
-        }
-      } catch {
-        failed.append(deferred.id)
-      }
+    return documents.map { document in
+      document.transformToDocumentTabUi(
+        categories: categories,
+        revocationStatus: revocationStatuses[document.id],
+        usageCount: isBatchCounterEnabled()
+        ? getCredentialsUsageCount(
+          credentialsUsageCounts: document.credentialsUsageCounts,
+          isDeferred: false
+        )
+        : nil,
+        issuerLogoOrigins: issuerLogoOrigins
+      )
     }
-
-    if !issued.isEmpty {
-      await checkRevocationAfterDeferredReIssue(revocationStatuses: revocationStatuses)
-    }
-
-    return .completion(issued: issued, failed: failed)
-  }
-
-  /// Wallet-kit deletes the original of a deferred re-issue when its credential arrives. If a document that had
-  /// a revocation record is gone, the revocation check runs at once, as the Android wallet does, so the new copy's
-  /// status is read without waiting for the interval.
-  private func checkRevocationAfterDeferredReIssue(
-    revocationStatuses: [String: DocumentRevocationStatus]
-  ) async {
-    let remainingIds = Set(await walletKitController.fetchAllDocuments().map(\.id))
-    guard let goneId = revocationStatuses.keys.first(where: { !remainingIds.contains($0) }) else { return }
-    await walletWorkScheduler.scheduleRevocationCheck(afterReIssueOf: goneId)
   }
 
   private func createFiltersGroup() -> Filters {

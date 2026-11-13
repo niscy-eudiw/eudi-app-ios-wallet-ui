@@ -628,10 +628,12 @@ final actor WalletKitControllerImpl: WalletKitController {
 
   /// Adds an entry for each deferred document WalletKit returned. A failed write doesn't fail
   /// the issuance; the document is already stored.
+  /// Also wakes the deferred work manager, which adds the entry itself if the write failed.
   private func scheduleDeferredRequests(for documents: [WalletStorage.Document]) async {
     let entries = DeferredIssuanceSchedule.entries(for: documents, at: Date())
     guard !entries.isEmpty else { return }
     try? await deferredIssuanceStorageController.store(entries)
+    NotificationCenter.default.post(name: .deferredIssuanceEntered, object: nil)
   }
 
   /// WalletKit doesn't persist the interval of a "still pending" response, so we keep it in our own entry.

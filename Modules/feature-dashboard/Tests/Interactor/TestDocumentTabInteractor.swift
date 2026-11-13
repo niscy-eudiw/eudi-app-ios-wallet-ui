@@ -28,7 +28,6 @@ final class TestDocumentTabInteractor: EudiTest {
   var prefsController: MockPrefsController!
   var filterValidator: MockFilterValidator!
   var configLogic: MockConfigLogic!
-  var walletWorkScheduler: MockWalletWorkScheduler!
   
   override func setUp() {
     self.walletKitController = MockWalletKitController()
@@ -38,10 +37,6 @@ final class TestDocumentTabInteractor: EudiTest {
     self.prefsController = MockPrefsController()
     self.configLogic = MockConfigLogic()
     self.filterValidator = MockFilterValidator()
-    self.walletWorkScheduler = MockWalletWorkScheduler()
-    stub(walletWorkScheduler) { mock in
-      when(mock.scheduleRevocationCheck(afterReIssueOf: any())).thenDoNothing()
-    }
     stub(walletKitController) { mock in
       when(mock.fetchAllDocuments()).thenReturn([])
     }
@@ -49,8 +44,7 @@ final class TestDocumentTabInteractor: EudiTest {
       walletKitController: walletKitController,
       prefsController: prefsController,
       filterValidator: filterValidator,
-      configLogic: configLogic,
-      walletWorkScheduler: walletWorkScheduler
+      configLogic: configLogic
     )
     
     stubConfigLogic()
@@ -61,41 +55,6 @@ final class TestDocumentTabInteractor: EudiTest {
     self.walletKitController = nil
     self.prefsController = nil
     self.configLogic = nil
-  }
-  
-  func testHasDeferredDocuments_WhenWalletKitControllerReturnsDeferredDocuments_ThenReturnsTrue() async {
-    // Given
-    stubFetchDeferredDocuments(
-      with: [
-        .init(
-          docType: "",
-          docDataFormat: .cbor,
-          data: Data(),
-          docKeyInfo: nil,
-          createdAt: nil,
-          metadata: nil,
-          displayName: "",
-          status: .deferred
-        )
-      ]
-    )
-    
-    // When
-    let result = await interactor.hasDeferredDocuments()
-    
-    // Then
-    XCTAssertTrue(result)
-  }
-  
-  func testHasDeferredDocuments_WhenWalletKitControllerReturnsNoDeferredDocuments_ThenReturnsFalse() async {
-    // Given
-    stubFetchDeferredDocuments(with: [])
-    
-    // When
-    let result = await interactor.hasDeferredDocuments()
-    
-    // Then
-    XCTAssertFalse(result)
   }
   
   func testFetchDocuments_WhenWalletKitControllerReturnsEmptyDocuments_ThenReturnsError() async {
@@ -436,149 +395,44 @@ final class TestDocumentTabInteractor: EudiTest {
     XCTAssertEqual(updatedSections.count, 0)
   }
   
-  func testRequestDeferredIssuance_WhenAllIssuanceSucceeds_ThenReturnsIssuedModels() async {
-    // Given
-    let issuedDoc = Constants.createEuPidModel()
-    
-    stubFetchDeferredDocuments(
-      with: [
-        .init(
-          docType: "",
-          docDataFormat: .cbor,
-          data: Data(),
-          docKeyInfo: nil,
-          createdAt: nil,
-          metadata: nil,
-          displayName: "",
-          status: .deferred
-        )
-      ]
-    )
+  func testFetchIssuedDeferredDocuments_WhenTheDocumentsAreInTheWallet_ThenReturnsTheirListItems() async {
+    stub(walletKitController) { stub in
+      when(stub.fetchDocuments(with: equal(to: [Constants.euPidModelId]))).thenReturn([Constants.createEuPidModel()])
+    }
     stubFetchRevokedDocumentStatuses(with: [:])
     stubFetchDocumentCategories(with: [:])
-    stub(walletKitController) { stub in
-      when(stub.requestDeferredIssuance(with: any())).thenReturn(issuedDoc)
-    }
     stubIsBatchCounterEnabled()
 
-    // When
-    let result = await interactor.requestDeferredIssuance()
-    
-    // Then
-    switch result {
-    case .completion(let issued, let failed):
-      XCTAssertEqual(issued.count, 1)
-      XCTAssertEqual(failed.count, 0)
-    default:
-      XCTFail("Expected completion with success")
-    }
+    let issued = await interactor.fetchIssuedDeferredDocuments(with: [Constants.euPidModelId])
+
+    XCTAssertEqual(issued.map(\.value.id), [Constants.euPidModelId])
+    XCTAssertEqual(issued.first?.value.state, .issued)
   }
-  
-  func testRequestDeferredIssuance_WhenARevokedDocumentIsGoneAfterIssuance_ThenTheRevocationCheckRuns() async {
-    stubDeferredIssuanceOfOneDocument(revocationStatuses: ["original": .revoked])
+
+  func testFetchIssuedDeferredDocuments_WhenTheDocumentIsRevoked_ThenItsItemShowsIt() async {
     stub(walletKitController) { stub in
-      when(stub.fetchAllDocuments()).thenReturn([Constants.createEuPidModel()])
+      when(stub.fetchDocuments(with: any())).thenReturn([Constants.createEuPidModel()])
     }
-
-    _ = await interactor.requestDeferredIssuance()
-
-    verify(walletWorkScheduler).scheduleRevocationCheck(afterReIssueOf: equal(to: "original"))
-  }
-
-  func testRequestDeferredIssuance_WhenEveryRevokedDocumentRemains_ThenNoRevocationCheckIsAsked() async {
-    stubDeferredIssuanceOfOneDocument(revocationStatuses: [Constants.euPidModelId: .revoked])
-    stub(walletKitController) { stub in
-      when(stub.fetchAllDocuments()).thenReturn([Constants.createEuPidModel()])
-    }
-
-    _ = await interactor.requestDeferredIssuance()
-
-    verify(walletWorkScheduler, never()).scheduleRevocationCheck(afterReIssueOf: any())
-  }
-
-  private func stubDeferredIssuanceOfOneDocument(revocationStatuses: [String: DocumentRevocationStatus]) {
-    stubFetchDeferredDocuments(
-      with: [
-        .init(
-          docType: "",
-          docDataFormat: .cbor,
-          data: Data(),
-          docKeyInfo: nil,
-          createdAt: nil,
-          metadata: nil,
-          displayName: "",
-          status: .deferred
-        )
-      ]
-    )
-    stubFetchRevokedDocumentStatuses(with: revocationStatuses)
+    stubFetchRevokedDocumentStatuses(with: [Constants.euPidModelId: .revoked])
     stubFetchDocumentCategories(with: [:])
-    stub(walletKitController) { stub in
-      when(stub.requestDeferredIssuance(with: any())).thenReturn(Constants.createEuPidModel())
-    }
-    stubIsBatchCounterEnabled()
+    stubIsBatchCounterEnabled(false)
+
+    let issued = await interactor.fetchIssuedDeferredDocuments(with: [Constants.euPidModelId])
+
+    XCTAssertEqual(issued.first?.value.state, .revoked)
   }
 
-  func testRequestDeferredIssuance_WhenIssuanceFails_ThenReturnsFailedIds() async {
-    // Given
-    let expectedId = "fail-id"
-    stubFetchDeferredDocuments(
-      with: [
-        .init(
-          id: expectedId,
-          docType: "",
-          docDataFormat: .cbor,
-          data: Data(),
-          docKeyInfo: nil,
-          createdAt: nil,
-          metadata: nil,
-          displayName: "",
-          status: .deferred
-        )
-      ]
-    )
-    stubFetchRevokedDocumentStatuses(with: [:])
-    stubFetchDocumentCategories(with: [:])
+  func testFetchIssuedDeferredDocuments_WhenNoDocumentIsInTheWallet_ThenReturnsNone() async {
     stub(walletKitController) { stub in
-      when(stub.requestDeferredIssuance(with: any())).thenThrow(WalletCoreError.unableFetchDocument)
+      when(stub.fetchDocuments(with: any())).thenReturn([])
     }
-    
-    // When
-    let result = await interactor.requestDeferredIssuance()
-    
-    // Then
-    switch result {
-    case .completion(let issued, let failed):
-      XCTAssertEqual(issued.count, 0)
-      XCTAssertEqual(failed, [expectedId])
-    default:
-      XCTFail("Expected completion with failed")
-    }
+
+    let issued = await interactor.fetchIssuedDeferredDocuments(with: ["gone"])
+
+    XCTAssertTrue(issued.isEmpty)
+    verify(walletKitController, never()).getDocumentCategories()
   }
-  
-  func testRequestDeferredIssuance_WhenNoDeferredDocuments_ThenReturnsEmptyIssuedAndFailed() async {
-    // Given
-    let issuedDoc = Constants.createEuPidModel()
-    stubFetchDeferredDocuments(with: [])
-    stubFetchRevokedDocumentStatuses(with: [:])
-    stubFetchDocumentCategories(with: [:])
-    stub(walletKitController) { stub in
-      when(stub.requestDeferredIssuance(with: any())).thenReturn(issuedDoc)
-    }
-    
-    // When
-    let result = await interactor.requestDeferredIssuance()
-    
-    // Then
-    switch result {
-    case .completion(let issued, let failed):
-      XCTAssertTrue(issued.isEmpty)
-      XCTAssertTrue(failed.isEmpty)
-    default:
-      XCTFail("Expected completion with empty arrays")
-    }
-  }
-  
+
   func testInitializeFilters_WhenCalled_ThenInitializesFilterValidatorWithCorrectArguments() async {
     // Given
     stubInitializeValidator()
@@ -747,12 +601,6 @@ private extension TestDocumentTabInteractor {
   func stubFetchIssuedDocuments(with documents: [any DocClaimsDecodable]) {
     stub(walletKitController) { mock in
       when(mock.fetchIssuedDocuments()).thenReturn(documents)
-    }
-  }
-  
-  func stubFetchDeferredDocuments(with documents: [WalletStorage.Document]) {
-    stub(walletKitController) { mock in
-      when(mock.fetchDeferredDocuments()).thenReturn(documents)
     }
   }
   

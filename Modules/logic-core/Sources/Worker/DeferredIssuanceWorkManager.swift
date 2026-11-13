@@ -18,6 +18,11 @@ import WalletStorage
 import logic_business
 import logic_storage
 
+extension Notification.Name {
+  /// Posted by WalletKitController after adding an entry, so an idle deferred work manager picks it up.
+  static let deferredIssuanceEntered = Notification.Name("DeferredIssuanceEntered")
+}
+
 protocol DeferredIssuanceWorkManager: Sendable {
   /// Starts the loop. Entries that fell due while the app was closed are requested right away.
   func start() async
@@ -29,6 +34,7 @@ protocol DeferredIssuanceWorkManager: Sendable {
 
 /// Requests deferred credentials as their entries fall due, one check at a time.
 /// Sleeps until the next due entry; goes idle when nothing is pending until `wake()`.
+/// Also woken by `deferredIssuanceEntered` while running.
 final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
 
   private let walletKitController: WalletKitController
@@ -47,6 +53,8 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
   private var waitTask: Task<Void, Error>?
   /// Set when wake() arrives mid-check, so the loop re-reads the entries instead of sleeping.
   private var isWakeRequested = false
+  /// Wakes the manager when a document is entered, from `start()` to `stop()`.
+  private var enteredObserver: (any NSObjectProtocol)?
 
   /// `now` and `sleep` are injectable so tests can control time.
   init(
@@ -68,11 +76,22 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
   func start() async {
     guard !isRunning else { return }
     isRunning = true
+    enteredObserver = NotificationCenter.default.addObserver(
+      forName: .deferredIssuanceEntered,
+      object: nil,
+      queue: nil
+    ) { [weak self] _ in
+      Task { await self?.wake() }
+    }
     startLoopIfIdle()
   }
 
   func stop() async {
     isRunning = false
+    if let enteredObserver {
+      NotificationCenter.default.removeObserver(enteredObserver)
+    }
+    enteredObserver = nil
     loopTask?.cancel()
     loopTask = nil
     waitTask?.cancel()

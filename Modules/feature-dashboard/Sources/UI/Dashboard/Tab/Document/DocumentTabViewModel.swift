@@ -71,9 +71,6 @@ final class DocumentTabViewModel<Router: RouterHost>: ViewModel<Router, Document
   @ObservationIgnored
   private var debouncedSucceededModal = CurrentValueSubject<Bool, Never>(false)
 
-  @ObservationIgnored
-  private var deferredTask: Task<DeferredPartialState, Error>?
-
   init(
     router: Router,
     interactor: DocumentTabInteractor,
@@ -106,7 +103,6 @@ final class DocumentTabViewModel<Router: RouterHost>: ViewModel<Router, Document
   }
 
   func onDisappear() {
-    self.deferredTask?.cancel()
     self.setState { $0.copy(lifecycle: .tabNotActivePaused) }
   }
 
@@ -177,7 +173,6 @@ final class DocumentTabViewModel<Router: RouterHost>: ViewModel<Router, Document
   }
 
   private func onbackground() {
-    self.deferredTask?.cancel()
     self.setState { $0.copy(lifecycle: .tabActivePaused) }
   }
 
@@ -297,31 +292,24 @@ final class DocumentTabViewModel<Router: RouterHost>: ViewModel<Router, Document
   }
 
   private func onDocumentsRetrievedPostActions() async {
-    if await interactor.hasDeferredDocuments() && (self.deferredTask == nil || self.deferredTask?.isCancelled == true) {
-      self.deferredTask = Task {
-        try? await Task.sleep(seconds: 5)
-        return await interactor.requestDeferredIssuance()
-      }
-      Task {
-        guard let task = self.deferredTask else { return }
-        let partialState = try? await task.value
-        switch partialState {
-        case .completion(let issued, let failed):
-          self.deferredTask?.cancel()
-          self.setState {
-            $0.copy(
-              succededIssuedDocuments: !isSuccededDocumentsModalShowing
-              ? issued
-              : $0.succededIssuedDocuments,
-              failedDocuments: failed
-            )
-          }
-          fetch()
-        case .cancelled, .none: break
-        }
-      }
-    }
     checkForSuccededIssuedDocuments()
+  }
+
+  /// Opens the "documents issued" sheet. The list is refreshed separately (DocumentTabRefresh);
+  /// an open sheet keeps the documents it already shows.
+  func handleDeferredIssuanceNotification(for userInfo: [AnyHashable: Any]?) {
+    guard
+      let payload = DeferredIssuancePayload(userInfo: userInfo),
+      !payload.issued.isEmpty
+    else {
+      return
+    }
+    Task {
+      let issued = await interactor.fetchIssuedDeferredDocuments(with: Array(payload.issued.keys))
+      guard !issued.isEmpty, !isSuccededDocumentsModalShowing else { return }
+      setState { $0.copy(succededIssuedDocuments: issued) }
+      checkForSuccededIssuedDocuments()
+    }
   }
 
   private func checkForSuccededIssuedDocuments() {

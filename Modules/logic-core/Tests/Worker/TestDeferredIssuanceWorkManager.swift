@@ -343,6 +343,38 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     await workManager.stop()
   }
 
+  func testStart_WhenADocumentIsEnteredLater_ThenChecksIt() async {
+    await workManager.start()
+    await waitUntilIdle()
+    await givenDeferred(["a"], entries: [entry("a", dueIn: -1)])
+    let asked = expectation(description: "asked")
+    stubRequest { _ in
+      asked.fulfill()
+      throw URLError(.timedOut)
+    }
+
+    NotificationCenter.default.post(name: .deferredIssuanceEntered, object: nil)
+
+    await fulfillment(of: [asked], timeout: 2)
+    await workManager.stop()
+  }
+
+  func testStop_ThenAnEnteredDocumentAsksNothing() async {
+    await workManager.start()
+    await workManager.stop()
+    await givenDeferred(["a"], entries: [entry("a", dueIn: -1)])
+    let asked = expectation(description: "asked")
+    asked.isInverted = true
+    stubRequest { _ in
+      asked.fulfill()
+      throw URLError(.timedOut)
+    }
+
+    NotificationCenter.default.post(name: .deferredIssuanceEntered, object: nil)
+
+    await fulfillment(of: [asked], timeout: 0.5)
+  }
+
   func testStop_ThenWakeAsksNothing() async {
     await workManager.start()
     await workManager.stop()
