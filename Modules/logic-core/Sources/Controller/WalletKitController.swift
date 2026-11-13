@@ -175,6 +175,7 @@ final actor WalletKitControllerImpl: WalletKitController {
   private let revokedDocumentStorageController: any RevokedDocumentStorageController
   private let failedReIssuedDocStorageController: any FailedReIssuedDocStorageController
   private let statusRefreshFailureStorageController: any StatusRefreshFailureStorageController
+  private let deferredIssuanceStorageController: any DeferredIssuanceStorageController
   private let storageEraseController: StorageEraseController
   private let documentRegistrationManager: DocumentRegistrationManager
   private let prefsController: PrefsController
@@ -202,6 +203,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     revokedDocumentStorageController: any RevokedDocumentStorageController,
     failedReIssuedDocStorageController: any FailedReIssuedDocStorageController,
     statusRefreshFailureStorageController: any StatusRefreshFailureStorageController,
+    deferredIssuanceStorageController: any DeferredIssuanceStorageController,
     storageEraseController: StorageEraseController,
     networkSessionProvider: NetworkSessionProvider,
     documentRegistrationManager: DocumentRegistrationManager,
@@ -217,6 +219,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     self.revokedDocumentStorageController = revokedDocumentStorageController
     self.failedReIssuedDocStorageController = failedReIssuedDocStorageController
     self.statusRefreshFailureStorageController = statusRefreshFailureStorageController
+    self.deferredIssuanceStorageController = deferredIssuanceStorageController
     self.storageEraseController = storageEraseController
     self.documentRegistrationManager = documentRegistrationManager
     self.prefsController = prefsController
@@ -357,6 +360,7 @@ final actor WalletKitControllerImpl: WalletKitController {
       docTypes: docTypes,
       txCodeValue: txCodeValue
     )
+    await scheduleDeferredRequests(for: response.documents)
     await reconcileRegistrations()
     return IssuanceResult(
       documents: response.documents,
@@ -381,6 +385,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     try? await statusRefreshFailureStorageController.deleteAll()
     try? await bookmarkStorageController.deleteAll()
     try? await failedReIssuedDocStorageController.deleteAll()
+    try? await deferredIssuanceStorageController.deleteAll()
     await reconcileRegistrations()
   }
 
@@ -494,6 +499,7 @@ final actor WalletKitControllerImpl: WalletKitController {
         )
       }
     )
+    await scheduleDeferredRequests(for: response.documents)
     await reconcileRegistrations()
     return IssuanceResult(
       documents: response.documents,
@@ -581,6 +587,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     if !response.documents.contains(where: { $0.id == identifier }) {
       try? await deleteRecords(of: identifier, keepingRevocationRecord: true)
     }
+    await scheduleDeferredRequests(for: response.documents)
     await reconcileRegistrations()
     return document
   }
@@ -602,8 +609,13 @@ final actor WalletKitControllerImpl: WalletKitController {
       keyOptions: walletKitConfig.keyOptions
     )
     if result.isDeferred {
+      await scheduleNextDeferredRequest(
+        for: doc.id,
+        interval: result.deferredIssuanceInterval ?? doc.deferredIssuanceInterval
+      )
       return result.transformToDeferredDecodable()
     } else if let issued = fetchDocument(with: result.id) {
+      try? await deferredIssuanceStorageController.delete(doc.id)
       if result.id != doc.id {
         try? await deleteRecords(of: doc.id)
       }
@@ -614,9 +626,24 @@ final actor WalletKitControllerImpl: WalletKitController {
     }
   }
 
-  /// Deletes the records the wallet keeps for a document: its revocation record, refresh failure, bookmark and failed
-  /// re-issue, as Android's `deleteDocumentRecords`; its history stays, a legal record. After a re-issue the
-  /// original's revocation record stays until the check after the re-issue has read it.
+  /// Adds an entry for each deferred document WalletKit returned. A failed write doesn't fail
+  /// the issuance; the document is already stored.
+  private func scheduleDeferredRequests(for documents: [WalletStorage.Document]) async {
+    let entries = DeferredIssuanceSchedule.entries(for: documents, at: Date())
+    guard !entries.isEmpty else { return }
+    try? await deferredIssuanceStorageController.store(entries)
+  }
+
+  /// WalletKit doesn't persist the interval of a "still pending" response, so we keep it in our own entry.
+  private func scheduleNextDeferredRequest(for id: String, interval: TimeInterval?) async {
+    try? await deferredIssuanceStorageController.update(
+      DeferredIssuanceSchedule.pending(identifier: id, interval: interval, at: Date())
+    )
+  }
+
+  /// Deletes the records the wallet keeps for a document: its revocation record, refresh failure, bookmark, failed
+  /// re-issue and deferred request, as Android's `deleteDocumentRecords`; its history stays, a legal record. After a
+  /// re-issue the original's revocation record stays until the check after the re-issue has read it.
   private func deleteRecords(of id: String, keepingRevocationRecord: Bool = false) async throws {
     if !keepingRevocationRecord {
       try await revokedDocumentStorageController.delete(id)
@@ -624,6 +651,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     try await statusRefreshFailureStorageController.delete(id)
     try await bookmarkStorageController.delete(id)
     try await failedReIssuedDocStorageController.delete(id)
+    try await deferredIssuanceStorageController.delete(id)
   }
 
   /// Nil in builds that write no log file, so Settings offers no "Retrieve logs".
@@ -666,6 +694,7 @@ final actor WalletKitControllerImpl: WalletKitController {
       credentialOptions: credentialOptions,
       keyOptions: walletKitConfig.keyOptions
     )
+    await scheduleDeferredRequests(for: [document])
     await reconcileRegistrations()
     return document
   }
@@ -923,6 +952,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     try await revokedDocumentStorageController.deleteAll()
     try await failedReIssuedDocStorageController.deleteAll()
     try await statusRefreshFailureStorageController.deleteAll()
+    try await deferredIssuanceStorageController.deleteAll()
     try await storageEraseController.eraseStore()
   }
 

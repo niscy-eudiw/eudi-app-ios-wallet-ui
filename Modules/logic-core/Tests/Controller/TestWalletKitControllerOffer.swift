@@ -186,6 +186,7 @@ private extension TestWalletKitControllerOffer {
       revokedDocumentStorageController: StubStorageController<RevokedDocument>(),
       failedReIssuedDocStorageController: StubStorageController<FailedReIssuedDocument>(),
       statusRefreshFailureStorageController: StubStorageController<StatusRefreshFailure>(),
+      deferredIssuanceStorageController: StubStorageController<DeferredIssuance>(),
       storageEraseController: StubStorageEraseController(),
       networkSessionProvider: StubNetworkSessionProvider(urlSession: URLSession(configuration: configuration)),
       documentRegistrationManager: MockDocumentRegistrationManager(),
@@ -289,6 +290,7 @@ extension TestWalletKitControllerOffer.StubStorageController: BookmarkStorageCon
 extension TestWalletKitControllerOffer.StubStorageController: RevokedDocumentStorageController where Value == RevokedDocument {}
 extension TestWalletKitControllerOffer.StubStorageController: FailedReIssuedDocStorageController where Value == FailedReIssuedDocument {}
 extension TestWalletKitControllerOffer.StubStorageController: StatusRefreshFailureStorageController where Value == StatusRefreshFailure {}
+extension TestWalletKitControllerOffer.StubStorageController: DeferredIssuanceStorageController where Value == DeferredIssuance {}
 
 extension TestWalletKitControllerOffer.StubStorageController: TransactionLogStorageController where Value == TransactionLog {
 
