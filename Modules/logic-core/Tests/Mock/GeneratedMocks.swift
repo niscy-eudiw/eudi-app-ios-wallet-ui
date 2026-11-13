@@ -7316,6 +7316,17 @@ import Foundation
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/DeferredIssuanceSchedule.swift'
+
+import Cuckoo
+import Foundation
+import WalletStorage
+import logic_storage
+@testable import logic_business
+@testable import logic_core
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/DeferrredDocument.swift'
 
 import Cuckoo
