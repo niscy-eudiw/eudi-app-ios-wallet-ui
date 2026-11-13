@@ -107,6 +107,15 @@ public final class LogicCoreAssembly: Assembly {
     }
     .inObjectScope(ObjectScope.container)
 
+    container.register(DeferredIssuanceWorkManager.self) { r in
+      DeferredIssuanceWorkManagerImpl(
+        walletKitController: r.force(WalletKitController.self),
+        storageController: r.force((any DeferredIssuanceStorageController).self),
+        revocationWorkManager: r.force(RevocationWorkManager.self)
+      )
+    }
+    .inObjectScope(ObjectScope.container)
+
     container.register(WalletResetStatusProvider.self) { _ in
       WalletResetStatusProviderImpl()
     }
