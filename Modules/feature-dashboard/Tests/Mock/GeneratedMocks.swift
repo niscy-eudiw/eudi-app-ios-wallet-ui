@@ -15260,6 +15260,21 @@ import logic_storage
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/DeferredIssuanceStorageController+Extensions.swift'
+
+import Cuckoo
+import logic_storage
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/DocClaim+Extensions.swift'
 
 import Cuckoo
@@ -15634,6 +15649,21 @@ import SwiftUI
 
 
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Extension/WalletStorage.Document+Extensions.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Model/DeferredIssuancePayload.swift'
 
 import Cuckoo
 import Foundation
@@ -16536,6 +16566,169 @@ import Security
 @testable import logic_authentication
 @testable import feature_common
 @testable import feature_dashboard
+
+
+
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Worker/DeferredIssuanceWorkManager.swift'
+
+import Cuckoo
+import Foundation
+import WalletStorage
+import logic_storage
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+@testable import feature_dashboard
+
+class MockDeferredIssuanceWorkManager: DeferredIssuanceWorkManager, Cuckoo.ProtocolMock, @unchecked Sendable {
+    typealias MocksType = any DeferredIssuanceWorkManager
+    typealias Stubbing = __StubbingProxy_DeferredIssuanceWorkManager
+    typealias Verification = __VerificationProxy_DeferredIssuanceWorkManager
+
+    // Original typealiases
+
+    let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+
+    private var __defaultImplStub: (any DeferredIssuanceWorkManager)?
+
+    func enableDefaultImplementation(_ stub: any DeferredIssuanceWorkManager) {
+        __defaultImplStub = stub
+        cuckoo_manager.enableDefaultStubImplementation()
+    }
+
+
+    func start() async {
+        return await cuckoo_manager.call(
+            "start() async",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.start()
+        )
+    }
+
+    func stop() async {
+        return await cuckoo_manager.call(
+            "stop() async",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.stop()
+        )
+    }
+
+    func wake() async {
+        return await cuckoo_manager.call(
+            "wake() async",
+            parameters: (),
+            escapingParameters: (),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: await __defaultImplStub!.wake()
+        )
+    }
+
+    struct __StubbingProxy_DeferredIssuanceWorkManager: Cuckoo.StubbingProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+    
+        init(manager: Cuckoo.MockManager) {
+            self.cuckoo_manager = manager
+        }
+        
+        func start() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockDeferredIssuanceWorkManager.self,
+                method: "start() async",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func stop() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockDeferredIssuanceWorkManager.self,
+                method: "stop() async",
+                parameterMatchers: matchers
+            ))
+        }
+        
+        func wake() -> Cuckoo.ProtocolStubNoReturnFunction<()> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return .init(stub: cuckoo_manager.createStub(for: MockDeferredIssuanceWorkManager.self,
+                method: "wake() async",
+                parameterMatchers: matchers
+            ))
+        }
+    }
+
+    struct __VerificationProxy_DeferredIssuanceWorkManager: Cuckoo.VerificationProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+        private let callMatcher: Cuckoo.CallMatcher
+        private let sourceLocation: Cuckoo.SourceLocation
+    
+        init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+            self.cuckoo_manager = manager
+            self.callMatcher = callMatcher
+            self.sourceLocation = sourceLocation
+        }
+        
+        
+        @discardableResult
+        func start() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "start() async",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func stop() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "stop() async",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+        
+        
+        @discardableResult
+        func wake() -> Cuckoo.__DoNotUse<(), Void> {
+            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+            return cuckoo_manager.verify(
+                "wake() async",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+    }
+}
+
+class DeferredIssuanceWorkManagerStub:DeferredIssuanceWorkManager, @unchecked Sendable {
+
+
+    
+    func start() async {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    func stop() async {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+    
+    func wake() async {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+}
+
 
 
 
