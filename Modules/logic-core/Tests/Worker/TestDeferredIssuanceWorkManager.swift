@@ -15,6 +15,7 @@
  */
 import XCTest
 import os
+import UIKit
 import WalletStorage
 import logic_storage
 import enum OpenID4VCI.CredentialIssuanceError
@@ -371,6 +372,45 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     }
 
     NotificationCenter.default.post(name: .deferredIssuanceEntered, object: nil)
+
+    await fulfillment(of: [asked], timeout: 0.5)
+  }
+
+  func testStart_WhenTheAppComesBackToTheForegroundAfterAnEntryFellDue_ThenChecksAtOnce() async {
+    await givenDeferred(["a"], entries: [entry("a", dueIn: 3_600)])
+    let waiting = expectation(description: "waiting")
+    waiting.assertForOverFulfill = false
+    workManager = makeManager(sleep: { _ in
+      waiting.fulfill()
+      try await Task.sleep(nanoseconds: 60_000_000_000)
+    })
+    let asked = expectation(description: "asked")
+    stubRequest { _ in
+      asked.fulfill()
+      throw URLError(.timedOut)
+    }
+    await workManager.start()
+    await fulfillment(of: [waiting], timeout: 2)
+
+    clock.advance(by: 3_600)
+    NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+
+    await fulfillment(of: [asked], timeout: 2)
+    await workManager.stop()
+  }
+
+  func testStop_ThenComingBackToTheForegroundAsksNothing() async {
+    await workManager.start()
+    await workManager.stop()
+    await givenDeferred(["a"], entries: [entry("a", dueIn: -1)])
+    let asked = expectation(description: "asked")
+    asked.isInverted = true
+    stubRequest { _ in
+      asked.fulfill()
+      throw URLError(.timedOut)
+    }
+
+    NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
 
     await fulfillment(of: [asked], timeout: 0.5)
   }

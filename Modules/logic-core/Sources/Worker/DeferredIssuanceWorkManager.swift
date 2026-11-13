@@ -14,6 +14,7 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
+import UIKit
 import WalletStorage
 import logic_business
 import logic_storage
@@ -34,8 +35,14 @@ protocol DeferredIssuanceWorkManager: Sendable {
 
 /// Requests deferred credentials as their entries fall due, one check at a time.
 /// Sleeps until the next due entry; goes idle when nothing is pending until `wake()`.
-/// Also woken by `deferredIssuanceEntered` while running.
+/// Also woken by `wakingNotifications` while running.
 final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
+
+  // Task.sleep doesn't advance while the device sleeps, so re-check on returning to the foreground.
+  static let wakingNotifications: [Notification.Name] = [
+    .deferredIssuanceEntered,
+    UIApplication.willEnterForegroundNotification
+  ]
 
   private let walletKitController: WalletKitController
   private let storageController: any DeferredIssuanceStorageController
@@ -53,8 +60,8 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
   private var waitTask: Task<Void, Error>?
   /// Set when wake() arrives mid-check, so the loop re-reads the entries instead of sleeping.
   private var isWakeRequested = false
-  /// Wakes the manager when a document is entered, from `start()` to `stop()`.
-  private var enteredObserver: (any NSObjectProtocol)?
+  /// Registered in start(), removed in stop().
+  private var wakingObservers: [any NSObjectProtocol] = []
 
   /// `now` and `sleep` are injectable so tests can control time.
   init(
@@ -76,22 +83,18 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
   func start() async {
     guard !isRunning else { return }
     isRunning = true
-    enteredObserver = NotificationCenter.default.addObserver(
-      forName: .deferredIssuanceEntered,
-      object: nil,
-      queue: nil
-    ) { [weak self] _ in
-      Task { await self?.wake() }
+    wakingObservers = Self.wakingNotifications.map { name in
+      NotificationCenter.default.addObserver(forName: name, object: nil, queue: nil) { [weak self] _ in
+        Task { await self?.wake() }
+      }
     }
     startLoopIfIdle()
   }
 
   func stop() async {
     isRunning = false
-    if let enteredObserver {
-      NotificationCenter.default.removeObserver(enteredObserver)
-    }
-    enteredObserver = nil
+    wakingObservers.forEach { NotificationCenter.default.removeObserver($0) }
+    wakingObservers = []
     loopTask?.cancel()
     loopTask = nil
     waitTask?.cancel()
