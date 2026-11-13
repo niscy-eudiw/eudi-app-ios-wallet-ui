@@ -125,6 +125,7 @@ public final class LogicCoreAssembly: Assembly {
       WalletWorkSchedulerImpl(
         revocationWorkManager: r.force(RevocationWorkManager.self),
         reIssuanceWorkManager: r.force(ReIssuanceWorkManager.self),
+        deferredIssuanceWorkManager: r.force(DeferredIssuanceWorkManager.self),
         stopTimeout: r.force(WalletKitConfig.self).workerStopTimeoutSeconds,
         resetStatusProvider: r.force(WalletResetStatusProvider.self)
       )

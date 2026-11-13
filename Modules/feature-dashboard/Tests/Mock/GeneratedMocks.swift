@@ -2027,16 +2027,6 @@ public class MockDocumentTabInteractor: DocumentTabInteractor, Cuckoo.ProtocolMo
         )
     }
 
-    public func hasDeferredDocuments() async -> Bool {
-        return await cuckoo_manager.call(
-            "hasDeferredDocuments() async -> Bool",
-            parameters: (),
-            escapingParameters: (),
-            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.hasDeferredDocuments()
-        )
-    }
-
     public func deleteDeferredDocument(with p0: String) async -> DeleteDeferredPartialState {
         return await cuckoo_manager.call(
             "deleteDeferredDocument(with p0: String) async -> DeleteDeferredPartialState",
@@ -2047,13 +2037,13 @@ public class MockDocumentTabInteractor: DocumentTabInteractor, Cuckoo.ProtocolMo
         )
     }
 
-    public func requestDeferredIssuance() async -> DeferredPartialState {
+    public func fetchIssuedDeferredDocuments(with p0: [String]) async -> [DocumentTabUIModel] {
         return await cuckoo_manager.call(
-            "requestDeferredIssuance() async -> DeferredPartialState",
-            parameters: (),
-            escapingParameters: (),
+            "fetchIssuedDeferredDocuments(with p0: [String]) async -> [DocumentTabUIModel]",
+            parameters: (p0),
+            escapingParameters: (p0),
             superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
-            defaultCall: await __defaultImplStub!.requestDeferredIssuance()
+            defaultCall: await __defaultImplStub!.fetchIssuedDeferredDocuments(with: p0)
         )
     }
 
@@ -2162,14 +2152,6 @@ public class MockDocumentTabInteractor: DocumentTabInteractor, Cuckoo.ProtocolMo
             ))
         }
         
-        func hasDeferredDocuments() -> Cuckoo.ProtocolStubFunction<(), Bool> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return .init(stub: cuckoo_manager.createStub(for: MockDocumentTabInteractor.self,
-                method: "hasDeferredDocuments() async -> Bool",
-                parameterMatchers: matchers
-            ))
-        }
-        
         func deleteDeferredDocument<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubFunction<(String), DeleteDeferredPartialState> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockDocumentTabInteractor.self,
@@ -2178,10 +2160,10 @@ public class MockDocumentTabInteractor: DocumentTabInteractor, Cuckoo.ProtocolMo
             ))
         }
         
-        func requestDeferredIssuance() -> Cuckoo.ProtocolStubFunction<(), DeferredPartialState> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+        func fetchIssuedDeferredDocuments<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.ProtocolStubFunction<([String]), [DocumentTabUIModel]> where M1.MatchedType == [String] {
+            let matchers: [Cuckoo.ParameterMatcher<([String])>] = [wrap(matchable: p0) { $0 }]
             return .init(stub: cuckoo_manager.createStub(for: MockDocumentTabInteractor.self,
-                method: "requestDeferredIssuance() async -> DeferredPartialState",
+                method: "fetchIssuedDeferredDocuments(with p0: [String]) async -> [DocumentTabUIModel]",
                 parameterMatchers: matchers
             ))
         }
@@ -2284,18 +2266,6 @@ public class MockDocumentTabInteractor: DocumentTabInteractor, Cuckoo.ProtocolMo
         
         
         @discardableResult
-        func hasDeferredDocuments() -> Cuckoo.__DoNotUse<(), Bool> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
-            return cuckoo_manager.verify(
-                "hasDeferredDocuments() async -> Bool",
-                callMatcher: callMatcher,
-                parameterMatchers: matchers,
-                sourceLocation: sourceLocation
-            )
-        }
-        
-        
-        @discardableResult
         func deleteDeferredDocument<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<(String), DeleteDeferredPartialState> where M1.MatchedType == String {
             let matchers: [Cuckoo.ParameterMatcher<(String)>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
@@ -2308,10 +2278,10 @@ public class MockDocumentTabInteractor: DocumentTabInteractor, Cuckoo.ProtocolMo
         
         
         @discardableResult
-        func requestDeferredIssuance() -> Cuckoo.__DoNotUse<(), DeferredPartialState> {
-            let matchers: [Cuckoo.ParameterMatcher<Void>] = []
+        func fetchIssuedDeferredDocuments<M1: Cuckoo.Matchable>(with p0: M1) -> Cuckoo.__DoNotUse<([String]), [DocumentTabUIModel]> where M1.MatchedType == [String] {
+            let matchers: [Cuckoo.ParameterMatcher<([String])>] = [wrap(matchable: p0) { $0 }]
             return cuckoo_manager.verify(
-                "requestDeferredIssuance() async -> DeferredPartialState",
+                "fetchIssuedDeferredDocuments(with p0: [String]) async -> [DocumentTabUIModel]",
                 callMatcher: callMatcher,
                 parameterMatchers: matchers,
                 sourceLocation: sourceLocation
@@ -2436,16 +2406,12 @@ public class DocumentTabInteractorStub:DocumentTabInteractor, @unchecked Sendabl
         return DefaultValueRegistry.defaultValue(for: (DocumentsPartialState).self)
     }
     
-    public func hasDeferredDocuments() async -> Bool {
-        return DefaultValueRegistry.defaultValue(for: (Bool).self)
-    }
-    
     public func deleteDeferredDocument(with p0: String) async -> DeleteDeferredPartialState {
         return DefaultValueRegistry.defaultValue(for: (DeleteDeferredPartialState).self)
     }
     
-    public func requestDeferredIssuance() async -> DeferredPartialState {
-        return DefaultValueRegistry.defaultValue(for: (DeferredPartialState).self)
+    public func fetchIssuedDeferredDocuments(with p0: [String]) async -> [DocumentTabUIModel] {
+        return DefaultValueRegistry.defaultValue(for: ([DocumentTabUIModel]).self)
     }
     
     public func onFilterChangeState() async -> AsyncStream<DocumentFiltersPartialState> {
