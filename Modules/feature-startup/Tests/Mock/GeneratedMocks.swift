@@ -13416,6 +13416,7 @@ import Security
 
 import Cuckoo
 import Foundation
+import UIKit
 import WalletStorage
 import logic_storage
 @testable import logic_core
