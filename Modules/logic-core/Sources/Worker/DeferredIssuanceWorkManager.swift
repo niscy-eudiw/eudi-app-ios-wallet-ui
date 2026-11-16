@@ -135,7 +135,6 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
       .sorted { $0.nextAttemptAt < $1.nextAttemptAt }
     guard !due.isEmpty else { return }
 
-    let revocationStatuses = (try? await walletKitController.fetchRevokedDocumentStatuses()) ?? [:]
     var issued: [String: String] = [:]
     var refused: [String: String] = [:]
 
@@ -160,7 +159,7 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
     }
 
     if !issued.isEmpty {
-      await checkRevocationAfterDeferredReIssue(asked: due.map(\.identifier), revocationStatuses: revocationStatuses)
+      await checkRevocationAfterDeferredReIssue()
     }
 
     if !issued.isEmpty || !refused.isEmpty {
@@ -250,16 +249,13 @@ private extension DeferredIssuanceWorkManagerImpl {
     return entries.filter { deferredIds.contains($0.identifier) } + missing
   }
 
-  // WalletKit deletes the original of a deferred re-issue when the credential arrives. If that original had a
-  // revocation record, run the revocation check now so the new copy's status is read right away (as on Android).
-  func checkRevocationAfterDeferredReIssue(
-    asked ids: [String],
-    revocationStatuses: [String: DocumentRevocationStatus]
-  ) async {
+  // When a re-issue comes back deferred, WalletKit deletes the original right away but the wallet keeps its
+  // revocation record. Once the credential arrives, such a leftover record means the new copy's status should
+  // be read now instead of on the next revocation check (as on Android).
+  func checkRevocationAfterDeferredReIssue() async {
+    guard let revocationStatuses = try? await walletKitController.fetchRevokedDocumentStatuses() else { return }
     let remainingIds = Set(await walletKitController.fetchAllDocuments().map(\.id))
-    guard let goneId = ids.first(where: { revocationStatuses[$0] != nil && !remainingIds.contains($0) }) else {
-      return
-    }
+    guard let goneId = revocationStatuses.keys.first(where: { !remainingIds.contains($0) }) else { return }
     await revocationWorkManager.checkAfterReIssue(of: goneId)
   }
 

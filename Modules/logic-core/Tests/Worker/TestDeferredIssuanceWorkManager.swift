@@ -210,28 +210,59 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     verify(walletKitController, never()).requestDeferredIssuance(with: any())
   }
 
-  func testCheck_WhenADeferredReIssueRemovesARevokedDocument_ThenRunsTheRevocationCheck() async {
+  func testCheck_WhenTheReIssuedOriginalWasRevoked_ThenRunsTheRevocationCheckOnceIssued() async {
     await givenDeferred(["a"], entries: [entry("a", dueIn: -10)])
     stub(walletKitController) { mock in
-      when(mock.fetchRevokedDocumentStatuses()).thenReturn(["a": .revoked])
-      when(mock.fetchAllDocuments()).thenReturn([StubDocument.make(id: "issued-a")])
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn(["original": .revoked])
+      when(mock.fetchAllDocuments()).thenReturn([StubDocument.make(id: "a")])
     }
-    stubRequest { _ in StubDocument.make(id: "issued-a") }
+    stubRequest { _ in StubDocument.make(id: "a") }
 
     await workManager.checkDeferredDocuments()
 
-    verify(revocationWorkManager).checkAfterReIssue(of: equal(to: "a"))
+    verify(revocationWorkManager).checkAfterReIssue(of: equal(to: "original"))
   }
 
-  func testCheck_WhenNoRevokedDocumentIsRemoved_ThenRunsNoRevocationCheck() async {
+  func testCheck_WhenTheReIssuedOriginalWasRevokedButTheIssuerIsNotReady_ThenRunsNoRevocationCheck() async {
     await givenDeferred(["a"], entries: [entry("a", dueIn: -10)])
     stub(walletKitController) { mock in
-      when(mock.fetchAllDocuments()).thenReturn([StubDocument.make(id: "issued-a")])
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn(["original": .revoked])
+      when(mock.fetchAllDocuments()).thenReturn([deferredDocument("a")])
     }
-    stubRequest { _ in StubDocument.make(id: "issued-a") }
+    stubRequest { document in deferredDocument(document.id) }
 
     await workManager.checkDeferredDocuments()
 
+    verify(revocationWorkManager, never()).checkAfterReIssue(of: any())
+  }
+
+  func testCheck_WhenEveryRevokedDocumentIsStillThere_ThenRunsNoRevocationCheck() async {
+    await givenDeferred(["a"], entries: [entry("a", dueIn: -10)])
+    stub(walletKitController) { mock in
+      when(mock.fetchRevokedDocumentStatuses()).thenReturn(["kept": .revoked])
+      when(mock.fetchAllDocuments()).thenReturn([StubDocument.make(id: "a"), StubDocument.make(id: "kept")])
+    }
+    stubRequest { _ in StubDocument.make(id: "a") }
+
+    await workManager.checkDeferredDocuments()
+
+    verify(revocationWorkManager, never()).checkAfterReIssue(of: any())
+  }
+
+  func testCheck_WhenTheRevocationRecordsCannotBeRead_ThenStillAnnouncesTheIssuedDocument() async {
+    await givenDeferred(["a"], entries: [entry("a", dueIn: -10)])
+    stub(walletKitController) { mock in
+      when(mock.fetchRevokedDocumentStatuses()).thenThrow(RuntimeError.genericError)
+    }
+    stubRequest { _ in StubDocument.make(id: "a", displayName: "PID") }
+    let announced = expectation(forNotification: NSNotification.DeferredIssuanceResult, object: nil) { notification in
+      DeferredIssuancePayload(userInfo: notification.userInfo)
+        == DeferredIssuancePayload(issued: ["a": "PID"], failed: [:])
+    }
+
+    await workManager.checkDeferredDocuments()
+
+    await fulfillment(of: [announced], timeout: 2)
     verify(revocationWorkManager, never()).checkAfterReIssue(of: any())
   }
 
