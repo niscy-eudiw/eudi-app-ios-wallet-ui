@@ -15,14 +15,17 @@
  */
 import Foundation
 import logic_storage
+import logic_test
 
-/// In-memory entries keyed by document id. Can be made to fail reads.
+/// In-memory entries keyed by document id. Can be made to fail reads, or to hold one read until a gate opens.
 actor StubDeferredIssuanceStorageController: DeferredIssuanceStorageController {
 
   struct ReadFailure: Error {}
 
   private(set) var entries: [String: DeferredIssuance] = [:]
   private var failsReads = false
+  private var readCount = 0
+  private var heldRead: (number: Int, gate: AsyncGate, reached: @Sendable () -> Void)?
 
   init(_ entries: [DeferredIssuance] = []) {
     self.entries = Dictionary(uniqueKeysWithValues: entries.map { ($0.identifier, $0) })
@@ -34,6 +37,11 @@ actor StubDeferredIssuanceStorageController: DeferredIssuanceStorageController {
 
   func setFailsReads(_ failsReads: Bool) {
     self.failsReads = failsReads
+  }
+
+  /// Holds the `number`th call to `retrieveAll()`, counting from 1, until `gate` opens. Calls `reached` when it gets there.
+  func hold(read number: Int, until gate: AsyncGate, reached: @escaping @Sendable () -> Void) {
+    heldRead = (number, gate, reached)
   }
 
   func store(_ value: DeferredIssuance) async throws {
@@ -55,6 +63,11 @@ actor StubDeferredIssuanceStorageController: DeferredIssuanceStorageController {
   }
 
   func retrieveAll() async throws -> [DeferredIssuance] {
+    readCount += 1
+    if let heldRead, heldRead.number == readCount {
+      heldRead.reached()
+      await heldRead.gate.wait()
+    }
     guard !failsReads else { throw ReadFailure() }
     guard !entries.isEmpty else { throw StorageError.itemsNotFound }
     return Array(entries.values)

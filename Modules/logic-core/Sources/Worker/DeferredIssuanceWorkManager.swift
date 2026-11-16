@@ -207,12 +207,17 @@ private extension DeferredIssuanceWorkManagerImpl {
       await runCheck()
       guard isRunning, !Task.isCancelled else { break }
       let delay = await delayUntilNextCheck()
+      // stop() may have come during the read; a wait started now would outlive it.
+      guard isRunning, !Task.isCancelled else { break }
       if isWakeRequested { continue }
       guard let delay else { break }
       let wait = Task { [sleep] in try await sleep(delay) }
       waitTask = wait
       _ = try? await wait.value
-      waitTask = nil
+      // After stop() and start() this may already be the next loop's wait.
+      if waitTask == wait {
+        waitTask = nil
+      }
     }
     if generation == loopGeneration {
       loopTask = nil

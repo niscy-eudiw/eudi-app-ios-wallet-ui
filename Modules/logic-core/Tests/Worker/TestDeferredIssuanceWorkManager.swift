@@ -534,6 +534,73 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     await stopping.value
     await underWay.value
   }
+
+  func testStop_WhenTheLoopIsReadingTheEntries_ThenStartsNoWait() async {
+    await givenDeferred(["a"], entries: [entry("a", dueIn: 3_600)])
+    let gate = AsyncGate()
+    let reading = expectation(description: "reading the entries for the wait")
+    // The check reads the entries first; the second read is the one for the wait.
+    await storage.hold(read: 2, until: gate) { reading.fulfill() }
+    let waited = expectation(description: "waited")
+    waited.isInverted = true
+    workManager = makeManager(sleep: { _ in
+      waited.fulfill()
+      try await Task.sleep(nanoseconds: 60_000_000_000)
+    })
+    await workManager.start()
+    await fulfillment(of: [reading], timeout: 2)
+
+    await workManager.stop()
+    await gate.open()
+
+    await fulfillment(of: [waited], timeout: 0.5)
+  }
+
+  func testStart_WhenTheStoppedLoopWakesLate_ThenTheNewLoopCanStillBeWoken() async {
+    await givenDeferred(["a"], entries: [entry("a", dueIn: 3_600)])
+    let gate = AsyncGate()
+    let firstWaiting = expectation(description: "the first loop waits")
+    let firstWaitEnded = expectation(description: "the first loop's wait ended")
+    let secondWaiting = expectation(description: "the second loop waits")
+    secondWaiting.assertForOverFulfill = false
+    let waits = OSAllocatedUnfairLock(initialState: 0)
+    // The first loop's wait outlasts stop(), so that loop gets back to the manager only after start().
+    workManager = makeManager(sleep: { _ in
+      let number = waits.withLock { count in
+        count += 1
+        return count
+      }
+      guard number > 1 else {
+        firstWaiting.fulfill()
+        await gate.wait()
+        firstWaitEnded.fulfill()
+        return
+      }
+      secondWaiting.fulfill()
+      try await Task.sleep(nanoseconds: 60_000_000_000)
+    })
+    let asked = expectation(description: "asked")
+    stubRequest { _ in
+      asked.fulfill()
+      throw URLError(.timedOut)
+    }
+    await workManager.start()
+    await fulfillment(of: [firstWaiting], timeout: 2)
+    await workManager.stop()
+    await workManager.start()
+    await fulfillment(of: [secondWaiting], timeout: 2)
+    await gate.open()
+    await fulfillment(of: [firstWaitEnded], timeout: 2)
+    // Nothing tells when the first loop is back on the manager. If it's later than this, the test passes
+    // without having checked anything, but it never fails wrongly.
+    try? await Task.sleep(nanoseconds: 200_000_000)
+
+    clock.advance(by: 3_600)
+    await workManager.wake()
+
+    await fulfillment(of: [asked], timeout: 2)
+    await workManager.stop()
+  }
 }
 
 private extension TestDeferredIssuanceWorkManager {
