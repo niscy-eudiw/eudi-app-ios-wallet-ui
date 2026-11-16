@@ -72,9 +72,11 @@ private extension DeferredRequestFailure {
     if let innerError = error.innerError {
       return classify(innerError)
     }
+    // issuanceRequestFailed on its own is an answer WalletKit couldn't read: a 2xx body without a credential
+    // or an interval, or a credential that fails its checks. Asking again settles it, since a transaction_id
+    // that was already used comes back as invalid_transaction_id.
     switch error.code {
-    case .issuanceRequestFailed,
-        .trustError,
+    case .trustError,
         .internalError,
         .unsupportedCredentialConfiguration,
         .missingVciConfiguration:

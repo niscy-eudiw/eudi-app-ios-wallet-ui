@@ -77,7 +77,6 @@ final class TestDeferredRequestFailure: EudiTest {
 
   func testInit_WhenWalletKitRefusesTheCredentialOrCannotCompleteTheDocument_ThenItIsARefusal() {
     let codes: [WalletError.Code] = [
-      .issuanceRequestFailed,
       .trustError,
       .internalError,
       .unsupportedCredentialConfiguration,
@@ -86,6 +85,12 @@ final class TestDeferredRequestFailure: EudiTest {
     for code in codes {
       XCTAssertEqual(DeferredRequestFailure(WalletError(description: "", code: code)), .refused, "\(code)")
     }
+  }
+
+  func testInit_WhenWalletKitCannotReadTheIssuersAnswer_ThenItIsTransient() {
+    let unreadable = WalletError(description: "Something went wrong with your deferred request response", code: .issuanceRequestFailed)
+
+    XCTAssertEqual(DeferredRequestFailure(unreadable), .transient)
   }
 
   func testInit_WhenWalletKitFailsOtherwise_ThenItIsTransient() {
@@ -97,7 +102,7 @@ final class TestDeferredRequestFailure: EudiTest {
   func testInit_WhenWalletKitWrapsAnotherError_ThenTheWrappedErrorDecides() {
     let wrappedConnectionLoss = WalletError(
       description: "",
-      code: .issuanceRequestFailed,
+      code: .internalError,
       innerError: URLError(.networkConnectionLost)
     )
     let wrappedRefusal = WalletError(
