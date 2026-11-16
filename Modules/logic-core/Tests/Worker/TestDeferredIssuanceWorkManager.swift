@@ -304,6 +304,14 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     XCTAssertEqual(delay, 5)
   }
 
+  func testDelayUntilNextCheck_WhenTheNextEntryIsDueInMoreThanAnHour_ThenWaitsAnHour() async {
+    await storage.setEntries([entry("a", dueIn: 3 * 24 * 3_600)])
+
+    let delay = await workManager.delayUntilNextCheck()
+
+    XCTAssertEqual(delay, 3_600)
+  }
+
   func testDelayUntilNextCheck_WhenNoEntryIsPending_ThenThereIsNoNextCheck() async {
     await storage.setEntries([entry("a", dueIn: 10, state: .failed)])
 
@@ -334,6 +342,45 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
 
     await fulfillment(of: [asked], timeout: 2)
     await workManager.stop()
+  }
+
+  func testStart_WhenTheIssuerAsksForMoreThanAnHour_ThenAsksOnlyOnceItIsDue() async {
+    await givenDeferred(["a"], entries: [entry("a", dueIn: 5_400)])
+    let delays = OSAllocatedUnfairLock<[TimeInterval]>(initialState: [])
+    let blocked = expectation(description: "blocked")
+    workManager = makeManager(passingWaits: 2, recordingIn: delays, blocked: blocked)
+    let clock = clock!
+    let askedAt = OSAllocatedUnfairLock<Date?>(initialState: nil)
+    stubRequest { _ in
+      askedAt.withLock { $0 = clock.now }
+      throw URLError(.timedOut)
+    }
+
+    await workManager.start()
+    await fulfillment(of: [blocked], timeout: 2)
+    await workManager.stop()
+
+    XCTAssertEqual(delays.withLock { $0 }, [3_600, 1_800, 30])
+    XCTAssertEqual(askedAt.withLock { $0 }, startDate.addingTimeInterval(5_400))
+    verify(walletKitController, times(1)).requestDeferredIssuance(with: any())
+  }
+
+  func testStart_WhenTheIssuerSentAHugeInterval_ThenWaitsAnHourAtATimeWithoutAsking() async {
+    let farOff = DeferredIssuanceSchedule.pending(identifier: "a", interval: 1e12, at: startDate)
+    await givenDeferred(["a"], entries: [farOff])
+    let delays = OSAllocatedUnfairLock<[TimeInterval]>(initialState: [])
+    let blocked = expectation(description: "blocked")
+    workManager = makeManager(passingWaits: 2, recordingIn: delays, blocked: blocked)
+    stubRequest { document in deferredDocument(document.id) }
+
+    await workManager.start()
+    await fulfillment(of: [blocked], timeout: 2)
+    await workManager.stop()
+
+    XCTAssertEqual(delays.withLock { $0 }, [3_600, 3_600, 3_600])
+    verify(walletKitController, never()).requestDeferredIssuance(with: any())
+    let entries = await storage.entries
+    XCTAssertEqual(entries["a"], farOff)
   }
 
   func testWake_WhenIdle_ThenChecksTheEntryAddedMeanwhile() async {
@@ -506,6 +553,29 @@ private extension TestDeferredIssuanceWorkManager {
       now: { clock.now },
       sleep: sleep
     )
+  }
+
+  /// Records every wait. The first `passingWaits` move the clock on by their delay and return at once;
+  /// the next one fulfils `blocked` and blocks until the manager stops.
+  func makeManager(
+    passingWaits: Int,
+    recordingIn delays: OSAllocatedUnfairLock<[TimeInterval]>,
+    blocked: XCTestExpectation
+  ) -> DeferredIssuanceWorkManagerImpl {
+    let clock = clock!
+    blocked.assertForOverFulfill = false
+    return makeManager(sleep: { delay in
+      let count = delays.withLock { recorded in
+        recorded.append(delay)
+        return recorded.count
+      }
+      guard count > passingWaits else {
+        clock.advance(by: delay)
+        return
+      }
+      blocked.fulfill()
+      try await Task.sleep(nanoseconds: 60_000_000_000)
+    })
   }
 
   /// Polls until the manager's loop has ended.

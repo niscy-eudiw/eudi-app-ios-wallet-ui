@@ -34,7 +34,7 @@ protocol DeferredIssuanceWorkManager: Sendable {
 }
 
 /// Requests deferred credentials as their entries fall due, one check at a time.
-/// Sleeps until the next due entry; goes idle when nothing is pending until `wake()`.
+/// Sleeps until the next due entry, at most `maximumWait` at a time; goes idle when nothing is pending until `wake()`.
 /// Also woken by `wakingNotifications` while running.
 final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
 
@@ -43,6 +43,10 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
     .deferredIssuanceEntered,
     UIApplication.willEnterForegroundNotification
   ]
+
+  // A longer wait is split into pieces: the issuer's interval has no upper limit and Task.sleep traps
+  // past UInt64 nanoseconds. Each wake-up only reads the entries; nothing is requested before it's due.
+  static let maximumWait: TimeInterval = 60 * 60
 
   private let walletKitController: WalletKitController
   private let storageController: any DeferredIssuanceStorageController
@@ -168,8 +172,9 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
     }
   }
 
-  /// Never less than `minimumInterval`, so an entry that couldn't be updated isn't retried in a tight loop.
-  /// nil when nothing is pending; after a read error, tries again in `firstRetryDelay`.
+  /// Never less than `minimumInterval`, so an entry that couldn't be updated isn't retried in a tight loop,
+  /// and never more than `maximumWait`. nil when nothing is pending; after a read error, tries again in
+  /// `firstRetryDelay`.
   func delayUntilNextCheck() async -> TimeInterval? {
     let entries: [DeferredIssuance]
     do {
@@ -180,7 +185,8 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
     guard let next = entries.filter({ $0.state == .pending }).map(\.nextAttemptAt).min() else {
       return nil
     }
-    return max(next.timeIntervalSince(now()), DeferredIssuanceSchedule.minimumInterval)
+    let delay = max(next.timeIntervalSince(now()), DeferredIssuanceSchedule.minimumInterval)
+    return min(delay, Self.maximumWait)
   }
 }
 
