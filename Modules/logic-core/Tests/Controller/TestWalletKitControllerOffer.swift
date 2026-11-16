@@ -141,9 +141,23 @@ private extension TestWalletKitControllerOffer {
     }
   }
 
+  func makeController() -> WalletKitControllerImpl {
+    Self.makeController(
+      issuer: issuer,
+      deferredIssuanceStorageController: StubStorageController<DeferredIssuance>()
+    )
+  }
+}
+
+// Other tests of the controller build it here too.
+extension TestWalletKitControllerOffer {
+
   /// The controller with a real WalletKit, configured for `issuer` alone, whose requests all go through
   /// `RecordingURLProtocol`.
-  func makeController() -> WalletKitControllerImpl {
+  static func makeController(
+    issuer: String,
+    deferredIssuanceStorageController: any DeferredIssuanceStorageController
+  ) -> WalletKitControllerImpl {
     let walletKitConfig = MockWalletKitConfig()
     stub(walletKitConfig) { mock in
       when(mock.logFileName.get).thenReturn(nil)
@@ -186,7 +200,7 @@ private extension TestWalletKitControllerOffer {
       revokedDocumentStorageController: StubStorageController<RevokedDocument>(),
       failedReIssuedDocStorageController: StubStorageController<FailedReIssuedDocument>(),
       statusRefreshFailureStorageController: StubStorageController<StatusRefreshFailure>(),
-      deferredIssuanceStorageController: StubStorageController<DeferredIssuance>(),
+      deferredIssuanceStorageController: deferredIssuanceStorageController,
       storageEraseController: StubStorageEraseController(),
       networkSessionProvider: StubNetworkSessionProvider(urlSession: URLSession(configuration: configuration)),
       documentRegistrationManager: MockDocumentRegistrationManager(),
@@ -194,6 +208,9 @@ private extension TestWalletKitControllerOffer {
       registrationCheckProvider: MockRegistrationCheckProvider()
     )
   }
+}
+
+private extension TestWalletKitControllerOffer {
 
   /// Answers every request of a session it is installed in with the body `serve(_:at:)` set for its address, or
   /// with 404, and records the addresses asked for.
