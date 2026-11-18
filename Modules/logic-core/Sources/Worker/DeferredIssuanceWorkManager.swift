@@ -129,7 +129,7 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
 
   /// Syncs the entries with WalletKit's deferred documents, then requests the due ones, oldest first.
   /// Documents deferred before entries existed get one based on their last modification date.
-  /// If the check is cancelled, no failure is recorded for the request in flight.
+  /// If the check is cancelled, or the document is deleted meanwhile, no failure is recorded for the request.
   func checkDeferredDocuments() async {
 
     guard let entries = try? await storageController.retrieveAllEntries() else { return }
@@ -155,6 +155,9 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
         if !(result is DeferrredDocument) {
           issued[result.id] = result.displayName.orEmpty
         }
+      } catch is DeferredDocumentDeletedError {
+        // The user deleted it meanwhile; its entry went with it.
+        continue
       } catch {
         guard !Task.isCancelled else { break }
         let next = schedule.after(DeferredRequestFailure(error), of: entry, at: now())

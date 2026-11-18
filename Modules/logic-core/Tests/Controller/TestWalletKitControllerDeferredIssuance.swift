@@ -15,6 +15,7 @@
  */
 import XCTest
 import logic_storage
+import WalletStorage
 @testable import logic_core
 @testable import logic_test
 
@@ -59,6 +60,71 @@ final class TestWalletKitControllerDeferredIssuance: EudiTest {
     let ids = await controller.fetchFailedDeferredDocumentIds()
 
     XCTAssertEqual(ids, [])
+  }
+
+  func testRequestDeferredIssuance_WhenTheDocumentIsNoLongerStored_ThenWritesNothingAndSaysItWasDeleted() async {
+    let document = WalletStorage.Document(
+      id: "gone",
+      docType: "",
+      docDataFormat: .cbor,
+      data: Data(),
+      docKeyInfo: nil,
+      createdAt: nil,
+      metadata: nil,
+      displayName: "",
+      status: .deferred
+    )
+
+    do {
+      _ = try await controller.requestDeferredIssuance(with: document)
+      XCTFail("Expected DeferredDocumentDeletedError")
+    } catch {
+      XCTAssertEqual(error as? DeferredDocumentDeletedError, DeferredDocumentDeletedError())
+    }
+    let entries = await storage.entries
+    XCTAssertTrue(entries.isEmpty)
+  }
+
+  func testDeleteDocument_WhenADeferredRequestForItIsUnderWay_ThenWaitsForTheRequestToEnd() async {
+    let gate = controller.deferredRequestGate
+    _ = await gate.beginRequest(for: "a")
+    let controller = controller!
+    let deletion = Task { try? await controller.deleteDocument(with: "a", status: .deferred) }
+    let early = expectation(description: "early")
+    early.isInverted = true
+    let deleted = expectation(description: "deleted")
+    Task {
+      await deletion.value
+      early.fulfill()
+      deleted.fulfill()
+    }
+
+    await fulfillment(of: [early], timeout: 0.3)
+    let isDeleting = await gate.isDeleting("a")
+    await gate.endRequest(for: "a")
+
+    await fulfillment(of: [deleted], timeout: 2)
+    XCTAssertTrue(isDeleting)
+  }
+
+  func testClearAllDocuments_WhenADeferredRequestIsUnderWay_ThenWaitsForTheRequestToEnd() async {
+    let gate = controller.deferredRequestGate
+    _ = await gate.beginRequest(for: "a")
+    let controller = controller!
+    let clearing = Task { try? await controller.clearAllDocuments() }
+    let early = expectation(description: "early")
+    early.isInverted = true
+    let cleared = expectation(description: "cleared")
+    Task {
+      await clearing.value
+      early.fulfill()
+      cleared.fulfill()
+    }
+
+    await fulfillment(of: [early], timeout: 0.3)
+    await gate.endRequest(for: "a")
+
+    await fulfillment(of: [cleared], timeout: 2)
   }
 
   func testDeleteAllRecords_ThenRemovesEveryDeferredEntry() async throws {

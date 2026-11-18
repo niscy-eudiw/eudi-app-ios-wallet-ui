@@ -70,6 +70,8 @@ public protocol WalletKitController: Sendable {
     isBackgroundOperation: Bool
   ) async throws -> WalletStorage.Document
   func getDocumentCredentialOptions(with id: String) async -> CredentialOptions?
+  /// Throws `DeferredDocumentDeletedError`, and writes nothing, when the document is deleted before or while
+  /// it is requested.
   func requestDeferredIssuance(with doc: WalletStorage.Document) async throws -> any DocClaimsDecodable
   func resolveOfferUrlDocTypes(offerUri: String) async throws -> OfferedIssuanceModel
   func issueDocumentsByOfferUrl(
@@ -184,6 +186,8 @@ final actor WalletKitControllerImpl: WalletKitController {
   private let storageEraseController: StorageEraseController
   private let documentRegistrationManager: DocumentRegistrationManager
   private let prefsController: PrefsController
+  /// Internal so tests can hold a deferred request open.
+  nonisolated let deferredRequestGate = DeferredRequestGate()
   private let registrationCheckProvider: RegistrationCheckProvider
   private let registrationRunner = SerialCheckRunner()
   /// "Check Registration Certificates" as WalletKit was configured with it at launch; the setting applies after a
@@ -379,7 +383,31 @@ final actor WalletKitControllerImpl: WalletKitController {
   /// Deletes every document and updates the Digital Credential API registrations, also when the deletion fails
   /// part way, so a document that is gone is no longer offered.
   /// With the documents go every document's records (`deleteRecords(of:)`); the history stays.
+  /// Waits for any deferred request under way first, so no credential arrives after the documents are gone.
   func clearAllDocuments() async throws {
+    await deferredRequestGate.beginClearing()
+    do {
+      try await clearAllStoredDocuments()
+      await deferredRequestGate.endClearing()
+    } catch {
+      await deferredRequestGate.endClearing()
+      throw error
+    }
+  }
+
+  /// Waits for a deferred request under way for the document first, so its credential can't bring it back.
+  func deleteDocument(with id: String, status: DocumentStatus) async throws {
+    await deferredRequestGate.beginDeletion(of: id)
+    do {
+      try await deleteStoredDocument(with: id, status: statusToDelete(id: id, requested: status))
+      await deferredRequestGate.endDeletion(of: id)
+    } catch {
+      await deferredRequestGate.endDeletion(of: id)
+      throw error
+    }
+  }
+
+  private func clearAllStoredDocuments() async throws {
     do {
       try await wallet.deleteAllDocuments()
     } catch {
@@ -394,7 +422,7 @@ final actor WalletKitControllerImpl: WalletKitController {
     await reconcileRegistrations()
   }
 
-  func deleteDocument(with id: String, status: DocumentStatus) async throws {
+  private func deleteStoredDocument(with id: String, status: DocumentStatus) async throws {
     try await wallet.deleteDocument(id: id, status: status)
     do {
       try await deleteRecords(of: id)
@@ -403,6 +431,18 @@ final actor WalletKitControllerImpl: WalletKitController {
       throw error
     }
     await reconcileRegistrations()
+  }
+
+  /// A deferred document whose credential arrived while its deletion waited is now issued, under the same id.
+  private func statusToDelete(id: String, requested: DocumentStatus) -> DocumentStatus {
+    guard
+      requested == .deferred,
+      !fetchDeferredDocuments().contains(where: { $0.id == id }),
+      fetchDocument(with: id) != nil
+    else {
+      return requested
+    }
+    return .issued
   }
 
   func loadDocuments() async throws {
@@ -598,21 +638,54 @@ final actor WalletKitControllerImpl: WalletKitController {
   }
 
   func requestDeferredIssuance(with doc: WalletStorage.Document) async throws -> any DocClaimsDecodable {
+    guard fetchDeferredDocuments().contains(where: { $0.id == doc.id }) else {
+      throw DeferredDocumentDeletedError()
+    }
     guard
       let metadata = DocMetadata(from: doc.metadata)
     else {
       throw WalletCoreError.missingMetadata
     }
+    guard await deferredRequestGate.beginRequest(for: doc.id) else {
+      throw DeferredDocumentDeletedError()
+    }
+    do {
+      let document = try await requestDeferredCredential(for: doc, metadata: metadata)
+      await deferredRequestGate.endRequest(for: doc.id)
+      return document
+    } catch {
+      await deferredRequestGate.endRequest(for: doc.id)
+      throw error
+    }
+  }
+
+  /// Runs while the gate holds a deletion of the document back. A deletion that started meanwhile wins: the
+  /// answer is dropped, and the deletion then removes the document, issued or not.
+  private func requestDeferredCredential(
+    for doc: WalletStorage.Document,
+    metadata: DocMetadata
+  ) async throws -> any DocClaimsDecodable {
     let credentialOptions = await resolveCredentialOptions(
       documentId: doc.id,
       documentTypeIdentifier: doc.documentTypeIdentifier
     )
-    let result = try await wallet.requestDeferredIssuance(
-      issuerName: metadata.credentialIssuerIdentifier,
-      deferredDoc: doc,
-      credentialOptions: credentialOptions,
-      keyOptions: walletKitConfig.keyOptions
-    )
+    let result: WalletStorage.Document
+    do {
+      result = try await wallet.requestDeferredIssuance(
+        issuerName: metadata.credentialIssuerIdentifier,
+        deferredDoc: doc,
+        credentialOptions: credentialOptions,
+        keyOptions: walletKitConfig.keyOptions
+      )
+    } catch {
+      if await deferredRequestGate.isDeleting(doc.id) {
+        throw DeferredDocumentDeletedError()
+      }
+      throw error
+    }
+    if await deferredRequestGate.isDeleting(doc.id) {
+      throw DeferredDocumentDeletedError()
+    }
     if result.isDeferred {
       await scheduleNextDeferredRequest(
         for: doc.id,

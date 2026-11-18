@@ -182,6 +182,20 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     await fulfillment(of: [announced], timeout: 0.5)
   }
 
+  func testCheck_WhenTheDocumentIsDeletedWhileItIsRequested_ThenRecordsNoFailureAndAnnouncesNothing() async {
+    let due = entry("a", dueIn: -10)
+    await givenDeferred(["a"], entries: [due])
+    stubRequest { _ in throw DeferredDocumentDeletedError() }
+    let announced = expectation(forNotification: NSNotification.DeferredIssuanceResult, object: nil)
+    announced.isInverted = true
+
+    await workManager.checkDeferredDocuments()
+
+    let stored = await storage.entries["a"]
+    XCTAssertEqual(stored, due)
+    await fulfillment(of: [announced], timeout: 0.5)
+  }
+
   func testCheck_WhenTheCredentialIsIssued_ThenAnnouncesTheIssuedDocument() async {
     await givenDeferred(["a"], entries: [entry("a", dueIn: -10)])
     stubRequest { _ in StubDocument.make(id: "issued-a", displayName: "PID") }

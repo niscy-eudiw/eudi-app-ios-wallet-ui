@@ -188,6 +188,15 @@ extension TestWalletKitControllerOffer {
         KeyChainConfig(documentStorageServiceName: "offer-tests", keychainAccessGroup: "offer-tests")
       )
     }
+    // Clearing or deleting documents updates the Digital Credential API registrations; none are offered here.
+    let prefsController = MockPrefsController()
+    stub(prefsController) { mock in
+      when(mock.getBool(forKey: any())).thenReturn(false)
+    }
+    let documentRegistrationManager = MockDocumentRegistrationManager()
+    stub(documentRegistrationManager) { mock in
+      when(mock.reconcile(desired: any())).thenDoNothing()
+    }
     let configuration = URLSessionConfiguration.ephemeral
     configuration.protocolClasses = [RecordingURLProtocol.self]
 
@@ -204,8 +213,8 @@ extension TestWalletKitControllerOffer {
       deferredIssuanceStorageController: deferredIssuanceStorageController,
       storageEraseController: StubStorageEraseController(),
       networkSessionProvider: StubNetworkSessionProvider(urlSession: URLSession(configuration: configuration)),
-      documentRegistrationManager: MockDocumentRegistrationManager(),
-      prefsController: MockPrefsController(),
+      documentRegistrationManager: documentRegistrationManager,
+      prefsController: prefsController,
       registrationCheckProvider: MockRegistrationCheckProvider()
     )
   }
