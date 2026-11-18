@@ -14,7 +14,6 @@
  * governing permissions and limitations under the Licence.
  */
 import Foundation
-import UIKit
 import WalletStorage
 import logic_business
 import logic_storage
@@ -33,15 +32,17 @@ protocol DeferredIssuanceWorkManager: Sendable {
   func wake() async
 }
 
-/// Requests deferred credentials as their entries fall due, one check at a time.
-/// Sleeps until the next due entry, at most `maximumWait` at a time; goes idle when nothing is pending until `wake()`.
-/// Also woken by `wakingNotifications` while running.
+/// Requests deferred credentials as their entries fall due, one check at a time, and only while the wallet is
+/// unlocked and in front (`WalletSessionStatusProvider`), as on Android; a request under way when it locks finishes.
+/// Sleeps until the next due entry, at most `maximumWait` at a time; goes idle when nothing is pending, or the wallet
+/// is locked or in the background, until `wake()`. Also woken by `wakingNotifications` while running.
 final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
 
-  // Task.sleep doesn't advance while the device sleeps, so re-check on returning to the foreground.
+  // Task.sleep doesn't advance while the device sleeps, so the wallet turning active again, which includes its
+  // return to the front, re-checks.
   static let wakingNotifications: [Notification.Name] = [
     .deferredIssuanceEntered,
-    UIApplication.willEnterForegroundNotification
+    .walletSessionBecameActive
   ]
 
   // A longer wait is split into pieces: the issuer's interval has no upper limit and Task.sleep traps
@@ -52,6 +53,7 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
   private let storageController: any DeferredIssuanceStorageController
   private let revocationWorkManager: RevocationWorkManager
   private let schedule: DeferredIssuanceSchedule
+  private let sessionStatusProvider: WalletSessionStatusProvider
   private let checkRunner: SerialCheckRunner
   private let now: @Sendable () -> Date
   private let sleep: @Sendable (TimeInterval) async throws -> Void
@@ -74,6 +76,7 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
     storageController: any DeferredIssuanceStorageController,
     revocationWorkManager: RevocationWorkManager,
     schedule: DeferredIssuanceSchedule,
+    sessionStatusProvider: WalletSessionStatusProvider,
     checkRunner: SerialCheckRunner = SerialCheckRunner(),
     now: @escaping @Sendable () -> Date = { Date() },
     sleep: @escaping @Sendable (TimeInterval) async throws -> Void = { try await Task.sleep(seconds: $0) }
@@ -82,6 +85,7 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
     self.storageController = storageController
     self.revocationWorkManager = revocationWorkManager
     self.schedule = schedule
+    self.sessionStatusProvider = sessionStatusProvider
     self.checkRunner = checkRunner
     self.now = now
     self.sleep = sleep
@@ -130,8 +134,10 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
   /// Syncs the entries with WalletKit's deferred documents, then requests the due ones, oldest first.
   /// Documents deferred before entries existed get one based on their last modification date.
   /// If the check is cancelled, or the document is deleted meanwhile, no failure is recorded for the request.
+  /// Does nothing while the wallet is locked or in the background, and stops before the next request if it locks.
   func checkDeferredDocuments() async {
 
+    guard sessionStatusProvider.isActive else { return }
     guard let entries = try? await storageController.retrieveAllEntries() else { return }
     let documents = await walletKitController.fetchDeferredDocuments()
     guard let current = try? await reconcile(entries, with: documents) else { return }
@@ -147,7 +153,7 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
 
     for entry in due {
 
-      guard !Task.isCancelled else { break }
+      guard !Task.isCancelled, sessionStatusProvider.isActive else { break }
       guard let document = documents.first(where: { $0.id == entry.identifier }) else { continue }
 
       do {
@@ -179,9 +185,10 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
   }
 
   /// Never less than `minimumInterval`, so an entry that couldn't be updated isn't retried in a tight loop,
-  /// and never more than `maximumWait`. nil when nothing is pending; after a read error, tries again in
-  /// `failureRetryDelay`.
+  /// and never more than `maximumWait`. nil when nothing is pending, or the wallet is locked or in the background;
+  /// after a read error, tries again in `failureRetryDelay`.
   func delayUntilNextCheck() async -> TimeInterval? {
+    guard sessionStatusProvider.isActive else { return nil }
     let entries: [DeferredIssuance]
     do {
       entries = try await storageController.retrieveAllEntries()

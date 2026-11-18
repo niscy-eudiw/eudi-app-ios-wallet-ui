@@ -5549,6 +5549,17 @@ class WalletProviderAttestationConfigStub:WalletProviderAttestationConfig, @unch
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Controller/DeferredRequestGate.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_authentication
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Controller/WalletKitController.swift'
 
 import Cuckoo
@@ -9632,6 +9643,8 @@ import Foundation
 import EudiWalletKit
 import enum OpenID4VCI.CredentialIssuanceError
 import enum OpenID4VCI.CredentialError
+import enum OpenID4VCI.PostError
+import enum OpenID4VCI.FetchError
 @testable import logic_core
 @testable import logic_business
 @testable import logic_analytics
@@ -10376,6 +10389,120 @@ public class WalletResetStatusProviderStub:WalletResetStatusProvider, @unchecked
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Provider/WalletSessionStatusProvider.swift'
+
+import Cuckoo
+import Foundation
+import os
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_authentication
+
+public class MockWalletSessionStatusProvider: WalletSessionStatusProvider, Cuckoo.ProtocolMock, @unchecked Sendable {
+    public typealias MocksType = any WalletSessionStatusProvider
+    public typealias Stubbing = __StubbingProxy_WalletSessionStatusProvider
+    public typealias Verification = __VerificationProxy_WalletSessionStatusProvider
+
+    // Original typealiases
+
+    public let cuckoo_manager = Cuckoo.MockManager.preconfiguredManager ?? Cuckoo.MockManager(hasParent: false)
+
+    private var __defaultImplStub: (any WalletSessionStatusProvider)?
+
+    public func enableDefaultImplementation(_ stub: any WalletSessionStatusProvider) {
+        __defaultImplStub = stub
+        cuckoo_manager.enableDefaultStubImplementation()
+    }
+
+    public var isActive: Bool {
+        get {
+            return cuckoo_manager.getter(
+                "isActive",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.isActive
+            )
+        }
+    }
+
+
+    public func update(isUnlocked p0: Bool, isInForeground p1: Bool) {
+        return cuckoo_manager.call(
+            "update(isUnlocked p0: Bool, isInForeground p1: Bool)",
+            parameters: (p0, p1),
+            escapingParameters: (p0, p1),
+            superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+            defaultCall: __defaultImplStub!.update(isUnlocked: p0, isInForeground: p1)
+        )
+    }
+
+    public struct __StubbingProxy_WalletSessionStatusProvider: Cuckoo.StubbingProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+    
+        public init(manager: Cuckoo.MockManager) {
+            self.cuckoo_manager = manager
+        }
+        
+        var isActive: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockWalletSessionStatusProvider,Bool> {
+            return .init(manager: cuckoo_manager, name: "isActive")
+        }
+        
+        func update<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(isUnlocked p0: M1, isInForeground p1: M2) -> Cuckoo.ProtocolStubNoReturnFunction<(Bool, Bool)> where M1.MatchedType == Bool, M2.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool, Bool)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
+            return .init(stub: cuckoo_manager.createStub(for: MockWalletSessionStatusProvider.self,
+                method: "update(isUnlocked p0: Bool, isInForeground p1: Bool)",
+                parameterMatchers: matchers
+            ))
+        }
+    }
+
+    public struct __VerificationProxy_WalletSessionStatusProvider: Cuckoo.VerificationProxy {
+        private let cuckoo_manager: Cuckoo.MockManager
+        private let callMatcher: Cuckoo.CallMatcher
+        private let sourceLocation: Cuckoo.SourceLocation
+    
+        public init(manager: Cuckoo.MockManager, callMatcher: Cuckoo.CallMatcher, sourceLocation: Cuckoo.SourceLocation) {
+            self.cuckoo_manager = manager
+            self.callMatcher = callMatcher
+            self.sourceLocation = sourceLocation
+        }
+        
+        var isActive: Cuckoo.VerifyReadOnlyProperty<Bool> {
+            return .init(manager: cuckoo_manager, name: "isActive", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        
+        @discardableResult
+        func update<M1: Cuckoo.Matchable, M2: Cuckoo.Matchable>(isUnlocked p0: M1, isInForeground p1: M2) -> Cuckoo.__DoNotUse<(Bool, Bool), Void> where M1.MatchedType == Bool, M2.MatchedType == Bool {
+            let matchers: [Cuckoo.ParameterMatcher<(Bool, Bool)>] = [wrap(matchable: p0) { $0.0 }, wrap(matchable: p1) { $0.1 }]
+            return cuckoo_manager.verify(
+                "update(isUnlocked p0: Bool, isInForeground p1: Bool)",
+                callMatcher: callMatcher,
+                parameterMatchers: matchers,
+                sourceLocation: sourceLocation
+            )
+        }
+    }
+}
+
+public class WalletSessionStatusProviderStub:WalletSessionStatusProvider, @unchecked Sendable {
+    
+    public var isActive: Bool {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (Bool).self)
+        }
+    }
+
+
+    
+    public func update(isUnlocked p0: Bool, isInForeground p1: Bool) {
+        return DefaultValueRegistry.defaultValue(for: (Void).self)
+    }
+}
+
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Storage/StoredDocumentPresence.swift'
 
 import Cuckoo
@@ -10392,7 +10519,6 @@ import Security
 
 import Cuckoo
 import Foundation
-import UIKit
 import WalletStorage
 import logic_storage
 @testable import logic_core

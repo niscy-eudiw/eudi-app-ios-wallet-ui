@@ -112,13 +112,19 @@ public final class LogicCoreAssembly: Assembly {
         walletKitController: r.force(WalletKitController.self),
         storageController: r.force((any DeferredIssuanceStorageController).self),
         revocationWorkManager: r.force(RevocationWorkManager.self),
-        schedule: DeferredIssuanceSchedule(config: r.force(WalletKitConfig.self).deferredIssuanceConfig)
+        schedule: DeferredIssuanceSchedule(config: r.force(WalletKitConfig.self).deferredIssuanceConfig),
+        sessionStatusProvider: r.force(WalletSessionStatusProvider.self)
       )
     }
     .inObjectScope(ObjectScope.container)
 
     container.register(WalletResetStatusProvider.self) { _ in
       WalletResetStatusProviderImpl()
+    }
+    .inObjectScope(ObjectScope.container)
+
+    container.register(WalletSessionStatusProvider.self) { _ in
+      WalletSessionStatusProviderImpl()
     }
     .inObjectScope(ObjectScope.container)
 

@@ -32,6 +32,7 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
   private var revocationWorkManager: MockRevocationWorkManager!
   private var storage: StubDeferredIssuanceStorageController!
   private var clock: TestClock!
+  private var sessionStatus: WalletSessionStatusProviderImpl!
   private var workManager: DeferredIssuanceWorkManagerImpl!
 
   override func setUp() {
@@ -40,6 +41,8 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     revocationWorkManager = MockRevocationWorkManager()
     storage = StubDeferredIssuanceStorageController()
     clock = TestClock(startDate)
+    sessionStatus = WalletSessionStatusProviderImpl()
+    sessionStatus.update(isUnlocked: true, isInForeground: true)
     workManager = makeManager()
     stub(walletKitController) { mock in
       when(mock.fetchDeferredDocuments()).thenReturn([])
@@ -53,6 +56,7 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
 
   override func tearDown() {
     workManager = nil
+    sessionStatus = nil
     clock = nil
     storage = nil
     revocationWorkManager = nil
@@ -408,6 +412,58 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     XCTAssertEqual(delay, 45)
   }
 
+  func testCheck_WhenTheWalletIsLocked_ThenAsksNothing() async {
+    sessionStatus.update(isUnlocked: false, isInForeground: true)
+    let due = entry("a", dueIn: -10)
+    await givenDeferred(["a"], entries: [due])
+    stubRequest { _ in
+      XCTFail("Asked while locked")
+      throw URLError(.timedOut)
+    }
+
+    await workManager.checkDeferredDocuments()
+
+    let stored = await storage.entries["a"]
+    XCTAssertEqual(stored, due)
+  }
+
+  func testCheck_WhenTheAppIsInTheBackground_ThenAsksNothing() async {
+    sessionStatus.update(isUnlocked: true, isInForeground: false)
+    await givenDeferred(["a"], entries: [entry("a", dueIn: -10)])
+    stubRequest { _ in
+      XCTFail("Asked in the background")
+      throw URLError(.timedOut)
+    }
+
+    await workManager.checkDeferredDocuments()
+  }
+
+  func testCheck_WhenTheWalletLocksDuringARequest_ThenFinishesItButAsksForNoOtherDocument() async {
+    await givenDeferred(["a", "b"], entries: [entry("a", dueIn: -20), entry("b", dueIn: -10)])
+    let sessionStatus = sessionStatus!
+    let asked = OSAllocatedUnfairLock<[String]>(initialState: [])
+    stubRequest { document in
+      asked.withLock { $0.append(document.id) }
+      sessionStatus.update(isUnlocked: false, isInForeground: true)
+      throw URLError(.timedOut)
+    }
+
+    await workManager.checkDeferredDocuments()
+
+    XCTAssertEqual(asked.withLock { $0 }, ["a"])
+    let first = await storage.entries["a"]
+    XCTAssertEqual(first?.failedAttempts, 1)
+  }
+
+  func testDelayUntilNextCheck_WhenTheWalletIsLocked_ThenThereIsNoNextCheck() async {
+    sessionStatus.update(isUnlocked: false, isInForeground: true)
+    await storage.setEntries([entry("a", dueIn: 60)])
+
+    let delay = await workManager.delayUntilNextCheck()
+
+    XCTAssertNil(delay)
+  }
+
   // MARK: - Starting, waking and stopping
 
   func testStart_WhenAnEntryIsOverdue_ThenAsksAtOnce() async {
@@ -534,7 +590,7 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     await fulfillment(of: [asked], timeout: 0.5)
   }
 
-  func testStart_WhenTheAppComesBackToTheForegroundAfterAnEntryFellDue_ThenChecksAtOnce() async {
+  func testStart_WhenTheWalletIsActiveAgainAfterAnEntryFellDue_ThenChecksAtOnce() async {
     await givenDeferred(["a"], entries: [entry("a", dueIn: 3_600)])
     let waiting = expectation(description: "waiting")
     waiting.assertForOverFulfill = false
@@ -550,14 +606,15 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     await workManager.start()
     await fulfillment(of: [waiting], timeout: 2)
 
+    sessionStatus.update(isUnlocked: true, isInForeground: false)
     clock.advance(by: 3_600)
-    NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+    sessionStatus.update(isUnlocked: true, isInForeground: true)
 
     await fulfillment(of: [asked], timeout: 2)
     await workManager.stop()
   }
 
-  func testStop_ThenComingBackToTheForegroundAsksNothing() async {
+  func testStop_ThenTheWalletTurningActiveAsksNothing() async {
     await workManager.start()
     await workManager.stop()
     await givenDeferred(["a"], entries: [entry("a", dueIn: -1)])
@@ -568,9 +625,27 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
       throw URLError(.timedOut)
     }
 
-    NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+    sessionStatus.update(isUnlocked: false, isInForeground: true)
+    sessionStatus.update(isUnlocked: true, isInForeground: true)
 
     await fulfillment(of: [asked], timeout: 0.5)
+  }
+
+  func testStart_WhenTheWalletIsUnlockedLater_ThenChecksAtOnce() async {
+    sessionStatus.update(isUnlocked: false, isInForeground: true)
+    await givenDeferred(["a"], entries: [entry("a", dueIn: -1)])
+    let asked = expectation(description: "asked")
+    stubRequest { _ in
+      asked.fulfill()
+      throw URLError(.timedOut)
+    }
+    await workManager.start()
+    await waitUntilIdle()
+
+    sessionStatus.update(isUnlocked: true, isInForeground: true)
+
+    await fulfillment(of: [asked], timeout: 2)
+    await workManager.stop()
   }
 
   func testStop_ThenWakeAsksNothing() async {
@@ -698,6 +773,7 @@ private extension TestDeferredIssuanceWorkManager {
       storageController: storage,
       revocationWorkManager: revocationWorkManager,
       schedule: DeferredIssuanceSchedule(config: config),
+      sessionStatusProvider: sessionStatus,
       checkRunner: checkRunner,
       now: { clock.now },
       sleep: sleep
