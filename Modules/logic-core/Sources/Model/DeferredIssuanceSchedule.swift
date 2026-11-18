@@ -17,22 +17,23 @@ import Foundation
 import WalletStorage
 import logic_storage
 
-/// Timing of deferred credential requests: wait the interval sent by the issuer, never less than
-/// `minimumInterval` (also used when the issuer sends none). No upper limit.
-/// After a transient error, back off from `firstRetryDelay` to `maximumRetryDelay`, or the
+/// Timing of deferred credential requests, from `config`: wait the interval sent by the issuer, or
+/// `initialPollingDelay` when it sends none, never less than `minimumInterval`. No upper limit.
+/// After a transient error, back off from `failureRetryDelay` to `maximumFailureRetryDelay`, or the
 /// issuer's interval if that is longer.
-enum DeferredIssuanceSchedule {
+struct DeferredIssuanceSchedule: Sendable {
 
+  /// The shortest wait whatever the issuer or the config says, so an interval of 0 can't make a tight loop.
   static let minimumInterval: TimeInterval = 5
-  static let firstRetryDelay: TimeInterval = 30
-  static let maximumRetryDelay: TimeInterval = 60 * 60
 
-  static func nextAttempt(after date: Date, interval: TimeInterval?) -> Date {
-    date.addingTimeInterval(max(interval ?? minimumInterval, minimumInterval))
+  let config: DeferredIssuanceConfig
+
+  func nextAttempt(after date: Date, interval: TimeInterval?) -> Date {
+    date.addingTimeInterval(max(interval ?? config.initialPollingDelay, Self.minimumInterval))
   }
 
   /// Stores the interval as the issuer sent it; only the wait is clamped to `minimumInterval`.
-  static func pending(identifier: String, interval: TimeInterval?, at date: Date) -> DeferredIssuance {
+  func pending(identifier: String, interval: TimeInterval?, at date: Date) -> DeferredIssuance {
     DeferredIssuance(
       identifier: identifier,
       nextAttemptAt: nextAttempt(after: date, interval: interval),
@@ -40,14 +41,14 @@ enum DeferredIssuanceSchedule {
     )
   }
 
-  static func entries(for documents: [WalletStorage.Document], at date: Date) -> [DeferredIssuance] {
+  func entries(for documents: [WalletStorage.Document], at date: Date) -> [DeferredIssuance] {
     documents
       .filter { $0.status == .deferred }
       .map { pending(identifier: $0.id, interval: $0.deferredIssuanceInterval, at: date) }
   }
 
   /// A refusal marks the entry failed; a transient failure reschedules it with backoff.
-  static func after(_ failure: DeferredRequestFailure, of entry: DeferredIssuance, at date: Date) -> DeferredIssuance {
+  func after(_ failure: DeferredRequestFailure, of entry: DeferredIssuance, at date: Date) -> DeferredIssuance {
     switch failure {
     case .refused:
       return DeferredIssuance(
@@ -59,7 +60,7 @@ enum DeferredIssuanceSchedule {
       )
     case .transient:
       let failures = entry.failedAttempts + 1
-      let wait = max(retryDelay(afterFailures: failures), entry.interval ?? 0, minimumInterval)
+      let wait = max(retryDelay(afterFailures: failures), entry.interval ?? 0, Self.minimumInterval)
       return DeferredIssuance(
         identifier: entry.identifier,
         nextAttemptAt: date.addingTimeInterval(wait),
@@ -70,9 +71,9 @@ enum DeferredIssuanceSchedule {
     }
   }
 
-  /// Doubles from `firstRetryDelay` with each failure, capped at `maximumRetryDelay`.
-  static func retryDelay(afterFailures failures: Int) -> TimeInterval {
+  /// Doubles from `failureRetryDelay` with each failure, capped at `maximumFailureRetryDelay`.
+  func retryDelay(afterFailures failures: Int) -> TimeInterval {
     let doublings = min(max(failures - 1, 0), 32)
-    return min(firstRetryDelay * pow(2, Double(doublings)), maximumRetryDelay)
+    return min(config.failureRetryDelay * pow(2, Double(doublings)), config.maximumFailureRetryDelay)
   }
 }

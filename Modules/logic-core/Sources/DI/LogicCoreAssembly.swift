@@ -111,7 +111,8 @@ public final class LogicCoreAssembly: Assembly {
       DeferredIssuanceWorkManagerImpl(
         walletKitController: r.force(WalletKitController.self),
         storageController: r.force((any DeferredIssuanceStorageController).self),
-        revocationWorkManager: r.force(RevocationWorkManager.self)
+        revocationWorkManager: r.force(RevocationWorkManager.self),
+        schedule: DeferredIssuanceSchedule(config: r.force(WalletKitConfig.self).deferredIssuanceConfig)
       )
     }
     .inObjectScope(ObjectScope.container)

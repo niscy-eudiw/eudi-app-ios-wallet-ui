@@ -171,6 +171,7 @@ extension TestWalletKitControllerOffer {
         ["issuer": VciConfig(config: OpenId4VciConfiguration(credentialIssuerURL: issuer), order: 1)]
       )
       when(mock.transactionLogger.get).thenReturn(StubTransactionLogger())
+      when(mock.deferredIssuanceConfig.get).thenReturn(.stub)
       when(mock.trustMarkSource.get).thenReturn(
         .static(
           information: TrustMarkInformation(

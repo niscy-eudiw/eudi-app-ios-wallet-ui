@@ -22,17 +22,18 @@ import logic_storage
 final class TestDeferredIssuanceSchedule: EudiTest {
 
   private let now = Date(timeIntervalSince1970: 1_000)
+  private let schedule = DeferredIssuanceSchedule(config: .stub)
 
   func testNextAttempt_WhenTheIssuerGaveAnInterval_ThenWaitsThatLong() {
     XCTAssertEqual(
-      DeferredIssuanceSchedule.nextAttempt(after: now, interval: 42),
+      schedule.nextAttempt(after: now, interval: 42),
       now.addingTimeInterval(42)
     )
   }
 
   func testNextAttempt_WhenTheIntervalIsLong_ThenWaitsAllOfIt() {
     XCTAssertEqual(
-      DeferredIssuanceSchedule.nextAttempt(after: now, interval: 86_400),
+      schedule.nextAttempt(after: now, interval: 86_400),
       now.addingTimeInterval(86_400)
     )
   }
@@ -40,7 +41,7 @@ final class TestDeferredIssuanceSchedule: EudiTest {
   func testNextAttempt_WhenTheIntervalIsShorterThanTheMinimum_ThenWaitsTheMinimum() {
     for interval: TimeInterval in [0, 2, -10] {
       XCTAssertEqual(
-        DeferredIssuanceSchedule.nextAttempt(after: now, interval: interval),
+        schedule.nextAttempt(after: now, interval: interval),
         now.addingTimeInterval(5),
         "\(interval)"
       )
@@ -49,13 +50,26 @@ final class TestDeferredIssuanceSchedule: EudiTest {
 
   func testNextAttempt_WhenTheIssuerGaveNoInterval_ThenWaitsTheMinimum() {
     XCTAssertEqual(
-      DeferredIssuanceSchedule.nextAttempt(after: now, interval: nil),
+      schedule.nextAttempt(after: now, interval: nil),
       now.addingTimeInterval(5)
     )
   }
 
+  func testNextAttempt_WhenTheIssuerGaveNoInterval_ThenWaitsTheConfiguredInitialDelay() {
+    let schedule = DeferredIssuanceSchedule(config: config(initialPollingDelay: 30))
+
+    XCTAssertEqual(schedule.nextAttempt(after: now, interval: nil), now.addingTimeInterval(30))
+    XCTAssertEqual(schedule.nextAttempt(after: now, interval: 10), now.addingTimeInterval(10))
+  }
+
+  func testNextAttempt_WhenTheConfiguredInitialDelayIsShorterThanTheMinimum_ThenWaitsTheMinimum() {
+    let schedule = DeferredIssuanceSchedule(config: config(initialPollingDelay: 1))
+
+    XCTAssertEqual(schedule.nextAttempt(after: now, interval: nil), now.addingTimeInterval(5))
+  }
+
   func testPending_ThenKeepsTheIntervalAsGivenWithNoFailures() {
-    let entry = DeferredIssuanceSchedule.pending(identifier: "pid", interval: 2, at: now)
+    let entry = schedule.pending(identifier: "pid", interval: 2, at: now)
 
     XCTAssertEqual(
       entry,
@@ -77,36 +91,53 @@ final class TestDeferredIssuanceSchedule: EudiTest {
       document(id: "pending", status: .pending)
     ]
 
-    let entries = DeferredIssuanceSchedule.entries(for: documents, at: now)
+    let entries = schedule.entries(for: documents, at: now)
 
     XCTAssertEqual(entries.map(\.identifier), ["pid", "age"])
     XCTAssertTrue(entries.allSatisfy { $0.state == .pending && $0.failedAttempts == 0 })
   }
 
   func testEntries_WhenNoDocumentIsDeferred_ThenSchedulesNothing() {
-    let entries = DeferredIssuanceSchedule.entries(for: [document(id: "pid", status: .issued)], at: now)
+    let entries = schedule.entries(for: [document(id: "pid", status: .issued)], at: now)
 
     XCTAssertTrue(entries.isEmpty)
   }
 
   func testEntries_WhenTheDeferredDocumentHoldsNoInterval_ThenAsksAgainAfterTheMinimum() {
-    let entries = DeferredIssuanceSchedule.entries(for: [document(id: "pid", status: .deferred)], at: now)
+    let entries = schedule.entries(for: [document(id: "pid", status: .deferred)], at: now)
 
     XCTAssertEqual(entries.first?.interval, nil)
     XCTAssertEqual(entries.first?.nextAttemptAt, now.addingTimeInterval(5))
   }
 
   func testRetryDelay_ThenDoublesFromThirtySecondsUpToAnHour() {
-    let delays = (1...9).map { DeferredIssuanceSchedule.retryDelay(afterFailures: $0) }
+    let delays = (1...9).map { schedule.retryDelay(afterFailures: $0) }
 
     XCTAssertEqual(delays, [30, 60, 120, 240, 480, 960, 1920, 3600, 3600])
-    XCTAssertEqual(DeferredIssuanceSchedule.retryDelay(afterFailures: 1_000), 3600)
+    XCTAssertEqual(schedule.retryDelay(afterFailures: 1_000), 3600)
+  }
+
+  func testRetryDelay_WhenTheRetryDelaysAreConfigured_ThenDoublesFromTheFirstUpToTheLongest() {
+    let schedule = DeferredIssuanceSchedule(config: config(failureRetryDelay: 10, maximumFailureRetryDelay: 50))
+
+    let delays = (1...5).map { schedule.retryDelay(afterFailures: $0) }
+
+    XCTAssertEqual(delays, [10, 20, 40, 50, 50])
+  }
+
+  func testAfter_WhenTheRetryDelayIsConfigured_ThenTheFirstFailureWaitsThatLong() {
+    let schedule = DeferredIssuanceSchedule(config: config(failureRetryDelay: 45, maximumFailureRetryDelay: 90))
+    let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, interval: 5)
+
+    let next = schedule.after(.transient, of: entry, at: now)
+
+    XCTAssertEqual(next.nextAttemptAt, now.addingTimeInterval(45))
   }
 
   func testAfter_WhenTheFirstRequestFailsTransiently_ThenWaitsThirtySecondsAndCountsTheFailure() {
     let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, interval: 5)
 
-    let next = DeferredIssuanceSchedule.after(.transient, of: entry, at: now)
+    let next = schedule.after(.transient, of: entry, at: now)
 
     XCTAssertEqual(
       next,
@@ -123,7 +154,7 @@ final class TestDeferredIssuanceSchedule: EudiTest {
   func testAfter_WhenRequestsKeepFailingTransiently_ThenWaitsLongerEachTime() {
     let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, failedAttempts: 2)
 
-    let next = DeferredIssuanceSchedule.after(.transient, of: entry, at: now)
+    let next = schedule.after(.transient, of: entry, at: now)
 
     XCTAssertEqual(next.failedAttempts, 3)
     XCTAssertEqual(next.nextAttemptAt, now.addingTimeInterval(120))
@@ -132,7 +163,7 @@ final class TestDeferredIssuanceSchedule: EudiTest {
   func testAfter_WhenTheIssuersIntervalIsLongerThanTheRetryDelay_ThenWaitsTheInterval() {
     let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, interval: 7_200)
 
-    let next = DeferredIssuanceSchedule.after(.transient, of: entry, at: now)
+    let next = schedule.after(.transient, of: entry, at: now)
 
     XCTAssertEqual(next.nextAttemptAt, now.addingTimeInterval(7_200))
   }
@@ -140,7 +171,7 @@ final class TestDeferredIssuanceSchedule: EudiTest {
   func testAfter_WhenTheIssuerRefuses_ThenStopsAskingAndKeepsTheRest() {
     let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, interval: 60, failedAttempts: 2)
 
-    let next = DeferredIssuanceSchedule.after(.refused, of: entry, at: now.addingTimeInterval(100))
+    let next = schedule.after(.refused, of: entry, at: now.addingTimeInterval(100))
 
     XCTAssertEqual(
       next,
@@ -150,6 +181,18 @@ final class TestDeferredIssuanceSchedule: EudiTest {
 }
 
 private extension TestDeferredIssuanceSchedule {
+
+  func config(
+    initialPollingDelay: TimeInterval = 5,
+    failureRetryDelay: TimeInterval = 30,
+    maximumFailureRetryDelay: TimeInterval = 3600
+  ) -> DeferredIssuanceConfig {
+    DeferredIssuanceConfig(
+      initialPollingDelay: initialPollingDelay,
+      failureRetryDelay: failureRetryDelay,
+      maximumFailureRetryDelay: maximumFailureRetryDelay
+    )
+  }
 
   func document(id: String, status: WalletStorage.DocumentStatus) -> WalletStorage.Document {
     WalletStorage.Document(

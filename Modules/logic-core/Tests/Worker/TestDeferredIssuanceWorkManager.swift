@@ -116,6 +116,19 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     )
   }
 
+  func testCheck_WhenTheRequestFailsTransiently_ThenWaitsTheConfiguredRetryDelay() async {
+    workManager = makeManager(
+      config: DeferredIssuanceConfig(initialPollingDelay: 5, failureRetryDelay: 45, maximumFailureRetryDelay: 90)
+    )
+    await givenDeferred(["a"], entries: [entry("a", dueIn: -10, interval: 5)])
+    stubRequest { _ in throw URLError(.timedOut) }
+
+    await workManager.checkDeferredDocuments()
+
+    let stored = await storage.entries["a"]
+    XCTAssertEqual(stored?.nextAttemptAt, startDate.addingTimeInterval(45))
+  }
+
   func testCheck_WhenTheIssuerRefuses_ThenMarksTheEntryFailedAndAnnouncesIt() async {
     await givenDeferred(["a"], entries: [entry("a", dueIn: -10)])
     stubRequest { _ in throw CredentialIssuanceError.invalidTransactionId }
@@ -328,6 +341,17 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     XCTAssertEqual(delay, 30)
   }
 
+  func testDelayUntilNextCheck_WhenTheEntriesCannotBeRead_ThenReadsAgainAfterTheConfiguredRetryDelay() async {
+    workManager = makeManager(
+      config: DeferredIssuanceConfig(initialPollingDelay: 5, failureRetryDelay: 45, maximumFailureRetryDelay: 90)
+    )
+    await storage.setFailsReads(true)
+
+    let delay = await workManager.delayUntilNextCheck()
+
+    XCTAssertEqual(delay, 45)
+  }
+
   // MARK: - Starting, waking and stopping
 
   func testStart_WhenAnEntryIsOverdue_ThenAsksAtOnce() async {
@@ -366,7 +390,7 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
   }
 
   func testStart_WhenTheIssuerSentAHugeInterval_ThenWaitsAnHourAtATimeWithoutAsking() async {
-    let farOff = DeferredIssuanceSchedule.pending(identifier: "a", interval: 1e12, at: startDate)
+    let farOff = DeferredIssuanceSchedule(config: .stub).pending(identifier: "a", interval: 1e12, at: startDate)
     await givenDeferred(["a"], entries: [farOff])
     let delays = OSAllocatedUnfairLock<[TimeInterval]>(initialState: [])
     let blocked = expectation(description: "blocked")
@@ -606,6 +630,7 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
 private extension TestDeferredIssuanceWorkManager {
 
   func makeManager(
+    config: DeferredIssuanceConfig = .stub,
     checkRunner: SerialCheckRunner = SerialCheckRunner(),
     sleep: @escaping @Sendable (TimeInterval) async throws -> Void = { _ in
       try await Task.sleep(nanoseconds: 60_000_000_000)
@@ -616,6 +641,7 @@ private extension TestDeferredIssuanceWorkManager {
       walletKitController: walletKitController,
       storageController: storage,
       revocationWorkManager: revocationWorkManager,
+      schedule: DeferredIssuanceSchedule(config: config),
       checkRunner: checkRunner,
       now: { clock.now },
       sleep: sleep

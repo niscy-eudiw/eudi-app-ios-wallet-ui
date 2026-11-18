@@ -51,6 +51,7 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
   private let walletKitController: WalletKitController
   private let storageController: any DeferredIssuanceStorageController
   private let revocationWorkManager: RevocationWorkManager
+  private let schedule: DeferredIssuanceSchedule
   private let checkRunner: SerialCheckRunner
   private let now: @Sendable () -> Date
   private let sleep: @Sendable (TimeInterval) async throws -> Void
@@ -72,6 +73,7 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
     walletKitController: WalletKitController,
     storageController: any DeferredIssuanceStorageController,
     revocationWorkManager: RevocationWorkManager,
+    schedule: DeferredIssuanceSchedule,
     checkRunner: SerialCheckRunner = SerialCheckRunner(),
     now: @escaping @Sendable () -> Date = { Date() },
     sleep: @escaping @Sendable (TimeInterval) async throws -> Void = { try await Task.sleep(seconds: $0) }
@@ -79,6 +81,7 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
     self.walletKitController = walletKitController
     self.storageController = storageController
     self.revocationWorkManager = revocationWorkManager
+    self.schedule = schedule
     self.checkRunner = checkRunner
     self.now = now
     self.sleep = sleep
@@ -155,7 +158,7 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
       } catch {
         guard !Task.isCancelled else { break }
         let failure = DeferredRequestFailure(error)
-        try? await storageController.update(DeferredIssuanceSchedule.after(failure, of: entry, at: now()))
+        try? await storageController.update(schedule.after(failure, of: entry, at: now()))
         if failure == .refused {
           refused[document.id] = document.displayName.orEmpty
         }
@@ -174,13 +177,13 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
 
   /// Never less than `minimumInterval`, so an entry that couldn't be updated isn't retried in a tight loop,
   /// and never more than `maximumWait`. nil when nothing is pending; after a read error, tries again in
-  /// `firstRetryDelay`.
+  /// `failureRetryDelay`.
   func delayUntilNextCheck() async -> TimeInterval? {
     let entries: [DeferredIssuance]
     do {
       entries = try await storageController.retrieveAllEntries()
     } catch {
-      return DeferredIssuanceSchedule.firstRetryDelay
+      return schedule.config.failureRetryDelay
     }
     guard let next = entries.filter({ $0.state == .pending }).map(\.nextAttemptAt).min() else {
       return nil
@@ -243,7 +246,7 @@ private extension DeferredIssuanceWorkManagerImpl {
     let missing = documents
       .filter { !enteredIds.contains($0.id) }
       .map {
-        DeferredIssuanceSchedule.pending(
+        schedule.pending(
           identifier: $0.id,
           interval: $0.deferredIssuanceInterval,
           at: $0.modifiedAt ?? $0.createdAt

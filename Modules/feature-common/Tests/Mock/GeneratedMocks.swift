@@ -7595,6 +7595,20 @@ import Cuckoo
 
 
 
+// MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Config/DeferredIssuanceConfig.swift'
+
+import Cuckoo
+import Foundation
+@testable import logic_core
+@testable import logic_business
+@testable import logic_analytics
+@testable import logic_ui
+@testable import logic_api
+@testable import logic_authentication
+@testable import feature_common
+
+
+
 // MARK: - Mocks generated from file: '../Modules/logic-core/Sources/Config/DocumentIssuanceConfig.swift'
 
 import Cuckoo
@@ -7777,6 +7791,16 @@ class MockWalletKitConfig: WalletKitConfig, Cuckoo.ProtocolMock, @unchecked Send
         }
     }
 
+    var deferredIssuanceConfig: DeferredIssuanceConfig {
+        get {
+            return cuckoo_manager.getter(
+                "deferredIssuanceConfig",
+                superclassCall: Cuckoo.MockManager.crashOnProtocolSuperclassCall(),
+                defaultCall: __defaultImplStub!.deferredIssuanceConfig
+            )
+        }
+    }
+
     var documentIssuanceConfig: DocumentIssuanceConfig {
         get {
             return cuckoo_manager.getter(
@@ -7853,6 +7877,10 @@ class MockWalletKitConfig: WalletKitConfig, Cuckoo.ProtocolMock, @unchecked Send
             return .init(manager: cuckoo_manager, name: "workerStopTimeoutSeconds")
         }
         
+        var deferredIssuanceConfig: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockWalletKitConfig,DeferredIssuanceConfig> {
+            return .init(manager: cuckoo_manager, name: "deferredIssuanceConfig")
+        }
+        
         var documentIssuanceConfig: Cuckoo.ProtocolToBeStubbedReadOnlyProperty<MockWalletKitConfig,DocumentIssuanceConfig> {
             return .init(manager: cuckoo_manager, name: "documentIssuanceConfig")
         }
@@ -7919,6 +7947,10 @@ class MockWalletKitConfig: WalletKitConfig, Cuckoo.ProtocolMock, @unchecked Send
         
         var workerStopTimeoutSeconds: Cuckoo.VerifyReadOnlyProperty<TimeInterval> {
             return .init(manager: cuckoo_manager, name: "workerStopTimeoutSeconds", callMatcher: callMatcher, sourceLocation: sourceLocation)
+        }
+        
+        var deferredIssuanceConfig: Cuckoo.VerifyReadOnlyProperty<DeferredIssuanceConfig> {
+            return .init(manager: cuckoo_manager, name: "deferredIssuanceConfig", callMatcher: callMatcher, sourceLocation: sourceLocation)
         }
         
         var documentIssuanceConfig: Cuckoo.VerifyReadOnlyProperty<DocumentIssuanceConfig> {
@@ -8002,6 +8034,12 @@ class WalletKitConfigStub:WalletKitConfig, @unchecked Sendable {
     var workerStopTimeoutSeconds: TimeInterval {
         get {
             return DefaultValueRegistry.defaultValue(for: (TimeInterval).self)
+        }
+    }
+    
+    var deferredIssuanceConfig: DeferredIssuanceConfig {
+        get {
+            return DefaultValueRegistry.defaultValue(for: (DeferredIssuanceConfig).self)
         }
     }
     

@@ -634,7 +634,7 @@ final actor WalletKitControllerImpl: WalletKitController {
   /// the issuance; the document is already stored.
   /// Also wakes the deferred work manager, which adds the entry itself if the write failed.
   private func scheduleDeferredRequests(for documents: [WalletStorage.Document]) async {
-    let entries = DeferredIssuanceSchedule.entries(for: documents, at: Date())
+    let entries = deferredIssuanceSchedule.entries(for: documents, at: Date())
     guard !entries.isEmpty else { return }
     try? await deferredIssuanceStorageController.store(entries)
     NotificationCenter.default.post(name: .deferredIssuanceEntered, object: nil)
@@ -643,8 +643,12 @@ final actor WalletKitControllerImpl: WalletKitController {
   /// WalletKit doesn't persist the interval of a "still pending" response, so we keep it in our own entry.
   private func scheduleNextDeferredRequest(for id: String, interval: TimeInterval?) async {
     try? await deferredIssuanceStorageController.update(
-      DeferredIssuanceSchedule.pending(identifier: id, interval: interval, at: Date())
+      deferredIssuanceSchedule.pending(identifier: id, interval: interval, at: Date())
     )
+  }
+
+  private var deferredIssuanceSchedule: DeferredIssuanceSchedule {
+    DeferredIssuanceSchedule(config: walletKitConfig.deferredIssuanceConfig)
   }
 
   /// Deletes the records the wallet keeps for a document: its revocation record, refresh failure, bookmark, failed
