@@ -16,10 +16,12 @@
 @testable import logic_core
 
 extension DeferredIssuanceConfig {
-  /// The wallet's own timing: 5 s without an interval, then 30 s doubling up to an hour after failures.
+  /// The wallet's own timing: 5 s without an interval, then 30 s doubling up to an hour after failures,
+  /// up to 5 failures in a row.
   static let stub = DeferredIssuanceConfig(
     initialPollingDelay: 5,
     failureRetryDelay: 30,
-    maximumFailureRetryDelay: 3600
+    maximumFailureRetryDelay: 3600,
+    maxConsecutiveFailedAttempts: 5
   )
 }

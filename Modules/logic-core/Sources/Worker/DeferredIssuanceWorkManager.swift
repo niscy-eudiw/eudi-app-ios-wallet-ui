@@ -143,7 +143,7 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
     guard !due.isEmpty else { return }
 
     var issued: [String: String] = [:]
-    var refused: [String: String] = [:]
+    var failed: [String: String] = [:]
 
     for entry in due {
 
@@ -157,10 +157,10 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
         }
       } catch {
         guard !Task.isCancelled else { break }
-        let failure = DeferredRequestFailure(error)
-        try? await storageController.update(schedule.after(failure, of: entry, at: now()))
-        if failure == .refused {
-          refused[document.id] = document.displayName.orEmpty
+        let next = schedule.after(DeferredRequestFailure(error), of: entry, at: now())
+        try? await storageController.update(next)
+        if next.state == .failed {
+          failed[document.id] = document.displayName.orEmpty
         }
       }
     }
@@ -169,8 +169,8 @@ final actor DeferredIssuanceWorkManagerImpl: DeferredIssuanceWorkManager {
       await checkRevocationAfterDeferredReIssue()
     }
 
-    if !issued.isEmpty || !refused.isEmpty {
-      await notifyListeners(with: DeferredIssuancePayload(issued: issued, failed: refused))
+    if !issued.isEmpty || !failed.isEmpty {
+      await notifyListeners(with: DeferredIssuancePayload(issued: issued, failed: failed))
       await notifyDocumentTabListener()
     }
   }

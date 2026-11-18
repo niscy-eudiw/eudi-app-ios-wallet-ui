@@ -410,7 +410,8 @@ struct WalletKitConfigImpl: WalletKitConfig {
     DeferredIssuanceConfig(
       initialPollingDelay: 5,
       failureRetryDelay: 30,
-      maximumFailureRetryDelay: 60 * 60
+      maximumFailureRetryDelay: 60 * 60,
+      maxConsecutiveFailedAttempts: 5
     )
   }
 

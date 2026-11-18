@@ -39,7 +39,12 @@ final class TestWalletKitConfig: EudiTest {
 
     XCTAssertEqual(
       config.deferredIssuanceConfig,
-      DeferredIssuanceConfig(initialPollingDelay: 5, failureRetryDelay: 30, maximumFailureRetryDelay: 3600)
+      DeferredIssuanceConfig(
+        initialPollingDelay: 5,
+        failureRetryDelay: 30,
+        maximumFailureRetryDelay: 3600,
+        maxConsecutiveFailedAttempts: 5
+      )
     )
   }
 }

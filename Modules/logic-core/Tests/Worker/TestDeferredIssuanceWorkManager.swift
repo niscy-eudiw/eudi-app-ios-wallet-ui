@@ -19,6 +19,7 @@ import UIKit
 import WalletStorage
 import logic_storage
 import enum OpenID4VCI.CredentialIssuanceError
+import enum OpenID4VCI.PostError
 @testable import logic_business
 @testable import logic_core
 @testable import logic_test
@@ -118,7 +119,12 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
 
   func testCheck_WhenTheRequestFailsTransiently_ThenWaitsTheConfiguredRetryDelay() async {
     workManager = makeManager(
-      config: DeferredIssuanceConfig(initialPollingDelay: 5, failureRetryDelay: 45, maximumFailureRetryDelay: 90)
+      config: DeferredIssuanceConfig(
+        initialPollingDelay: 5,
+        failureRetryDelay: 45,
+        maximumFailureRetryDelay: 90,
+        maxConsecutiveFailedAttempts: 5
+      )
     )
     await givenDeferred(["a"], entries: [entry("a", dueIn: -10, interval: 5)])
     stubRequest { _ in throw URLError(.timedOut) }
@@ -143,6 +149,37 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
     let stored = await storage.entries["a"]
     XCTAssertEqual(stored?.state, .failed)
     await fulfillment(of: [announced, refreshed], timeout: 2)
+  }
+
+  func testCheck_WhenTheRequestFailsTransientlyOnceTooOften_ThenMarksTheEntryFailedAndAnnouncesIt() async {
+    await givenDeferred(["a"], entries: [entry("a", dueIn: -10, failedAttempts: 4)])
+    stubRequest { _ in throw URLError(.timedOut) }
+    let announced = expectation(forNotification: NSNotification.DeferredIssuanceResult, object: nil) { notification in
+      DeferredIssuancePayload(userInfo: notification.userInfo)
+        == DeferredIssuancePayload(issued: [:], failed: ["a": "Document a"])
+    }
+    let refreshed = expectation(forNotification: NSNotification.DocumentTabRefresh, object: nil)
+
+    await workManager.checkDeferredDocuments()
+
+    let stored = await storage.entries["a"]
+    XCTAssertEqual(stored?.state, .failed)
+    XCTAssertEqual(stored?.failedAttempts, 5)
+    await fulfillment(of: [announced, refreshed], timeout: 2)
+  }
+
+  func testCheck_WhenTheDeviceIsOfflineAfterManyFailures_ThenKeepsAskingWithoutCountingIt() async {
+    await givenDeferred(["a"], entries: [entry("a", dueIn: -10, failedAttempts: 4)])
+    stubRequest { _ in throw PostError.networkError(URLError(.notConnectedToInternet)) }
+    let announced = expectation(forNotification: NSNotification.DeferredIssuanceResult, object: nil)
+    announced.isInverted = true
+
+    await workManager.checkDeferredDocuments()
+
+    let stored = await storage.entries["a"]
+    XCTAssertEqual(stored?.state, .pending)
+    XCTAssertEqual(stored?.failedAttempts, 4)
+    await fulfillment(of: [announced], timeout: 0.5)
   }
 
   func testCheck_WhenTheCredentialIsIssued_ThenAnnouncesTheIssuedDocument() async {
@@ -343,7 +380,12 @@ final class TestDeferredIssuanceWorkManager: EudiTest {
 
   func testDelayUntilNextCheck_WhenTheEntriesCannotBeRead_ThenReadsAgainAfterTheConfiguredRetryDelay() async {
     workManager = makeManager(
-      config: DeferredIssuanceConfig(initialPollingDelay: 5, failureRetryDelay: 45, maximumFailureRetryDelay: 90)
+      config: DeferredIssuanceConfig(
+        initialPollingDelay: 5,
+        failureRetryDelay: 45,
+        maximumFailureRetryDelay: 90,
+        maxConsecutiveFailedAttempts: 5
+      )
     )
     await storage.setFailsReads(true)
 
@@ -699,12 +741,14 @@ private extension TestDeferredIssuanceWorkManager {
     _ id: String,
     dueIn seconds: TimeInterval,
     interval: TimeInterval? = nil,
+    failedAttempts: Int = 0,
     state: DeferredIssuance.State = .pending
   ) -> DeferredIssuance {
     DeferredIssuance(
       identifier: id,
       nextAttemptAt: startDate.addingTimeInterval(seconds),
       interval: interval,
+      failedAttempts: failedAttempts,
       state: state
     )
   }

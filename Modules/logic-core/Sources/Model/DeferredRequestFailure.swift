@@ -17,6 +17,8 @@ import Foundation
 import EudiWalletKit
 import enum OpenID4VCI.CredentialIssuanceError
 import enum OpenID4VCI.CredentialError
+import enum OpenID4VCI.PostError
+import enum OpenID4VCI.FetchError
 
 /// Classifies a failed deferred request. Only explicit issuer errors (e.g. invalid_transaction_id) and
 /// documents we can no longer complete are permanent; everything else is retried with backoff.
@@ -25,8 +27,12 @@ enum DeferredRequestFailure: Equatable {
 
   /// The issuer won't issue the credential. Stop asking; the user can delete the document.
   case refused
-  /// Might succeed later. Retry with backoff.
+  /// Might succeed later. Retry with backoff, up to `maxConsecutiveFailedAttempts`.
   case transient
+  /// The device has no network or can't resolve the issuer's name, as the Android wallet's
+  /// `isOfflineFailure`. Retried like a transient failure but not counted. Other network errors, such
+  /// as a timeout or a lost connection, are transient.
+  case offline
 
   init(_ error: Error) {
     self = Self.classify(error)
@@ -36,6 +42,9 @@ enum DeferredRequestFailure: Equatable {
 private extension DeferredRequestFailure {
 
   static func classify(_ error: Error) -> DeferredRequestFailure {
+    if isOffline(error) {
+      return .offline
+    }
     switch error {
     case let error as CredentialIssuanceError:
       return classify(error)
@@ -84,6 +93,35 @@ private extension DeferredRequestFailure {
     default:
       return .transient
     }
+  }
+
+  static let offlineCodes: Set<Int> = [
+    NSURLErrorNotConnectedToInternet,
+    NSURLErrorDataNotAllowed,
+    NSURLErrorCannotFindHost,
+    NSURLErrorDNSLookupFailed
+  ]
+
+  // OpenID4VCI wraps URLSession errors in PostError or FetchError, and WalletKit may wrap them again.
+  static func isOffline(_ error: Error, depth: Int = 0) -> Bool {
+    guard depth < 8 else { return false }
+    let inner: Error?
+    switch error {
+    case let error as WalletError:
+      inner = error.innerError
+    case PostError.networkError(let error):
+      inner = error
+    case FetchError.networkError(let error):
+      inner = error
+    default:
+      let error = error as NSError
+      if error.domain == NSURLErrorDomain, offlineCodes.contains(error.code) {
+        return true
+      }
+      inner = error.userInfo[NSUnderlyingErrorKey] as? Error
+    }
+    guard let inner else { return false }
+    return isOffline(inner, depth: depth + 1)
   }
 
   // 4xx except 408 and 429. WalletKit has already retried once with a refreshed access token.

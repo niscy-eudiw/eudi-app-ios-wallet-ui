@@ -168,6 +168,51 @@ final class TestDeferredIssuanceSchedule: EudiTest {
     XCTAssertEqual(next.nextAttemptAt, now.addingTimeInterval(7_200))
   }
 
+  func testAfter_WhenTheFailuresInARowReachTheLimit_ThenStopsAsking() {
+    let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, failedAttempts: 4)
+
+    let next = schedule.after(.transient, of: entry, at: now)
+
+    XCTAssertEqual(next.failedAttempts, 5)
+    XCTAssertEqual(next.state, .failed)
+  }
+
+  func testAfter_WhenTheFailuresInARowStayUnderTheLimit_ThenKeepsAsking() {
+    let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, failedAttempts: 3)
+
+    let next = schedule.after(.transient, of: entry, at: now)
+
+    XCTAssertEqual(next.failedAttempts, 4)
+    XCTAssertEqual(next.state, .pending)
+  }
+
+  func testAfter_WhenTheLimitIsConfigured_ThenStopsAskingThere() {
+    let schedule = DeferredIssuanceSchedule(config: config(maxConsecutiveFailedAttempts: 2))
+
+    let first = schedule.after(.transient, of: DeferredIssuance(identifier: "pid", nextAttemptAt: now), at: now)
+    let second = schedule.after(.transient, of: first, at: now)
+
+    XCTAssertEqual(first.state, .pending)
+    XCTAssertEqual(second.state, .failed)
+  }
+
+  func testAfter_WhenTheDeviceIsOffline_ThenWaitsAsAfterAFailureWithoutCountingIt() {
+    let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, interval: 5, failedAttempts: 4)
+
+    let next = schedule.after(.offline, of: entry, at: now)
+
+    XCTAssertEqual(
+      next,
+      DeferredIssuance(
+        identifier: "pid",
+        nextAttemptAt: now.addingTimeInterval(480),
+        interval: 5,
+        failedAttempts: 4,
+        state: .pending
+      )
+    )
+  }
+
   func testAfter_WhenTheIssuerRefuses_ThenStopsAskingAndKeepsTheRest() {
     let entry = DeferredIssuance(identifier: "pid", nextAttemptAt: now, interval: 60, failedAttempts: 2)
 
@@ -185,12 +230,14 @@ private extension TestDeferredIssuanceSchedule {
   func config(
     initialPollingDelay: TimeInterval = 5,
     failureRetryDelay: TimeInterval = 30,
-    maximumFailureRetryDelay: TimeInterval = 3600
+    maximumFailureRetryDelay: TimeInterval = 3600,
+    maxConsecutiveFailedAttempts: Int = 5
   ) -> DeferredIssuanceConfig {
     DeferredIssuanceConfig(
       initialPollingDelay: initialPollingDelay,
       failureRetryDelay: failureRetryDelay,
-      maximumFailureRetryDelay: maximumFailureRetryDelay
+      maximumFailureRetryDelay: maximumFailureRetryDelay,
+      maxConsecutiveFailedAttempts: maxConsecutiveFailedAttempts
     )
   }
 

@@ -49,7 +49,7 @@ public enum DocumentFiltersPartialState: Sendable {
 }
 
 public protocol DocumentTabInteractor: Sendable {
-  /// Deferred documents refused by the issuer are marked as failed.
+  /// Deferred documents refused by the issuer, or that failed too many times in a row, are marked as failed.
   func fetchDocuments(shouldRefreshCounters: Bool) async -> DocumentsPartialState
   func deleteDeferredDocument(with id: String) async -> DeleteDeferredPartialState
   /// List items for the "documents issued" sheet. Ids no longer in the wallet are skipped.

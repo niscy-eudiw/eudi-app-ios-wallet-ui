@@ -18,6 +18,7 @@ import EudiWalletKit
 import enum OpenID4VCI.CredentialIssuanceError
 import enum OpenID4VCI.CredentialError
 import enum OpenID4VCI.PostError
+import enum OpenID4VCI.FetchError
 @testable import logic_core
 @testable import logic_test
 
@@ -60,8 +61,8 @@ final class TestDeferredRequestFailure: EudiTest {
 
   func testInit_WhenTheConnectionOrTheServerFails_ThenItIsTransient() {
     let errors: [Error] = [
-      URLError(.notConnectedToInternet),
       URLError(.timedOut),
+      URLError(.cannotConnectToHost),
       PostError.networkError(URLError(.networkConnectionLost)),
       PostError.invalidStatusCode(nil, 503, nil),
       PostError.requestError(404, URLError(.cannotParseResponse))
@@ -117,6 +118,27 @@ final class TestDeferredRequestFailure: EudiTest {
 
   func testInit_WhenTheDocumentHasNoMetadata_ThenItIsARefusal() {
     XCTAssertEqual(DeferredRequestFailure(WalletCoreError.missingMetadata), .refused)
+  }
+
+  func testInit_WhenTheDeviceHasNoNetworkOrCannotResolveTheIssuer_ThenItIsOffline() {
+    let codes: [URLError.Code] = [.notConnectedToInternet, .dataNotAllowed, .cannotFindHost, .dnsLookupFailed]
+    for code in codes {
+      XCTAssertEqual(DeferredRequestFailure(URLError(code)), .offline, "\(code)")
+    }
+  }
+
+  func testInit_WhenTheOfflineErrorIsWrapped_ThenItIsStillOffline() {
+    let offline = URLError(.notConnectedToInternet)
+    let errors: [Error] = [
+      PostError.networkError(offline),
+      PostError.networkError(offline as NSError),
+      FetchError.networkError(offline),
+      WalletError(description: "", code: .issuanceRequestFailed, innerError: PostError.networkError(offline)),
+      NSError(domain: "test", code: 1, userInfo: [NSUnderlyingErrorKey: offline])
+    ]
+    for error in errors {
+      XCTAssertEqual(DeferredRequestFailure(error), .offline, "\(error)")
+    }
   }
 
   func testInit_WhenTheErrorIsUnknown_ThenItIsTransient() {

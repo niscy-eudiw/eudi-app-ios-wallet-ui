@@ -138,7 +138,8 @@ public protocol WalletKitController: Sendable {
   func removeAllFailedReIssuedDocuments() async throws
   /// Whether the last background re-issuance could not renew the document.
   func hasReIssuanceFailure(with id: String) async -> Bool
-  /// Deferred documents refused by the issuer. Empty if the entries can't be read, so they show as pending.
+  /// Deferred documents no longer requested: refused by the issuer, or failed too many times in a row. Empty if the
+  /// entries can't be read, so they show as pending.
   func fetchFailedDeferredDocumentIds() async -> Set<String>
 
   func refreshUsageCounters() async throws

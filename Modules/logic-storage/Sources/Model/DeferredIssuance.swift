@@ -46,7 +46,8 @@ public struct DeferredIssuance: Sendable, Equatable {
 
   public enum State: String, Sendable {
     case pending
-    /// Refused by the issuer. Not requested again; the user can delete the document.
+    /// Refused by the issuer, or failed too many times in a row. Not requested again; the user can delete
+    /// the document.
     case failed
   }
 

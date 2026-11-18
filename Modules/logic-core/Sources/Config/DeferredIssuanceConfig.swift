@@ -26,17 +26,23 @@ struct DeferredIssuanceConfig: Sendable, Equatable {
   let failureRetryDelay: TimeInterval
   /// Longest wait after transient failures.
   let maximumFailureRetryDelay: TimeInterval
+  /// Transient failures in a row after which the document is no longer requested and shows as failed.
+  /// A failure without a network connection doesn't count.
+  let maxConsecutiveFailedAttempts: Int
 
   init(
     initialPollingDelay: TimeInterval,
     failureRetryDelay: TimeInterval,
-    maximumFailureRetryDelay: TimeInterval
+    maximumFailureRetryDelay: TimeInterval,
+    maxConsecutiveFailedAttempts: Int
   ) {
     precondition(initialPollingDelay.isFinite && initialPollingDelay > 0)
     precondition(failureRetryDelay.isFinite && failureRetryDelay > 0)
     precondition(maximumFailureRetryDelay.isFinite && maximumFailureRetryDelay >= failureRetryDelay)
+    precondition(maxConsecutiveFailedAttempts > 0)
     self.initialPollingDelay = initialPollingDelay
     self.failureRetryDelay = failureRetryDelay
     self.maximumFailureRetryDelay = maximumFailureRetryDelay
+    self.maxConsecutiveFailedAttempts = maxConsecutiveFailedAttempts
   }
 }

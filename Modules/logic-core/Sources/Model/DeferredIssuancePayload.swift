@@ -15,7 +15,7 @@
  */
 import Foundation
 
-/// Payload of `DeferredIssuanceResult`: issued and refused documents, id → display name.
+/// Payload of `DeferredIssuanceResult`: issued documents and those no longer requested, id → display name.
 /// Issued documents are keyed by the id of the issued document, which can differ from the deferred one.
 public struct DeferredIssuancePayload: Sendable, Equatable {
 

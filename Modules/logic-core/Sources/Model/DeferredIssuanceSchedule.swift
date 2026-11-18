@@ -20,7 +20,7 @@ import logic_storage
 /// Timing of deferred credential requests, from `config`: wait the interval sent by the issuer, or
 /// `initialPollingDelay` when it sends none, never less than `minimumInterval`. No upper limit.
 /// After a transient error, back off from `failureRetryDelay` to `maximumFailureRetryDelay`, or the
-/// issuer's interval if that is longer.
+/// issuer's interval if that is longer, until `maxConsecutiveFailedAttempts` marks the entry failed.
 struct DeferredIssuanceSchedule: Sendable {
 
   /// The shortest wait whatever the issuer or the config says, so an interval of 0 can't make a tight loop.
@@ -47,7 +47,8 @@ struct DeferredIssuanceSchedule: Sendable {
       .map { pending(identifier: $0.id, interval: $0.deferredIssuanceInterval, at: date) }
   }
 
-  /// A refusal marks the entry failed; a transient failure reschedules it with backoff.
+  /// A refusal marks the entry failed. A transient failure reschedules it with backoff, or marks it failed at
+  /// `maxConsecutiveFailedAttempts`. Without a network the wait is the same but the failure isn't counted.
   func after(_ failure: DeferredRequestFailure, of entry: DeferredIssuance, at date: Date) -> DeferredIssuance {
     switch failure {
     case .refused:
@@ -60,15 +61,26 @@ struct DeferredIssuanceSchedule: Sendable {
       )
     case .transient:
       let failures = entry.failedAttempts + 1
-      let wait = max(retryDelay(afterFailures: failures), entry.interval ?? 0, Self.minimumInterval)
       return DeferredIssuance(
         identifier: entry.identifier,
-        nextAttemptAt: date.addingTimeInterval(wait),
+        nextAttemptAt: date.addingTimeInterval(retryWait(afterFailures: failures, of: entry)),
         interval: entry.interval,
         failedAttempts: failures,
+        state: failures >= config.maxConsecutiveFailedAttempts ? .failed : .pending
+      )
+    case .offline:
+      return DeferredIssuance(
+        identifier: entry.identifier,
+        nextAttemptAt: date.addingTimeInterval(retryWait(afterFailures: entry.failedAttempts + 1, of: entry)),
+        interval: entry.interval,
+        failedAttempts: entry.failedAttempts,
         state: .pending
       )
     }
+  }
+
+  private func retryWait(afterFailures failures: Int, of entry: DeferredIssuance) -> TimeInterval {
+    max(retryDelay(afterFailures: failures), entry.interval ?? 0, Self.minimumInterval)
   }
 
   /// Doubles from `failureRetryDelay` with each failure, capped at `maximumFailureRetryDelay`.
